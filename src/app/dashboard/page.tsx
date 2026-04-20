@@ -1,0 +1,166 @@
+"use client";
+
+import { useState } from "react";
+import { Plus, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useHabits } from "@/hooks/useHabits";
+import { FREE_HABIT_LIMIT } from "@/types";
+import DashboardNav from "@/components/dashboard/DashboardNav";
+import HabitCard from "@/components/dashboard/HabitCard";
+import AddHabitModal from "@/components/dashboard/AddHabitModal";
+import UpgradeModal from "@/components/dashboard/UpgradeModal";
+
+export default function DashboardPage() {
+  const { habits, loading, error, completedCount, toggleHabit, deleteHabit, isCompletedToday, addHabit } =
+    useHabits();
+  const [showAdd, setShowAdd] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+
+  const handleAddClick = () => {
+    if (habits.length >= FREE_HABIT_LIMIT) {
+      setShowUpgrade(true);
+    } else {
+      setShowAdd(true);
+    }
+  };
+
+  const progressPct = habits.length > 0 ? Math.round((completedCount / habits.length) * 100) : 0;
+
+  return (
+    <div className="min-h-screen bg-[#09090f]">
+      <DashboardNav habitCount={habits.length} />
+
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+        {/* Header */}
+        <div className="mb-8">
+          <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">{today}</p>
+          <div className="flex items-end justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Today&apos;s Habits</h1>
+              {habits.length > 0 && (
+                <p className="text-sm text-slate-400 mt-1">
+                  {completedCount === habits.length
+                    ? "All done! Amazing work today 🎉"
+                    : `${habits.length - completedCount} remaining`}
+                </p>
+              )}
+            </div>
+            {habits.length > 0 && (
+              <div className="text-right">
+                <p className="text-3xl font-bold text-violet-400">
+                  {completedCount}
+                  <span className="text-slate-600 text-xl font-normal">/{habits.length}</span>
+                </p>
+                <p className="text-xs text-slate-500">completed</p>
+              </div>
+            )}
+          </div>
+
+          {/* Progress bar */}
+          {habits.length > 0 && (
+            <div className="mt-4 w-full h-1.5 bg-violet-950/60 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-500 rounded-full transition-all duration-700"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Error state */}
+        {error && (
+          <div className="flex items-center gap-3 bg-red-950/40 border border-red-800/40 rounded-xl p-4 mb-6">
+            <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+            <p className="text-sm text-red-300">{error}</p>
+          </div>
+        )}
+
+        {/* Loading state */}
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-6 h-6 text-violet-500 animate-spin" />
+          </div>
+        ) : habits.length === 0 ? (
+          /* Empty state */
+          <div className="text-center py-20">
+            <div className="w-16 h-16 rounded-2xl bg-violet-950/50 border border-violet-800/30 flex items-center justify-center mx-auto mb-5">
+              <CheckCircle2 className="w-7 h-7 text-violet-500" />
+            </div>
+            <h2 className="text-lg font-semibold text-white mb-2">No habits yet</h2>
+            <p className="text-slate-400 text-sm mb-6 max-w-sm mx-auto">
+              Start building your first habit. Even small daily actions compound into
+              life-changing results.
+            </p>
+            <button
+              onClick={handleAddClick}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-medium rounded-xl transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              Add your first habit
+            </button>
+          </div>
+        ) : (
+          /* Habit list */
+          <div className="space-y-3">
+            {habits.map((habit) => (
+              <HabitCard
+                key={habit.id}
+                habit={habit}
+                completed={isCompletedToday(habit.id)}
+                onToggle={() => toggleHabit(habit.id)}
+                onDelete={() => deleteHabit(habit.id)}
+              />
+            ))}
+
+            {/* Add habit button */}
+            {habits.length < FREE_HABIT_LIMIT && (
+              <button
+                onClick={handleAddClick}
+                className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl border border-dashed border-violet-800/40 text-slate-500 hover:text-violet-400 hover:border-violet-700/50 transition-all text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add habit
+              </button>
+            )}
+
+            {habits.length >= FREE_HABIT_LIMIT && (
+              <button
+                onClick={handleAddClick}
+                className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl border border-dashed border-violet-700/30 text-violet-500 hover:text-violet-400 hover:bg-violet-950/30 transition-all text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Upgrade to add more habits
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Floating add button on mobile */}
+        {!loading && habits.length > 0 && (
+          <button
+            onClick={handleAddClick}
+            className="fixed bottom-6 right-6 sm:hidden w-14 h-14 bg-violet-600 hover:bg-violet-500 text-white rounded-full shadow-xl shadow-violet-900/40 flex items-center justify-center transition-all"
+          >
+            <Plus className="w-6 h-6" />
+          </button>
+        )}
+      </main>
+
+      {showAdd && (
+        <AddHabitModal
+          onClose={() => setShowAdd(false)}
+          onAdd={addHabit}
+        />
+      )}
+
+      {showUpgrade && (
+        <UpgradeModal onClose={() => setShowUpgrade(false)} />
+      )}
+    </div>
+  );
+}
