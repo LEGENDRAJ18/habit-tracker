@@ -9,6 +9,7 @@ import DashboardNav from "@/components/dashboard/DashboardNav";
 import HabitCard from "@/components/dashboard/HabitCard";
 import AddHabitModal from "@/components/dashboard/AddHabitModal";
 import UpgradeModal from "@/components/dashboard/UpgradeModal";
+import OnboardingModal from "@/components/dashboard/OnboardingModal";
 
 function PlusBanner() {
   const chips = ["Unlimited habits", "Full history", "Streak protection"];
@@ -121,7 +122,10 @@ function ProBanner() {
 export default function DashboardPage() {
   const { habits, loading, error, completedCount, toggleHabit, deleteHabit, isCompletedToday, addHabit } =
     useHabits();
-  const { tier, profileLoading } = useProfile();
+  const { tier, profileLoading, onboardingCompleted } = useProfile();
+  // Local override so closing the modal doesn't require a page reload
+  const [onboardingDone, setOnboardingDone] = useState(false);
+  const showOnboarding = !profileLoading && !onboardingCompleted && !onboardingDone;
 
   const [showAdd, setShowAdd] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
@@ -311,6 +315,10 @@ export default function DashboardPage() {
 
       {showUpgrade && (
         <UpgradeModal onClose={() => setShowUpgrade(false)} />
+      )}
+
+      {showOnboarding && (
+        <OnboardingModal onComplete={() => setOnboardingDone(true)} />
       )}
     </div>
   );
