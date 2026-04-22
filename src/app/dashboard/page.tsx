@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Plus, Loader2, AlertCircle, CheckCircle2, Crown, Diamond } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Plus, Loader2, AlertCircle, CheckCircle2, Crown, Diamond, Shield } from "lucide-react";
 import type { Plan } from "@/types";
 import { useHabits } from "@/hooks/useHabits";
 import { useProfile } from "@/hooks/useProfile";
@@ -11,6 +11,7 @@ import HabitCard from "@/components/dashboard/HabitCard";
 import AddHabitModal from "@/components/dashboard/AddHabitModal";
 import UpgradeModal from "@/components/dashboard/UpgradeModal";
 import OnboardingModal from "@/components/dashboard/OnboardingModal";
+import StreakBrokenModal from "@/components/dashboard/StreakBrokenModal";
 
 // ─── Progress ring ────────────────────────────────────────────────────────────
 
@@ -211,9 +212,9 @@ function ProBanner() {
 }
 
 export default function DashboardPage() {
-  const { habits, loading, error, completedCount, toggleHabit, deleteHabit, isCompletedToday, addHabit, getStreak } =
+  const { habits, loading, error, completedCount, toggleHabit, deleteHabit, isCompletedToday, addHabit, getStreakInfo, hasBrokenStreak } =
     useHabits();
-  const { tier, profileLoading, onboardingCompleted } = useProfile();
+  const { tier, profileLoading, onboardingCompleted, freezeAvailable, freezeProtectedDate, applyFreeze } = useProfile();
   // Local override so closing the modal doesn't require a page reload
   const [onboardingDone, setOnboardingDone] = useState(false);
   const showOnboarding = !profileLoading && !onboardingCompleted && !onboardingDone;
@@ -221,8 +222,11 @@ export default function DashboardPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [upgradeSuccess, setUpgradeSuccess] = useState(false);
-  const [showCelebration, setShowCelebration] = useState(false);
-  const prevCompletedRef = useRef<number | null>(null);
+  const [showCelebration, setShowCelebration]   = useState(false);
+  const [showStreakBroken, setShowStreakBroken] = useState(false);
+  const prevCompletedRef   = useRef<number | null>(null);
+  const seenBreakModalRef  = useRef(false);
+  const appliedFreezeRef   = useRef(false);
 
   const isPaid = tier === "plus" || tier === "pro";
 
@@ -259,6 +263,35 @@ export default function DashboardPage() {
     prevCompletedRef.current = completedCount;
   }, [completedCount, habits.length, loading]);
 
+  // Per-habit streak info with freeze awareness
+  const streakInfoMap = useMemo(() => {
+    const map = new Map<string, { streak: number; freezeApplied: boolean; newFreezeUsed: boolean }>();
+    for (const habit of habits) {
+      map.set(habit.id, getStreakInfo(habit.id, isPaid, freezeAvailable, freezeProtectedDate));
+    }
+    return map;
+  }, [habits, getStreakInfo, isPaid, freezeAvailable, freezeProtectedDate]);
+
+  const anyFreezeApplied  = useMemo(() => Array.from(streakInfoMap.values()).some((i) => i.freezeApplied),  [streakInfoMap]);
+  const anyNewFreezeUsed  = useMemo(() => Array.from(streakInfoMap.values()).some((i) => i.newFreezeUsed),  [streakInfoMap]);
+
+  // Persist freeze to DB the first time a fresh freeze is detected this session
+  useEffect(() => {
+    if (!anyNewFreezeUsed || appliedFreezeRef.current) return;
+    appliedFreezeRef.current = true;
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+    applyFreeze(yesterday);
+  }, [anyNewFreezeUsed, applyFreeze]);
+
+  // Show streak-broken modal once per session for free users
+  useEffect(() => {
+    if (loading || isPaid || seenBreakModalRef.current) return;
+    if (habits.some((h) => hasBrokenStreak(h.id))) {
+      seenBreakModalRef.current = true;
+      setShowStreakBroken(true);
+    }
+  }, [loading, isPaid, habits, hasBrokenStreak]);
+
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
@@ -272,8 +305,6 @@ export default function DashboardPage() {
       setShowAdd(true);
     }
   };
-
-  const progressPct = habits.length > 0 ? Math.round((completedCount / habits.length) * 100) : 0;
 
   return (
     <div className="min-h-screen bg-[#09090f]">
@@ -311,6 +342,20 @@ export default function DashboardPage() {
                     : `${habits.length - completedCount} remaining`}
                 </p>
               )}
+              {/* Streak protection info for paid users */}
+              {!loading && isPaid && habits.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  {anyFreezeApplied && (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-300 bg-blue-950/40 border border-blue-700/30 px-2 py-0.5 rounded-full">
+                      <Shield className="w-3 h-3" />
+                      Streak Protected
+                    </span>
+                  )}
+                  <span className={`text-xs ${freezeAvailable ? "text-slate-500" : "text-slate-600"}`}>
+                    {freezeAvailable ? "1 freeze available this week" : "0 freezes left this week"}
+                  </span>
+                </div>
+              )}
             </div>
             {habits.length > 0 && (
               <ProgressRing completed={completedCount} total={habits.length} tier={tier} />
@@ -322,7 +367,7 @@ export default function DashboardPage() {
             <div className="mt-4 w-full h-1.5 bg-violet-950/60 rounded-full overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-500 rounded-full transition-all duration-700"
-                style={{ width: `${progressPct}%` }}
+                style={{ width: habits.length > 0 ? `${Math.round((completedCount / habits.length) * 100)}%` : "0%" }}
               />
             </div>
           )}
@@ -363,16 +408,20 @@ export default function DashboardPage() {
         ) : (
           /* Habit list */
           <div className="space-y-3">
-            {habits.map((habit) => (
+            {habits.map((habit) => {
+              const info = streakInfoMap.get(habit.id) ?? { streak: 0, freezeApplied: false, newFreezeUsed: false };
+              return (
               <HabitCard
                 key={habit.id}
                 habit={habit}
                 completed={isCompletedToday(habit.id)}
-                streak={getStreak(habit.id)}
+                streak={info.streak}
+                isProtected={info.freezeApplied}
                 onToggle={() => toggleHabit(habit.id)}
                 onDelete={() => deleteHabit(habit.id)}
               />
-            ))}
+              );
+            })}
 
             {/* Add habit button — always visible for paid; gated for free */}
             {(isPaid || habits.length < FREE_HABIT_LIMIT) && (
@@ -422,6 +471,13 @@ export default function DashboardPage() {
 
       {showCelebration && (
         <AllDoneCelebration onDismiss={() => setShowCelebration(false)} />
+      )}
+
+      {showStreakBroken && (
+        <StreakBrokenModal
+          onUpgrade={() => { setShowStreakBroken(false); setShowUpgrade(true); }}
+          onDismiss={() => setShowStreakBroken(false)}
+        />
       )}
     </div>
   );

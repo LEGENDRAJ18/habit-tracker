@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, Check, Flame } from "lucide-react";
+import { Trash2, Check, Flame, Snowflake } from "lucide-react";
 import type { Habit } from "@/types";
 
 interface Props {
   habit: Habit;
   completed: boolean;
   streak: number;
+  isProtected?: boolean;
   onToggle: () => void;
   onDelete: () => void;
 }
@@ -29,7 +30,7 @@ const PARTICLE_COLORS = [
   "#34d399","#fb923c","#f472b6",
 ];
 
-export default function HabitCard({ habit, completed, streak, onToggle, onDelete }: Props) {
+export default function HabitCard({ habit, completed, streak, isProtected, onToggle, onDelete }: Props) {
   const [toggling, setToggling]           = useState(false);
   const [deleting, setDeleting]           = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -159,10 +160,10 @@ export default function HabitCard({ habit, completed, streak, onToggle, onDelete
 
       {/* ── Streak counter ───────────────────────────────────────────── */}
       <div className="flex items-center gap-1 flex-shrink-0">
-        <Flame
-          className={flameClass}
-          style={flameAnimation}
-        />
+        {isProtected && (
+          <Snowflake className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+        )}
+        <Flame className={flameClass} style={flameAnimation} />
         <span className={streakTextClass}>
           {hasStreak ? streak : "—"}
         </span>

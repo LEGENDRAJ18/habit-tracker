@@ -135,7 +135,6 @@ export function useHabits() {
     const today     = new Date().toISOString().split("T")[0];
     const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
 
-    // Streak must be active (last log is today or yesterday)
     if (dates[0] !== today && dates[0] !== yesterday) return 0;
 
     let streak = 1;
@@ -149,6 +148,78 @@ export function useHabits() {
     return streak;
   }, [habitDateSets]);
 
+  // Streak calculation that accounts for a single weekly freeze.
+  // A fresh freeze bridges a 2-day gap at the active edge (last log = 2 days ago).
+  // A previously applied freeze bridges the specific protected date mid-streak.
+  const getStreakInfo = useCallback((
+    habitId: string,
+    isPaid: boolean,
+    freezeAvailable: boolean,
+    freezeProtectedDate: string | null
+  ): { streak: number; freezeApplied: boolean; newFreezeUsed: boolean } => {
+    const dates = habitDateSets.get(habitId) ?? [];
+    if (dates.length === 0) return { streak: 0, freezeApplied: false, newFreezeUsed: false };
+
+    const today      = new Date().toISOString().split("T")[0];
+    const yesterday  = new Date(Date.now() -     86400000).toISOString().split("T")[0];
+    const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toISOString().split("T")[0];
+
+    let freezeApplied = false;
+    let newFreezeUsed = false;
+
+    const firstDate = dates[0];
+    if (firstDate !== today && firstDate !== yesterday) {
+      if (firstDate === twoDaysAgo) {
+        if (isPaid && freezeAvailable) {
+          // Fresh freeze bridges the missed yesterday
+          freezeApplied = true;
+          newFreezeUsed = true;
+        } else if (freezeProtectedDate === yesterday) {
+          // Previously applied freeze still bridges this specific gap
+          freezeApplied = true;
+        } else {
+          return { streak: 0, freezeApplied: false, newFreezeUsed: false };
+        }
+      } else {
+        return { streak: 0, freezeApplied: false, newFreezeUsed: false };
+      }
+    }
+
+    let streak = 1;
+    for (let i = 1; i < dates.length; i++) {
+      const prev = new Date(dates[i - 1]);
+      const curr = new Date(dates[i]);
+      const diffDays = Math.round((prev.getTime() - curr.getTime()) / 86400000);
+      if (diffDays === 1) {
+        streak++;
+      } else if (diffDays === 2) {
+        // Missing date is curr + 1 day (dates are newest-first)
+        const missingDate = new Date(curr.getTime() + 86400000).toISOString().split("T")[0];
+        if (freezeProtectedDate === missingDate) {
+          streak++;
+          freezeApplied = true;
+        } else {
+          break;
+        }
+      } else {
+        break;
+      }
+    }
+
+    return { streak, freezeApplied, newFreezeUsed };
+  }, [habitDateSets]);
+
+  // True if a habit has recent historical logs (within 7 days) but the streak is currently 0.
+  // Used to detect a freshly broken streak for free-user upsell.
+  const hasBrokenStreak = useCallback((habitId: string): boolean => {
+    const dates = habitDateSets.get(habitId) ?? [];
+    if (dates.length === 0) return false;
+    const today      = new Date().toISOString().split("T")[0];
+    const yesterday  = new Date(Date.now() -     86400000).toISOString().split("T")[0];
+    const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0];
+    return dates[0] !== today && dates[0] !== yesterday && dates[0] >= sevenDaysAgo;
+  }, [habitDateSets]);
+
   return {
     habits,
     todayLogs,
@@ -160,6 +231,8 @@ export function useHabits() {
     deleteHabit,
     isCompletedToday,
     getStreak,
+    getStreakInfo,
+    hasBrokenStreak,
     refetch: fetchData,
   };
 }
