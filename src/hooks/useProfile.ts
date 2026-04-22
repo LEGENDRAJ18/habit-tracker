@@ -11,6 +11,8 @@ export function useProfile() {
   const [profileLoading, setProfileLoading]           = useState(true);
   const [lastFreezeUsed, setLastFreezeUsed]           = useState<string | null>(null);
   const [freezeProtectedDate, setFreezeProtectedDate] = useState<string | null>(null);
+  const [reminderEnabled, setReminderEnabled]         = useState(false);
+  const [reminderHour, setReminderHour]               = useState(8);
   const supabase = useRef(createClient()).current;
 
   useEffect(() => {
@@ -18,7 +20,9 @@ export function useProfile() {
       if (!user) { setProfileLoading(false); return; }
       supabase
         .from("profiles")
-        .select("subscription_tier, onboarding_completed, goal, last_freeze_used, freeze_protected_date")
+        .select(
+          "subscription_tier, onboarding_completed, goal, last_freeze_used, freeze_protected_date, reminder_enabled, reminder_hour"
+        )
         .eq("id", user.id)
         .single()
         .then(({ data }) => {
@@ -27,6 +31,8 @@ export function useProfile() {
           setGoal(data?.goal ?? null);
           setLastFreezeUsed(data?.last_freeze_used ?? null);
           setFreezeProtectedDate(data?.freeze_protected_date ?? null);
+          setReminderEnabled(data?.reminder_enabled ?? false);
+          setReminderHour(data?.reminder_hour ?? 8);
           setProfileLoading(false);
         });
     });
@@ -61,6 +67,22 @@ export function useProfile() {
     [supabase]
   );
 
+  const saveReminderPrefs = useCallback(
+    async (enabled: boolean, hour: number) => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      await supabase
+        .from("profiles")
+        .update({ reminder_enabled: enabled, reminder_hour: hour })
+        .eq("id", user.id);
+      setReminderEnabled(enabled);
+      setReminderHour(hour);
+    },
+    [supabase]
+  );
+
   return {
     tier,
     onboardingCompleted,
@@ -69,5 +91,8 @@ export function useProfile() {
     freezeAvailable,
     freezeProtectedDate,
     applyFreeze,
+    reminderEnabled,
+    reminderHour,
+    saveReminderPrefs,
   };
 }

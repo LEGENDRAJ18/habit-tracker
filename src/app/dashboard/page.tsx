@@ -13,6 +13,7 @@ import UpgradeModal from "@/components/dashboard/UpgradeModal";
 import OnboardingModal from "@/components/dashboard/OnboardingModal";
 import StreakBrokenModal from "@/components/dashboard/StreakBrokenModal";
 import HabitRecommendations from "@/components/dashboard/HabitRecommendations";
+import ReminderSettings from "@/components/dashboard/ReminderSettings";
 
 // ─── Progress ring ────────────────────────────────────────────────────────────
 
@@ -215,7 +216,7 @@ function ProBanner() {
 export default function DashboardPage() {
   const { habits, loading, error, completedCount, toggleHabit, deleteHabit, isCompletedToday, addHabit, getStreakInfo, hasBrokenStreak } =
     useHabits();
-  const { tier, profileLoading, onboardingCompleted, goal, freezeAvailable, freezeProtectedDate, applyFreeze } = useProfile();
+  const { tier, profileLoading, onboardingCompleted, goal, freezeAvailable, freezeProtectedDate, applyFreeze, reminderEnabled, reminderHour, saveReminderPrefs } = useProfile();
   // Local override so closing the modal doesn't require a page reload
   const [onboardingDone, setOnboardingDone] = useState(false);
   const showOnboarding = !profileLoading && !onboardingCompleted && !onboardingDone;
@@ -457,6 +458,15 @@ export default function DashboardPage() {
             onAdd={(name, desc) => addHabit(name, desc, "daily")}
             onSetGoal={() => setShowReOnboard(true)}
             onUpgrade={() => setShowUpgrade(true)}
+          />
+        )}
+
+        {/* Reminder settings */}
+        {!profileLoading && (
+          <ReminderSettings
+            enabled={reminderEnabled}
+            hour={reminderHour}
+            onSave={saveReminderPrefs}
           />
         )}
 
