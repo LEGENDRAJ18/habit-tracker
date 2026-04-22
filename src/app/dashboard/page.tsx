@@ -1,37 +1,87 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Plus, Loader2, AlertCircle, CheckCircle2, Sparkles, Crown } from "lucide-react";
 import { useHabits } from "@/hooks/useHabits";
+import { useProfile } from "@/hooks/useProfile";
 import { FREE_HABIT_LIMIT } from "@/types";
 import DashboardNav from "@/components/dashboard/DashboardNav";
 import HabitCard from "@/components/dashboard/HabitCard";
 import AddHabitModal from "@/components/dashboard/AddHabitModal";
 import UpgradeModal from "@/components/dashboard/UpgradeModal";
 
+function PremiumBanner({ tier }: { tier: "plus" | "pro" }) {
+  const isPro = tier === "pro";
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-violet-600/20 mb-6">
+      {/* Glow layer */}
+      <div className="absolute inset-0 bg-gradient-to-r from-violet-950/80 via-purple-950/60 to-violet-950/80" />
+      <div className="absolute inset-0 bg-gradient-to-b from-violet-600/10 to-transparent" />
+      <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-64 h-16 bg-violet-600/20 rounded-full blur-2xl pointer-events-none" />
+
+      <div className="relative flex items-center justify-between px-5 py-3.5">
+        <div className="flex items-center gap-3">
+          <div className="w-7 h-7 rounded-lg bg-violet-600/30 border border-violet-500/30 flex items-center justify-center">
+            {isPro ? (
+              <Crown className="w-3.5 h-3.5 text-amber-400" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+            )}
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-white">
+              {isPro ? "Pro plan" : "Plus plan"}
+            </p>
+            <p className="text-[11px] text-slate-400">
+              {isPro ? "All features unlocked · Unlimited habits" : "Unlimited habits · Full history"}
+            </p>
+          </div>
+        </div>
+        {isPro && (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/30 text-amber-400 uppercase tracking-wide">
+            Pro
+          </span>
+        )}
+        {!isPro && (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-500/20 border border-violet-500/30 text-violet-300 uppercase tracking-wide">
+            Plus
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const { habits, loading, error, completedCount, toggleHabit, deleteHabit, isCompletedToday, addHabit } =
     useHabits();
+  const { tier, profileLoading } = useProfile();
+
   const [showAdd, setShowAdd] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [upgradeSuccess, setUpgradeSuccess] = useState(false);
 
+  const isPaid = tier === "plus" || tier === "pro";
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const upgrade = params.get('upgrade');
-    const checkout = params.get('checkout');
-    if (upgrade === 'success') setUpgradeSuccess(true);
-    if (checkout === 'plus' || checkout === 'pro') {
-      const priceId = checkout === 'plus'
-        ? process.env.NEXT_PUBLIC_STRIPE_PLUS_PRICE_ID!
-        : process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID!;
-      fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+    const upgrade = params.get("upgrade");
+    const checkout = params.get("checkout");
+    if (upgrade === "success") setUpgradeSuccess(true);
+    if (checkout === "plus" || checkout === "pro") {
+      const priceId =
+        checkout === "plus"
+          ? process.env.NEXT_PUBLIC_STRIPE_PLUS_PRICE_ID!
+          : process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID!;
+      fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ priceId }),
       })
         .then((r) => r.json())
-        .then((data) => { if (data.url) window.location.href = data.url; });
+        .then((data) => {
+          if (data.url) window.location.href = data.url;
+        });
     }
   }, []);
 
@@ -42,7 +92,7 @@ export default function DashboardPage() {
   });
 
   const handleAddClick = () => {
-    if (habits.length >= FREE_HABIT_LIMIT) {
+    if (!isPaid && habits.length >= FREE_HABIT_LIMIT) {
       setShowUpgrade(true);
     } else {
       setShowAdd(true);
@@ -53,15 +103,26 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#09090f]">
-      <DashboardNav habitCount={habits.length} onUpgradeClick={() => setShowUpgrade(true)} />
+      <DashboardNav
+        habitCount={habits.length}
+        tier={tier}
+        onUpgradeClick={() => setShowUpgrade(true)}
+      />
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
         {/* Upgrade success banner */}
         {upgradeSuccess && (
           <div className="flex items-center gap-3 bg-green-950/40 border border-green-800/40 rounded-xl p-4 mb-6">
             <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
-            <p className="text-sm text-green-300">Welcome to your new plan! Your account has been upgraded.</p>
+            <p className="text-sm text-green-300">
+              Welcome to your new plan! Your account has been upgraded.
+            </p>
           </div>
+        )}
+
+        {/* Premium banner for paid users */}
+        {!profileLoading && isPaid && (
+          <PremiumBanner tier={tier as "plus" | "pro"} />
         )}
 
         {/* Header */}
@@ -145,8 +206,8 @@ export default function DashboardPage() {
               />
             ))}
 
-            {/* Add habit button */}
-            {habits.length < FREE_HABIT_LIMIT && (
+            {/* Add habit button — always visible for paid; gated for free */}
+            {(isPaid || habits.length < FREE_HABIT_LIMIT) && (
               <button
                 onClick={handleAddClick}
                 className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl border border-dashed border-violet-800/40 text-slate-500 hover:text-violet-400 hover:border-violet-700/50 transition-all text-sm"
@@ -156,7 +217,7 @@ export default function DashboardPage() {
               </button>
             )}
 
-            {habits.length >= FREE_HABIT_LIMIT && (
+            {!isPaid && habits.length >= FREE_HABIT_LIMIT && (
               <button
                 onClick={handleAddClick}
                 className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl border border-dashed border-violet-700/30 text-violet-500 hover:text-violet-400 hover:bg-violet-950/30 transition-all text-sm"
@@ -180,10 +241,7 @@ export default function DashboardPage() {
       </main>
 
       {showAdd && (
-        <AddHabitModal
-          onClose={() => setShowAdd(false)}
-          onAdd={addHabit}
-        />
+        <AddHabitModal onClose={() => setShowAdd(false)} onAdd={addHabit} />
       )}
 
       {showUpgrade && (

@@ -5,18 +5,42 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Sparkles, LogOut, Zap, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { FREE_HABIT_LIMIT } from "@/types";
+import type { Plan } from "@/types";
 
 interface Props {
   habitCount: number;
+  tier: Plan;
   onUpgradeClick?: () => void;
 }
 
-export default function DashboardNav({ habitCount, onUpgradeClick }: Props) {
+function PlanBadge({ tier }: { tier: Plan }) {
+  if (tier === "pro") {
+    return (
+      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-400 uppercase tracking-wide">
+        Pro
+      </span>
+    );
+  }
+  if (tier === "plus") {
+    return (
+      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-violet-500/20 border border-violet-500/40 text-violet-300 uppercase tracking-wide">
+        Plus
+      </span>
+    );
+  }
+  return (
+    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-slate-800/60 border border-slate-700/40 text-slate-500 uppercase tracking-wide">
+      Free
+    </span>
+  );
+}
+
+export default function DashboardNav({ habitCount, tier, onUpgradeClick }: Props) {
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const isAtLimit = habitCount >= FREE_HABIT_LIMIT;
+
+  const isFree = tier === "free";
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -42,7 +66,8 @@ export default function DashboardNav({ habitCount, onUpgradeClick }: Props) {
 
           {/* Right side */}
           <div className="flex items-center gap-2">
-            {isAtLimit && (
+            {/* Upgrade CTA — only for free users at limit */}
+            {isFree && habitCount >= 3 && (
               <button
                 onClick={onUpgradeClick}
                 className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-600/30 text-violet-300 text-xs font-medium rounded-lg transition-all"
@@ -56,17 +81,18 @@ export default function DashboardNav({ habitCount, onUpgradeClick }: Props) {
             <div className="relative">
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-violet-950/50 text-slate-400 hover:text-white transition-all text-xs"
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-violet-950/50 text-slate-400 hover:text-white transition-all text-xs"
               >
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center flex-shrink-0">
                   <span className="text-white text-xs font-bold">U</span>
                 </div>
+                <PlanBadge tier={tier} />
                 <ChevronDown className="w-3 h-3" />
               </button>
 
               {menuOpen && (
                 <div className="absolute right-0 mt-1 w-48 bg-[#0f0f1a] border border-violet-900/30 rounded-xl shadow-xl shadow-violet-950/40 py-1 z-50">
-                  {isAtLimit && (
+                  {isFree && (
                     <button
                       onClick={() => { setMenuOpen(false); onUpgradeClick?.(); }}
                       className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs text-violet-300 hover:bg-violet-950/50 transition-colors sm:hidden"
