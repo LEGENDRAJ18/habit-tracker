@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useHabits } from "@/hooks/useHabits";
 import { FREE_HABIT_LIMIT } from "@/types";
@@ -14,6 +14,26 @@ export default function DashboardPage() {
     useHabits();
   const [showAdd, setShowAdd] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [upgradeSuccess, setUpgradeSuccess] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const upgrade = params.get('upgrade');
+    const checkout = params.get('checkout');
+    if (upgrade === 'success') setUpgradeSuccess(true);
+    if (checkout === 'plus' || checkout === 'pro') {
+      const priceId = checkout === 'plus'
+        ? process.env.NEXT_PUBLIC_STRIPE_PLUS_PRICE_ID!
+        : process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID!;
+      fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId }),
+      })
+        .then((r) => r.json())
+        .then((data) => { if (data.url) window.location.href = data.url; });
+    }
+  }, []);
 
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -33,9 +53,17 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#09090f]">
-      <DashboardNav habitCount={habits.length} />
+      <DashboardNav habitCount={habits.length} onUpgradeClick={() => setShowUpgrade(true)} />
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+        {/* Upgrade success banner */}
+        {upgradeSuccess && (
+          <div className="flex items-center gap-3 bg-green-950/40 border border-green-800/40 rounded-xl p-4 mb-6">
+            <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+            <p className="text-sm text-green-300">Welcome to your new plan! Your account has been upgraded.</p>
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-8">
           <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">{today}</p>

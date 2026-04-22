@@ -10,6 +10,10 @@ export default function SignupPage() {
   const router = useRouter();
   const supabase = createClient();
 
+  const plan = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('plan')
+    : null;
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -26,10 +30,13 @@ export default function SignupPage() {
     setLoading(true);
     setError(null);
 
+    const next = plan ? `/dashboard?checkout=${plan}` : '/dashboard';
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      },
     });
 
     if (error) {
@@ -40,7 +47,7 @@ export default function SignupPage() {
 
     // If email confirmation is disabled, session is created immediately
     if (data.session) {
-      router.push("/dashboard");
+      router.push(next);
       router.refresh();
     } else {
       setSuccess(true);
