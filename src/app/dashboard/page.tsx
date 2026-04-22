@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Loader2, AlertCircle, CheckCircle2, Crown, Zap } from "lucide-react";
+import { Plus, Loader2, AlertCircle, CheckCircle2, Crown, Diamond } from "lucide-react";
 import { useHabits } from "@/hooks/useHabits";
 import { useProfile } from "@/hooks/useProfile";
 import { FREE_HABIT_LIMIT } from "@/types";
@@ -11,69 +11,108 @@ import AddHabitModal from "@/components/dashboard/AddHabitModal";
 import UpgradeModal from "@/components/dashboard/UpgradeModal";
 
 function PlusBanner() {
+  const chips = ["Unlimited habits", "Full history", "Streak protection"];
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-violet-500/35 mb-6">
-      <div className="absolute inset-0 bg-gradient-to-r from-violet-950 via-purple-950/90 to-violet-950" />
-      <div className="absolute inset-0 bg-gradient-to-b from-violet-500/20 to-transparent" />
-      <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-56 h-14 bg-violet-500/20 rounded-full blur-3xl pointer-events-none" />
+    <div className="relative overflow-hidden rounded-2xl border border-violet-500/30 mb-6">
+      <div className="absolute inset-0 bg-gradient-to-br from-violet-950 via-[#1a0f2e] to-violet-950/90" />
+      <div className="absolute inset-0 bg-gradient-to-b from-violet-500/18 to-transparent" />
+      <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-64 h-16 bg-violet-500/18 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="relative flex items-center justify-between px-5 py-4">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-violet-600/30 border border-violet-500/40 flex items-center justify-center flex-shrink-0">
-            <Crown className="w-4 h-4 text-violet-300" />
+      <div className="relative px-5 pt-4 pb-3.5">
+        {/* Top row */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-violet-600/30 border border-violet-500/40 flex items-center justify-center flex-shrink-0">
+              <Crown className="w-4 h-4 text-violet-300" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-violet-100 leading-none">Plus Plan</p>
+              <p className="text-[11px] text-violet-400/60 mt-0.5">Unlock more, achieve more</p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-semibold text-violet-100">Plus Plan</p>
-            <p className="text-[11px] text-violet-300/65 mt-0.5">
-              Unlimited habits · Full history · Streak protection
-            </p>
-          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-500/20 border border-violet-400/35 text-violet-300 uppercase tracking-widest flex-shrink-0">
+            Plus
+          </span>
         </div>
-        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-500/20 border border-violet-400/35 text-violet-300 uppercase tracking-widest flex-shrink-0">
-          Plus
-        </span>
+        {/* Feature chips */}
+        <div className="flex flex-wrap gap-1.5">
+          {chips.map((c) => (
+            <span
+              key={c}
+              className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-violet-800/40 border border-violet-600/30 text-violet-300"
+            >
+              {c}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
 
 function ProBanner() {
+  const chips = ["AI Coaching", "Advanced Analytics", "Priority Support", "Early Access"];
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border border-amber-400/50 mb-6"
-      style={{ boxShadow: "0 4px 32px -4px rgba(245,158,11,0.18), 0 1px 0 0 rgba(245,158,11,0.12)" }}
+      className="relative overflow-hidden rounded-2xl border border-amber-400/55 mb-6"
+      style={{
+        boxShadow:
+          "0 0 0 1px rgba(251,191,36,0.08), 0 8px 40px -8px rgba(245,158,11,0.30), 0 2px 0 0 rgba(251,191,36,0.15)",
+      }}
     >
-      {/* Base gradient — deep warm gold */}
-      <div className="absolute inset-0 bg-gradient-to-r from-yellow-950 via-amber-950 to-orange-950" />
-      {/* Top-edge gold sheen */}
-      <div className="absolute inset-0 bg-gradient-to-b from-amber-400/25 via-amber-400/5 to-transparent" />
-      {/* Bottom-edge subtle darkening */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+      {/* Layered gold background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#1c1200] via-[#1f1400] to-[#1a1000]" />
+      <div className="absolute inset-0 bg-gradient-to-r from-yellow-950/60 via-amber-900/20 to-orange-950/60" />
+      {/* Top gold sheen */}
+      <div className="absolute inset-0 bg-gradient-to-b from-amber-400/30 via-amber-400/6 to-transparent" />
+      {/* Bottom depth */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/35 to-transparent" />
+      {/* Diagonal shimmer */}
+      <div className="absolute inset-0 bg-gradient-to-br from-yellow-200/10 via-transparent to-transparent pointer-events-none" />
       {/* Bloom glows */}
-      <div className="absolute -top-8 left-6 w-40 h-14 bg-amber-400/35 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -top-8 right-10 w-28 h-12 bg-yellow-300/20 rounded-full blur-2xl pointer-events-none" />
-      {/* Faint diagonal highlight */}
-      <div className="absolute inset-0 bg-gradient-to-br from-yellow-300/8 via-transparent to-transparent pointer-events-none" />
+      <div className="absolute -top-10 left-4 w-48 h-16 bg-amber-400/40 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-10 right-6 w-32 h-14 bg-yellow-300/25 rounded-full blur-2xl pointer-events-none" />
+      {/* Bottom edge accent line */}
+      <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
 
-      <div className="relative flex items-center justify-between px-5 py-4">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-amber-400/20 border border-amber-300/40 flex items-center justify-center flex-shrink-0"
-               style={{ boxShadow: "0 0 12px 2px rgba(251,191,36,0.25)" }}>
-            <Zap className="w-4 h-4 text-amber-200" />
+      <div className="relative px-5 pt-4 pb-3.5">
+        {/* Top row */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2.5">
+            <div
+              className="w-9 h-9 rounded-xl bg-amber-400/15 border border-amber-300/45 flex items-center justify-center flex-shrink-0"
+              style={{ boxShadow: "0 0 16px 3px rgba(251,191,36,0.28)" }}
+            >
+              <Diamond className="w-4 h-4 text-amber-200" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-bold text-amber-100 leading-none">Pro Plan</p>
+                <span className="text-[9px] font-semibold px-1.5 py-px rounded-full bg-amber-400/20 border border-amber-300/40 text-amber-300 uppercase tracking-widest">
+                  Premium
+                </span>
+              </div>
+              <p className="text-[11px] text-amber-400/60 mt-0.5">Everything in Plus, and beyond</p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-semibold text-amber-100">Pro Plan</p>
-            <p className="text-[11px] text-amber-300/70 mt-0.5">
-              Everything in Plus · AI Coaching · Advanced Analytics · Priority Support
-            </p>
-          </div>
+          <span
+            className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-400/18 border border-amber-300/55 text-amber-200 uppercase tracking-widest flex-shrink-0"
+            style={{ boxShadow: "0 0 12px 2px rgba(251,191,36,0.35)" }}
+          >
+            Pro
+          </span>
         </div>
-        <span
-          className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-400/20 border border-amber-300/50 text-amber-200 uppercase tracking-widest flex-shrink-0"
-          style={{ boxShadow: "0 0 10px 1px rgba(251,191,36,0.30)" }}
-        >
-          Pro
-        </span>
+        {/* Feature chips */}
+        <div className="flex flex-wrap gap-1.5">
+          {chips.map((c) => (
+            <span
+              key={c}
+              className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-900/50 border border-amber-600/35 text-amber-300"
+            >
+              {c}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );

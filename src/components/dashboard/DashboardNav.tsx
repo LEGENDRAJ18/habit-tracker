@@ -17,8 +17,12 @@ function PlanBadge({ tier }: { tier: Plan }) {
   if (tier === "pro") {
     return (
       <span
-        className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-400/20 border border-amber-300/50 text-amber-200 uppercase tracking-widest"
-        style={{ boxShadow: "0 0 10px 2px rgba(251,191,36,0.40)" }}
+        className="text-[10px] font-bold px-2 py-px rounded-full border text-amber-200 uppercase tracking-widest"
+        style={{
+          background: "linear-gradient(135deg, rgba(120,80,0,0.55), rgba(90,55,0,0.45))",
+          borderColor: "rgba(251,191,36,0.55)",
+          boxShadow: "0 0 0 1px rgba(251,191,36,0.12), 0 0 12px 2px rgba(251,191,36,0.45)",
+        }}
       >
         Pro
       </span>
@@ -26,13 +30,13 @@ function PlanBadge({ tier }: { tier: Plan }) {
   }
   if (tier === "plus") {
     return (
-      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-600/25 border border-violet-400/50 text-violet-300 uppercase tracking-widest">
+      <span className="text-[10px] font-bold px-2 py-px rounded-full bg-violet-700/30 border border-violet-400/45 text-violet-300 uppercase tracking-widest">
         Plus
       </span>
     );
   }
   return (
-    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-slate-800/60 border border-slate-700/40 text-slate-500 uppercase tracking-wide">
+    <span className="text-[10px] font-medium px-1.5 py-px rounded-full bg-slate-800/50 border border-slate-700/40 text-slate-500 uppercase tracking-wide">
       Free
     </span>
   );
