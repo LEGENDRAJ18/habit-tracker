@@ -7,10 +7,16 @@ import InstallBanner from "@/components/pwa/InstallBanner";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://habitai.app";
+
 export const metadata: Metadata = {
-  title: "habitAI — Build Better Habits with AI",
+  metadataBase: new URL(APP_URL),
+  title: {
+    default: "HabitAI – Build Habits That Actually Stick",
+    template: "%s | HabitAI",
+  },
   description:
-    "AI-powered habit tracking that adapts to your lifestyle. Track, analyse, and optimise your daily habits with intelligent insights.",
+    "AI-powered habit tracking with streak protection, personalized coaching and weekly insights.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -18,8 +24,36 @@ export const metadata: Metadata = {
     title: "HabitAI",
   },
   icons: {
-    apple: "/icons/icon-192.svg",
-    icon: "/icons/icon-512.svg",
+    icon: [
+      { url: "/icons/icon-192.svg", sizes: "192x192", type: "image/svg+xml" },
+      { url: "/icons/icon-512.svg", sizes: "512x512", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/icons/icon-192.svg", sizes: "192x192" }],
+    shortcut: "/icons/icon-192.svg",
+  },
+  openGraph: {
+    title: "HabitAI – Build Habits That Actually Stick",
+    description:
+      "AI-powered habit tracking with streak protection, personalized coaching and weekly insights.",
+    url: APP_URL,
+    siteName: "HabitAI",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "HabitAI",
+      },
+    ],
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "HabitAI – Build Habits That Actually Stick",
+    description:
+      "AI-powered habit tracking with streak protection, personalized coaching and weekly insights.",
+    images: ["/opengraph-image"],
   },
   other: {
     "mobile-web-app-capable": "yes",

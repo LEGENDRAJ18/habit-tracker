@@ -16,7 +16,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const origin = request.headers.get('origin') ?? 'http://localhost:3000';
+    const origin =
+      process.env.NEXT_PUBLIC_APP_URL ??
+      request.headers.get("origin") ??
+      "http://localhost:3000";
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
