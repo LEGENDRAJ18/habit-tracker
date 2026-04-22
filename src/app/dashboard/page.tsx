@@ -12,6 +12,7 @@ import AddHabitModal from "@/components/dashboard/AddHabitModal";
 import UpgradeModal from "@/components/dashboard/UpgradeModal";
 import OnboardingModal from "@/components/dashboard/OnboardingModal";
 import StreakBrokenModal from "@/components/dashboard/StreakBrokenModal";
+import HabitRecommendations from "@/components/dashboard/HabitRecommendations";
 
 // ─── Progress ring ────────────────────────────────────────────────────────────
 
@@ -214,7 +215,7 @@ function ProBanner() {
 export default function DashboardPage() {
   const { habits, loading, error, completedCount, toggleHabit, deleteHabit, isCompletedToday, addHabit, getStreakInfo, hasBrokenStreak } =
     useHabits();
-  const { tier, profileLoading, onboardingCompleted, freezeAvailable, freezeProtectedDate, applyFreeze } = useProfile();
+  const { tier, profileLoading, onboardingCompleted, goal, freezeAvailable, freezeProtectedDate, applyFreeze } = useProfile();
   // Local override so closing the modal doesn't require a page reload
   const [onboardingDone, setOnboardingDone] = useState(false);
   const showOnboarding = !profileLoading && !onboardingCompleted && !onboardingDone;
@@ -224,6 +225,7 @@ export default function DashboardPage() {
   const [upgradeSuccess, setUpgradeSuccess] = useState(false);
   const [showCelebration, setShowCelebration]   = useState(false);
   const [showStreakBroken, setShowStreakBroken] = useState(false);
+  const [showReOnboard, setShowReOnboard]       = useState(false);
   const prevCompletedRef   = useRef<number | null>(null);
   const seenBreakModalRef  = useRef(false);
   const appliedFreezeRef   = useRef(false);
@@ -446,6 +448,18 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Recommended habits */}
+        {!loading && !profileLoading && onboardingCompleted && (
+          <HabitRecommendations
+            goal={goal}
+            existingHabits={habits}
+            canAddMore={isPaid || habits.length < FREE_HABIT_LIMIT}
+            onAdd={(name, desc) => addHabit(name, desc, "daily")}
+            onSetGoal={() => setShowReOnboard(true)}
+            onUpgrade={() => setShowUpgrade(true)}
+          />
+        )}
+
         {/* Floating add button on mobile */}
         {!loading && habits.length > 0 && (
           <button
@@ -465,8 +479,8 @@ export default function DashboardPage() {
         <UpgradeModal onClose={() => setShowUpgrade(false)} />
       )}
 
-      {showOnboarding && (
-        <OnboardingModal onComplete={() => setOnboardingDone(true)} />
+      {(showOnboarding || showReOnboard) && (
+        <OnboardingModal onComplete={() => { setOnboardingDone(true); setShowReOnboard(false); }} />
       )}
 
       {showCelebration && (
