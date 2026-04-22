@@ -93,3 +93,21 @@ body {
   30%  { transform: translateX(5px); }
   100% { transform: translateX(0);  }
 }
+
+/* Onboarding step entrance */
+@keyframes stepIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* Onboarding confetti pieces fall from top */
+@keyframes confettiFall {
+  0%   { transform: translateY(-12px) rotate(0deg);   opacity: 0.9; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0;   }
+}
+
+/* PWA install banner slides up from the bottom */
+@keyframes slideUp {
+  from { transform: translateY(110%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}

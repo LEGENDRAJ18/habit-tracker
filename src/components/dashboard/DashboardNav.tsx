@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Sparkles, LogOut, Zap, ChevronDown, BarChart2 } from "lucide-react";
+import { Sparkles, LogOut, Zap, ChevronDown, BarChart2, Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
 import type { Plan } from "@/types";
 
 interface Props {
@@ -45,6 +46,7 @@ function PlanBadge({ tier }: { tier: Plan }) {
 export default function DashboardNav({ habitCount, tier, onUpgradeClick }: Props) {
   const router   = useRouter();
   const pathname = usePathname();
+  const { canInstall, promptInstall } = usePWAInstall();
   const [signingOut, setSigningOut] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -89,6 +91,18 @@ export default function DashboardNav({ habitCount, tier, onUpgradeClick }: Props
 
           {/* Right side */}
           <div className="flex items-center gap-2">
+            {/* Install App — shown when browser signals the PWA is installable */}
+            {canInstall && (
+              <button
+                onClick={promptInstall}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-400 hover:text-violet-300 border border-slate-800/60 hover:border-violet-700/50 rounded-lg transition-all"
+                title="Install HabitAI"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Install</span>
+              </button>
+            )}
+
             {/* Upgrade CTA — only for free users at limit */}
             {isFree && habitCount >= 3 && (
               <button

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg512" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#4c1d95"/>
+    </linearGradient>
+    <linearGradient id="glow512" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="url(#bg512)"/>
+  <!-- Top sheen -->
+  <rect width="512" height="256" rx="112" fill="url(#glow512)"/>
+  <!-- Main 4-pointed sparkle star, centred at (256,256)
+       outer radius 128, inner radius 77 (at 45°: 77×0.707≈54) -->
+  <path d="M256,128 L310,202 L384,256 L310,310 L256,384 L202,310 L128,256 L202,202 Z"
+        fill="white" opacity="0.95"/>
+  <!-- Small upper-right star, centred ~(390,118), outer r=38, inner r=22 -->
+  <path d="M390,80 L406,104 L430,120 L406,136 L390,160 L374,136 L350,120 L374,104 Z"
+        fill="white" opacity="0.62"/>
+  <!-- Tiny lower-left accent -->
+  <circle cx="136" cy="376" r="19" fill="white" opacity="0.38"/>
+</svg>
