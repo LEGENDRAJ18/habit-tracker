@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Sparkles, LogOut, Zap, ChevronDown } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Sparkles, LogOut, Zap, ChevronDown, BarChart2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Plan } from "@/types";
 
@@ -43,7 +43,8 @@ function PlanBadge({ tier }: { tier: Plan }) {
 }
 
 export default function DashboardNav({ habitCount, tier, onUpgradeClick }: Props) {
-  const router = useRouter();
+  const router   = useRouter();
+  const pathname = usePathname();
   const [signingOut, setSigningOut] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -70,6 +71,21 @@ export default function DashboardNav({ habitCount, tier, onUpgradeClick }: Props
               habit<span className="text-violet-400">AI</span>
             </span>
           </Link>
+
+          {/* Nav links */}
+          <div className="flex items-center gap-0.5">
+            <Link
+              href="/analytics"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                pathname === "/analytics"
+                  ? "bg-violet-950/60 text-violet-300 border border-violet-800/40"
+                  : "text-slate-500 hover:text-slate-300 hover:bg-violet-950/30"
+              }`}
+            >
+              <BarChart2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Analytics</span>
+            </Link>
+          </div>
 
           {/* Right side */}
           <div className="flex items-center gap-2">
