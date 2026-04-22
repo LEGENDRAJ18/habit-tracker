@@ -16,14 +16,17 @@ interface Props {
 function PlanBadge({ tier }: { tier: Plan }) {
   if (tier === "pro") {
     return (
-      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-400 uppercase tracking-wide">
+      <span
+        className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500/20 border border-amber-400/50 text-amber-300 uppercase tracking-wide"
+        style={{ boxShadow: "0 0 8px 1px rgba(245,158,11,0.35)" }}
+      >
         Pro
       </span>
     );
   }
   if (tier === "plus") {
     return (
-      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-violet-500/20 border border-violet-500/40 text-violet-300 uppercase tracking-wide">
+      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-violet-600/25 border border-violet-500/50 text-violet-300 uppercase tracking-wide">
         Plus
       </span>
     );

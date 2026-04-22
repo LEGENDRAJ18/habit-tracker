@@ -10,43 +10,59 @@ import HabitCard from "@/components/dashboard/HabitCard";
 import AddHabitModal from "@/components/dashboard/AddHabitModal";
 import UpgradeModal from "@/components/dashboard/UpgradeModal";
 
-function PremiumBanner({ tier }: { tier: "plus" | "pro" }) {
-  const isPro = tier === "pro";
+function PlusBanner() {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-violet-600/20 mb-6">
-      {/* Glow layer */}
-      <div className="absolute inset-0 bg-gradient-to-r from-violet-950/80 via-purple-950/60 to-violet-950/80" />
-      <div className="absolute inset-0 bg-gradient-to-b from-violet-600/10 to-transparent" />
-      <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-64 h-16 bg-violet-600/20 rounded-full blur-2xl pointer-events-none" />
+    <div className="relative overflow-hidden rounded-2xl border border-violet-500/30 mb-6">
+      <div className="absolute inset-0 bg-gradient-to-r from-violet-950 via-purple-950/80 to-violet-950" />
+      <div className="absolute inset-0 bg-gradient-to-b from-violet-600/15 to-transparent" />
+      <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-48 h-12 bg-violet-500/25 rounded-full blur-2xl pointer-events-none" />
 
       <div className="relative flex items-center justify-between px-5 py-3.5">
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-lg bg-violet-600/30 border border-violet-500/30 flex items-center justify-center">
-            {isPro ? (
-              <Crown className="w-3.5 h-3.5 text-amber-400" />
-            ) : (
-              <Sparkles className="w-3.5 h-3.5 text-violet-400" />
-            )}
+          <div className="w-7 h-7 rounded-lg bg-violet-600/30 border border-violet-500/40 flex items-center justify-center">
+            <Crown className="w-3.5 h-3.5 text-violet-300" />
           </div>
           <div>
-            <p className="text-xs font-semibold text-white">
-              {isPro ? "Pro plan" : "Plus plan"}
-            </p>
-            <p className="text-[11px] text-slate-400">
-              {isPro ? "All features unlocked · Unlimited habits" : "Unlimited habits · Full history"}
+            <p className="text-xs font-semibold text-violet-100">Plus plan</p>
+            <p className="text-[11px] text-violet-300/70">
+              Unlimited habits · Full history
             </p>
           </div>
         </div>
-        {isPro && (
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/30 text-amber-400 uppercase tracking-wide">
-            Pro
-          </span>
-        )}
-        {!isPro && (
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-500/20 border border-violet-500/30 text-violet-300 uppercase tracking-wide">
-            Plus
-          </span>
-        )}
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-500/25 border border-violet-400/30 text-violet-300 uppercase tracking-wide">
+          Plus
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function ProBanner() {
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-amber-500/40 mb-6 shadow-lg shadow-amber-950/20">
+      {/* Rich amber-to-violet gradient base */}
+      <div className="absolute inset-0 bg-gradient-to-r from-amber-950/90 via-yellow-950/70 to-violet-950/80" />
+      {/* Top sheen */}
+      <div className="absolute inset-0 bg-gradient-to-b from-amber-500/20 via-amber-500/5 to-transparent" />
+      {/* Dual glows */}
+      <div className="absolute -top-6 left-8 w-32 h-10 bg-amber-500/30 rounded-full blur-2xl pointer-events-none" />
+      <div className="absolute -top-6 right-8 w-24 h-10 bg-yellow-400/20 rounded-full blur-2xl pointer-events-none" />
+
+      <div className="relative flex items-center justify-between px-5 py-3.5">
+        <div className="flex items-center gap-3">
+          <div className="w-7 h-7 rounded-lg bg-amber-500/25 border border-amber-400/40 flex items-center justify-center">
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-amber-100">Pro plan</p>
+            <p className="text-[11px] text-amber-300/70">
+              Everything in Plus · AI Coaching · Advanced Analytics
+            </p>
+          </div>
+        </div>
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/25 border border-amber-400/50 text-amber-300 uppercase tracking-wide shadow-sm shadow-amber-900/40">
+          Pro
+        </span>
       </div>
     </div>
   );
@@ -121,9 +137,8 @@ export default function DashboardPage() {
         )}
 
         {/* Premium banner for paid users */}
-        {!profileLoading && isPaid && (
-          <PremiumBanner tier={tier as "plus" | "pro"} />
-        )}
+        {!profileLoading && tier === "plus" && <PlusBanner />}
+        {!profileLoading && tier === "pro" && <ProBanner />}
 
         {/* Header */}
         <div className="mb-8">
