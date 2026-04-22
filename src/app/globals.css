@@ -34,3 +34,62 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #6d28d9;
 }
+
+/* ─── Dashboard animations ──────────────────────────────────────────── */
+
+/* Checkbox pop when completing a habit */
+@keyframes checkPop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.5); }
+  65%  { transform: scale(0.85); }
+  100% { transform: scale(1); }
+}
+
+/* Particles fly outward from the checkbox — use --tx / --ty custom props */
+@keyframes particleFly {
+  from {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(0);
+    opacity: 0;
+  }
+}
+
+/* Flame icon — gentle pulse for 7+ day streaks */
+@keyframes streakPulse {
+  0%, 100% { opacity: 1;    transform: scale(1);    }
+  50%       { opacity: 0.6; transform: scale(0.88); }
+}
+
+/* Flame icon — glow + grow for 30+ day streaks */
+@keyframes streakGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px #fb923c);
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 10px #f97316) drop-shadow(0 0 22px #ea580c);
+    transform: scale(1.22);
+  }
+}
+
+/* All-done celebration — spring entrance */
+@keyframes celebIn {
+  from { opacity: 0; transform: scale(0.88) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);   }
+}
+
+/* Auto-dismiss progress bar shrinks left-to-right */
+@keyframes celebProgress {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+/* Habit card subtle nudge when completing */
+@keyframes cardNudge {
+  0%   { transform: translateX(0);  }
+  30%  { transform: translateX(5px); }
+  100% { transform: translateX(0);  }
+}

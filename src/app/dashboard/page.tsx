@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus, Loader2, AlertCircle, CheckCircle2, Crown, Diamond } from "lucide-react";
+import type { Plan } from "@/types";
 import { useHabits } from "@/hooks/useHabits";
 import { useProfile } from "@/hooks/useProfile";
 import { FREE_HABIT_LIMIT } from "@/types";
@@ -10,6 +11,96 @@ import HabitCard from "@/components/dashboard/HabitCard";
 import AddHabitModal from "@/components/dashboard/AddHabitModal";
 import UpgradeModal from "@/components/dashboard/UpgradeModal";
 import OnboardingModal from "@/components/dashboard/OnboardingModal";
+
+// ─── Progress ring ────────────────────────────────────────────────────────────
+
+function ProgressRing({ completed, total, tier }: { completed: number; total: number; tier: Plan }) {
+  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const size = 76;
+  const stroke = 6.5;
+  const r = (size - stroke) / 2;
+  const circ = 2 * Math.PI * r;
+  const offset = circ * (1 - pct / 100);
+
+  const palette =
+    tier === "pro"
+      ? { from: "#f59e0b", to: "#fbbf24", glow: "rgba(245,158,11,0.45)", text: "text-amber-400" }
+      : tier === "plus"
+      ? { from: "#8b5cf6", to: "#e879f9", glow: "rgba(139,92,246,0.45)", text: "text-violet-400" }
+      : { from: "#7c3aed", to: "#8b5cf6", glow: "rgba(124,58,237,0.4)",  text: "text-violet-400" };
+
+  return (
+    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+        <defs>
+          <linearGradient id="habitRingGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%"   stopColor={palette.from} />
+            <stop offset="100%" stopColor={palette.to}   />
+          </linearGradient>
+        </defs>
+        {/* Track */}
+        <circle
+          cx={size / 2} cy={size / 2} r={r}
+          fill="none"
+          stroke="rgba(109,40,217,0.12)"
+          strokeWidth={stroke}
+        />
+        {/* Arc */}
+        {total > 0 && (
+          <circle
+            cx={size / 2} cy={size / 2} r={r}
+            fill="none"
+            stroke="url(#habitRingGrad)"
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={circ}
+            strokeDashoffset={offset}
+            style={{
+              transition: "stroke-dashoffset 0.75s cubic-bezier(0.4,0,0.2,1)",
+              filter: `drop-shadow(0 0 5px ${palette.glow})`,
+            }}
+          />
+        )}
+      </svg>
+      {/* Center label */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+        <span className={`text-lg font-bold leading-none ${palette.text}`}>{pct}%</span>
+        <span className="text-[10px] text-slate-600 leading-none mt-0.5">done</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── All-done celebration ─────────────────────────────────────────────────────
+
+function AllDoneCelebration({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-40 flex items-center justify-center"
+      style={{ animation: "celebIn 0.45s cubic-bezier(0.34,1.56,0.64,1) both" }}
+      onClick={onDismiss}
+    >
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="relative bg-[#0f0f1a] border border-violet-700/30 rounded-3xl px-10 py-8 text-center shadow-2xl shadow-violet-950/60 max-w-xs mx-4 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-b from-violet-600/10 to-transparent rounded-3xl" />
+        <div className="relative">
+          <div className="text-6xl mb-4 leading-none">🔥</div>
+          <h3 className="text-2xl font-bold text-white mb-1.5">All done!</h3>
+          <p className="text-sm text-violet-300 mb-5">Streak continues. Keep it up!</p>
+          {/* Auto-dismiss progress bar */}
+          <div className="h-0.5 bg-violet-900/50 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-violet-500 rounded-full origin-left"
+              style={{ animation: "celebProgress 3s linear both" }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Plan banners ─────────────────────────────────────────────────────────────
 
 function PlusBanner() {
   const chips = ["Unlimited habits", "Full history", "Streak protection"];
@@ -120,7 +211,7 @@ function ProBanner() {
 }
 
 export default function DashboardPage() {
-  const { habits, loading, error, completedCount, toggleHabit, deleteHabit, isCompletedToday, addHabit } =
+  const { habits, loading, error, completedCount, toggleHabit, deleteHabit, isCompletedToday, addHabit, getStreak } =
     useHabits();
   const { tier, profileLoading, onboardingCompleted } = useProfile();
   // Local override so closing the modal doesn't require a page reload
@@ -130,6 +221,8 @@ export default function DashboardPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [upgradeSuccess, setUpgradeSuccess] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const prevCompletedRef = useRef<number | null>(null);
 
   const isPaid = tier === "plus" || tier === "pro";
 
@@ -154,6 +247,17 @@ export default function DashboardPage() {
         });
     }
   }, []);
+
+  // Trigger all-done celebration when every habit becomes completed
+  useEffect(() => {
+    if (loading || habits.length === 0) return;
+    const prev = prevCompletedRef.current;
+    if (prev !== null && prev < habits.length && completedCount === habits.length) {
+      setShowCelebration(true);
+      setTimeout(() => setShowCelebration(false), 3200);
+    }
+    prevCompletedRef.current = completedCount;
+  }, [completedCount, habits.length, loading]);
 
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -209,13 +313,7 @@ export default function DashboardPage() {
               )}
             </div>
             {habits.length > 0 && (
-              <div className="text-right">
-                <p className="text-3xl font-bold text-violet-400">
-                  {completedCount}
-                  <span className="text-slate-600 text-xl font-normal">/{habits.length}</span>
-                </p>
-                <p className="text-xs text-slate-500">completed</p>
-              </div>
+              <ProgressRing completed={completedCount} total={habits.length} tier={tier} />
             )}
           </div>
 
@@ -270,6 +368,7 @@ export default function DashboardPage() {
                 key={habit.id}
                 habit={habit}
                 completed={isCompletedToday(habit.id)}
+                streak={getStreak(habit.id)}
                 onToggle={() => toggleHabit(habit.id)}
                 onDelete={() => deleteHabit(habit.id)}
               />
@@ -319,6 +418,10 @@ export default function DashboardPage() {
 
       {showOnboarding && (
         <OnboardingModal onComplete={() => setOnboardingDone(true)} />
+      )}
+
+      {showCelebration && (
+        <AllDoneCelebration onDismiss={() => setShowCelebration(false)} />
       )}
     </div>
   );
