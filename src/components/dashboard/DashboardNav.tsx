@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Sparkles, LogOut, Zap, ChevronDown, BarChart2, Download } from "lucide-react";
+import { Sparkles, LogOut, Zap, ChevronDown, BarChart2, Download, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import type { Plan } from "@/types";
@@ -86,6 +86,17 @@ export default function DashboardNav({ habitCount, tier, onUpgradeClick }: Props
             >
               <BarChart2 className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Analytics</span>
+            </Link>
+            <Link
+              href="/profile"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                pathname === "/profile"
+                  ? "bg-violet-950/60 text-violet-300 border border-violet-800/40"
+                  : "text-slate-500 hover:text-slate-300 hover:bg-violet-950/30"
+              }`}
+            >
+              <User className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Profile</span>
             </Link>
           </div>
 

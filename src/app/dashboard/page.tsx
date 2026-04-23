@@ -14,6 +14,11 @@ import OnboardingModal from "@/components/dashboard/OnboardingModal";
 import StreakBrokenModal from "@/components/dashboard/StreakBrokenModal";
 import HabitRecommendations from "@/components/dashboard/HabitRecommendations";
 import ReminderSettings from "@/components/dashboard/ReminderSettings";
+import StatsBar from "@/components/dashboard/StatsBar";
+import MilestoneCards from "@/components/dashboard/MilestoneCards";
+import LevelUpModal from "@/components/dashboard/LevelUpModal";
+import { useXP } from "@/hooks/useXP";
+import { playSound } from "@/lib/sounds";
 
 // ─── Progress ring ────────────────────────────────────────────────────────────
 
@@ -214,9 +219,10 @@ function ProBanner() {
 }
 
 export default function DashboardPage() {
-  const { habits, loading, error, completedCount, toggleHabit, deleteHabit, isCompletedToday, addHabit, getStreakInfo, hasBrokenStreak } =
+  const { habits, loading, error, completedCount, toggleHabit, deleteHabit, isCompletedToday, addHabit, getStreakInfo, hasBrokenStreak, getStreak } =
     useHabits();
   const { tier, profileLoading, onboardingCompleted, goal, freezeAvailable, freezeProtectedDate, applyFreeze, reminderEnabled, reminderHour, saveReminderPrefs } = useProfile();
+  const { xp, level, achievements, totalCompletions, justLeveledUp, isDailyAchieved, onHabitCompleted, checkMilestones, dismissLevelUp } = useXP();
   // Local override so closing the modal doesn't require a page reload
   const [onboardingDone, setOnboardingDone] = useState(false);
   const showOnboarding = !profileLoading && !onboardingCompleted && !onboardingDone;
@@ -275,6 +281,11 @@ export default function DashboardPage() {
     return map;
   }, [habits, getStreakInfo, isPaid, freezeAvailable, freezeProtectedDate]);
 
+  const bestStreak = useMemo(
+    () => Math.max(0, ...habits.map((h) => getStreak(h.id))),
+    [habits, getStreak],
+  );
+
   const anyFreezeApplied  = useMemo(() => Array.from(streakInfoMap.values()).some((i) => i.freezeApplied),  [streakInfoMap]);
   const anyNewFreezeUsed  = useMemo(() => Array.from(streakInfoMap.values()).some((i) => i.newFreezeUsed),  [streakInfoMap]);
 
@@ -294,6 +305,21 @@ export default function DashboardPage() {
       setShowStreakBroken(true);
     }
   }, [loading, isPaid, habits, hasBrokenStreak]);
+
+  // Check milestones whenever completed count or streak changes
+  useEffect(() => {
+    if (loading || habits.length === 0) return;
+    checkMilestones(completedCount, habits.length, bestStreak).then((newly) => {
+      if (newly.has("streak_7") || newly.has("streak_30")) playSound("streak");
+      else if (newly.size > 0) playSound("milestone");
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completedCount, bestStreak, loading]);
+
+  // Play level-up sound when justLeveledUp fires
+  useEffect(() => {
+    if (justLeveledUp !== null) playSound("levelup");
+  }, [justLeveledUp]);
 
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -331,6 +357,14 @@ export default function DashboardPage() {
         {/* Premium banner for paid users */}
         {!profileLoading && tier === "plus" && <PlusBanner />}
         {!profileLoading && tier === "pro" && <ProBanner />}
+
+        {/* XP / Level stats bar */}
+        <StatsBar
+          xp={xp}
+          level={level}
+          bestStreak={bestStreak}
+          totalCompletions={totalCompletions}
+        />
 
         {/* Header */}
         <div className="mb-8">
@@ -422,6 +456,7 @@ export default function DashboardPage() {
                 isProtected={info.freezeApplied}
                 onToggle={() => toggleHabit(habit.id)}
                 onDelete={() => deleteHabit(habit.id)}
+                onCompleted={() => { playSound("complete"); onHabitCompleted(); }}
               />
               );
             })}
@@ -447,6 +482,18 @@ export default function DashboardPage() {
               </button>
             )}
           </div>
+        )}
+
+        {/* Daily milestones */}
+        {!loading && habits.length > 0 && (
+          <MilestoneCards
+            completedCount={completedCount}
+            totalHabits={habits.length}
+            bestStreak={bestStreak}
+            isDailyAchieved={isDailyAchieved}
+            hasStreak7={achievements.includes("streak_7")}
+            hasStreak30={achievements.includes("streak_30")}
+          />
         )}
 
         {/* Recommended habits */}
@@ -502,6 +549,10 @@ export default function DashboardPage() {
           onUpgrade={() => { setShowStreakBroken(false); setShowUpgrade(true); }}
           onDismiss={() => setShowStreakBroken(false)}
         />
+      )}
+
+      {justLeveledUp !== null && (
+        <LevelUpModal newLevel={justLeveledUp} onDismiss={dismissLevelUp} />
       )}
     </div>
   );

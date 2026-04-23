@@ -11,6 +11,7 @@ interface Props {
   isProtected?: boolean;
   onToggle: () => void;
   onDelete: () => void;
+  onCompleted?: () => void;
 }
 
 // Eight evenly-spaced directions for the particle burst
@@ -30,7 +31,7 @@ const PARTICLE_COLORS = [
   "#34d399","#fb923c","#f472b6",
 ];
 
-export default function HabitCard({ habit, completed, streak, isProtected, onToggle, onDelete }: Props) {
+export default function HabitCard({ habit, completed, streak, isProtected, onToggle, onDelete, onCompleted }: Props) {
   const [toggling, setToggling]           = useState(false);
   const [deleting, setDeleting]           = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -43,6 +44,7 @@ export default function HabitCard({ habit, completed, streak, isProtected, onTog
       setShowParticles(true);
       setJustCompleted(true);
       setTimeout(() => { setShowParticles(false); setJustCompleted(false); }, 700);
+      onCompleted?.();
     }
     setToggling(true);
     await onToggle();
