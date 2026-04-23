@@ -117,47 +117,50 @@ function buildEmailHtml(habits: string[], streak: number, unsubscribeUrl: string
 </html>`;
 }
 
-export async function POST(req: NextRequest) {
-  // Verify internal cron secret so this endpoint isn't publicly callable
-  const secret = req.headers.get("x-cron-secret");
-  if (secret !== process.env.CRON_SECRET) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+/** Verify the caller is our cron runner.
+ *  Vercel Cron sends: Authorization: Bearer <CRON_SECRET>
+ *  Supabase pg_cron sends: x-cron-secret: <CRON_SECRET>
+ */
+function isAuthorized(req: NextRequest): boolean {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return false;
+  const bearer = req.headers.get("authorization");
+  if (bearer === `Bearer ${secret}`) return true;
+  const legacy = req.headers.get("x-cron-secret");
+  return legacy === secret;
+}
 
+async function runReminders(): Promise<{ sent: number; skipped: number; hour: number; timestamp: string }> {
   const supabase = createAdminClient();
-  const nowHour = new Date().getUTCHours();
+  const now = new Date();
+  const nowHour = now.getUTCHours();
 
-  // Fetch users with reminders enabled for this hour
   const { data: profiles, error: profilesError } = await supabase
     .from("profiles")
-    .select("id, reminder_enabled, reminder_hour")
+    .select("id, reminder_hour, reminder_minute")
     .eq("reminder_enabled", true)
     .eq("reminder_hour", nowHour);
 
-  if (profilesError) {
-    return NextResponse.json({ error: profilesError.message }, { status: 500 });
-  }
+  if (profilesError) throw new Error(profilesError.message);
   if (!profiles || profiles.length === 0) {
-    return NextResponse.json({ sent: 0 });
+    return { sent: 0, skipped: 0, hour: nowHour, timestamp: now.toISOString() };
   }
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = now.toISOString().split("T")[0];
   let sent = 0;
+  let skipped = 0;
 
   for (const profile of profiles) {
-    // Get user email from auth
     const { data: userData } = await supabase.auth.admin.getUserById(profile.id);
     const email = userData?.user?.email;
-    if (!email) continue;
+    if (!email) { skipped++; continue; }
 
-    // Get their habits
     const { data: habits } = await supabase
       .from("habits")
       .select("id, name")
       .eq("user_id", profile.id);
-    if (!habits || habits.length === 0) continue;
+    if (!habits || habits.length === 0) { skipped++; continue; }
 
-    // Get today's completions
     const { data: logs } = await supabase
       .from("habit_logs")
       .select("habit_id")
@@ -167,9 +170,9 @@ export async function POST(req: NextRequest) {
 
     const completedIds = new Set((logs ?? []).map((l) => l.habit_id));
     const remaining = habits.filter((h) => !completedIds.has(h.id)).map((h) => h.name);
-    if (remaining.length === 0) continue; // all done — skip
+    if (remaining.length === 0) { skipped++; continue; }
 
-    // Rough streak calc (last consecutive days with at least one completion)
+    // Consecutive-day streak (look back 90 days)
     const { data: recentLogs } = await supabase
       .from("habit_logs")
       .select("completed_at")
@@ -201,5 +204,31 @@ export async function POST(req: NextRequest) {
     sent++;
   }
 
-  return NextResponse.json({ sent });
+  return { sent, skipped, hour: nowHour, timestamp: now.toISOString() };
+}
+
+// GET — called by Vercel Cron (Authorization: Bearer <CRON_SECRET>)
+export async function GET(req: NextRequest) {
+  if (!isAuthorized(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  try {
+    const result = await runReminders();
+    return NextResponse.json(result);
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+  }
+}
+
+// POST — called by Supabase pg_cron via pg_net (x-cron-secret: <CRON_SECRET>)
+export async function POST(req: NextRequest) {
+  if (!isAuthorized(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  try {
+    const result = await runReminders();
+    return NextResponse.json(result);
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+  }
 }
