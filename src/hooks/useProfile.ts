@@ -13,6 +13,7 @@ export function useProfile() {
   const [freezeProtectedDate, setFreezeProtectedDate] = useState<string | null>(null);
   const [reminderEnabled, setReminderEnabled]         = useState(false);
   const [reminderHour, setReminderHour]               = useState(8);
+  const [reminderMinute, setReminderMinute]           = useState(0);
   const supabase = useRef(createClient()).current;
 
   useEffect(() => {
@@ -21,7 +22,7 @@ export function useProfile() {
       supabase
         .from("profiles")
         .select(
-          "subscription_tier, onboarding_completed, goal, last_freeze_used, freeze_protected_date, reminder_enabled, reminder_hour"
+          "subscription_tier, onboarding_completed, goal, last_freeze_used, freeze_protected_date, reminder_enabled, reminder_hour, reminder_minute"
         )
         .eq("id", user.id)
         .single()
@@ -33,6 +34,7 @@ export function useProfile() {
           setFreezeProtectedDate(data?.freeze_protected_date ?? null);
           setReminderEnabled(data?.reminder_enabled ?? false);
           setReminderHour(data?.reminder_hour ?? 8);
+          setReminderMinute(data?.reminder_minute ?? 0);
           setProfileLoading(false);
         });
     });
@@ -68,17 +70,18 @@ export function useProfile() {
   );
 
   const saveReminderPrefs = useCallback(
-    async (enabled: boolean, hour: number) => {
+    async (enabled: boolean, hour: number, minute = 0) => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
       await supabase
         .from("profiles")
-        .update({ reminder_enabled: enabled, reminder_hour: hour })
+        .update({ reminder_enabled: enabled, reminder_hour: hour, reminder_minute: minute })
         .eq("id", user.id);
       setReminderEnabled(enabled);
       setReminderHour(hour);
+      setReminderMinute(minute);
     },
     [supabase]
   );
@@ -93,6 +96,7 @@ export function useProfile() {
     applyFreeze,
     reminderEnabled,
     reminderHour,
+    reminderMinute,
     saveReminderPrefs,
   };
 }

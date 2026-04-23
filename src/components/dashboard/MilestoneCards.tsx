@@ -18,6 +18,7 @@ interface Props {
   isDailyAchieved: (id: "first_habit_today" | "all_habits_today") => boolean;
   hasStreak7: boolean;
   hasStreak30: boolean;
+  sidebar?: boolean;
 }
 
 export default function MilestoneCards({
@@ -27,6 +28,7 @@ export default function MilestoneCards({
   isDailyAchieved,
   hasStreak7,
   hasStreak30,
+  sidebar,
 }: Props) {
   const milestones: Milestone[] = [
     {
@@ -82,75 +84,88 @@ export default function MilestoneCards({
   }
 
   return (
-    <div className="mt-8">
+    <div className={sidebar ? "" : "mt-8"}>
       <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
         Daily Milestones
       </p>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      <div className={sidebar ? "space-y-2" : "grid grid-cols-2 sm:grid-cols-4 gap-2.5"}>
         {milestones.map((m) => {
           const pct = progress(m);
-          return (
-            <div
-              key={m.id}
-              className={`relative overflow-hidden rounded-xl border p-3.5 transition-all ${
-                m.achieved
-                  ? "bg-violet-900/20 border-violet-600/30"
-                  : "bg-[#0f0f1a] border-violet-900/15"
-              }`}
-            >
-              {/* XP chip */}
-              <span
-                className={`absolute top-2.5 right-2.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+          return sidebar ? (
+              /* Sidebar: compact horizontal card */
+              <div
+                key={m.id}
+                className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all ${
                   m.achieved
-                    ? "bg-violet-500/20 text-violet-300"
-                    : "bg-slate-800/60 text-slate-600"
+                    ? "bg-violet-900/20 border-violet-600/30"
+                    : "bg-[#0f0f1a] border-violet-900/15"
                 }`}
               >
-                +{m.xp} XP
-              </span>
-
-              {/* Icon */}
-              <div className="mb-2">
-                {m.achieved ? (
-                  <span className="text-2xl leading-none">{m.emoji}</span>
-                ) : (
-                  <div className="relative inline-flex">
-                    <span className="text-2xl leading-none opacity-30">{m.emoji}</span>
-                    <Lock className="absolute -bottom-0.5 -right-0.5 w-3 h-3 text-slate-600" />
+                <span className={`text-lg leading-none flex-shrink-0 ${m.achieved ? "" : "opacity-30"}`}>
+                  {m.achieved ? m.emoji : <Lock className="w-4 h-4 text-slate-700" />}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-[11px] font-semibold truncate ${m.achieved ? "text-white" : "text-slate-500"}`}>
+                    {m.title}
+                  </p>
+                  {!m.achieved && pct > 0 && (
+                    <div className="mt-1 w-full h-1 bg-violet-950/60 rounded-full overflow-hidden">
+                      <div className="h-full bg-violet-600/50 rounded-full" style={{ width: `${pct}%` }} />
+                    </div>
+                  )}
+                </div>
+                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${
+                  m.achieved ? "bg-violet-500/20 text-violet-300" : "bg-slate-800/60 text-slate-600"
+                }`}>
+                  +{m.xp}
+                </span>
+              </div>
+            ) : (
+              /* Grid: existing card layout */
+              <div
+                key={m.id}
+                className={`relative overflow-hidden rounded-xl border p-3.5 transition-all ${
+                  m.achieved
+                    ? "bg-violet-900/20 border-violet-600/30"
+                    : "bg-[#0f0f1a] border-violet-900/15"
+                }`}
+              >
+                <span
+                  className={`absolute top-2.5 right-2.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                    m.achieved ? "bg-violet-500/20 text-violet-300" : "bg-slate-800/60 text-slate-600"
+                  }`}
+                >
+                  +{m.xp} XP
+                </span>
+                <div className="mb-2">
+                  {m.achieved ? (
+                    <span className="text-2xl leading-none">{m.emoji}</span>
+                  ) : (
+                    <div className="relative inline-flex">
+                      <span className="text-2xl leading-none opacity-30">{m.emoji}</span>
+                      <Lock className="absolute -bottom-0.5 -right-0.5 w-3 h-3 text-slate-600" />
+                    </div>
+                  )}
+                </div>
+                <p className={`text-xs font-semibold leading-tight mb-0.5 ${m.achieved ? "text-white" : "text-slate-500"}`}>
+                  {m.title}
+                </p>
+                <p className={`text-[10px] leading-tight ${m.achieved ? "text-slate-400" : "text-slate-700"}`}>
+                  {m.desc}
+                </p>
+                {!m.achieved && pct > 0 && (
+                  <div className="mt-2 w-full h-1 bg-violet-950/60 rounded-full overflow-hidden">
+                    <div className="h-full bg-violet-600/50 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                  </div>
+                )}
+                {m.achieved && (
+                  <div className="mt-2 flex items-center gap-1">
+                    <Check className="w-3 h-3 text-violet-400" />
+                    <span className="text-[10px] text-violet-400 font-medium">Earned</span>
                   </div>
                 )}
               </div>
-
-              <p
-                className={`text-xs font-semibold leading-tight mb-0.5 ${
-                  m.achieved ? "text-white" : "text-slate-500"
-                }`}
-              >
-                {m.title}
-              </p>
-              <p className={`text-[10px] leading-tight ${m.achieved ? "text-slate-400" : "text-slate-700"}`}>
-                {m.desc}
-              </p>
-
-              {/* Progress bar for unachieved */}
-              {!m.achieved && pct > 0 && (
-                <div className="mt-2 w-full h-1 bg-violet-950/60 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-violet-600/50 rounded-full transition-all duration-500"
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-              )}
-
-              {/* Check mark for achieved */}
-              {m.achieved && (
-                <div className="mt-2 flex items-center gap-1">
-                  <Check className="w-3 h-3 text-violet-400" />
-                  <span className="text-[10px] text-violet-400 font-medium">Earned</span>
-                </div>
-              )}
-            </div>
-          );
+            );
         })}
       </div>
     </div>

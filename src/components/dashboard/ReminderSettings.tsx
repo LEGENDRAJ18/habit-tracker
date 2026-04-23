@@ -3,32 +3,46 @@
 import { useState } from "react";
 import { Bell, BellOff, Check, Loader2 } from "lucide-react";
 
-const TIMES = [
-  { label: "Morning",   hour: 8,  desc: "8:00 AM" },
-  { label: "Afternoon", hour: 12, desc: "12:00 PM" },
-  { label: "Evening",   hour: 19, desc: "7:00 PM" },
-] as const;
-
 interface Props {
   enabled: boolean;
   hour: number;
-  onSave: (enabled: boolean, hour: number) => Promise<void>;
+  minute: number;
+  onSave: (enabled: boolean, hour: number, minute: number) => Promise<void>;
 }
 
-export default function ReminderSettings({ enabled, hour, onSave }: Props) {
+function toTimeString(hour: number, minute: number): string {
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+function fromTimeString(value: string): { hour: number; minute: number } {
+  const [h, m] = value.split(":").map(Number);
+  return { hour: h ?? 8, minute: m ?? 0 };
+}
+
+function formatDisplay(hour: number, minute: number): string {
+  const suffix = hour < 12 ? "AM" : "PM";
+  const h12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${h12}:${String(minute).padStart(2, "0")} ${suffix}`;
+}
+
+export default function ReminderSettings({ enabled, hour, minute, onSave }: Props) {
   const [localEnabled, setLocalEnabled] = useState(enabled);
-  const [localHour, setLocalHour]       = useState(hour);
+  const [localTime, setLocalTime]       = useState(toTimeString(hour, minute));
   const [saving, setSaving]             = useState(false);
   const [saved, setSaved]               = useState(false);
 
-  const hasChanges = localEnabled !== enabled || localHour !== hour;
+  const { hour: initHour, minute: initMinute } = fromTimeString(toTimeString(hour, minute));
+  const { hour: localHour, minute: localMinute } = fromTimeString(localTime);
+
+  const hasChanges =
+    localEnabled !== enabled || localHour !== initHour || localMinute !== initMinute;
 
   const handleSave = async () => {
     setSaving(true);
-    await onSave(localEnabled, localHour);
+    await onSave(localEnabled, localHour, localMinute);
     setSaving(false);
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setTimeout(() => setSaved(false), 2200);
   };
 
   return (
@@ -61,30 +75,31 @@ export default function ReminderSettings({ enabled, hour, onSave }: Props) {
         </button>
       </div>
 
-      {/* Time picker — only shown when enabled */}
+      {/* Time picker */}
       {localEnabled && (
         <div className="mb-4">
           <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">Reminder time</p>
-          <div className="grid grid-cols-3 gap-2">
-            {TIMES.map((t) => (
-              <button
-                key={t.hour}
-                onClick={() => setLocalHour(t.hour)}
-                className={`flex flex-col items-center py-2.5 px-2 rounded-xl border text-xs font-medium transition-all ${
-                  localHour === t.hour
-                    ? "bg-violet-600/20 border-violet-500/50 text-violet-300"
-                    : "bg-slate-900/40 border-slate-800/60 text-slate-500 hover:border-violet-800/50 hover:text-slate-300"
-                }`}
-              >
-                <span className="font-semibold">{t.label}</span>
-                <span className="text-[10px] mt-0.5 opacity-70">{t.desc}</span>
-              </button>
-            ))}
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <input
+                type="time"
+                value={localTime}
+                onChange={(e) => setLocalTime(e.target.value || "08:00")}
+                className="w-full bg-slate-900/60 border border-slate-700/60 hover:border-violet-700/50 focus:border-violet-500/70 focus:outline-none text-white text-sm rounded-xl px-3.5 py-2.5 transition-colors appearance-none"
+                style={{ colorScheme: "dark" }}
+              />
+            </div>
+            <div className="flex-shrink-0 text-sm font-semibold text-violet-300 bg-violet-900/25 border border-violet-700/30 px-3 py-2.5 rounded-xl min-w-[90px] text-center">
+              {formatDisplay(localHour, localMinute)}
+            </div>
           </div>
+          <p className="text-[11px] text-slate-600 mt-2">
+            We&apos;ll send your reminder at approximately this time each day.
+          </p>
         </div>
       )}
 
-      {/* Disabled state hint */}
+      {/* Disabled hint */}
       {!localEnabled && (
         <div className="flex items-center gap-2 text-xs text-slate-600 mb-4">
           <BellOff className="w-3.5 h-3.5" />
@@ -92,7 +107,7 @@ export default function ReminderSettings({ enabled, hour, onSave }: Props) {
         </div>
       )}
 
-      {/* Save button */}
+      {/* Save */}
       <button
         onClick={handleSave}
         disabled={!hasChanges || saving}
@@ -105,10 +120,7 @@ export default function ReminderSettings({ enabled, hour, onSave }: Props) {
         {saving ? (
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
         ) : saved ? (
-          <>
-            <Check className="w-3.5 h-3.5" />
-            Saved
-          </>
+          <><Check className="w-3.5 h-3.5" />Saved</>
         ) : (
           "Save preferences"
         )}

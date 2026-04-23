@@ -221,7 +221,7 @@ function ProBanner() {
 export default function DashboardPage() {
   const { habits, loading, error, completedCount, toggleHabit, deleteHabit, isCompletedToday, addHabit, getStreakInfo, hasBrokenStreak, getStreak } =
     useHabits();
-  const { tier, profileLoading, onboardingCompleted, goal, freezeAvailable, freezeProtectedDate, applyFreeze, reminderEnabled, reminderHour, saveReminderPrefs } = useProfile();
+  const { tier, profileLoading, onboardingCompleted, goal, freezeAvailable, freezeProtectedDate, applyFreeze, reminderEnabled, reminderHour, reminderMinute, saveReminderPrefs } = useProfile();
   const { xp, level, achievements, totalCompletions, justLeveledUp, isDailyAchieved, onHabitCompleted, checkMilestones, dismissLevelUp } = useXP();
   // Local override so closing the modal doesn't require a page reload
   const [onboardingDone, setOnboardingDone] = useState(false);
@@ -343,7 +343,7 @@ export default function DashboardPage() {
         onUpgradeClick={() => setShowUpgrade(true)}
       />
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         {/* Upgrade success banner */}
         {upgradeSuccess && (
           <div className="flex items-center gap-3 bg-green-950/40 border border-green-800/40 rounded-xl p-4 mb-6">
@@ -358,13 +358,14 @@ export default function DashboardPage() {
         {!profileLoading && tier === "plus" && <PlusBanner />}
         {!profileLoading && tier === "pro" && <ProBanner />}
 
-        {/* XP / Level stats bar */}
-        <StatsBar
-          xp={xp}
-          level={level}
-          bestStreak={bestStreak}
-          totalCompletions={totalCompletions}
-        />
+        {/* Two-column layout on desktop */}
+        <div className="lg:grid lg:grid-cols-[1fr_308px] lg:gap-8 lg:items-start">
+        {/* ── Left column ───────────────────────────────────────────────── */}
+        <div>
+          {/* Mobile-only horizontal StatsBar */}
+          <div className="lg:hidden">
+            <StatsBar xp={xp} level={level} bestStreak={bestStreak} totalCompletions={totalCompletions} />
+          </div>
 
         {/* Header */}
         <div className="mb-8">
@@ -484,17 +485,19 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Daily milestones */}
-        {!loading && habits.length > 0 && (
-          <MilestoneCards
-            completedCount={completedCount}
-            totalHabits={habits.length}
-            bestStreak={bestStreak}
-            isDailyAchieved={isDailyAchieved}
-            hasStreak7={achievements.includes("streak_7")}
-            hasStreak30={achievements.includes("streak_30")}
-          />
-        )}
+        {/* Daily milestones — mobile only (desktop shows in sidebar) */}
+        <div className="lg:hidden">
+          {!loading && habits.length > 0 && (
+            <MilestoneCards
+              completedCount={completedCount}
+              totalHabits={habits.length}
+              bestStreak={bestStreak}
+              isDailyAchieved={isDailyAchieved}
+              hasStreak7={achievements.includes("streak_7")}
+              hasStreak30={achievements.includes("streak_30")}
+            />
+          )}
+        </div>
 
         {/* Recommended habits */}
         {!loading && !profileLoading && onboardingCompleted && (
@@ -513,9 +516,30 @@ export default function DashboardPage() {
           <ReminderSettings
             enabled={reminderEnabled}
             hour={reminderHour}
+            minute={reminderMinute}
             onSave={saveReminderPrefs}
           />
         )}
+        </div>{/* end left column */}
+
+        {/* ── Right sidebar (desktop only) ──────────────────────────────── */}
+        <div className="hidden lg:flex lg:flex-col lg:gap-4 lg:sticky lg:top-20">
+          <StatsBar xp={xp} level={level} bestStreak={bestStreak} totalCompletions={totalCompletions} sidebar />
+          {!loading && habits.length > 0 && (
+            <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-4">
+              <MilestoneCards
+                completedCount={completedCount}
+                totalHabits={habits.length}
+                bestStreak={bestStreak}
+                isDailyAchieved={isDailyAchieved}
+                hasStreak7={achievements.includes("streak_7")}
+                hasStreak30={achievements.includes("streak_30")}
+                sidebar
+              />
+            </div>
+          )}
+        </div>
+        </div>{/* end two-column grid */}
 
         {/* Floating add button on mobile */}
         {!loading && habits.length > 0 && (
