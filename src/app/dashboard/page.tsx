@@ -219,7 +219,7 @@ function ProBanner() {
 }
 
 export default function DashboardPage() {
-  const { habits, loading, error, completedCount, toggleHabit, deleteHabit, isCompletedToday, addHabit, getStreakInfo, hasBrokenStreak, getStreak } =
+  const { habits, loading, error, completedCount, toggleHabit, deleteHabit, isCompletedToday, addHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength } =
     useHabits();
   const { tier, profileLoading, onboardingCompleted, goal, freezeAvailable, freezeProtectedDate, applyFreeze, reminderEnabled, reminderHour, reminderMinute, saveReminderPrefs } = useProfile();
   const { xp, level, achievements, totalCompletions, justLeveledUp, isDailyAchieved, onHabitCompleted, checkMilestones, dismissLevelUp } = useXP();
@@ -448,13 +448,16 @@ export default function DashboardPage() {
           <div className="space-y-3">
             {habits.map((habit) => {
               const info = streakInfoMap.get(habit.id) ?? { streak: 0, freezeApplied: false, newFreezeUsed: false };
+              const stackParent = habit.stack_after_id ? habits.find((h) => h.id === habit.stack_after_id) : undefined;
               return (
               <HabitCard
                 key={habit.id}
                 habit={habit}
                 completed={isCompletedToday(habit.id)}
                 streak={info.streak}
+                strength={getHabitStrength(habit.id)}
                 isProtected={info.freezeApplied}
+                stackAfterName={stackParent?.name}
                 onToggle={() => toggleHabit(habit.id)}
                 onDelete={() => deleteHabit(habit.id)}
                 onCompleted={() => { playSound("complete"); onHabitCompleted(); }}
@@ -553,7 +556,11 @@ export default function DashboardPage() {
       </main>
 
       {showAdd && (
-        <AddHabitModal onClose={() => setShowAdd(false)} onAdd={addHabit} />
+        <AddHabitModal
+          onClose={() => setShowAdd(false)}
+          existingHabits={habits}
+          onAdd={addHabit}
+        />
       )}
 
       {showUpgrade && (

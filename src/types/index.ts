@@ -5,6 +5,7 @@ export interface Habit {
   description: string | null;
   frequency: "daily" | "weekly";
   created_at: string;
+  stack_after_id: string | null;
 }
 
 export interface HabitLog {

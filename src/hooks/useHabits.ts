@@ -65,7 +65,8 @@ export function useHabits() {
   const addHabit = async (
     name: string,
     description: string,
-    frequency: "daily" | "weekly"
+    frequency: "daily" | "weekly",
+    stackAfterId?: string | null,
   ): Promise<{ error: string | null }> => {
     const {
       data: { user },
@@ -74,7 +75,13 @@ export function useHabits() {
 
     const { data, error } = await supabase
       .from("habits")
-      .insert({ user_id: user.id, name, description: description || null, frequency })
+      .insert({
+        user_id: user.id,
+        name,
+        description: description || null,
+        frequency,
+        stack_after_id: stackAfterId ?? null,
+      })
       .select()
       .single();
 
@@ -209,6 +216,16 @@ export function useHabits() {
     return { streak, freezeApplied, newFreezeUsed };
   }, [habitDateSets]);
 
+  // Habit Strength 0-100: measures how automatic a habit is becoming.
+  // Formula: base 10 + 2.5 per unique completion day (last 30) + 1.5 per streak day, capped at 100.
+  // Missing days reduce the streak component but completions are never lost.
+  const getHabitStrength = useCallback((habitId: string): number => {
+    const dates = habitDateSets.get(habitId) ?? [];
+    if (dates.length === 0) return 10;
+    const streak = getStreak(habitId);
+    return Math.min(100, Math.round(10 + dates.length * 2.5 + streak * 1.5));
+  }, [habitDateSets, getStreak]);
+
   // True if a habit has recent historical logs (within 7 days) but the streak is currently 0.
   // Used to detect a freshly broken streak for free-user upsell.
   const hasBrokenStreak = useCallback((habitId: string): boolean => {
@@ -232,6 +249,7 @@ export function useHabits() {
     isCompletedToday,
     getStreak,
     getStreakInfo,
+    getHabitStrength,
     hasBrokenStreak,
     refetch: fetchData,
   };
