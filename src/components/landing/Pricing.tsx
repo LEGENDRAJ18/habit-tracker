@@ -3,59 +3,58 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, Sparkles, Zap, Loader2 } from "lucide-react";
+import { Check, Sparkles, Zap, Loader2, Brain, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-const freePlan = {
-  name: "Free",
-  price: "$0",
-  period: "forever",
-  description: "Perfect for getting started with habit tracking.",
-  features: [
-    "Up to 3 habits",
-    "Daily & weekly tracking",
-    "7-day history",
-    "Basic streak tracking",
-    "Mobile responsive",
-  ],
-  notIncluded: ["AI insights", "Full history", "Analytics dashboard", "Priority support"],
-};
+function Soon() {
+  return (
+    <span className="inline-flex items-center gap-0.5 bg-violet-950/80 border border-violet-700/40 text-violet-400 text-[9px] font-bold px-1.5 py-0.5 rounded-full ml-1.5 leading-none align-middle">
+      <Clock className="w-2 h-2" />
+      Soon
+    </span>
+  );
+}
 
-const plusPlan = {
-  name: "Plus",
-  price: "$9",
-  period: "per month",
-  description: "More habits and history for the committed tracker.",
-  priceId: process.env.NEXT_PUBLIC_STRIPE_PLUS_PRICE_ID!,
-  features: [
-    "Up to 10 habits",
-    "Full history & archives",
-    "Basic analytics",
-    "Smart reminders",
-    "Priority support",
-  ],
-};
+type FeatureItem = { label: string; soon?: boolean };
 
-const proPlan = {
-  name: "Pro",
-  price: "$19",
-  period: "per month",
-  description: "For those serious about building life-changing habits.",
-  priceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID!,
-  badge: "Most Popular",
-  features: [
-    "Unlimited habits",
-    "Full history & archives",
-    "AI-powered insights",
-    "Advanced analytics",
-    "Smart reminders",
-    "Goal tracking",
-    "Priority support",
-    "Early access to features",
-  ],
-};
+const FREE_FEATURES: FeatureItem[] = [
+  { label: "5 active habits" },
+  { label: "Basic streak counters" },
+  { label: "7-day history" },
+  { label: "Basic daily reminders" },
+  { label: "Access to Global Challenges" },
+];
 
-function PaidPlanButton({ plan, priceId }: { plan: string; priceId: string }) {
+const PLUS_FEATURES: FeatureItem[] = [
+  { label: "Unlimited habits & reminders" },
+  { label: "Full history" },
+  { label: "Off Mode for rest days" },
+  { label: "Habit checklists" },
+  { label: "Predictive nudges" },
+  { label: "Advanced streak protection" },
+  { label: "Apple Health & Google Calendar sync", soon: true },
+];
+
+const PRO_FEATURES: FeatureItem[] = [
+  { label: "Everything in Plus" },
+  { label: "Autonomous AI Coach" },
+  { label: "Weekly AI reflection sessions" },
+  { label: "Custom recovery plans" },
+  { label: "API & Webhook access" },
+  { label: "Identity & Sentiment analysis" },
+  { label: "Team & Family Spaces", soon: true },
+  { label: "Zapier / IFTTT integration", soon: true },
+];
+
+function PaidPlanButton({
+  plan,
+  priceId,
+  primary,
+}: {
+  plan: string;
+  priceId: string;
+  primary?: boolean;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -63,22 +62,22 @@ function PaidPlanButton({ plan, priceId }: { plan: string; priceId: string }) {
     setLoading(true);
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       if (!user) {
         router.push(`/auth/signup?plan=${plan.toLowerCase()}`);
         return;
       }
 
-      const res = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ priceId }),
       });
       const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      }
+      if (data.url) window.location.href = data.url;
     } catch {
       setLoading(false);
     }
@@ -88,15 +87,27 @@ function PaidPlanButton({ plan, priceId }: { plan: string; priceId: string }) {
     <button
       onClick={handleClick}
       disabled={loading}
-      className={
-        plan === 'Pro'
-          ? "w-full block text-center py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold text-sm transition-colors mb-6 shadow-lg shadow-violet-900/30 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-          : "w-full block text-center py-2.5 rounded-xl border border-violet-700/40 text-slate-300 hover:text-white hover:border-violet-600 transition-colors text-sm font-medium mb-6 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-      }
+      className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 mb-6 disabled:opacity-60 disabled:cursor-not-allowed ${
+        primary
+          ? "bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-900/40"
+          : "border border-violet-700/40 text-slate-300 hover:text-white hover:border-violet-500"
+      }`}
     >
       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-      Start {plan} Trial
+      Get {plan}
     </button>
+  );
+}
+
+function FeatureRow({ item, bright }: { item: FeatureItem; bright?: boolean }) {
+  return (
+    <div className={`flex items-start gap-2.5 text-sm ${bright ? "text-slate-200" : "text-slate-300"}`}>
+      <Check className="w-4 h-4 text-violet-400 flex-shrink-0 mt-0.5" />
+      <span>
+        {item.label}
+        {item.soon && <Soon />}
+      </span>
+    </div>
   );
 }
 
@@ -107,7 +118,7 @@ export default function Pricing() {
         {/* Header */}
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 bg-violet-950/50 border border-violet-800/30 rounded-full px-4 py-1.5 text-sm text-violet-300 mb-6">
-            Simple pricing
+            Simple, transparent pricing
           </div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-5">
             Start free.{" "}
@@ -116,108 +127,104 @@ export default function Pricing() {
             </span>
           </h2>
           <p className="text-lg text-slate-400 max-w-xl mx-auto">
-            No hidden fees, no surprise charges. Upgrade or downgrade at any time.
+            No hidden fees. No surprise charges. Upgrade or cancel at any time.
           </p>
         </div>
 
-        {/* Pricing cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          {/* Free card */}
+        {/* Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+
+          {/* ── FREE ── */}
           <div className="bg-[#0f0f1a] border border-violet-900/20 rounded-2xl p-7 flex flex-col">
-            <div className="flex items-center gap-2 mb-2">
-              <Zap className="w-5 h-5 text-slate-400" />
-              <span className="text-sm font-medium text-slate-300">{freePlan.name}</span>
+            <div className="flex items-center gap-2 mb-3">
+              <Zap className="w-4.5 h-4.5 text-slate-400" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Free</span>
             </div>
+            <p className="text-sm font-semibold text-slate-300 mb-2">The Foundation</p>
             <div className="mb-1">
-              <span className="text-4xl font-bold text-white">{freePlan.price}</span>
-              <span className="text-slate-400 ml-2 text-sm">/ {freePlan.period}</span>
+              <span className="text-4xl font-extrabold text-white">$0</span>
+              <span className="text-slate-500 ml-2 text-sm">/ forever</span>
             </div>
-            <p className="text-sm text-slate-400 mb-6">{freePlan.description}</p>
+            <p className="text-xs text-slate-500 mb-6">Everything you need to start building better habits.</p>
 
             <Link
               href="/auth/signup"
-              className="block text-center py-2.5 rounded-xl border border-violet-700/40 text-slate-300 hover:text-white hover:border-violet-600 transition-colors text-sm font-medium mb-6"
+              className="w-full block text-center py-2.5 rounded-xl border border-violet-700/40 text-slate-300 hover:text-white hover:border-violet-500 transition-all text-sm font-semibold mb-6"
             >
               Start for Free
             </Link>
 
             <div className="space-y-2.5">
-              {freePlan.features.map((f) => (
-                <div key={f} className="flex items-center gap-2.5 text-sm text-slate-300">
-                  <Check className="w-4 h-4 text-violet-500 flex-shrink-0" />
-                  {f}
-                </div>
-              ))}
-              {freePlan.notIncluded.map((f) => (
-                <div key={f} className="flex items-center gap-2.5 text-sm text-slate-600">
-                  <div className="w-4 h-4 flex-shrink-0 flex items-center justify-center">
-                    <div className="w-3 h-px bg-slate-700" />
-                  </div>
-                  {f}
-                </div>
+              {FREE_FEATURES.map((f) => (
+                <FeatureRow key={f.label} item={f} />
               ))}
             </div>
           </div>
 
-          {/* Plus card */}
-          <div className="bg-[#0f0f1a] border border-violet-700/30 rounded-2xl p-7 flex flex-col">
-            <div className="flex items-center gap-2 mb-2">
-              <Zap className="w-5 h-5 text-violet-400" />
-              <span className="text-sm font-medium text-violet-300">{plusPlan.name}</span>
-            </div>
-            <div className="mb-1">
-              <span className="text-4xl font-bold text-white">{plusPlan.price}</span>
-              <span className="text-slate-400 ml-2 text-sm">/ {plusPlan.period}</span>
-            </div>
-            <p className="text-sm text-slate-400 mb-6">{plusPlan.description}</p>
-
-            <PaidPlanButton plan="Plus" priceId={plusPlan.priceId} />
-
-            <div className="space-y-2.5">
-              {plusPlan.features.map((f) => (
-                <div key={f} className="flex items-center gap-2.5 text-sm text-slate-300">
-                  <Check className="w-4 h-4 text-violet-400 flex-shrink-0" />
-                  {f}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Pro card */}
-          <div className="relative bg-gradient-to-b from-violet-950/80 to-[#0f0f1a] border border-violet-600/40 rounded-2xl p-7 flex flex-col shadow-xl shadow-violet-950/50">
-            {/* Popular badge */}
+          {/* ── PLUS ── */}
+          <div className="relative bg-[#0f0f1a] border border-violet-600/40 rounded-2xl p-7 flex flex-col shadow-xl shadow-violet-950/40">
+            {/* Badge */}
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-              <span className="inline-flex items-center gap-1.5 bg-violet-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
+              <span className="inline-flex items-center gap-1.5 bg-violet-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg shadow-violet-900/40">
                 <Sparkles className="w-3 h-3" />
-                {proPlan.badge}
+                Most Popular
               </span>
             </div>
 
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-5 h-5 text-violet-400" />
-              <span className="text-sm font-medium text-violet-300">{proPlan.name}</span>
+            <div className="flex items-center gap-2 mb-3">
+              <Zap className="w-4.5 h-4.5 text-violet-400" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-violet-300">Plus</span>
             </div>
+            <p className="text-sm font-semibold text-violet-200 mb-2">The Optimizer</p>
             <div className="mb-1">
-              <span className="text-4xl font-bold text-white">{proPlan.price}</span>
-              <span className="text-slate-400 ml-2 text-sm">/ {proPlan.period}</span>
+              <span className="text-4xl font-extrabold text-white">$7</span>
+              <span className="text-slate-400 ml-2 text-sm">/ month</span>
             </div>
-            <p className="text-sm text-slate-400 mb-6">{proPlan.description}</p>
+            <p className="text-xs text-slate-500 mb-6">For the committed tracker who wants zero limits.</p>
 
-            <PaidPlanButton plan="Pro" priceId={proPlan.priceId} />
+            <PaidPlanButton plan="Plus" priceId={process.env.NEXT_PUBLIC_STRIPE_PLUS_PRICE_ID!} />
 
             <div className="space-y-2.5">
-              {proPlan.features.map((f) => (
-                <div key={f} className="flex items-center gap-2.5 text-sm text-slate-200">
-                  <Check className="w-4 h-4 text-violet-400 flex-shrink-0" />
-                  {f}
-                </div>
+              {PLUS_FEATURES.map((f) => (
+                <FeatureRow key={f.label} item={f} />
+              ))}
+            </div>
+          </div>
+
+          {/* ── PRO ── */}
+          <div className="relative bg-gradient-to-b from-violet-950/70 to-[#0f0f1a] border border-violet-500/50 rounded-2xl p-7 flex flex-col shadow-xl shadow-violet-950/60">
+            {/* Badge */}
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+              <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg shadow-orange-900/40">
+                <Brain className="w-3 h-3" />
+                Best Value
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 mb-3">
+              <Brain className="w-4.5 h-4.5 text-violet-400" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-violet-300">Pro</span>
+            </div>
+            <p className="text-sm font-semibold text-violet-200 mb-2">The Behavioral Scientist</p>
+            <div className="mb-1">
+              <span className="text-4xl font-extrabold text-white">$12</span>
+              <span className="text-slate-400 ml-2 text-sm">/ month</span>
+            </div>
+            <p className="text-xs text-slate-500 mb-6">AI-powered coaching for life-changing habits.</p>
+
+            <PaidPlanButton plan="Pro" priceId={process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID!} primary />
+
+            <div className="space-y-2.5">
+              {PRO_FEATURES.map((f) => (
+                <FeatureRow key={f.label} item={f} bright />
               ))}
             </div>
           </div>
         </div>
 
-        <p className="text-center text-sm text-slate-500 mt-8">
-          14-day free trial on paid plans. No credit card required to start.
+        {/* Footer note */}
+        <p className="text-center text-sm text-slate-500 mt-10">
+          14-day free trial on paid plans · Cancel anytime · No credit card required to start
         </p>
       </div>
     </section>

@@ -17,4 +17,4 @@ export interface HabitLog {
 
 export type Plan = "free" | "plus" | "pro";
 
-export const FREE_HABIT_LIMIT = 3;
+export const FREE_HABIT_LIMIT = 5;
