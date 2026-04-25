@@ -65,8 +65,8 @@ function validateHabitName(name: string): string | null {
     }
   }
 
-  if (trimmed.length < 4) {
-    return "Please enter a more descriptive habit name.";
+  if (trimmed.length < 5) {
+    return "Habit name must be at least 5 characters.";
   }
 
   return null;
@@ -86,6 +86,11 @@ interface Props {
   ) => Promise<{ error: string | null }>;
 }
 
+function isDuplicate(name: string, existingHabits: Habit[]): boolean {
+  const normalized = name.trim().toLowerCase();
+  return existingHabits.some((h) => h.name.trim().toLowerCase() === normalized);
+}
+
 export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props) {
   const [name, setName]               = useState("");
   const [description, setDescription] = useState("");
@@ -103,12 +108,26 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
 
   const handleNameChange = (val: string) => {
     setName(val);
-    setNameWarning(val.length > 2 ? validateHabitName(val) : null);
+    if (val.length > 2) {
+      if (isDuplicate(val, existingHabits)) {
+        setNameWarning("You already have a habit with this name.");
+      } else {
+        setNameWarning(validateHabitName(val));
+      }
+    } else {
+      setNameWarning(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+
+    // Block duplicates at submit time
+    if (isDuplicate(name, existingHabits)) {
+      setError("You already have a habit with this name.");
+      return;
+    }
 
     // Block harmful habits at submit time too
     const validationMsg = validateHabitName(name.trim());
@@ -167,14 +186,19 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
             </label>
             <input
               type="text" value={name} onChange={(e) => handleNameChange(e.target.value)}
-              placeholder="e.g. Meditate for 10 minutes" required maxLength={80} autoFocus
+              placeholder="e.g. Meditate for 10 minutes" required maxLength={100} autoFocus
               className={`${inputCls} ${nameWarning ? "border-amber-600/50 focus:border-amber-500/60" : ""}`}
             />
-            {nameWarning && (
-              <p className="mt-1.5 text-[11px] text-amber-400 leading-relaxed">
-                💡 {nameWarning}
-              </p>
-            )}
+            <div className="flex items-start justify-between mt-1.5">
+              {nameWarning ? (
+                <p className="text-[11px] text-amber-400 leading-relaxed">💡 {nameWarning}</p>
+              ) : (
+                <span />
+              )}
+              <span className={`text-[10px] flex-shrink-0 ml-2 ${name.length > 90 ? "text-amber-400" : "text-slate-700"}`}>
+                {name.length}/100
+              </span>
+            </div>
           </div>
 
           {/* Description */}

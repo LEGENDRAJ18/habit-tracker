@@ -10,12 +10,17 @@ export async function GET(req: NextRequest) {
   const tier  = searchParams.get("tier") ?? "";
 
   const isStreak = type === "streak";
-  const emoji    = isStreak ? "🔥" : "⚡";
+  const isDaily  = type === "daily";
+  const emoji    = isStreak ? "🔥" : isDaily ? "🎯" : "⚡";
   const headline = isStreak
     ? `${value}-Day Streak`
+    : isDaily
+    ? "All Done!"
     : `Level ${value}`;
   const sub = isStreak
     ? "Consistency is my superpower"
+    : isDaily
+    ? "Crushed every habit today"
     : tier ? `${tier} — Leveling up daily` : "Leveling up daily";
 
   return new ImageResponse(

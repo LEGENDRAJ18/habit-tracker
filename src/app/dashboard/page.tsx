@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Plus, Loader2, AlertCircle, CheckCircle2, Crown, Diamond, Shield } from "lucide-react";
+import { Plus, Loader2, AlertCircle, CheckCircle2, Crown, Diamond, Shield, Share2 } from "lucide-react";
 import type { Plan } from "@/types";
 import { useHabits } from "@/hooks/useHabits";
 import { useProfile } from "@/hooks/useProfile";
@@ -83,7 +83,13 @@ function ProgressRing({ completed, total, tier }: { completed: number; total: nu
 
 // ─── All-done celebration ─────────────────────────────────────────────────────
 
-function AllDoneCelebration({ onDismiss }: { onDismiss: () => void }) {
+function AllDoneCelebration({
+  onDismiss,
+  onShare,
+}: {
+  onDismiss: () => void;
+  onShare: () => void;
+}) {
   return (
     <div
       className="fixed inset-0 z-40 flex items-center justify-center"
@@ -91,17 +97,27 @@ function AllDoneCelebration({ onDismiss }: { onDismiss: () => void }) {
       onClick={onDismiss}
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-      <div className="relative bg-[#0f0f1a] border border-violet-700/30 rounded-3xl px-10 py-8 text-center shadow-2xl shadow-violet-950/60 max-w-xs mx-4 pointer-events-none">
+      <div
+        className="relative bg-[#0f0f1a] border border-violet-700/30 rounded-3xl px-10 py-8 text-center shadow-2xl shadow-violet-950/60 max-w-xs mx-4"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="absolute inset-0 bg-gradient-to-b from-violet-600/10 to-transparent rounded-3xl" />
         <div className="relative">
           <div className="text-6xl mb-4 leading-none">🔥</div>
           <h3 className="text-2xl font-bold text-white mb-1.5">All done!</h3>
-          <p className="text-sm text-violet-300 mb-5">Streak continues. Keep it up!</p>
+          <p className="text-sm text-violet-300 mb-4">Streak continues. Keep it up!</p>
+          <button
+            onClick={onShare}
+            className="w-full py-2.5 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-600/30 text-violet-300 font-medium rounded-xl text-sm transition-all mb-4 flex items-center justify-center gap-2"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            Share your win
+          </button>
           {/* Auto-dismiss progress bar */}
           <div className="h-0.5 bg-violet-900/50 rounded-full overflow-hidden">
             <div
               className="h-full bg-violet-500 rounded-full origin-left"
-              style={{ animation: "celebProgress 3s linear both" }}
+              style={{ animation: "celebProgress 5s linear both" }}
             />
           </div>
         </div>
@@ -235,7 +251,7 @@ export default function DashboardPage() {
   const [showCelebration, setShowCelebration]   = useState(false);
   const [showStreakBroken, setShowStreakBroken] = useState(false);
   const [showReOnboard, setShowReOnboard]       = useState(false);
-  const [shareData, setShareData] = useState<{ type: "streak" | "level"; value: number; tier?: string } | null>(null);
+  const [shareData, setShareData] = useState<{ type: "streak" | "level" | "daily"; value: number; tier?: string } | null>(null);
   const prevCompletedRef   = useRef<number | null>(null);
   const seenBreakModalRef  = useRef(false);
   const appliedFreezeRef   = useRef(false);
@@ -270,7 +286,7 @@ export default function DashboardPage() {
     const prev = prevCompletedRef.current;
     if (prev !== null && prev < habits.length && completedCount === habits.length) {
       setShowCelebration(true);
-      setTimeout(() => setShowCelebration(false), 3200);
+      setTimeout(() => setShowCelebration(false), 5200);
     }
     prevCompletedRef.current = completedCount;
   }, [completedCount, habits.length, loading]);
@@ -611,7 +627,13 @@ export default function DashboardPage() {
       )}
 
       {showCelebration && (
-        <AllDoneCelebration onDismiss={() => setShowCelebration(false)} />
+        <AllDoneCelebration
+          onDismiss={() => setShowCelebration(false)}
+          onShare={() => {
+            setShowCelebration(false);
+            setShareData({ type: "daily", value: bestStreak });
+          }}
+        />
       )}
 
       {showStreakBroken && (

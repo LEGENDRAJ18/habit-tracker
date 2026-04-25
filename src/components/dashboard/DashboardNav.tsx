@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Sparkles, LogOut, Zap, ChevronDown, BarChart2,
   Download, User, Settings, CreditCard, HelpCircle,
-  Keyboard, Users,
+  Keyboard, Users, Calendar,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
@@ -125,16 +125,9 @@ export default function DashboardNav({ habitCount, tier, onUpgradeClick }: Props
           {/* Nav links */}
           <div className="flex items-center gap-0.5">
             {navLink("/analytics", <BarChart2 className="w-3.5 h-3.5" />, "Analytics")}
-            {navLink("/profile",   <User       className="w-3.5 h-3.5" />, "Profile")}
-            <a
-              href="https://discord.gg/habitai"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-slate-500 hover:text-violet-300 hover:bg-violet-950/30"
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Community</span>
-            </a>
+            {navLink("/calendar",  <Calendar  className="w-3.5 h-3.5" />, "Calendar")}
+            {navLink("/friends",   <Users     className="w-3.5 h-3.5" />, "Friends")}
+            {navLink("/profile",   <User      className="w-3.5 h-3.5" />, "Profile")}
           </div>
 
           {/* Right side */}
