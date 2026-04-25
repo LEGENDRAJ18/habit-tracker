@@ -120,14 +120,16 @@ function CompletionHeatmap({ logs }: { logs: Pick<HabitLog, "habit_id" | "comple
 }
 
 function WeeklyBars({ logs }: { logs: Pick<HabitLog, "habit_id" | "completed_at">[] }) {
+  // Each week: offset = start of week in days-ago. Days within it go offset..offset+6.
+  // i=0 → oldest (7 weeks ago), i=7 → current week. No reverse needed: left=old, right=new.
   const weeks = Array.from({ length: 8 }, (_, i) => {
     const offset    = (7 - i) * 7;
-    const days      = Array.from({ length: 7 }, (_, d) => daysAgo(offset - d));
+    const days      = Array.from({ length: 7 }, (_, d) => daysAgo(offset + d));
     const count     = logs.filter((l) => days.some((d) => l.completed_at.startsWith(d))).length;
     const labelDate = new Date(daysAgo(offset));
     const label     = labelDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     return { label, count };
-  }).reverse();
+  });
 
   const max = Math.max(1, ...weeks.map((w) => w.count));
 
