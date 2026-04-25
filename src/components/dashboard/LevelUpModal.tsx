@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Zap } from "lucide-react";
+import { Zap, Share2 } from "lucide-react";
 import { levelName, levelColorKey, type LevelColorKey } from "@/lib/xp";
 
 interface Props {
   newLevel: number;
   onDismiss: () => void;
+  onShare?: () => void;
 }
 
 const STYLES: Record<LevelColorKey, { ring: string; bg: string; text: string; glow: string }> = {
@@ -27,7 +28,7 @@ const SPARKS = Array.from({ length: 20 }, (_, i) => ({
   color: ["#8b5cf6","#a78bfa","#fbbf24","#34d399","#60a5fa","#f472b6","#fb923c","#e879f9"][i % 8],
 }));
 
-export default function LevelUpModal({ newLevel, onDismiss }: Props) {
+export default function LevelUpModal({ newLevel, onDismiss, onShare }: Props) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -93,12 +94,23 @@ export default function LevelUpModal({ newLevel, onDismiss }: Props) {
         <h2 className="text-2xl font-extrabold text-white mb-1">Level {newLevel}</h2>
         <p className={`text-base font-semibold mb-5 ${style.text}`}>{name}</p>
 
-        <button
-          onClick={onDismiss}
-          className="px-6 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-violet-900/30"
-        >
-          Keep going!
-        </button>
+        <div className="flex flex-col gap-2 w-full">
+          {onShare && (
+            <button
+              onClick={() => { onShare(); onDismiss(); }}
+              className="w-full flex items-center justify-center gap-2 px-6 py-2 bg-violet-950/60 hover:bg-violet-900/60 border border-violet-700/40 text-violet-300 text-sm font-semibold rounded-xl transition-all"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              Share achievement
+            </button>
+          )}
+          <button
+            onClick={onDismiss}
+            className="w-full px-6 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-violet-900/30"
+          >
+            Keep going!
+          </button>
+        </div>
       </div>
     </div>
   );
