@@ -353,7 +353,7 @@ export default function DashboardPage() {
         onUpgradeClick={() => setShowUpgrade(true)}
       />
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Upgrade success banner */}
         {upgradeSuccess && (
           <div className="flex items-center gap-3 bg-green-950/40 border border-green-800/40 rounded-xl p-4 mb-6">

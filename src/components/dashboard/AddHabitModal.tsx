@@ -4,8 +4,73 @@ import { useState } from "react";
 import { X, Loader2, Plus, ArrowRight, Link2, ChevronDown } from "lucide-react";
 import type { Habit } from "@/types";
 
-const WHERE_OPTIONS  = ["Bedroom", "Gym", "Office", "Kitchen", "Living room", "Outdoors", "On commute"];
+const WHERE_OPTIONS    = ["Bedroom", "Gym", "Office", "Kitchen", "Living room", "Outdoors", "On commute"];
 const HOW_LONG_OPTIONS = ["5 min", "10 min", "20 min", "30 min", "45 min", "1 hour", "2+ hours"];
+
+// ─── Habit name validation ────────────────────────────────────────────────────
+
+const HARMFUL_PATTERNS = [
+  /\b(smoke|smok(ing)?|cigarette|tobacco|vape|vaping)\b/i,
+  /\b(drink(ing)?\s*(beer|alcohol|wine|whiskey|vodka|liquor|spirits))\b/i,
+  /\b(get\s*drunk|binge\s*drink)\b/i,
+  /\b(drug|cocaine|heroin|meth|marijuana|weed|cannabis|fentanyl)\b/i,
+  /\b(self[\s-]?harm|cut\s*myself|starve|purge)\b/i,
+  /\b(gambl(e|ing)|bet\s+money)\b/i,
+  /\b(skip\s*(all\s*)?meals?|not\s*eat)\b/i,
+];
+
+const VAGUE_PATTERNS = [
+  /^(be\s+)?(better|good|healthy|happy|productive|successful|awesome|nice|great)$/i,
+  /^(do\s+)?more$/i,
+  /^stuff$/i,
+  /^things?$/i,
+  /^exercise$/i,
+  /^work(out)?$/i,
+  /^study$/i,
+  /^read$/i,
+  /^sleep$/i,
+];
+
+const VAGUE_SUGGESTIONS: Record<string, string> = {
+  exercise:   'e.g. "Walk for 20 minutes" or "Do 15 push-ups"',
+  workout:    'e.g. "Gym session for 45 minutes" or "Run 2km"',
+  study:      'e.g. "Study Chapter 3 for 30 minutes" or "Review flashcards"',
+  read:       'e.g. "Read 20 pages of my current book"',
+  sleep:      'e.g. "In bed by 10:30 PM with no screens"',
+  healthy:    'e.g. "Eat a vegetable with every meal"',
+  better:     'e.g. "Journal one thing I\'m grateful for each day"',
+  productive: 'e.g. "Plan tomorrow\'s top 3 tasks each evening"',
+};
+
+function validateHabitName(name: string): string | null {
+  const trimmed = name.trim();
+  if (!trimmed) return null;
+
+  for (const pattern of HARMFUL_PATTERNS) {
+    if (pattern.test(trimmed)) {
+      return 'HabitAI is designed to build positive habits. Try something like "Drink more water" or "Exercise for 30 minutes" instead.';
+    }
+  }
+
+  const vagueKey = Object.keys(VAGUE_SUGGESTIONS).find(
+    (k) => new RegExp(`^${k}$`, "i").test(trimmed),
+  );
+  if (vagueKey) {
+    return `That habit is a bit vague — specific habits are 3× more likely to stick. Try ${VAGUE_SUGGESTIONS[vagueKey]}.`;
+  }
+
+  for (const pattern of VAGUE_PATTERNS) {
+    if (pattern.test(trimmed)) {
+      return "That habit is a bit vague. Adding a specific action, duration, or time makes it much easier to follow through.";
+    }
+  }
+
+  if (trimmed.length < 4) {
+    return "Please enter a more descriptive habit name.";
+  }
+
+  return null;
+}
 
 interface Props {
   onClose: () => void;
@@ -30,14 +95,28 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
   const [whereLocation, setWhereLocation] = useState("");
   const [howLong, setHowLong]             = useState("");
   const [showIntentions, setShowIntentions] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState<string | null>(null);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState<string | null>(null);
+  const [nameWarning, setNameWarning] = useState<string | null>(null);
 
   const stackParent = existingHabits.find((h) => h.id === stackAfterId);
+
+  const handleNameChange = (val: string) => {
+    setName(val);
+    setNameWarning(val.length > 2 ? validateHabitName(val) : null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+
+    // Block harmful habits at submit time too
+    const validationMsg = validateHabitName(name.trim());
+    if (validationMsg && validationMsg.startsWith("HabitAI is designed")) {
+      setError(validationMsg);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -87,10 +166,15 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
               Habit name <span className="text-violet-500">*</span>
             </label>
             <input
-              type="text" value={name} onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Morning Meditation" required maxLength={80} autoFocus
-              className={inputCls}
+              type="text" value={name} onChange={(e) => handleNameChange(e.target.value)}
+              placeholder="e.g. Meditate for 10 minutes" required maxLength={80} autoFocus
+              className={`${inputCls} ${nameWarning ? "border-amber-600/50 focus:border-amber-500/60" : ""}`}
             />
+            {nameWarning && (
+              <p className="mt-1.5 text-[11px] text-amber-400 leading-relaxed">
+                💡 {nameWarning}
+              </p>
+            )}
           </div>
 
           {/* Description */}
