@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { X, Loader2, Plus, ArrowRight, Link2 } from "lucide-react";
+import { X, Loader2, Plus, ArrowRight, Link2, ChevronDown } from "lucide-react";
 import type { Habit } from "@/types";
+
+const WHERE_OPTIONS  = ["Bedroom", "Gym", "Office", "Kitchen", "Living room", "Outdoors", "On commute"];
+const HOW_LONG_OPTIONS = ["5 min", "10 min", "20 min", "30 min", "45 min", "1 hour", "2+ hours"];
 
 interface Props {
   onClose: () => void;
@@ -12,6 +15,9 @@ interface Props {
     description: string,
     frequency: "daily" | "weekly",
     stackAfterId?: string | null,
+    whenTime?: string | null,
+    whereLocation?: string | null,
+    howLong?: string | null,
   ) => Promise<{ error: string | null }>;
 }
 
@@ -19,9 +25,13 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
   const [name, setName]               = useState("");
   const [description, setDescription] = useState("");
   const [frequency, setFrequency]     = useState<"daily" | "weekly">("daily");
-  const [stackAfterId, setStackAfterId] = useState<string>("");
-  const [loading, setLoading]         = useState(false);
-  const [error, setError]             = useState<string | null>(null);
+  const [stackAfterId, setStackAfterId]   = useState<string>("");
+  const [whenTime, setWhenTime]           = useState("");
+  const [whereLocation, setWhereLocation] = useState("");
+  const [howLong, setHowLong]             = useState("");
+  const [showIntentions, setShowIntentions] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState<string | null>(null);
 
   const stackParent = existingHabits.find((h) => h.id === stackAfterId);
 
@@ -35,7 +45,10 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
       name.trim(),
       description.trim(),
       frequency,
-      stackAfterId || null,
+      stackAfterId    || null,
+      whenTime        || null,
+      whereLocation   || null,
+      howLong         || null,
     );
 
     if (error) {
@@ -46,14 +59,17 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
     }
   };
 
+  const inputCls =
+    "w-full bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none focus:ring-2 focus:ring-violet-600/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 transition-all";
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-md bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl shadow-violet-950/50 overflow-hidden">
+      <div className="w-full max-w-md bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl shadow-violet-950/50 overflow-hidden max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-violet-900/20">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-violet-900/20 sticky top-0 bg-[#0f0f1a] z-10">
           <h2 className="text-base font-semibold text-white">Add New Habit</h2>
           <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50">
             <X className="w-4 h-4" />
@@ -65,26 +81,31 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
             <p className="text-sm text-red-400 bg-red-950/30 border border-red-800/30 rounded-xl px-3.5 py-2.5">{error}</p>
           )}
 
+          {/* Name */}
           <div>
             <label className="block text-xs font-medium text-slate-400 mb-1.5">
               Habit name <span className="text-violet-500">*</span>
             </label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)}
+            <input
+              type="text" value={name} onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Morning Meditation" required maxLength={80} autoFocus
-              className="w-full bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none focus:ring-2 focus:ring-violet-600/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 transition-all"
+              className={inputCls}
             />
           </div>
 
+          {/* Description */}
           <div>
             <label className="block text-xs font-medium text-slate-400 mb-1.5">
               Description <span className="text-slate-600 font-normal">(optional)</span>
             </label>
-            <input type="text" value={description} onChange={(e) => setDescription(e.target.value)}
+            <input
+              type="text" value={description} onChange={(e) => setDescription(e.target.value)}
               placeholder="e.g. 10 minutes of mindfulness" maxLength={200}
-              className="w-full bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none focus:ring-2 focus:ring-violet-600/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 transition-all"
+              className={inputCls}
             />
           </div>
 
+          {/* Frequency */}
           <div>
             <label className="block text-xs font-medium text-slate-400 mb-2">Frequency</label>
             <div className="grid grid-cols-2 gap-2">
@@ -113,7 +134,7 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
               <select
                 value={stackAfterId}
                 onChange={(e) => setStackAfterId(e.target.value)}
-                className="w-full bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none focus:ring-2 focus:ring-violet-600/20 rounded-xl px-4 py-2.5 text-sm text-white transition-all appearance-none"
+                className={`${inputCls} appearance-none`}
                 style={{ colorScheme: "dark" }}
               >
                 <option value="">— None —</option>
@@ -122,7 +143,6 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
                 ))}
               </select>
 
-              {/* Preview */}
               {stackParent && name.trim() && (
                 <div className="flex items-center gap-2 mt-2.5 px-3 py-2 bg-violet-950/30 border border-violet-800/25 rounded-lg">
                   <span className="text-xs text-slate-400 truncate max-w-[120px]">{stackParent.name}</span>
@@ -132,12 +152,109 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
               )}
               {stackParent && !name.trim() && (
                 <p className="text-[10px] text-slate-600 mt-1.5 ml-1">
-                  This habit will trigger after: <span className="text-slate-500">{stackParent.name}</span>
+                  This habit will trigger after:{" "}
+                  <span className="text-slate-500">{stackParent.name}</span>
                 </p>
               )}
             </div>
           )}
 
+          {/* Implementation Intentions */}
+          <div className="border border-violet-900/25 rounded-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowIntentions((v) => !v)}
+              className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-violet-950/30 transition-colors"
+            >
+              <div>
+                <span className="text-xs font-medium text-slate-300">Implementation Intentions</span>
+                <span className="ml-2 text-[10px] text-slate-600">(optional)</span>
+              </div>
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-slate-600 transition-transform duration-200 ${showIntentions ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {showIntentions && (
+              <div className="px-4 pb-4 pt-1 space-y-3 border-t border-violet-900/20">
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Specifying when, where, and how long makes habits 2× more likely to stick.
+                </p>
+
+                {/* When */}
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-500 mb-1.5">
+                    ⏰ When will you do this?
+                  </label>
+                  <input
+                    type="time"
+                    value={whenTime}
+                    onChange={(e) => setWhenTime(e.target.value)}
+                    className={`${inputCls} [color-scheme:dark]`}
+                  />
+                </div>
+
+                {/* Where */}
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-500 mb-1.5">
+                    📍 Where?
+                  </label>
+                  <select
+                    value={whereLocation}
+                    onChange={(e) => setWhereLocation(e.target.value)}
+                    className={`${inputCls} appearance-none`}
+                    style={{ colorScheme: "dark" }}
+                  >
+                    <option value="">e.g. Bedroom, Gym, Office…</option>
+                    {WHERE_OPTIONS.map((o) => (
+                      <option key={o} value={o}>{o}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* How long */}
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-500 mb-1.5">
+                    ⏱ How long?
+                  </label>
+                  <select
+                    value={howLong}
+                    onChange={(e) => setHowLong(e.target.value)}
+                    className={`${inputCls} appearance-none`}
+                    style={{ colorScheme: "dark" }}
+                  >
+                    <option value="">Select duration…</option>
+                    {HOW_LONG_OPTIONS.map((o) => (
+                      <option key={o} value={o}>{o}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Preview pill */}
+                {(whenTime || whereLocation || howLong) && (
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    {whereLocation && (
+                      <span className="text-[11px] text-slate-400 bg-slate-800/50 border border-slate-700/40 px-2 py-0.5 rounded-full">
+                        📍 {whereLocation}
+                      </span>
+                    )}
+                    {whenTime && (
+                      <span className="text-[11px] text-slate-400 bg-slate-800/50 border border-slate-700/40 px-2 py-0.5 rounded-full">
+                        ⏰ {whenTime}
+                      </span>
+                    )}
+                    {howLong && (
+                      <span className="text-[11px] text-slate-400 bg-slate-800/50 border border-slate-700/40 px-2 py-0.5 rounded-full">
+                        ⏱ {howLong}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose}
               className="flex-1 py-2.5 border border-violet-900/30 text-slate-400 hover:text-white rounded-xl text-sm transition-colors"

@@ -6,6 +6,10 @@ export interface Habit {
   frequency: "daily" | "weekly";
   created_at: string;
   stack_after_id: string | null;
+  habit_strength: number;
+  when_time: string | null;
+  where_location: string | null;
+  how_long: string | null;
 }
 
 export interface HabitLog {

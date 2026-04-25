@@ -4,12 +4,43 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Habit, HabitLog } from "@/types";
 
+// Computes habit strength from historical logs using the canonical formula:
+// base 10 + 5 per completion − 3 per missed day (min 5, max 100).
+// Missed days are counted from the day AFTER creation (not the creation day itself).
+function computeStrengthFromLogs(
+  habitCreatedAt: string,
+  logDates: string[], // unique completion date strings YYYY-MM-DD, any order
+): number {
+  const today             = new Date().toISOString().split("T")[0];
+  const thirtyOneDaysAgo  = new Date(Date.now() - 31 * 86400000).toISOString().split("T")[0];
+  const createdDay        = habitCreatedAt.split("T")[0];
+
+  // First day we'd count a miss: the day after the habit was created
+  const dayAfterCreation = new Date(new Date(createdDay).getTime() + 86400000)
+    .toISOString().split("T")[0];
+  const missStart = dayAfterCreation > thirtyOneDaysAgo ? dayAfterCreation : thirtyOneDaysAgo;
+
+  // Total completions within the 31-day window
+  const completions = logDates.filter((d) => d >= thirtyOneDaysAgo).length;
+
+  // Days between missStart and today (exclusive) — the window in which we count misses
+  const daysInMissWindow = Math.max(
+    0,
+    Math.round((new Date(today).getTime() - new Date(missStart).getTime()) / 86400000),
+  );
+
+  const pastCompletions = logDates.filter((d) => d >= missStart && d < today).length;
+  const missed          = Math.max(0, daysInMissWindow - pastCompletions);
+
+  return Math.max(5, Math.min(100, 10 + completions * 5 - missed * 3));
+}
+
 export function useHabits() {
-  const [habits, setHabits] = useState<Habit[]>([]);
-  const [todayLogs, setTodayLogs] = useState<HabitLog[]>([]);
+  const [habits, setHabits]                 = useState<Habit[]>([]);
+  const [todayLogs, setTodayLogs]           = useState<HabitLog[]>([]);
   const [historicalLogs, setHistoricalLogs] = useState<Pick<HabitLog, "habit_id" | "completed_at">[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading]               = useState(true);
+  const [error, setError]                   = useState<string | null>(null);
   const supabase = useRef(createClient()).current;
 
   const fetchData = useCallback(async () => {
@@ -22,8 +53,8 @@ export function useHabits() {
       return;
     }
 
-    const today = new Date().toISOString().split("T")[0];
-    const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+    const today         = new Date().toISOString().split("T")[0];
+    const tomorrow      = new Date(Date.now() + 86400000).toISOString().split("T")[0];
     const thirtyOneDaysAgo = new Date(Date.now() - 31 * 86400000).toISOString().split("T")[0];
 
     const [
@@ -52,9 +83,45 @@ export function useHabits() {
 
     if (hErr) setError(hErr.message);
     if (lErr) setError(lErr.message);
-    setHabits(habitsData || []);
+
+    const loadedHabits = habitsData || [];
+    const loadedHist   = histData   || [];
+
+    // Sync habit_strength in DB: apply missed-day penalties accumulated while user was away
+    if (loadedHabits.length > 0) {
+      // Build per-habit date sets from historical logs
+      const dateMap = new Map<string, string[]>();
+      for (const log of loadedHist) {
+        const d   = log.completed_at.split("T")[0];
+        const arr = dateMap.get(log.habit_id) ?? [];
+        if (!arr.includes(d)) arr.push(d);
+        dateMap.set(log.habit_id, arr);
+      }
+
+      const strengthUpdates: { id: string; strength: number }[] = [];
+      for (const habit of loadedHabits) {
+        const computed = computeStrengthFromLogs(habit.created_at, dateMap.get(habit.id) ?? []);
+        if (computed !== habit.habit_strength) {
+          strengthUpdates.push({ id: habit.id, strength: computed });
+        }
+      }
+
+      if (strengthUpdates.length > 0) {
+        await Promise.all(
+          strengthUpdates.map(({ id, strength }) =>
+            supabase.from("habits").update({ habit_strength: strength }).eq("id", id),
+          ),
+        );
+        for (const upd of strengthUpdates) {
+          const idx = loadedHabits.findIndex((h) => h.id === upd.id);
+          if (idx !== -1) loadedHabits[idx] = { ...loadedHabits[idx], habit_strength: upd.strength };
+        }
+      }
+    }
+
+    setHabits(loadedHabits);
     setTodayLogs(logsData || []);
-    setHistoricalLogs(histData || []);
+    setHistoricalLogs(loadedHist);
     setLoading(false);
   }, [supabase]);
 
@@ -67,6 +134,9 @@ export function useHabits() {
     description: string,
     frequency: "daily" | "weekly",
     stackAfterId?: string | null,
+    whenTime?: string | null,
+    whereLocation?: string | null,
+    howLong?: string | null,
   ): Promise<{ error: string | null }> => {
     const {
       data: { user },
@@ -76,11 +146,14 @@ export function useHabits() {
     const { data, error } = await supabase
       .from("habits")
       .insert({
-        user_id: user.id,
+        user_id:       user.id,
         name,
-        description: description || null,
+        description:   description || null,
         frequency,
         stack_after_id: stackAfterId ?? null,
+        when_time:     whenTime     ?? null,
+        where_location:   whereLocation   ?? null,
+        how_long:      howLong      ?? null,
       })
       .select()
       .single();
@@ -96,17 +169,34 @@ export function useHabits() {
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    const existing = todayLogs.find((l) => l.habit_id === habitId);
+    const habit          = habits.find((h) => h.id === habitId);
+    const currentStrength = habit?.habit_strength ?? 10;
+    const existing        = todayLogs.find((l) => l.habit_id === habitId);
+
     if (existing) {
+      // Uncomplete — remove log, reduce strength by 5
       await supabase.from("habit_logs").delete().eq("id", existing.id);
       setTodayLogs((prev) => prev.filter((l) => l.id !== existing.id));
+
+      const newStrength = Math.max(5, currentStrength - 5);
+      await supabase.from("habits").update({ habit_strength: newStrength }).eq("id", habitId);
+      setHabits((prev) =>
+        prev.map((h) => (h.id === habitId ? { ...h, habit_strength: newStrength } : h)),
+      );
     } else {
+      // Complete — add log, increase strength by 5
       const { data } = await supabase
         .from("habit_logs")
         .insert({ habit_id: habitId, user_id: user.id })
         .select()
         .single();
       if (data) setTodayLogs((prev) => [...prev, data]);
+
+      const newStrength = Math.min(100, currentStrength + 5);
+      await supabase.from("habits").update({ habit_strength: newStrength }).eq("id", habitId);
+      setHabits((prev) =>
+        prev.map((h) => (h.id === habitId ? { ...h, habit_strength: newStrength } : h)),
+      );
     }
   };
 
@@ -126,116 +216,112 @@ export function useHabits() {
     const map = new Map<string, string[]>();
     for (const log of historicalLogs) {
       const dateStr = log.completed_at.split("T")[0];
-      const arr = map.get(log.habit_id) ?? [];
+      const arr     = map.get(log.habit_id) ?? [];
       if (!arr.includes(dateStr)) arr.push(dateStr);
       map.set(log.habit_id, arr);
     }
-    // Sort each array newest-first
     map.forEach((arr) => arr.sort().reverse());
     return map;
   }, [historicalLogs]);
 
-  const getStreak = useCallback((habitId: string): number => {
-    const dates = habitDateSets.get(habitId) ?? [];
-    if (dates.length === 0) return 0;
+  const getStreak = useCallback(
+    (habitId: string): number => {
+      const dates     = habitDateSets.get(habitId) ?? [];
+      if (dates.length === 0) return 0;
 
-    const today     = new Date().toISOString().split("T")[0];
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+      const today     = new Date().toISOString().split("T")[0];
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
 
-    if (dates[0] !== today && dates[0] !== yesterday) return 0;
+      if (dates[0] !== today && dates[0] !== yesterday) return 0;
 
-    let streak = 1;
-    for (let i = 1; i < dates.length; i++) {
-      const prev = new Date(dates[i - 1]);
-      const curr = new Date(dates[i]);
-      const diffDays = Math.round((prev.getTime() - curr.getTime()) / 86400000);
-      if (diffDays === 1) streak++;
-      else break;
-    }
-    return streak;
-  }, [habitDateSets]);
+      let streak = 1;
+      for (let i = 1; i < dates.length; i++) {
+        const prev     = new Date(dates[i - 1]);
+        const curr     = new Date(dates[i]);
+        const diffDays = Math.round((prev.getTime() - curr.getTime()) / 86400000);
+        if (diffDays === 1) streak++;
+        else break;
+      }
+      return streak;
+    },
+    [habitDateSets],
+  );
 
-  // Streak calculation that accounts for a single weekly freeze.
-  // A fresh freeze bridges a 2-day gap at the active edge (last log = 2 days ago).
-  // A previously applied freeze bridges the specific protected date mid-streak.
-  const getStreakInfo = useCallback((
-    habitId: string,
-    isPaid: boolean,
-    freezeAvailable: boolean,
-    freezeProtectedDate: string | null
-  ): { streak: number; freezeApplied: boolean; newFreezeUsed: boolean } => {
-    const dates = habitDateSets.get(habitId) ?? [];
-    if (dates.length === 0) return { streak: 0, freezeApplied: false, newFreezeUsed: false };
+  const getStreakInfo = useCallback(
+    (
+      habitId: string,
+      isPaid: boolean,
+      freezeAvailable: boolean,
+      freezeProtectedDate: string | null,
+    ): { streak: number; freezeApplied: boolean; newFreezeUsed: boolean } => {
+      const dates = habitDateSets.get(habitId) ?? [];
+      if (dates.length === 0) return { streak: 0, freezeApplied: false, newFreezeUsed: false };
 
-    const today      = new Date().toISOString().split("T")[0];
-    const yesterday  = new Date(Date.now() -     86400000).toISOString().split("T")[0];
-    const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toISOString().split("T")[0];
+      const today      = new Date().toISOString().split("T")[0];
+      const yesterday  = new Date(Date.now() -     86400000).toISOString().split("T")[0];
+      const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toISOString().split("T")[0];
 
-    let freezeApplied = false;
-    let newFreezeUsed = false;
+      let freezeApplied = false;
+      let newFreezeUsed = false;
 
-    const firstDate = dates[0];
-    if (firstDate !== today && firstDate !== yesterday) {
-      if (firstDate === twoDaysAgo) {
-        if (isPaid && freezeAvailable) {
-          // Fresh freeze bridges the missed yesterday
-          freezeApplied = true;
-          newFreezeUsed = true;
-        } else if (freezeProtectedDate === yesterday) {
-          // Previously applied freeze still bridges this specific gap
-          freezeApplied = true;
+      const firstDate = dates[0];
+      if (firstDate !== today && firstDate !== yesterday) {
+        if (firstDate === twoDaysAgo) {
+          if (isPaid && freezeAvailable) {
+            freezeApplied = true;
+            newFreezeUsed = true;
+          } else if (freezeProtectedDate === yesterday) {
+            freezeApplied = true;
+          } else {
+            return { streak: 0, freezeApplied: false, newFreezeUsed: false };
+          }
         } else {
           return { streak: 0, freezeApplied: false, newFreezeUsed: false };
         }
-      } else {
-        return { streak: 0, freezeApplied: false, newFreezeUsed: false };
       }
-    }
 
-    let streak = 1;
-    for (let i = 1; i < dates.length; i++) {
-      const prev = new Date(dates[i - 1]);
-      const curr = new Date(dates[i]);
-      const diffDays = Math.round((prev.getTime() - curr.getTime()) / 86400000);
-      if (diffDays === 1) {
-        streak++;
-      } else if (diffDays === 2) {
-        // Missing date is curr + 1 day (dates are newest-first)
-        const missingDate = new Date(curr.getTime() + 86400000).toISOString().split("T")[0];
-        if (freezeProtectedDate === missingDate) {
+      let streak = 1;
+      for (let i = 1; i < dates.length; i++) {
+        const prev     = new Date(dates[i - 1]);
+        const curr     = new Date(dates[i]);
+        const diffDays = Math.round((prev.getTime() - curr.getTime()) / 86400000);
+        if (diffDays === 1) {
           streak++;
-          freezeApplied = true;
+        } else if (diffDays === 2) {
+          const missingDate = new Date(curr.getTime() + 86400000).toISOString().split("T")[0];
+          if (freezeProtectedDate === missingDate) {
+            streak++;
+            freezeApplied = true;
+          } else {
+            break;
+          }
         } else {
           break;
         }
-      } else {
-        break;
       }
-    }
 
-    return { streak, freezeApplied, newFreezeUsed };
-  }, [habitDateSets]);
+      return { streak, freezeApplied, newFreezeUsed };
+    },
+    [habitDateSets],
+  );
 
-  // Habit Strength 0-100: measures how automatic a habit is becoming.
-  // Formula: base 10 + 2.5 per unique completion day (last 30) + 1.5 per streak day, capped at 100.
-  // Missing days reduce the streak component but completions are never lost.
-  const getHabitStrength = useCallback((habitId: string): number => {
-    const dates = habitDateSets.get(habitId) ?? [];
-    if (dates.length === 0) return 10;
-    const streak = getStreak(habitId);
-    return Math.min(100, Math.round(10 + dates.length * 2.5 + streak * 1.5));
-  }, [habitDateSets, getStreak]);
+  // Returns the stored habit_strength from DB state (updated on toggle and synced on load)
+  const getHabitStrength = useCallback(
+    (habitId: string): number => habits.find((h) => h.id === habitId)?.habit_strength ?? 10,
+    [habits],
+  );
 
-  // True if a habit has recent historical logs (within 7 days) but the streak is currently 0.
-  // Used to detect a freshly broken streak for free-user upsell.
-  const hasBrokenStreak = useCallback((habitId: string): boolean => {
-    const dates = habitDateSets.get(habitId) ?? [];
-    if (dates.length === 0) return false;
-    const today      = new Date().toISOString().split("T")[0];
-    const yesterday  = new Date(Date.now() -     86400000).toISOString().split("T")[0];
-    const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0];
-    return dates[0] !== today && dates[0] !== yesterday && dates[0] >= sevenDaysAgo;
-  }, [habitDateSets]);
+  const hasBrokenStreak = useCallback(
+    (habitId: string): boolean => {
+      const dates       = habitDateSets.get(habitId) ?? [];
+      if (dates.length === 0) return false;
+      const today       = new Date().toISOString().split("T")[0];
+      const yesterday   = new Date(Date.now() -     86400000).toISOString().split("T")[0];
+      const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0];
+      return dates[0] !== today && dates[0] !== yesterday && dates[0] >= sevenDaysAgo;
+    },
+    [habitDateSets],
+  );
 
   return {
     habits,

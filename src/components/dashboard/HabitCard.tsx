@@ -26,10 +26,31 @@ const PARTICLE_COLORS = [
 ];
 
 function strengthColor(s: number): string {
-  if (s >= 80) return "bg-gradient-to-r from-emerald-500 to-teal-400";
-  if (s >= 55) return "bg-gradient-to-r from-violet-500 to-fuchsia-400";
-  if (s >= 30) return "bg-gradient-to-r from-violet-600 to-violet-400";
-  return "bg-violet-700/60";
+  if (s > 90) return "bg-gradient-to-r from-emerald-500 to-green-400";   // Automatic
+  if (s > 60) return "bg-gradient-to-r from-blue-500 to-cyan-400";       // Strong
+  if (s > 30) return "bg-gradient-to-r from-yellow-500 to-amber-400";    // Growing
+  return "bg-gradient-to-r from-red-500 to-rose-400";                     // Building
+}
+
+function strengthLabel(s: number): string {
+  if (s > 90) return "Automatic";
+  if (s > 60) return "Strong";
+  if (s > 30) return "Growing";
+  return "Building";
+}
+
+function strengthTextColor(s: number): string {
+  if (s > 90) return "text-emerald-400";
+  if (s > 60) return "text-cyan-400";
+  if (s > 30) return "text-amber-400";
+  return "text-red-400";
+}
+
+function formatTime(t: string): string {
+  const [h, m] = t.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2, "0")} ${ampm}`;
 }
 
 export default function HabitCard({
@@ -156,6 +177,27 @@ export default function HabitCard({
         </button>
       </div>
 
+      {/* Implementation intentions */}
+      {(habit.when_time || habit.where_location || habit.how_long) && (
+        <div className="flex items-center gap-2.5 px-4 pb-1.5 flex-wrap">
+          {habit.where_location && (
+            <span className="text-[11px] text-slate-600 flex items-center gap-1">
+              <span>📍</span>{habit.where_location}
+            </span>
+          )}
+          {habit.when_time && (
+            <span className="text-[11px] text-slate-600 flex items-center gap-1">
+              <span>⏰</span>{formatTime(habit.when_time)}
+            </span>
+          )}
+          {habit.how_long && (
+            <span className="text-[11px] text-slate-600 flex items-center gap-1">
+              <span>⏱</span>{habit.how_long}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Habit Strength bar */}
       <div className="px-4 pb-3"
         onMouseEnter={() => setShowStrTooltip(true)}
@@ -168,17 +210,19 @@ export default function HabitCard({
               style={{ width: `${strength}%` }}
             />
           </div>
-          {/* Strength label — visible on hover or always for high strength */}
           <div className={`flex items-center justify-between mt-1 transition-opacity duration-150 ${showStrTooltip ? "opacity-100" : "opacity-0"}`}>
-            <span className="text-[9px] text-slate-600 font-semibold uppercase tracking-wider">Habit Strength</span>
-            <span className={`text-[9px] font-bold ${
-              strength >= 80 ? "text-emerald-400" : strength >= 55 ? "text-fuchsia-400" : strength >= 30 ? "text-violet-400" : "text-slate-600"
-            }`}>{strength}/100</span>
+            <span className="text-[9px] text-slate-600 font-semibold uppercase tracking-wider">
+              Habit Strength · {strengthLabel(strength)}
+            </span>
+            <span className={`text-[9px] font-bold ${strengthTextColor(strength)}`}>{strength}/100</span>
           </div>
           {showStrTooltip && (
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 bg-[#1a1a2e] border border-violet-800/40 rounded-xl p-3 shadow-xl z-10 pointer-events-none">
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 bg-[#1a1a2e] border border-violet-800/40 rounded-xl p-3 shadow-xl z-10 pointer-events-none">
               <p className="text-[11px] text-slate-300 leading-relaxed">
-                <span className="text-violet-300 font-semibold">Habit Strength</span> measures how automatic this habit is becoming. Even if you miss a day, your progress is never lost.
+                <span className={`font-semibold ${strengthTextColor(strength)}`}>
+                  {strengthLabel(strength)}
+                </span>{" "}
+                — Habit Strength shows how automatic this habit is becoming. Missing days slows progress but never resets it.
               </p>
               <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#1a1a2e] border-r border-b border-violet-800/40 rotate-45" />
             </div>
