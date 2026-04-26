@@ -20,6 +20,9 @@
     "resend": "^6.12.2",
     "stripe": "^22.0.2"
   },
+  "engines": {
+    "node": "20.x"
+  },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
