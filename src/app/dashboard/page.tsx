@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Plus, Loader2, AlertCircle, CheckCircle2, Crown, Diamond, Shield, Share2 } from "lucide-react";
+import { Plus, Loader2, AlertCircle, CheckCircle2, Crown, Diamond, Shield, Share2, Sparkles } from "lucide-react";
 import type { Plan } from "@/types";
 import { useHabits } from "@/hooks/useHabits";
 import { useProfile } from "@/hooks/useProfile";
@@ -21,6 +21,8 @@ import ShareAchievement from "@/components/dashboard/ShareAchievement";
 import { useXP } from "@/hooks/useXP";
 import { playSound } from "@/lib/sounds";
 import { levelName } from "@/lib/xp";
+import AIInsightModal from "@/components/dashboard/AIInsightModal";
+import AICheckinCard from "@/components/dashboard/AICheckinCard";
 
 // ─── Progress ring ────────────────────────────────────────────────────────────
 
@@ -252,6 +254,8 @@ export default function DashboardPage() {
   const [showStreakBroken, setShowStreakBroken] = useState(false);
   const [showReOnboard, setShowReOnboard]       = useState(false);
   const [shareData, setShareData] = useState<{ type: "streak" | "level" | "daily"; value: number; tier?: string } | null>(null);
+  const [showAIInsight, setShowAIInsight] = useState(false);
+  const [checkinHabit, setCheckinHabit]   = useState<string | null>(null);
   const prevCompletedRef   = useRef<number | null>(null);
   const seenBreakModalRef  = useRef(false);
   const appliedFreezeRef   = useRef(false);
@@ -347,6 +351,18 @@ export default function DashboardPage() {
     if (justLeveledUp !== null) playSound("levelup");
   }, [justLeveledUp]);
 
+  // Daily check-in: detect missed habits from yesterday (once per day)
+  useEffect(() => {
+    if (loading || habits.length === 0) return;
+    const todayKey = new Date().toISOString().split("T")[0];
+    const lsKey    = `ai_checkin_dismissed_${todayKey}`;
+    if (localStorage.getItem(lsKey)) return;
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+    const missedYesterday = habits.find((h) => !getStreak(h.id) && h.created_at.split("T")[0] < yesterday);
+    if (missedYesterday) setCheckinHabit(missedYesterday.name);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, habits.length]);
+
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
@@ -398,7 +414,20 @@ export default function DashboardPage() {
           <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">{today}</p>
           <div className="flex items-end justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-white">Today&apos;s Habits</h1>
+              <div className="flex items-center gap-3 mb-1">
+                <h1 className="text-2xl font-bold text-white">Today&apos;s Habits</h1>
+                <button
+                  onClick={() => setShowAIInsight(true)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all ${
+                    isPaid
+                      ? "bg-violet-600/20 border border-violet-500/30 text-violet-300 hover:bg-violet-600/30"
+                      : "bg-slate-800/50 border border-slate-700/40 text-slate-500 hover:border-violet-700/40 hover:text-violet-400"
+                  }`}
+                >
+                  <Sparkles className="w-3 h-3" />
+                  AI Insight
+                </button>
+              </div>
               {habits.length > 0 && (
                 <p className="text-sm text-slate-400 mt-1">
                   {completedCount === habits.length
@@ -436,6 +465,18 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+
+        {/* Daily AI check-in card */}
+        {checkinHabit && isPaid && (
+          <AICheckinCard
+            missedHabitName={checkinHabit}
+            onDismiss={() => {
+              setCheckinHabit(null);
+              const todayKey = new Date().toISOString().split("T")[0];
+              localStorage.setItem(`ai_checkin_dismissed_${todayKey}`, "1");
+            }}
+          />
+        )}
 
         {/* Error state */}
         {error && (
@@ -640,6 +681,16 @@ export default function DashboardPage() {
         <StreakBrokenModal
           onUpgrade={() => { setShowStreakBroken(false); setShowUpgrade(true); }}
           onDismiss={() => setShowStreakBroken(false)}
+          brokenHabitName={habits.find((h) => hasBrokenStreak(h.id))?.name}
+          isPaid={isPaid}
+        />
+      )}
+
+      {showAIInsight && (
+        <AIInsightModal
+          isPaid={isPaid}
+          onClose={() => setShowAIInsight(false)}
+          onUpgrade={() => { setShowAIInsight(false); setShowUpgrade(true); }}
         />
       )}
 

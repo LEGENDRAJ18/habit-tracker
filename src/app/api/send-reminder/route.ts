@@ -5,6 +5,252 @@ import { createAdminClient } from "@/lib/supabase/admin";
 const resend = new Resend(process.env.RESEND_API_KEY);
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://habitai.app";
 
+// ─── Weekly AI Report (Sundays only) ─────────────────────────────────────────
+
+async function callOpenAIWeekly(userPrompt: string): Promise<{ summary: string; bestHabit: string; worstHabit: string; tips: string[] } | null> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: `You are a habit coach writing a weekly summary email. Be warm, specific, and actionable. Respond ONLY with valid JSON:
+{"summary":"2 sentence overall pattern analysis","bestHabit":"name of their best performing habit","worstHabit":"name of habit needing most work","tips":["tip 1 for next week","tip 2 for next week","tip 3 for next week"]}`,
+          },
+          { role: "user", content: userPrompt },
+        ],
+        max_tokens: 400,
+        temperature: 0.7,
+        response_format: { type: "json_object" },
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return JSON.parse(data.choices[0].message.content);
+  } catch {
+    return null;
+  }
+}
+
+function buildWeeklyEmailHtml(
+  firstName: string,
+  ai: { summary: string; bestHabit: string; worstHabit: string; tips: string[] },
+  xp: number,
+  level: number,
+  totalCompletions: number,
+  unsubscribeUrl: string,
+): string {
+  const tipRows = ai.tips
+    .map(
+      (tip, i) => `
+      <tr><td style="padding:0 0 10px;">
+        <table cellpadding="0" cellspacing="0" style="width:100%;background:rgba(109,40,217,0.08);border:1px solid rgba(109,40,217,0.15);border-radius:12px;">
+          <tr><td style="padding:14px 16px;">
+            <table cellpadding="0" cellspacing="0"><tr>
+              <td style="width:24px;vertical-align:top;">
+                <div style="width:20px;height:20px;border-radius:50%;background:rgba(124,58,237,0.25);text-align:center;line-height:20px;font-size:11px;font-weight:700;color:#a78bfa;">${i + 1}</div>
+              </td>
+              <td style="padding-left:10px;vertical-align:top;">
+                <p style="margin:0;font-size:13px;color:#c4b5fd;line-height:1.5;">${tip}</p>
+              </td>
+            </tr></table>
+          </td></tr>
+        </table>
+      </td></tr>`,
+    )
+    .join("");
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Your weekly HabitAI report</title></head>
+<body style="margin:0;padding:0;background:#09090f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<table cellpadding="0" cellspacing="0" style="width:100%;background:#09090f;">
+<tr><td align="center" style="padding:40px 16px;">
+<table cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;background:#0f0f1a;border:1px solid rgba(109,40,217,0.25);border-radius:20px;overflow:hidden;">
+
+  <!-- Header -->
+  <tr><td style="background:linear-gradient(135deg,rgba(124,58,237,0.4),rgba(109,40,217,0.2));padding:28px 36px 24px;border-bottom:1px solid rgba(109,40,217,0.2);">
+    <table cellpadding="0" cellspacing="0"><tr>
+      <td style="vertical-align:middle;">
+        <div style="width:36px;height:36px;background:linear-gradient(135deg,#7c3aed,#9333ea);border-radius:10px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;">
+          <span style="font-size:18px;line-height:1;">✨</span>
+        </div>
+      </td>
+      <td style="padding-left:12px;vertical-align:middle;">
+        <span style="font-size:18px;font-weight:700;color:#ffffff;">habit<span style="color:#a78bfa;">AI</span></span>
+        <span style="margin-left:8px;font-size:11px;font-weight:600;color:#7c3aed;background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.3);border-radius:20px;padding:2px 8px;">Weekly Report</span>
+      </td>
+    </tr></table>
+  </td></tr>
+
+  <!-- Greeting -->
+  <tr><td style="padding:32px 36px 0;">
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#ffffff;">Your week in review, ${firstName} 📊</h1>
+    <p style="margin:0;font-size:14px;color:#8b8fa8;line-height:1.6;">Here's your AI-powered habit analysis for the past 7 days.</p>
+  </td></tr>
+
+  <!-- AI Summary -->
+  <tr><td style="padding:24px 36px 0;">
+    <div style="background:rgba(109,40,217,0.12);border:1px solid rgba(109,40,217,0.25);border-radius:14px;padding:18px 20px;">
+      <p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#7c3aed;letter-spacing:0.08em;text-transform:uppercase;">✦ AI Analysis</p>
+      <p style="margin:0;font-size:14px;color:#c4b5fd;line-height:1.65;">${ai.summary}</p>
+    </div>
+  </td></tr>
+
+  <!-- Best / Worst -->
+  <tr><td style="padding:16px 36px 0;">
+    <table cellpadding="0" cellspacing="0" style="width:100%;border-spacing:8px;">
+      <tr>
+        <td style="width:50%;vertical-align:top;padding-right:4px;">
+          <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:14px 16px;">
+            <p style="margin:0 0 4px;font-size:10px;font-weight:700;color:#34d399;text-transform:uppercase;letter-spacing:0.06em;">🏆 Best habit</p>
+            <p style="margin:0;font-size:13px;font-weight:600;color:#ffffff;">${ai.bestHabit}</p>
+          </div>
+        </td>
+        <td style="width:50%;vertical-align:top;padding-left:4px;">
+          <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.18);border-radius:12px;padding:14px 16px;">
+            <p style="margin:0 0 4px;font-size:10px;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:0.06em;">⚡ Needs work</p>
+            <p style="margin:0;font-size:13px;font-weight:600;color:#ffffff;">${ai.worstHabit}</p>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+
+  <!-- XP / Level -->
+  <tr><td style="padding:16px 36px 0;">
+    <div style="background:rgba(109,40,217,0.08);border:1px solid rgba(109,40,217,0.18);border-radius:12px;padding:14px 20px;">
+      <table cellpadding="0" cellspacing="0" style="width:100%;"><tr>
+        <td style="text-align:center;border-right:1px solid rgba(109,40,217,0.2);padding-right:16px;">
+          <p style="margin:0 0 2px;font-size:22px;font-weight:800;color:#a78bfa;">${xp.toLocaleString()}</p>
+          <p style="margin:0;font-size:10px;color:#6d28d9;text-transform:uppercase;font-weight:600;">Total XP</p>
+        </td>
+        <td style="text-align:center;padding-left:16px;">
+          <p style="margin:0 0 2px;font-size:22px;font-weight:800;color:#a78bfa;">${totalCompletions}</p>
+          <p style="margin:0;font-size:10px;color:#6d28d9;text-transform:uppercase;font-weight:600;">Completions</p>
+        </td>
+      </tr></table>
+    </div>
+  </td></tr>
+
+  <!-- Tips -->
+  <tr><td style="padding:24px 36px 0;">
+    <p style="margin:0 0 12px;font-size:11px;font-weight:700;color:#6d28d9;letter-spacing:0.08em;text-transform:uppercase;">Next week's action plan</p>
+    <table cellpadding="0" cellspacing="0" style="width:100%;">${tipRows}</table>
+  </td></tr>
+
+  <!-- CTA -->
+  <tr><td align="center" style="padding:28px 36px;">
+    <a href="${APP_URL}/dashboard" style="display:inline-block;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;padding:14px 40px;border-radius:12px;box-shadow:0 4px 24px rgba(124,58,237,0.4);">Open Dashboard</a>
+  </td></tr>
+
+  <!-- Footer -->
+  <tr><td style="padding:20px 36px;border-top:1px solid rgba(109,40,217,0.12);">
+    <p style="margin:0;font-size:11px;color:#3d3d5c;text-align:center;line-height:1.6;">
+      Weekly AI report from HabitAI &middot; Level ${level}<br/>
+      <a href="${unsubscribeUrl}" style="color:#6d28d9;text-decoration:none;">Unsubscribe</a>
+      &nbsp;&middot;&nbsp;
+      <a href="${APP_URL}/dashboard" style="color:#6d28d9;text-decoration:none;">Open HabitAI</a>
+    </p>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
+async function runWeeklyReport(supabase: ReturnType<typeof createAdminClient>): Promise<{ sent: number; skipped: number }> {
+  const now = new Date();
+  // Only run on Sundays (UTC day 0)
+  if (now.getUTCDay() !== 0) return { sent: 0, skipped: 0 };
+
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000).toISOString().split("T")[0];
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, reminder_enabled")
+    .eq("reminder_enabled", true);
+
+  if (!profiles || profiles.length === 0) return { sent: 0, skipped: 0 };
+
+  let sent = 0;
+  let skipped = 0;
+
+  for (const profile of profiles) {
+    try {
+      const { data: userData } = await supabase.auth.admin.getUserById(profile.id);
+      const email = userData?.user?.email;
+      if (!email) { skipped++; continue; }
+
+      const rawName = userData.user?.user_metadata?.full_name ?? email.split("@")[0] ?? "there";
+      const firstName = rawName.split(/[\s_\-+@]/)[0];
+      const display = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+
+      const [{ data: habits }, { data: logs }, { data: profileData }] = await Promise.all([
+        supabase.from("habits").select("id, name").eq("user_id", profile.id),
+        supabase.from("habit_logs").select("habit_id, completed_at").eq("user_id", profile.id).gte("completed_at", sevenDaysAgo),
+        supabase.from("profiles").select("tier").eq("id", profile.id).single(),
+      ]);
+
+      if (!habits || habits.length === 0) { skipped++; continue; }
+
+      const logs7 = logs ?? [];
+
+      // Per-habit 7-day rates
+      const habitRates = habits.map((h) => {
+        const count = logs7.filter((l) => l.habit_id === h.id).length;
+        return { name: h.name, rate: count };
+      }).sort((a, b) => b.rate - a.rate);
+
+      const totalCompletions = logs7.length;
+
+      // Simple XP estimate (10 per completion)
+      const { data: allLogs } = await supabase
+        .from("habit_logs")
+        .select("completed_at", { count: "exact" })
+        .eq("user_id", profile.id);
+      const allTime = allLogs?.length ?? 0;
+      const xp = allTime * 10;
+      const level = Math.max(1, Math.floor(Math.sqrt(xp / 10)));
+
+      if (totalCompletions === 0) { skipped++; continue; }
+
+      const prompt = `User's weekly habit data:
+Habits and 7-day completion count:
+${habitRates.map((h) => `- "${h.name}": ${h.rate}/7 days`).join("\n")}
+
+Total completions this week: ${totalCompletions}
+Plan tier: ${profileData?.tier ?? "free"}
+
+Generate a warm weekly summary.`;
+
+      const ai = await callOpenAIWeekly(prompt);
+      if (!ai) { skipped++; continue; }
+
+      const unsubscribeUrl = `${APP_URL}/api/unsubscribe?uid=${profile.id}`;
+      await resend.emails.send({
+        from: "HabitAI <reminders@habitai.app>",
+        to: email,
+        subject: `📊 Your weekly AI habit report, ${display}`,
+        html: buildWeeklyEmailHtml(display, ai, xp, level, allTime, unsubscribeUrl),
+      });
+
+      sent++;
+    } catch {
+      skipped++;
+    }
+  }
+
+  return { sent, skipped };
+}
+
 function buildEmailHtml(habits: string[], streak: number, unsubscribeUrl: string) {
   const habitRows = habits
     .map(
@@ -130,7 +376,7 @@ function isAuthorized(req: NextRequest): boolean {
   return legacy === secret;
 }
 
-async function runReminders(): Promise<{ sent: number; skipped: number; hour: number; timestamp: string }> {
+async function runReminders(): Promise<{ sent: number; skipped: number; hour: number; timestamp: string; weeklySent?: number }> {
   const supabase = createAdminClient();
   const now = new Date();
   const nowHour = now.getUTCHours();
@@ -204,7 +450,10 @@ async function runReminders(): Promise<{ sent: number; skipped: number; hour: nu
     sent++;
   }
 
-  return { sent, skipped, hour: nowHour, timestamp: now.toISOString() };
+  // Weekly AI report — only fires on Sundays, doesn't block daily reminders
+  const weekly = await runWeeklyReport(supabase).catch(() => ({ sent: 0, skipped: 0 }));
+
+  return { sent, skipped, hour: nowHour, timestamp: now.toISOString(), weeklySent: weekly.sent };
 }
 
 // GET — called by Vercel Cron (Authorization: Bearer <CRON_SECRET>)
