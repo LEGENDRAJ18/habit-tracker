@@ -11,6 +11,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import type { Plan } from "@/types";
+import BottomNav from "@/components/ui/BottomNav";
 
 interface Props {
   habitCount: number;
@@ -109,6 +110,7 @@ export default function DashboardNav({ habitCount, tier, onUpgradeClick }: Props
   );
 
   return (
+    <>
     <nav className="sticky top-0 z-40 bg-[#09090f]/90 backdrop-blur-xl border-b border-violet-900/20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-14">
@@ -122,8 +124,8 @@ export default function DashboardNav({ habitCount, tier, onUpgradeClick }: Props
             </span>
           </Link>
 
-          {/* Nav links */}
-          <div className="flex items-center gap-0.5">
+          {/* Nav links — hidden on mobile (bottom nav handles it) */}
+          <div className="hidden sm:flex items-center gap-0.5">
             {navLink("/analytics", <BarChart2 className="w-3.5 h-3.5" />, "Analytics")}
             {navLink("/calendar",  <Calendar  className="w-3.5 h-3.5" />, "Calendar")}
             {navLink("/friends",   <Users     className="w-3.5 h-3.5" />, "Friends")}
@@ -227,6 +229,8 @@ export default function DashboardNav({ habitCount, tier, onUpgradeClick }: Props
         </div>
       </div>
     </nav>
+    <BottomNav />
+    </>
   );
 }
 

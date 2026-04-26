@@ -24,6 +24,89 @@ import { levelName } from "@/lib/xp";
 import AIInsightModal from "@/components/dashboard/AIInsightModal";
 import AICheckinCard from "@/components/dashboard/AICheckinCard";
 
+// ─── Greeting & quote ─────────────────────────────────────────────────────────
+
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
+
+const QUOTES = [
+  "Small daily improvements lead to remarkable results.",
+  "You don't rise to your goals — you fall to your systems.",
+  "The secret of getting ahead is getting started.",
+  "Motivation gets you started. Habit keeps you going.",
+  "You are what you repeatedly do.",
+  "An investment in yourself pays the best interest.",
+  "One day or day one — you decide.",
+  "Progress, not perfection.",
+  "Every expert was once a beginner.",
+  "Discipline is choosing between what you want now and what you want most.",
+  "Build the habit first. The results will follow.",
+  "Success is the sum of small efforts repeated daily.",
+  "The pain of discipline is lighter than the pain of regret.",
+  "Don't wish for it — work for it.",
+  "Your future self will thank you.",
+];
+
+function getDailyQuote(): string {
+  const dayOfYear = Math.floor(
+    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000,
+  );
+  return QUOTES[dayOfYear % QUOTES.length];
+}
+
+// ─── Skeleton card ────────────────────────────────────────────────────────────
+
+function SkeletonCard() {
+  return (
+    <div className="rounded-xl border border-violet-900/20 bg-[#0f0f1a] overflow-hidden">
+      <div className="flex items-center gap-4 px-4 py-3.5">
+        <div className="w-6 h-6 rounded-full skeleton flex-shrink-0" />
+        <div className="flex-1 space-y-2">
+          <div className="h-3.5 skeleton rounded-full w-3/4" />
+          <div className="h-2.5 skeleton rounded-full w-1/2 opacity-60" />
+        </div>
+        <div className="w-10 h-4 skeleton rounded-full" />
+      </div>
+      <div className="px-4 pb-3.5">
+        <div className="h-1 skeleton rounded-full" />
+      </div>
+    </div>
+  );
+}
+
+// ─── Quick stats row ──────────────────────────────────────────────────────────
+
+function QuickStats({
+  completedCount, totalHabits, bestStreak, totalXP,
+}: {
+  completedCount: number;
+  totalHabits: number;
+  bestStreak: number;
+  totalXP: number;
+}) {
+  const pct = totalHabits > 0 ? Math.round((completedCount / totalHabits) * 100) : 0;
+  return (
+    <div className="grid grid-cols-3 gap-2 mb-6">
+      {[
+        { label: "Today",   value: `${pct}%`,          sub: "done",        color: "text-violet-400" },
+        { label: "Streak",  value: `${bestStreak}d`,   sub: "best",        color: "text-orange-400" },
+        { label: "XP",      value: totalXP.toLocaleString(), sub: "earned", color: "text-amber-400"  },
+      ].map(({ label, value, sub, color }) => (
+        <div key={label} className="bg-[#0c0c18] border border-violet-900/20 rounded-xl px-3 py-2.5 text-center">
+          <p className={`text-lg font-bold leading-none ${color}`} style={{ animation: "countUp 0.5s ease-out both" }}>
+            {value}
+          </p>
+          <p className="text-[10px] text-slate-600 mt-1 uppercase tracking-wider font-medium">{label} · {sub}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Progress ring ────────────────────────────────────────────────────────────
 
 function ProgressRing({ completed, total, tier }: { completed: number; total: number; tier: Plan }) {
@@ -385,7 +468,7 @@ export default function DashboardPage() {
         onUpgradeClick={() => setShowUpgrade(true)}
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-8 page-fade">
         {/* Upgrade success banner */}
         {upgradeSuccess && (
           <div className="flex items-center gap-3 bg-green-950/40 border border-green-800/40 rounded-xl p-4 mb-6">
@@ -411,11 +494,25 @@ export default function DashboardPage() {
 
         {/* Header */}
         <div className="mb-8">
+          {/* Greeting */}
           <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">{today}</p>
+          <h1 className="text-2xl font-bold text-white mb-1">{getGreeting()} 👋</h1>
+          <p className="text-sm text-slate-500 italic mb-5">&ldquo;{getDailyQuote()}&rdquo;</p>
+
+          {/* Quick stats — only when habits exist */}
+          {!loading && habits.length > 0 && (
+            <QuickStats
+              completedCount={completedCount}
+              totalHabits={habits.length}
+              bestStreak={bestStreak}
+              totalXP={xp}
+            />
+          )}
+
           <div className="flex items-end justify-between">
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-2xl font-bold text-white">Today&apos;s Habits</h1>
+                <h2 className="text-lg font-semibold text-white">Today&apos;s Habits</h2>
                 <button
                   onClick={() => setShowAIInsight(true)}
                   className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all ${
@@ -486,27 +583,31 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Loading state */}
+        {/* Loading — skeleton cards */}
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-6 h-6 text-violet-500 animate-spin" />
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => <SkeletonCard key={i} />)}
           </div>
         ) : habits.length === 0 ? (
-          /* Empty state */
-          <div className="text-center py-20">
-            <div className="w-16 h-16 rounded-2xl bg-violet-950/50 border border-violet-800/30 flex items-center justify-center mx-auto mb-5">
-              <CheckCircle2 className="w-7 h-7 text-violet-500" />
+          /* Empty state — inspiring */
+          <div className="text-center py-16 page-fade">
+            <div className="relative mx-auto w-24 h-24 mb-6">
+              <div className="absolute inset-0 rounded-3xl bg-violet-600/10 border border-violet-600/20 rotate-6" />
+              <div className="absolute inset-0 rounded-3xl bg-violet-600/15 border border-violet-600/25 -rotate-3" />
+              <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-violet-600/30 to-purple-600/20 border border-violet-500/30 flex items-center justify-center">
+                <span className="text-4xl">🌱</span>
+              </div>
             </div>
-            <h2 className="text-lg font-semibold text-white mb-2">No habits yet</h2>
-            <p className="text-slate-400 text-sm mb-6 max-w-sm mx-auto">
-              Start building your first habit. Even small daily actions compound into
-              life-changing results.
+            <h2 className="text-2xl font-bold text-white mb-2">Start your journey</h2>
+            <p className="text-slate-400 text-sm mb-2 max-w-xs mx-auto leading-relaxed">
+              Every great habit starts with a single decision. Add your first habit and begin the compound effect.
             </p>
+            <p className="text-xs text-violet-400/60 mb-8">Join 10,000+ people building better habits</p>
             <button
               onClick={handleAddClick}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-medium rounded-xl transition-all"
+              className="inline-flex items-center gap-2 px-7 py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-2xl transition-all shadow-lg shadow-violet-900/40 text-base min-h-[44px]"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-5 h-5" />
               Add your first habit
             </button>
           </div>

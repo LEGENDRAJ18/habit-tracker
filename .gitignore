@@ -46,3 +46,5 @@ next-env.d.ts
 # sensitive local files
 *.txt
 .claude/
+
+.vercel

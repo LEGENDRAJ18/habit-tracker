@@ -111,3 +111,66 @@ body {
   from { transform: translateY(110%); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
 }
+
+/* Page fade-in */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+/* Toast slides in from top-right */
+@keyframes toastSlideIn {
+  from { opacity: 0; transform: translateX(32px) scale(0.92); }
+  to   { opacity: 1; transform: translateX(0)    scale(1);    }
+}
+
+/* Count-up hint — used by JS, keyframe just marks intent */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+/* Bottom nav active pip */
+@keyframes pipIn {
+  from { transform: scaleX(0) translateX(-50%); }
+  to   { transform: scaleX(1) translateX(-50%); }
+}
+
+/* Milestone slide-in from right */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0);    }
+}
+
+/* Utility class: skeleton shimmer */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(109,40,217,0.08) 0%,
+    rgba(109,40,217,0.18) 50%,
+    rgba(109,40,217,0.08) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* Page wrapper fade — apply to <main> */
+.page-fade {
+  animation: fadeIn 0.3s ease-out both;
+}
+
+/* Toast wrapper coloring */
+[role="alert"].success-toast {
+  background: rgba(6,20,15,0.96);
+  border-color: rgba(16,185,129,0.35);
+}
+[role="alert"].error-toast {
+  background: rgba(20,6,6,0.96);
+  border-color: rgba(239,68,68,0.35);
+}

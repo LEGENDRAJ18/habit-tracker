@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, ArrowLeft, Calendar as CalendarIcon, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Habit, HabitLog } from "@/types";
+import BottomNav from "@/components/ui/BottomNav";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -256,7 +257,7 @@ export default function CalendarPage() {
   const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
-    <div className="min-h-screen bg-[#09090f]">
+    <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
       {/* Header */}
       <div className="border-b border-violet-900/20 bg-[#09090f]/90 backdrop-blur-xl sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-4">
@@ -348,6 +349,7 @@ export default function CalendarPage() {
           onClose={() => setSelectedDay(null)}
         />
       )}
+      <BottomNav />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { createClient } from "@/lib/supabase/client";
 import type { Habit, HabitLog, Plan } from "@/types";
+import BottomNav from "@/components/ui/BottomNav";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -371,7 +372,7 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#09090f]">
+    <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
       {/* Header */}
       <div className="border-b border-violet-900/20 bg-[#09090f]/90 backdrop-blur-xl sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-4">
@@ -394,7 +395,7 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6 page-fade">
         {habits.length === 0 ? (
           <div className="text-center py-24">
             <BarChart2 className="w-12 h-12 text-violet-800/50 mx-auto mb-4" />
@@ -502,6 +503,7 @@ export default function AnalyticsPage() {
           </>
         )}
       </main>
+      <BottomNav />
     </div>
   );
 }

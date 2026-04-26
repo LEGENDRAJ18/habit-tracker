@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { ArrowLeft, Users, Flame, Zap, Send, Check, X, Loader2, UserPlus, Trophy } from "lucide-react";
+import BottomNav from "@/components/ui/BottomNav";
 
 interface FriendStat {
   id: string;
@@ -95,7 +96,7 @@ export default function FriendsPage() {
     name.slice(0, 2).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#09090f]">
+    <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
       {/* Nav */}
       <div className="border-b border-violet-900/20 bg-[#09090f]/90 backdrop-blur-xl sticky top-0 z-40">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-4">
@@ -267,6 +268,7 @@ export default function FriendsPage() {
           </div>
         )}
       </main>
+      <BottomNav />
     </div>
   );
 }

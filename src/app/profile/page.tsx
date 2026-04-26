@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, Lock } from "lucide-react";
+import BottomNav from "@/components/ui/BottomNav";
 import { useXP, ACHIEVEMENT_META, type AchievementId } from "@/hooks/useXP";
 import { levelName, levelColorKey, xpProgressPct, xpIntoLevel, xpSpanOfLevel, type LevelColorKey } from "@/lib/xp";
 
@@ -45,7 +46,7 @@ export default function ProfilePage() {
   const isGold   = colorKey === "gold";
 
   return (
-    <div className="min-h-screen bg-[#09090f]">
+    <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-[#09090f]/90 backdrop-blur-xl border-b border-violet-900/20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
@@ -161,6 +162,7 @@ export default function ProfilePage() {
           </>
         )}
       </main>
+      <BottomNav />
     </div>
   );
 }

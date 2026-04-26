@@ -53,6 +53,14 @@ function formatTime(t: string): string {
   return `${hour}:${String(m).padStart(2, "0")} ${ampm}`;
 }
 
+function getTimeEmoji(whenTime: string | null): string | null {
+  if (!whenTime) return null;
+  const h = parseInt(whenTime.split(":")[0], 10);
+  if (h < 12) return "🌅";
+  if (h < 17) return "🌞";
+  return "🌙";
+}
+
 export default function HabitCard({
   habit, completed, streak, strength, isProtected, stackAfterName,
   onToggle, onDelete, onCompleted,
@@ -138,11 +146,16 @@ export default function HabitCard({
 
         {/* Name + description */}
         <div className="flex-1 min-w-0">
-          <p className={`text-sm font-medium truncate transition-all duration-300 ${
-            completed ? "text-slate-500 line-through translate-x-1" : "text-slate-100"
-          }`}>
-            {habit.name}
-          </p>
+          <div className="flex items-center gap-1.5">
+            {getTimeEmoji(habit.when_time) && !completed && (
+              <span className="text-sm leading-none flex-shrink-0">{getTimeEmoji(habit.when_time)}</span>
+            )}
+            <p className={`text-sm font-medium truncate transition-all duration-300 ${
+              completed ? "text-slate-500 line-through" : "text-slate-100"
+            }`}>
+              {habit.name}
+            </p>
+          </div>
           {habit.description && (
             <p className={`text-xs truncate mt-0.5 transition-colors duration-300 ${completed ? "text-slate-700" : "text-slate-600"}`}>
               {habit.description}
