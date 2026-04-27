@@ -52,23 +52,28 @@ export default function LeftSidebar({ xp, level, bestStreak, tier, onUpgradeClic
       {/* ── Logo ────────────────────────────────────────────────────────── */}
       <Link
         href="/dashboard"
-        className="flex flex-col items-center gap-3 mb-7 group"
+        className="flex flex-col items-center gap-4 mb-8 group"
       >
         {/* Icon */}
         <div
-          className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center shadow-lg transition-transform duration-200 group-hover:scale-105"
+          className="w-[72px] h-[72px] rounded-3xl bg-gradient-to-br from-violet-500 via-violet-600 to-purple-800 flex items-center justify-center transition-all duration-300 group-hover:scale-105 group-hover:brightness-110"
           style={{
             boxShadow:
-              "0 0 0 1px rgba(139,92,246,0.35), 0 0 24px 6px rgba(139,92,246,0.30), 0 4px 20px rgba(0,0,0,0.5)",
+              "0 0 0 1.5px rgba(167,139,250,0.45), 0 0 0 4px rgba(139,92,246,0.15), 0 0 40px 12px rgba(139,92,246,0.40), 0 6px 24px rgba(0,0,0,0.6)",
           }}
         >
-          <Sparkles className="w-7 h-7 text-white" />
+          <Sparkles className="w-9 h-9 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
         </div>
 
         {/* Wordmark */}
-        <span className="text-xl font-extrabold text-white tracking-tight leading-none">
-          habit<span className="text-violet-400">AI</span>
-        </span>
+        <div className="flex flex-col items-center gap-0.5">
+          <span className="text-[1.6rem] font-black text-white tracking-tight leading-none">
+            habit<span className="text-violet-400">AI</span>
+          </span>
+          <span className="text-[10px] font-medium text-violet-500/70 tracking-[0.18em] uppercase leading-none">
+            your ai coach
+          </span>
+        </div>
       </Link>
 
       {/* Nav links */}
