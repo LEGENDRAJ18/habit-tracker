@@ -206,6 +206,29 @@ export function useHabits() {
     setTodayLogs((prev) => prev.filter((l) => l.habit_id !== habitId));
   };
 
+  // Optimistic delete: removes from state immediately, returns the removed habit.
+  // Caller must call commitDeleteHabit(id) after the undo window expires,
+  // or call restoreHabit(habit) to undo.
+  const removeHabitOptimistic = (habitId: string) => {
+    const removed = habits.find((h) => h.id === habitId) ?? null;
+    setHabits((prev) => prev.filter((h) => h.id !== habitId));
+    setTodayLogs((prev) => prev.filter((l) => l.habit_id !== habitId));
+    return removed;
+  };
+
+  const restoreHabit = (habit: (typeof habits)[number]) => {
+    setHabits((prev) => {
+      const exists = prev.some((h) => h.id === habit.id);
+      return exists ? prev : [...prev, habit].sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+    });
+  };
+
+  const commitDeleteHabit = async (habitId: string) => {
+    await supabase.from("habits").delete().eq("id", habitId);
+  };
+
   const isCompletedToday = (habitId: string) =>
     todayLogs.some((l) => l.habit_id === habitId);
 
@@ -332,6 +355,9 @@ export function useHabits() {
     addHabit,
     toggleHabit,
     deleteHabit,
+    removeHabitOptimistic,
+    restoreHabit,
+    commitDeleteHabit,
     isCompletedToday,
     getStreak,
     getStreakInfo,

@@ -26,6 +26,7 @@ import AICheckinCard from "@/components/dashboard/AICheckinCard";
 import LeftSidebar from "@/components/dashboard/LeftSidebar";
 import PromoBanner from "@/components/ui/PromoBanner";
 import SmartNotification from "@/components/ui/SmartNotification";
+import { toast } from "@/components/ui/Toast";
 
 // ─── Greeting & quote ─────────────────────────────────────────────────────────
 
@@ -325,7 +326,7 @@ function ProBanner() {
 }
 
 export default function DashboardPage() {
-  const { habits, loading, error, completedCount, toggleHabit, deleteHabit, isCompletedToday, addHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength } =
+  const { habits, loading, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, addHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength } =
     useHabits();
   const { tier, profileLoading, onboardingCompleted, goal, freezeAvailable, freezeProtectedDate, applyFreeze, reminderEnabled, reminderHour, reminderMinute, saveReminderPrefs } = useProfile();
   const { xp, level, achievements, totalCompletions, justLeveledUp, isDailyAchieved, onHabitCompleted, checkMilestones, dismissLevelUp } = useXP();
@@ -649,7 +650,27 @@ export default function DashboardPage() {
                 isProtected={info.freezeApplied}
                 stackAfterName={stackParent?.name}
                 onToggle={() => toggleHabit(habit.id)}
-                onDelete={() => deleteHabit(habit.id)}
+                onDelete={() => {
+                  const removed = removeHabitOptimistic(habit.id);
+                  if (!removed) return;
+                  let undone = false;
+                  const dismiss = toast(
+                    `"${removed.name}" deleted`,
+                    "success",
+                    {
+                      label: "Undo",
+                      onClick: () => {
+                        undone = true;
+                        restoreHabit(removed);
+                      },
+                    },
+                    5000,
+                  );
+                  setTimeout(() => {
+                    if (!undone) commitDeleteHabit(removed.id);
+                    dismiss();
+                  }, 5000);
+                }}
                 onCompleted={() => { playSound("complete"); onHabitCompleted(); }}
               />
               );

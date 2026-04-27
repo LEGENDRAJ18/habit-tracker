@@ -323,11 +323,11 @@ export default function AnalyticsPage() {
           .eq("user_id", user.id)
           .gte("completed_at", daysAgo(90))
           .order("completed_at", { ascending: false }),
-        supabase.from("profiles").select("tier").eq("id", user.id).single(),
+        supabase.from("profiles").select("subscription_tier").eq("id", user.id).single(),
       ]);
       setHabits(h ?? []);
       setLogs(l ?? []);
-      setTier((p?.tier as Plan) ?? "free");
+      setTier((p?.subscription_tier as Plan) ?? "free");
       setLoading(false);
     })();
   }, []);

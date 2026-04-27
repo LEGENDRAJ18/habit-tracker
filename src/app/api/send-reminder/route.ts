@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { levelFromXP } from "@/lib/xp";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://habitai.app";
@@ -196,7 +197,7 @@ async function runWeeklyReport(supabase: ReturnType<typeof createAdminClient>): 
       const [{ data: habits }, { data: logs }, { data: profileData }] = await Promise.all([
         supabase.from("habits").select("id, name").eq("user_id", profile.id),
         supabase.from("habit_logs").select("habit_id, completed_at").eq("user_id", profile.id).gte("completed_at", sevenDaysAgo),
-        supabase.from("profiles").select("tier").eq("id", profile.id).single(),
+        supabase.from("profiles").select("subscription_tier, xp, level").eq("id", profile.id).single(),
       ]);
 
       if (!habits || habits.length === 0) { skipped++; continue; }
@@ -211,14 +212,8 @@ async function runWeeklyReport(supabase: ReturnType<typeof createAdminClient>): 
 
       const totalCompletions = logs7.length;
 
-      // Simple XP estimate (10 per completion)
-      const { data: allLogs } = await supabase
-        .from("habit_logs")
-        .select("completed_at", { count: "exact" })
-        .eq("user_id", profile.id);
-      const allTime = allLogs?.length ?? 0;
-      const xp = allTime * 10;
-      const level = Math.max(1, Math.floor(Math.sqrt(xp / 10)));
+      const xp    = profileData?.xp    ?? 0;
+      const level = profileData?.level ?? levelFromXP(xp);
 
       if (totalCompletions === 0) { skipped++; continue; }
 
@@ -227,7 +222,7 @@ Habits and 7-day completion count:
 ${habitRates.map((h) => `- "${h.name}": ${h.rate}/7 days`).join("\n")}
 
 Total completions this week: ${totalCompletions}
-Plan tier: ${profileData?.tier ?? "free"}
+Plan tier: ${profileData?.subscription_tier ?? "free"}
 
 Generate a warm weekly summary.`;
 
@@ -239,7 +234,7 @@ Generate a warm weekly summary.`;
         from: "HabitAI <reminders@habitai.app>",
         to: email,
         subject: `📊 Your weekly AI habit report, ${display}`,
-        html: buildWeeklyEmailHtml(display, ai, xp, level, allTime, unsubscribeUrl),
+        html: buildWeeklyEmailHtml(display, ai, xp, level, totalCompletions, unsubscribeUrl),
       });
 
       sent++;

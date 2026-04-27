@@ -65,9 +65,8 @@ export default function HabitCard({
   habit, completed, streak, strength, isProtected, stackAfterName,
   onToggle, onDelete, onCompleted,
 }: Props) {
-  const [toggling, setToggling]           = useState(false);
-  const [deleting, setDeleting]           = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [toggling, setToggling]     = useState(false);
+  const [deleting, setDeleting]     = useState(false);
   const [showParticles, setShowParticles] = useState(false);
   const [justCompleted, setJustCompleted] = useState(false);
   const [showStrTooltip, setShowStrTooltip] = useState(false);
@@ -84,14 +83,9 @@ export default function HabitCard({
     setToggling(false);
   };
 
-  const handleDelete = async () => {
-    if (!confirmDelete) {
-      setConfirmDelete(true);
-      setTimeout(() => setConfirmDelete(false), 3000);
-      return;
-    }
+  const handleDelete = () => {
     setDeleting(true);
-    await onDelete();
+    onDelete();
   };
 
   const hasStreak = streak > 0;
@@ -181,10 +175,8 @@ export default function HabitCard({
 
         {/* Delete */}
         <button onClick={handleDelete}
-          className={`flex-shrink-0 transition-all p-1 rounded-lg ${
-            confirmDelete ? "text-red-400 bg-red-950/40" : "text-slate-700 hover:text-red-400 opacity-0 group-hover:opacity-100"
-          }`}
-          title={confirmDelete ? "Click again to confirm" : "Delete habit"}
+          className="flex-shrink-0 transition-all p-1 rounded-lg text-slate-700 hover:text-red-400 opacity-0 group-hover:opacity-100"
+          title="Delete habit"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>

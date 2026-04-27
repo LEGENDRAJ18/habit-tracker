@@ -1,10 +1,22 @@
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 
-const links = {
-  Product: ["Features", "Pricing", "Changelog"],
-  Company: ["About", "Blog", "Careers"],
-  Legal: ["Privacy", "Terms", "Cookies"],
+const links: Record<string, { label: string; href: string }[]> = {
+  Product: [
+    { label: "Features",  href: "/#features"  },
+    { label: "Pricing",   href: "/#pricing"   },
+    { label: "Changelog", href: "/changelog"  },
+  ],
+  Company: [
+    { label: "About",    href: "#" },
+    { label: "Blog",     href: "#" },
+    { label: "Careers",  href: "#" },
+  ],
+  Legal: [
+    { label: "Privacy", href: "/privacy" },
+    { label: "Terms",   href: "/terms"   },
+    { label: "Cookies", href: "#"        },
+  ],
 };
 
 export default function Footer() {
@@ -36,12 +48,12 @@ export default function Footer() {
               </h4>
               <ul className="space-y-2.5">
                 {items.map((item) => (
-                  <li key={item}>
+                  <li key={item.label}>
                     <Link
-                      href="#"
+                      href={item.href}
                       className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
                     >
-                      {item}
+                      {item.label}
                     </Link>
                   </li>
                 ))}

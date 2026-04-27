@@ -92,8 +92,24 @@ export default function FriendsPage() {
     setCheeringId(null);
   };
 
-  const getInitials = (name: string) =>
-    name.slice(0, 2).toUpperCase();
+  const getInitials = (name: string) => name.slice(0, 2).toUpperCase();
+
+  const AVATAR_PALETTES = [
+    { bg: "from-violet-500/50 to-purple-500/50",   border: "border-violet-600/35",  text: "text-violet-200"  },
+    { bg: "from-blue-500/50 to-cyan-500/50",        border: "border-blue-600/35",    text: "text-blue-200"    },
+    { bg: "from-emerald-500/50 to-teal-500/50",     border: "border-emerald-600/35", text: "text-emerald-200" },
+    { bg: "from-rose-500/50 to-pink-500/50",        border: "border-rose-600/35",    text: "text-rose-200"    },
+    { bg: "from-amber-500/50 to-orange-500/50",     border: "border-amber-600/35",   text: "text-amber-200"   },
+    { bg: "from-fuchsia-500/50 to-violet-500/50",   border: "border-fuchsia-600/35", text: "text-fuchsia-200" },
+    { bg: "from-indigo-500/50 to-blue-500/50",      border: "border-indigo-600/35",  text: "text-indigo-200"  },
+    { bg: "from-teal-500/50 to-emerald-500/50",     border: "border-teal-600/35",    text: "text-teal-200"    },
+  ] as const;
+
+  const avatarPalette = (name: string) => {
+    let hash = 5381;
+    for (let i = 0; i < name.length; i++) hash = ((hash << 5) + hash) ^ name.charCodeAt(i);
+    return AVATAR_PALETTES[Math.abs(hash) % AVATAR_PALETTES.length];
+  };
 
   return (
     <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
@@ -152,8 +168,8 @@ export default function FriendsPage() {
             <div className="divide-y divide-violet-900/10">
               {pending.map((p) => (
                 <div key={p.id} className="flex items-center gap-3 px-5 py-3.5">
-                  <div className="w-8 h-8 rounded-full bg-violet-700/30 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-bold text-violet-300">{getInitials(p.name)}</span>
+                  <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${avatarPalette(p.name).bg} border ${avatarPalette(p.name).border} flex items-center justify-center flex-shrink-0`}>
+                    <span className={`text-xs font-bold ${avatarPalette(p.name).text}`}>{getInitials(p.name)}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-slate-200 truncate">{p.name}</p>
@@ -216,8 +232,8 @@ export default function FriendsPage() {
                   </div>
 
                   {/* Avatar */}
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-600/40 to-purple-600/40 border border-violet-700/30 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-bold text-violet-300">{getInitials(friend.name)}</span>
+                  <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarPalette(friend.name).bg} border ${avatarPalette(friend.name).border} flex items-center justify-center flex-shrink-0`}>
+                    <span className={`text-xs font-bold ${avatarPalette(friend.name).text}`}>{getInitials(friend.name)}</span>
                   </div>
 
                   {/* Name + habit count */}
