@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, BarChart2, Calendar, Users, User, Zap, Flame,
+  LayoutDashboard, BarChart2, Calendar, Users, User, Zap, Flame, Sparkles,
 } from "lucide-react";
 import {
   levelName, levelColorKey, xpProgressPct, xpIntoLevel, xpSpanOfLevel,
@@ -47,7 +47,30 @@ export default function LeftSidebar({ xp, level, bestStreak, tier, onUpgradeClic
   const name     = levelName(level);
 
   return (
-    <aside className="hidden lg:flex flex-col h-[calc(100vh-3.5rem)] sticky top-14 overflow-y-auto scrollbar-none pt-6 pb-4">
+    <aside className="hidden lg:flex flex-col h-[calc(100vh-3.5rem)] sticky top-14 overflow-y-auto scrollbar-none pt-5 pb-4">
+
+      {/* ── Logo ────────────────────────────────────────────────────────── */}
+      <Link
+        href="/dashboard"
+        className="flex flex-col items-center gap-3 mb-7 group"
+      >
+        {/* Icon */}
+        <div
+          className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center shadow-lg transition-transform duration-200 group-hover:scale-105"
+          style={{
+            boxShadow:
+              "0 0 0 1px rgba(139,92,246,0.35), 0 0 24px 6px rgba(139,92,246,0.30), 0 4px 20px rgba(0,0,0,0.5)",
+          }}
+        >
+          <Sparkles className="w-7 h-7 text-white" />
+        </div>
+
+        {/* Wordmark */}
+        <span className="text-xl font-extrabold text-white tracking-tight leading-none">
+          habit<span className="text-violet-400">AI</span>
+        </span>
+      </Link>
+
       {/* Nav links */}
       <nav className="space-y-0.5 mb-5">
         {NAV_LINKS.map(({ href, icon: Icon, label }) => (
