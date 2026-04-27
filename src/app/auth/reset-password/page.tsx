@@ -1,17 +1,41 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Sparkles, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const router = useRouter();
-  const [password, setPassword]     = useState("");
+  const params = useSearchParams();
+  const code   = params.get("code");
+
+  const [ready, setReady]               = useState(false);
+  const [exchangeError, setExchangeError] = useState<string | null>(null);
+  const [password, setPassword]         = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading]       = useState(false);
-  const [error, setError]           = useState<string | null>(null);
+  const [loading, setLoading]           = useState(false);
+  const [error, setError]               = useState<string | null>(null);
+
+  // Exchange the one-time code for an active session as soon as the page mounts.
+  useEffect(() => {
+    if (!code) {
+      setExchangeError("Invalid or missing reset link. Please request a new one.");
+      return;
+    }
+    createClient()
+      .auth.exchangeCodeForSession(code)
+      .then(({ error }) => {
+        if (error) {
+          setExchangeError(
+            "This link has expired or already been used. Please request a new one."
+          );
+        } else {
+          setReady(true);
+        }
+      });
+  }, [code]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,8 +52,7 @@ export default function ResetPasswordPage() {
       setError(error.message);
       setLoading(false);
     } else {
-      router.push("/dashboard");
-      router.refresh();
+      router.push("/auth/login?message=password_updated");
     }
   };
 
@@ -52,71 +75,106 @@ export default function ResetPasswordPage() {
 
         <div className="bg-[#0f0f1a] border border-violet-900/25 rounded-2xl p-8 shadow-2xl shadow-violet-950/30">
           <h1 className="text-2xl font-bold text-white mb-1">Choose a new password</h1>
-          <p className="text-slate-400 text-sm mb-7">
-            Make it strong — at least 8 characters.
-          </p>
+          <p className="text-slate-400 text-sm mb-7">Make it strong — at least 8 characters.</p>
 
-          {error && (
+          {/* Link expired / invalid */}
+          {exchangeError && (
             <div className="flex items-start gap-3 bg-red-950/40 border border-red-800/40 rounded-xl p-3.5 mb-5">
               <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-300">{error}</p>
+              <div>
+                <p className="text-sm text-red-300">{exchangeError}</p>
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-xs text-violet-400 hover:text-violet-300 mt-1 inline-block"
+                >
+                  Request a new reset link →
+                </Link>
+              </div>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">
-                New password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Min. 8 characters"
-                  required
-                  minLength={8}
-                  autoFocus
-                  className="w-full bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none focus:ring-2 focus:ring-violet-600/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 transition-all pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {password && (
-                <div className="mt-1.5 flex gap-1">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div
-                      key={i}
-                      className={`h-1 flex-1 rounded-full transition-colors ${
-                        password.length >= i * 3
-                          ? password.length >= 12 ? "bg-green-500" : "bg-violet-500"
-                          : "bg-violet-950"
-                      }`}
-                    />
-                  ))}
+          {/* Verifying the code */}
+          {!ready && !exchangeError && (
+            <div className="flex items-center justify-center py-8 text-slate-500 gap-2">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span className="text-sm">Verifying reset link…</span>
+            </div>
+          )}
+
+          {/* Password form — only rendered after session is established */}
+          {ready && (
+            <>
+              {error && (
+                <div className="flex items-start gap-3 bg-red-950/40 border border-red-800/40 rounded-xl p-3.5 mb-5">
+                  <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-300">{error}</p>
                 </div>
               )}
-            </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-violet-900/30"
-            >
-              {loading ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</>
-              ) : (
-                "Set new password"
-              )}
-            </button>
-          </form>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                    New password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Min. 8 characters"
+                      required
+                      minLength={8}
+                      autoFocus
+                      className="w-full bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none focus:ring-2 focus:ring-violet-600/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 transition-all pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {password && (
+                    <div className="mt-1.5 flex gap-1">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div
+                          key={i}
+                          className={`h-1 flex-1 rounded-full transition-colors ${
+                            password.length >= i * 3
+                              ? password.length >= 12 ? "bg-green-500" : "bg-violet-500"
+                              : "bg-violet-950"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-violet-900/30"
+                >
+                  {loading ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</>
+                  ) : (
+                    "Set new password"
+                  )}
+                </button>
+              </form>
+            </>
+          )}
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

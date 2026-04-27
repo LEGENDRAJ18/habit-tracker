@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Sparkles, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
+import { Sparkles, Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 function GitHubIcon() {
@@ -24,16 +24,21 @@ function AppleIcon() {
 
 type OAuthProvider = "github" | "apple";
 
-export default function LoginPage() {
-  const router = useRouter();
+function LoginForm() {
+  const router   = useRouter();
+  const params   = useSearchParams();
   const supabase = createClient();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const successMessage = params.get("message") === "password_updated"
+    ? "Password updated — sign in with your new password."
+    : null;
+
+  const [email, setEmail]               = useState("");
+  const [password, setPassword]         = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]           = useState(false);
   const [oauthLoading, setOauthLoading] = useState<OAuthProvider | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError]               = useState<string | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,6 +91,14 @@ export default function LoginPage() {
         <div className="bg-[#0f0f1a] border border-violet-900/25 rounded-2xl p-8 shadow-2xl shadow-violet-950/30">
           <h1 className="text-2xl font-bold text-white mb-1">Welcome back</h1>
           <p className="text-slate-400 text-sm mb-7">Sign in to continue your habit streak</p>
+
+          {/* Password-reset success banner */}
+          {successMessage && (
+            <div className="flex items-start gap-3 bg-emerald-950/40 border border-emerald-800/40 rounded-xl p-3.5 mb-5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-emerald-300">{successMessage}</p>
+            </div>
+          )}
 
           {error && (
             <div className="flex items-start gap-3 bg-red-950/40 border border-red-800/40 rounded-xl p-3.5 mb-5">
@@ -148,7 +161,10 @@ export default function LoginPage() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-xs font-medium text-slate-400">Password</label>
-                <Link href="/auth/forgot-password" className="text-xs text-violet-400 hover:text-violet-300 transition-colors">
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-xs text-violet-400 hover:text-violet-300 transition-colors"
+                >
                   Forgot password?
                 </Link>
               </div>
@@ -190,11 +206,22 @@ export default function LoginPage() {
 
         <p className="text-center text-sm text-slate-500 mt-5">
           Don&apos;t have an account?{" "}
-          <Link href="/auth/signup" className="text-violet-400 hover:text-violet-300 transition-colors font-medium">
+          <Link
+            href="/auth/signup"
+            className="text-violet-400 hover:text-violet-300 transition-colors font-medium"
+          >
             Sign up free
           </Link>
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }
