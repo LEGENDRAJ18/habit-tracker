@@ -2,6 +2,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/react";
 import ServiceWorkerRegistration from "@/components/pwa/ServiceWorkerRegistration";
 import InstallBanner from "@/components/pwa/InstallBanner";
 import ToastContainer from "@/components/ui/Toast";
@@ -75,6 +76,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
         {children}
+        <Analytics />
         <ServiceWorkerRegistration />
         <InstallBanner />
         <ToastContainer />
