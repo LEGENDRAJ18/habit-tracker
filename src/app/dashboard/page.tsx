@@ -23,6 +23,9 @@ import { playSound } from "@/lib/sounds";
 import { levelName } from "@/lib/xp";
 import AIInsightModal from "@/components/dashboard/AIInsightModal";
 import AICheckinCard from "@/components/dashboard/AICheckinCard";
+import LeftSidebar from "@/components/dashboard/LeftSidebar";
+import PromoBanner from "@/components/ui/PromoBanner";
+import SmartNotification from "@/components/ui/SmartNotification";
 
 // ─── Greeting & quote ─────────────────────────────────────────────────────────
 
@@ -468,7 +471,16 @@ export default function DashboardPage() {
         onUpgradeClick={() => setShowUpgrade(true)}
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-8 page-fade">
+      {!profileLoading && <PromoBanner tier={tier} />}
+
+      <SmartNotification
+        tier={tier}
+        habitCount={habits.length}
+        onUpgradeClick={() => setShowUpgrade(true)}
+        onAIInsightClick={() => setShowAIInsight(true)}
+      />
+
+      <main className="max-w-[1340px] mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-8 page-fade">
         {/* Upgrade success banner */}
         {upgradeSuccess && (
           <div className="flex items-center gap-3 bg-green-950/40 border border-green-800/40 rounded-xl p-4 mb-6">
@@ -483,10 +495,20 @@ export default function DashboardPage() {
         {!profileLoading && tier === "plus" && <PlusBanner />}
         {!profileLoading && tier === "pro" && <ProBanner />}
 
-        {/* Two-column layout on desktop */}
-        <div className="lg:grid lg:grid-cols-[1fr_308px] lg:gap-8 lg:items-start">
-        {/* ── Left column ───────────────────────────────────────────────── */}
-        <div>
+        {/* Three-column layout: left sidebar (lg+), center, right sidebar (xl+) */}
+        <div className="lg:grid lg:grid-cols-[240px_1fr] xl:grid-cols-[240px_1fr_280px] lg:gap-6 lg:items-start">
+
+        {/* ── Left sidebar (lg+) ────────────────────────────────────────── */}
+        <LeftSidebar
+          xp={xp}
+          level={level}
+          bestStreak={bestStreak}
+          tier={tier}
+          onUpgradeClick={() => setShowUpgrade(true)}
+        />
+
+        {/* ── Center column ─────────────────────────────────────────────── */}
+        <div className="min-w-0">
           {/* Mobile-only horizontal StatsBar */}
           <div className="lg:hidden">
             <StatsBar xp={xp} level={level} bestStreak={bestStreak} totalCompletions={totalCompletions} />
@@ -656,8 +678,8 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Daily milestones — mobile only (desktop shows in sidebar) */}
-        <div className="lg:hidden">
+        {/* Daily milestones — hidden on xl+ (right sidebar handles it) */}
+        <div className="xl:hidden">
           {!loading && habits.length > 0 && (
             <MilestoneCards
               completedCount={completedCount}
@@ -693,9 +715,39 @@ export default function DashboardPage() {
         )}
         </div>{/* end left column */}
 
-        {/* ── Right sidebar (desktop only) ──────────────────────────────── */}
-        <div className="hidden lg:flex lg:flex-col lg:gap-4 lg:sticky lg:top-20">
-          <StatsBar xp={xp} level={level} bestStreak={bestStreak} totalCompletions={totalCompletions} sidebar />
+        {/* ── Right sidebar (xl only) ────────────────────────────────────── */}
+        <div className="hidden xl:flex xl:flex-col gap-4 sticky top-20">
+
+          {/* AI Insight — prominent card */}
+          <div className="relative overflow-hidden rounded-2xl border border-violet-600/30 bg-[#0c0c18]">
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-950/80 via-[#0f0f1a] to-purple-950/60" />
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-48 h-12 bg-violet-500/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative p-5">
+              <div className="flex items-center gap-2 mb-1.5">
+                <Sparkles className="w-4 h-4 text-violet-400" />
+                <p className="text-sm font-semibold text-white">AI Coaching</p>
+              </div>
+              <p className="text-[11px] text-slate-500 mb-4 leading-relaxed">
+                Get personalised insights on your habits, streaks, and patterns.
+              </p>
+              <button
+                onClick={() => setShowAIInsight(true)}
+                className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                  isPaid
+                    ? "bg-violet-600 hover:bg-violet-500 text-white"
+                    : "bg-violet-950/60 border border-violet-800/40 text-slate-500"
+                }`}
+                style={isPaid ? { boxShadow: "0 0 20px rgba(139,92,246,0.4)" } : undefined}
+              >
+                {isPaid ? "Analyse My Habits" : "Upgrade to Unlock"}
+              </button>
+              <p className="text-[10px] text-slate-600 text-center mt-2">
+                {isPaid ? "5 insights remaining today" : "Available on Plus & Pro"}
+              </p>
+            </div>
+          </div>
+
+          {/* Milestones */}
           {!loading && habits.length > 0 && (
             <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-4">
               <MilestoneCards

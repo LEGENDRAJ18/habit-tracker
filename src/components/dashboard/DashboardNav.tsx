@@ -124,8 +124,8 @@ export default function DashboardNav({ habitCount, tier, onUpgradeClick }: Props
             </span>
           </Link>
 
-          {/* Nav links — hidden on mobile (bottom nav handles it) */}
-          <div className="hidden sm:flex items-center gap-0.5">
+          {/* Nav links — hidden on mobile (bottom nav) and lg+ (left sidebar) */}
+          <div className="hidden sm:flex lg:hidden items-center gap-0.5">
             {navLink("/analytics", <BarChart2 className="w-3.5 h-3.5" />, "Analytics")}
             {navLink("/calendar",  <Calendar  className="w-3.5 h-3.5" />, "Calendar")}
             {navLink("/friends",   <Users     className="w-3.5 h-3.5" />, "Friends")}
