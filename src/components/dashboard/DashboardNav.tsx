@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Sparkles, LogOut, Zap, ChevronDown, BarChart2,
   Download, User, Settings, CreditCard, HelpCircle,
-  Keyboard, Users, Calendar,
+  Keyboard, Users, Calendar, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
@@ -113,27 +113,53 @@ export default function DashboardNav({ habitCount, tier, onUpgradeClick }: Props
     <>
     <nav className="sticky top-0 z-40 bg-[#09090f]/90 backdrop-blur-xl border-b border-violet-900/20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-14">
-          {/* Logo */}
-          <Link href="/dashboard" className="flex items-center gap-2 flex-shrink-0">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center">
-              <Sparkles className="w-3.5 h-3.5 text-white" />
+        <div className="relative flex items-center justify-between h-16">
+
+          {/* Left — back/forward on desktop, nav links on tablet */}
+          <div className="flex items-center gap-1 z-10">
+            <div className="hidden lg:flex items-center gap-0.5">
+              <button
+                onClick={() => router.back()}
+                className="w-8 h-8 flex items-center justify-center rounded-full text-slate-600 hover:text-slate-300 hover:bg-violet-950/40 transition-all"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => router.forward()}
+                className="w-8 h-8 flex items-center justify-center rounded-full text-slate-600 hover:text-slate-300 hover:bg-violet-950/40 transition-all"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
-            <span className="font-bold text-white text-sm">
+            <div className="hidden sm:flex lg:hidden items-center gap-0.5">
+              {navLink("/analytics", <BarChart2 className="w-3.5 h-3.5" />, "Analytics")}
+              {navLink("/calendar",  <Calendar  className="w-3.5 h-3.5" />, "Calendar")}
+              {navLink("/friends",   <Users     className="w-3.5 h-3.5" />, "Friends")}
+              {navLink("/profile",   <User      className="w-3.5 h-3.5" />, "Profile")}
+            </div>
+          </div>
+
+          {/* Center logo — absolutely centered */}
+          <Link
+            href="/dashboard"
+            className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 group"
+          >
+            <div
+              className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 via-violet-600 to-purple-800 flex items-center justify-center transition-all duration-300 group-hover:scale-105 group-hover:brightness-110 flex-shrink-0"
+              style={{
+                boxShadow:
+                  "0 0 0 1.5px rgba(167,139,250,0.45), 0 0 0 3px rgba(139,92,246,0.12), 0 0 28px 8px rgba(139,92,246,0.35), 0 4px 16px rgba(0,0,0,0.55)",
+              }}
+            >
+              <Sparkles className="w-5 h-5 text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.6)]" />
+            </div>
+            <span className="text-[1.35rem] font-black text-white tracking-tight leading-none">
               habit<span className="text-violet-400">AI</span>
             </span>
           </Link>
 
-          {/* Nav links — hidden on mobile (bottom nav) and lg+ (left sidebar) */}
-          <div className="hidden sm:flex lg:hidden items-center gap-0.5">
-            {navLink("/analytics", <BarChart2 className="w-3.5 h-3.5" />, "Analytics")}
-            {navLink("/calendar",  <Calendar  className="w-3.5 h-3.5" />, "Calendar")}
-            {navLink("/friends",   <Users     className="w-3.5 h-3.5" />, "Friends")}
-            {navLink("/profile",   <User      className="w-3.5 h-3.5" />, "Profile")}
-          </div>
-
           {/* Right side */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 z-10">
             {canInstall && (
               <button
                 onClick={promptInstall}
