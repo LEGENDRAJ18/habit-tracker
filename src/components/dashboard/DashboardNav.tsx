@@ -120,12 +120,16 @@ export default function DashboardNav({ habitCount, tier, onUpgradeClick }: Props
             <div className="hidden lg:flex items-center gap-0.5">
               <button
                 onClick={() => router.back()}
+                aria-label="Go back"
+                title="Go back"
                 className="w-8 h-8 flex items-center justify-center rounded-full text-slate-600 hover:text-slate-300 hover:bg-violet-950/40 transition-all"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 onClick={() => router.forward()}
+                aria-label="Go forward"
+                title="Go forward"
                 className="w-8 h-8 flex items-center justify-center rounded-full text-slate-600 hover:text-slate-300 hover:bg-violet-950/40 transition-all"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -163,8 +167,9 @@ export default function DashboardNav({ habitCount, tier, onUpgradeClick }: Props
             {canInstall && (
               <button
                 onClick={promptInstall}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-400 hover:text-violet-300 border border-slate-800/60 hover:border-violet-700/50 rounded-lg transition-all"
+                aria-label="Install HabitAI app"
                 title="Install HabitAI"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-400 hover:text-violet-300 border border-slate-800/60 hover:border-violet-700/50 rounded-lg transition-all"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Install</span>
@@ -185,6 +190,8 @@ export default function DashboardNav({ habitCount, tier, onUpgradeClick }: Props
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen((v) => !v)}
+                aria-label="Open account menu"
+                aria-expanded={menuOpen}
                 className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-violet-950/50 text-slate-400 hover:text-white transition-all text-xs"
               >
                 <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-violet-900/30">

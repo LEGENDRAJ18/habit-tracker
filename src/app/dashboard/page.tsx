@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
-import { Plus, Loader2, AlertCircle, CheckCircle2, Shield, Share2, Sparkles } from "lucide-react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { Plus, Loader2, AlertCircle, CheckCircle2, Shield, Share2, Sparkles, Search, X } from "lucide-react";
 import type { Plan } from "@/types";
 import { useHabits } from "@/hooks/useHabits";
 import { useProfile } from "@/hooks/useProfile";
@@ -26,6 +26,8 @@ import LeftSidebar from "@/components/dashboard/LeftSidebar";
 import PromoBanner from "@/components/ui/PromoBanner";
 import SmartNotification from "@/components/ui/SmartNotification";
 import { toast } from "@/components/ui/Toast";
+import HelpModal from "@/components/ui/HelpModal";
+import OnboardingTour from "@/components/ui/OnboardingTour";
 
 // ─── Greeting & quote ─────────────────────────────────────────────────────────
 
@@ -97,9 +99,9 @@ function QuickStats({
       {[
         { label: "Today",   value: `${pct}%`,          sub: "done",        color: "text-violet-400" },
         { label: "Streak",  value: `${bestStreak}d`,   sub: "best",        color: "text-orange-400" },
-        { label: "XP",      value: totalXP.toLocaleString(), sub: "earned", color: "text-amber-400"  },
-      ].map(({ label, value, sub, color }) => (
-        <div key={label} className="bg-[#0c0c18] border border-violet-900/20 rounded-xl px-3 py-2.5 text-center">
+        { label: "XP",      value: totalXP.toLocaleString(), sub: "earned", color: "text-amber-400", title: "XP = Experience Points earned by completing habits"  },
+      ].map(({ label, value, sub, color, title }: { label: string; value: string; sub: string; color: string; title?: string }) => (
+        <div key={label} className="bg-[#0c0c18] border border-violet-900/20 rounded-xl px-3 py-2.5 text-center" title={title}>
           <p className={`text-lg font-bold leading-none ${color}`} style={{ animation: "countUp 0.5s ease-out both" }}>
             {value}
           </p>
@@ -233,6 +235,7 @@ export default function DashboardPage() {
   const [shareData, setShareData] = useState<{ type: "streak" | "level" | "daily"; value: number; tier?: string } | null>(null);
   const [showAIInsight, setShowAIInsight] = useState(false);
   const [checkinHabit, setCheckinHabit]   = useState<string | null>(null);
+  const [search, setSearch] = useState("");
   const prevCompletedRef   = useRef<number | null>(null);
   const seenBreakModalRef  = useRef(false);
   const appliedFreezeRef   = useRef(false);
@@ -346,13 +349,41 @@ export default function DashboardPage() {
     day: "numeric",
   });
 
-  const handleAddClick = () => {
+  const handleAddClick = useCallback(() => {
     if (!isPaid && habits.length >= FREE_HABIT_LIMIT) {
       setShowUpgrade(true);
     } else {
       setShowAdd(true);
     }
-  };
+  }, [isPaid, habits.length]);
+
+  // Keyboard shortcuts: N = add habit, A = mark first incomplete done
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === "n" || e.key === "N") {
+        e.preventDefault();
+        handleAddClick();
+      }
+      if (e.key === "a" || e.key === "A") {
+        e.preventDefault();
+        const first = habits.find((h) => !isCompletedToday(h.id));
+        if (first) toggleHabit(first.id);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [handleAddClick, habits, isCompletedToday, toggleHabit]);
+
+  // Filtered habits for search
+  const filteredHabits = useMemo(
+    () =>
+      search.trim()
+        ? habits.filter((h) => h.name.toLowerCase().includes(search.toLowerCase().trim()))
+        : habits,
+    [habits, search],
+  );
 
   return (
     <div className="min-h-screen bg-[#09090f]">
@@ -512,20 +543,57 @@ export default function DashboardPage() {
         ) : (
           /* Habit list */
           <div className="space-y-3">
-            {/* Add habit button — always at top, prominent */}
-            <button
-              onClick={handleAddClick}
-              className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed transition-all text-sm font-medium ${
-                !isPaid && habits.length >= FREE_HABIT_LIMIT
-                  ? "border-violet-700/30 text-violet-500 hover:text-violet-400 hover:bg-violet-950/20"
-                  : "border-violet-600/50 text-violet-400 hover:bg-violet-950/30 hover:border-violet-500/70"
-              }`}
-            >
-              <Plus className="w-4 h-4" />
-              {!isPaid && habits.length >= FREE_HABIT_LIMIT ? "Upgrade to add more habits" : "Add habit"}
-            </button>
+            {/* Add habit button — always at top */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleAddClick}
+                data-tour="add-habit"
+                aria-label={!isPaid && habits.length >= FREE_HABIT_LIMIT ? "Upgrade to add more habits" : "Add a new habit (press N)"}
+                title={!isPaid && habits.length >= FREE_HABIT_LIMIT ? "Upgrade to add more" : "Add habit  ·  Press N"}
+                className={`flex-1 flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed transition-all text-sm font-medium ${
+                  !isPaid && habits.length >= FREE_HABIT_LIMIT
+                    ? "border-violet-700/30 text-violet-500 hover:text-violet-400 hover:bg-violet-950/20"
+                    : "border-violet-600/50 text-violet-400 hover:bg-violet-950/30 hover:border-violet-500/70"
+                }`}
+              >
+                <Plus className="w-4 h-4" />
+                {!isPaid && habits.length >= FREE_HABIT_LIMIT ? "Upgrade to add more habits" : "Add habit"}
+                <kbd className="ml-auto text-[10px] text-violet-600 bg-violet-950/60 border border-violet-800/40 rounded px-1.5 py-0.5 hidden sm:block">N</kbd>
+              </button>
+            </div>
 
-            {habits.map((habit) => {
+            {/* Search bar — shown when there are 3+ habits */}
+            {habits.length >= 3 && (
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-600 pointer-events-none" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Filter habits…"
+                  aria-label="Filter habits by name"
+                  className="w-full bg-violet-950/20 border border-violet-900/25 focus:border-violet-600/50 focus:outline-none focus:ring-1 focus:ring-violet-600/20 rounded-xl pl-9 pr-8 py-2 text-sm text-white placeholder-slate-600 transition-all"
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch("")}
+                    aria-label="Clear search"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Empty filter state */}
+            {search.trim() && filteredHabits.length === 0 && (
+              <p className="text-sm text-slate-500 text-center py-8">
+                No habits match &ldquo;{search}&rdquo;
+              </p>
+            )}
+
+            {filteredHabits.map((habit) => {
               const info = streakInfoMap.get(habit.id) ?? { streak: 0, freezeApplied: false, newFreezeUsed: false };
               const stackParent = habit.stack_after_id ? habits.find((h) => h.id === habit.stack_after_id) : undefined;
               return (
@@ -599,7 +667,7 @@ export default function DashboardPage() {
         <div className="hidden xl:flex xl:flex-col gap-4 sticky top-20">
 
           {/* AI Insight — prominent card */}
-          <div className="relative overflow-hidden rounded-2xl border border-violet-600/30 bg-[#0c0c18]">
+          <div data-tour="ai-insight" className="relative overflow-hidden rounded-2xl border border-violet-600/30 bg-[#0c0c18]">
             <div className="absolute inset-0 bg-gradient-to-br from-violet-950/80 via-[#0f0f1a] to-purple-950/60" />
             <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-48 h-12 bg-violet-500/20 rounded-full blur-3xl pointer-events-none" />
             <div className="relative p-5">
@@ -612,6 +680,7 @@ export default function DashboardPage() {
               </p>
               <button
                 onClick={() => setShowAIInsight(true)}
+                aria-label={isPaid ? "Open AI coaching insight" : "Upgrade to unlock AI coaching"}
                 className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all ${
                   isPaid
                     ? "bg-violet-600 hover:bg-violet-500 text-white"
@@ -676,7 +745,9 @@ export default function DashboardPage() {
         {!loading && habits.length > 0 && (
           <button
             onClick={handleAddClick}
-            className="fixed bottom-6 right-6 sm:hidden w-14 h-14 bg-violet-600 hover:bg-violet-500 text-white rounded-full shadow-xl shadow-violet-900/40 flex items-center justify-center transition-all"
+            aria-label="Add a new habit"
+            title="Add habit"
+            className="fixed bottom-20 right-4 sm:hidden w-14 h-14 bg-violet-600 hover:bg-violet-500 text-white rounded-full shadow-xl shadow-violet-900/40 flex items-center justify-center transition-all"
           >
             <Plus className="w-6 h-6" />
           </button>
@@ -745,6 +816,12 @@ export default function DashboardPage() {
           onClose={() => setShareData(null)}
         />
       )}
+
+      {/* Floating help button + FAQ modal */}
+      <HelpModal />
+
+      {/* First-visit onboarding tour (3 steps) */}
+      {!loading && !profileLoading && <OnboardingTour />}
     </div>
   );
 }

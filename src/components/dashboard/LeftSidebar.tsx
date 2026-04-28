@@ -82,6 +82,8 @@ export default function LeftSidebar({ xp, level, bestStreak, tier, onUpgradeClic
           <Link
             key={href}
             href={href}
+            data-tour={href === "/analytics" ? "analytics-nav" : undefined}
+            aria-label={label}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
               pathname === href
                 ? "bg-violet-950/60 text-violet-300 border border-violet-800/40"
