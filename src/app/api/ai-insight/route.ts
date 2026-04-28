@@ -34,7 +34,7 @@ async function callOpenAI(systemPrompt: string, userPrompt: string): Promise<Rec
         { role: "system", content: systemPrompt },
         { role: "user",   content: userPrompt },
       ],
-      max_tokens: 600,
+      max_tokens: 1000,
       temperature: 0.75,
       response_format: { type: "json_object" },
     }),
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     const [{ data: habits }, { data: rawLogs }, { data: profile }] = await Promise.all([
       admin.from("habits").select("id, name, habit_strength, created_at").eq("user_id", user.id).order("created_at"),
       admin.from("habit_logs").select("habit_id, completed_at").eq("user_id", user.id).gte("completed_at", daysAgo(30)),
-      admin.from("profiles").select("goal, tier").eq("id", user.id).single(),
+      admin.from("profiles").select("goal, subscription_tier").eq("id", user.id).single(),
     ]);
 
     if (!habits || habits.length === 0) {
@@ -124,13 +124,36 @@ export async function POST(request: NextRequest) {
     const totalCompletions = logs.length;
     const goal = profile?.goal ?? null;
 
+    // Detect potentially addictive/harmful habit keywords
+    const HARMFUL_KEYWORDS = ["smok", "vap", "nicotine", "alcohol", "drink", "gambling", "bet", "drug", "phone addic", "social media addic", "scroll", "reels", "tiktok", "porn", "junk food", "binge"];
+    const hasHarmfulHabit = habits.some((h) =>
+      HARMFUL_KEYWORDS.some((kw) => h.name.toLowerCase().includes(kw))
+    );
+
     // ── COACHING ──────────────────────────────────────────────────────────────
     if (mode === "coaching") {
-      const systemPrompt = `You are an expert habit coach. Analyze the user's habit data and provide personalized, actionable insights. Be warm, specific, and encouraging. Always respond with valid JSON matching this exact schema:
+      const systemPrompt = `You are an expert habit coach with deep knowledge of behavioral science, addiction recovery, and habit formation. Analyze the user's habit data and provide personalized, actionable insights. Be warm, specific, and encouraging.
+
+${hasHarmfulHabit ? "IMPORTANT: One or more habits involve addiction or harmful behaviors. Include evidence-based recovery strategies in the plan and populate helpResources with 2-3 real, well-known support resources." : ""}
+
+Always respond with valid JSON matching this exact schema:
 {
   "struggling": "1-2 sentence explanation of what the data reveals about their main challenge",
   "fixes": ["specific fix 1", "specific fix 2", "specific fix 3"],
-  "encouragement": "1-2 personalized encouraging sentences referencing their actual progress"
+  "encouragement": "1-2 personalized encouraging sentences referencing their actual progress",
+  "sevenDayPlan": [
+    {"day": 1, "action": "short, specific action (max 12 words)"},
+    {"day": 2, "action": "short, specific action (max 12 words)"},
+    {"day": 3, "action": "short, specific action (max 12 words)"},
+    {"day": 4, "action": "short, specific action (max 12 words)"},
+    {"day": 5, "action": "short, specific action (max 12 words)"},
+    {"day": 6, "action": "short, specific action (max 12 words)"},
+    {"day": 7, "action": "short, specific action (max 12 words)"}
+  ]${hasHarmfulHabit ? `,
+  "helpResources": [
+    {"name": "resource name", "url": "https://...", "desc": "one-line description"}
+  ]` : `,
+  "helpResources": []`}
 }`;
 
       const userPrompt = `User's goal: ${goal ?? "not set"}
@@ -139,7 +162,7 @@ Total habit completions (30 days): ${totalCompletions}
 Their habits:
 ${habitSummaries.map((h) => `- "${h.name}": ${h.rate7d}% completion this week, ${h.streak}-day streak, strength ${h.strength}/100`).join("\n")}
 
-Give them coaching based on this real data.`;
+Build a realistic 7-day recovery/improvement plan starting from where they are now. Each day should build on the previous one.`;
 
       const result = await callOpenAI(systemPrompt, userPrompt);
       return NextResponse.json({ mode: "coaching", remaining, ...result });

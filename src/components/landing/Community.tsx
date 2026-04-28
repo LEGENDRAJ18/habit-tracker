@@ -38,7 +38,7 @@ export default function Community() {
               </h2>
 
               <p className="text-slate-400 text-base leading-relaxed mb-8 max-w-xl">
-                Join <span className="text-violet-300 font-semibold">500+ HabitAI users</span> in our Discord. Share your wins, find accountability partners, and connect with people on the exact same journey as you.
+                Join the HabitAI community on Discord. Share your wins, find accountability partners, and connect with people on the exact same journey as you.
               </p>
 
               <Link

@@ -52,10 +52,10 @@ function ContributionHeatmap({
 
   function cellColor(pct: number, isFuture: boolean) {
     if (isFuture) return "bg-slate-900/40";
-    if (pct === 0)   return "bg-slate-800/60";
-    if (pct < 40)    return "bg-emerald-900/70";
-    if (pct < 75)    return "bg-emerald-600/70";
-    return "bg-emerald-500";
+    if (pct === 0)   return "bg-slate-800/50";
+    if (pct < 40)    return "bg-violet-900/70";
+    if (pct < 75)    return "bg-violet-600/60";
+    return "bg-violet-500";
   }
 
   const today = toDateStr(new Date());
@@ -68,22 +68,23 @@ function ContributionHeatmap({
         Contribution heatmap
         <span className="text-xs text-slate-600 font-normal ml-1">last {WEEKS} weeks</span>
       </h3>
-      <div className="flex gap-0.5 overflow-x-auto pb-1">
-        <div className="flex flex-col gap-0.5 mr-1.5">
+      <div className="flex gap-1 overflow-x-auto pb-1">
+        <div className="flex flex-col gap-1 mr-2">
           {DAY_LABELS.map((d, i) => (
-            <div key={i} className="w-3 h-3 flex items-center justify-center text-[8px] text-slate-700 leading-none">{d}</div>
+            <div key={i} className="w-3.5 h-3.5 flex items-center justify-center text-[8px] text-slate-600 leading-none">{d}</div>
           ))}
         </div>
         {Array.from({ length: WEEKS }, (_, w) => (
-          <div key={w} className="flex flex-col gap-0.5">
+          <div key={w} className="flex flex-col gap-1">
             {Array.from({ length: 7 }, (_, d) => {
               const cell    = cells[w * 7 + d];
               const isFuture = cell?.date > today;
+              const isToday = cell?.date === today;
               return (
                 <div
                   key={d}
                   title={cell ? `${cell.date}: ${cell.count}/${habitCount} habits` : ""}
-                  className={`w-3 h-3 rounded-sm transition-colors ${cell ? cellColor(cell.pct, isFuture) : "bg-transparent"}`}
+                  className={`w-3.5 h-3.5 rounded transition-all ${cell ? cellColor(cell.pct, isFuture) : "bg-transparent"} ${isToday ? "ring-1 ring-violet-400/60" : ""}`}
                 />
               );
             })}
@@ -91,11 +92,11 @@ function ContributionHeatmap({
         ))}
       </div>
       <div className="flex items-center gap-1.5 mt-3 justify-end">
-        <span className="text-[10px] text-slate-700">Less</span>
-        {(["bg-slate-800/60", "bg-emerald-900/70", "bg-emerald-600/70", "bg-emerald-500"] as const).map((c, i) => (
-          <div key={i} className={`w-2.5 h-2.5 rounded-sm ${c}`} />
+        <span className="text-[10px] text-slate-600">Less</span>
+        {(["bg-slate-800/50", "bg-violet-900/70", "bg-violet-600/60", "bg-violet-500"] as const).map((c, i) => (
+          <div key={i} className={`w-3 h-3 rounded ${c}`} />
         ))}
-        <span className="text-[10px] text-slate-700">More</span>
+        <span className="text-[10px] text-slate-600">More</span>
       </div>
     </div>
   );
@@ -134,10 +135,10 @@ function DayDetailPanel({
           {detail.completed.map((h) => {
             const log = dayLogs.find((l) => l.habit_id === h.id);
             return (
-              <div key={h.id} className="flex items-center gap-3 py-2.5 px-3 bg-emerald-950/30 border border-emerald-800/20 rounded-xl">
-                <div className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
+              <div key={h.id} className="flex items-center gap-3 py-2.5 px-3 bg-violet-950/30 border border-violet-700/25 rounded-xl">
+                <div className="w-2 h-2 rounded-full bg-violet-400 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-emerald-300 font-medium truncate">{h.name}</p>
+                  <p className="text-sm text-violet-200 font-medium truncate">{h.name}</p>
                   {log && <p className="text-[10px] text-slate-600 mt-0.5">Completed at {formatTime(log.completed_at)}</p>}
                 </div>
               </div>
@@ -219,9 +220,9 @@ export default function CalendarPage() {
 
       let dotColor = "bg-slate-700";
       if (!isFuture && totalExisting > 0) {
-        if (pct === 1)       dotColor = "bg-emerald-400";
-        else if (pct! > 0)   dotColor = "bg-amber-400";
-        else                 dotColor = "bg-red-500/70";
+        if (pct === 1)       dotColor = "bg-violet-400";
+        else if (pct! > 0)   dotColor = "bg-violet-600/80";
+        else                 dotColor = "bg-red-500/60";
       }
 
       return { d, i: i + 1, isFuture, isToday, completed, missed, pct, dotColor, totalExisting };
@@ -271,12 +272,12 @@ export default function CalendarPage() {
 
       <main className="max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         {/* Month navigator */}
-        <div className="flex items-center justify-between">
-          <button onClick={prevMonth} className="p-2 rounded-xl text-slate-500 hover:text-white hover:bg-violet-950/50 transition-all">
+        <div className="flex items-center justify-between bg-[#0c0c18] border border-violet-900/20 rounded-2xl px-4 py-3">
+          <button onClick={prevMonth} className="p-1.5 rounded-lg text-slate-500 hover:text-violet-300 hover:bg-violet-950/60 transition-all">
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <h2 className="text-base font-semibold text-white">{monthLabel}</h2>
-          <button onClick={nextMonth} disabled={canGoNext} className="p-2 rounded-xl text-slate-500 hover:text-white hover:bg-violet-950/50 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+          <h2 className="text-sm font-bold text-white">{monthLabel}</h2>
+          <button onClick={nextMonth} disabled={canGoNext} className="p-1.5 rounded-lg text-slate-500 hover:text-violet-300 hover:bg-violet-950/60 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
@@ -306,22 +307,22 @@ export default function CalendarPage() {
                   disabled={day.isFuture}
                   className={`aspect-square border-r border-b border-violet-900/10 last:border-r-0 flex flex-col items-center justify-center gap-1 transition-all relative ${
                     day.isToday
-                      ? "bg-violet-950/50"
+                      ? "bg-violet-900/30"
                       : isPast && day.totalExisting > 0
-                      ? "hover:bg-violet-950/30 cursor-pointer"
+                      ? "hover:bg-violet-950/40 cursor-pointer"
                       : "cursor-default"
-                  } ${selectedDay === day.d ? "ring-inset ring-1 ring-violet-600/60" : ""}`}
+                  } ${selectedDay === day.d ? "bg-violet-900/40 ring-inset ring-1 ring-violet-500/70" : ""}`}
                 >
                   <span className={`text-xs font-medium leading-none ${
-                    day.isToday ? "text-violet-300 font-bold" : day.isFuture ? "text-slate-700" : "text-slate-400"
+                    day.isToday ? "text-violet-200 font-bold" : day.isFuture ? "text-slate-700" : "text-slate-400"
                   }`}>
                     {day.i}
                   </span>
                   {!day.isFuture && day.totalExisting > 0 && (
-                    <div className={`w-1.5 h-1.5 rounded-full ${day.dotColor}`} />
+                    <div className={`w-2 h-2 rounded-full ${day.dotColor}`} />
                   )}
                   {day.isToday && (
-                    <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-violet-400" />
+                    <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-violet-400" />
                   )}
                 </button>
               );
@@ -331,9 +332,9 @@ export default function CalendarPage() {
 
         {/* Legend */}
         <div className="flex items-center gap-4 text-xs text-slate-600 justify-center flex-wrap">
-          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />All done</span>
-          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Partial</span>
-          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500/70 inline-block" />Missed all</span>
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-violet-400 inline-block" />All done</span>
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-violet-600/80 inline-block" />Partial</span>
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500/60 inline-block" />Missed all</span>
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-slate-700 inline-block" />No habits yet</span>
         </div>
 

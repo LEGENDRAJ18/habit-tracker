@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { X, Sparkles, Loader2, AlertCircle, Zap, Target, Heart } from "lucide-react";
+import { X, Sparkles, Loader2, AlertCircle, Zap, Target, Heart, CalendarDays, ExternalLink } from "lucide-react";
 
 interface CoachingResult {
   struggling: string;
   fixes: string[];
   encouragement: string;
+  sevenDayPlan?: Array<{ day: number; action: string }>;
+  helpResources?: Array<{ name: string; url: string; desc: string }>;
   remaining?: number;
 }
 
@@ -53,7 +55,7 @@ export default function AIInsightModal({ onClose, onUpgrade, isPaid }: Props) {
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-md bg-[#0d0d1a] border border-violet-700/30 rounded-3xl shadow-2xl shadow-violet-950/60 overflow-hidden">
+      <div className="w-full max-w-md bg-[#0d0d1a] border border-violet-700/30 rounded-3xl shadow-2xl shadow-violet-950/60 overflow-hidden max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="relative px-6 pt-6 pb-5 border-b border-violet-900/20">
           <div className="absolute inset-0 bg-gradient-to-br from-violet-600/10 via-transparent to-transparent pointer-events-none" />
@@ -75,7 +77,7 @@ export default function AIInsightModal({ onClose, onUpgrade, isPaid }: Props) {
         </div>
 
         {/* Body */}
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto flex-1">
           {/* Upgrade gate */}
           {!isPaid && (
             <div className="text-center py-4">
@@ -164,6 +166,46 @@ export default function AIInsightModal({ onClose, onUpgrade, isPaid }: Props) {
                 </div>
                 <p className="text-sm text-emerald-200/90 leading-relaxed">{result.encouragement}</p>
               </div>
+
+              {/* 7-day plan */}
+              {result.sevenDayPlan && result.sevenDayPlan.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <CalendarDays className="w-3.5 h-3.5 text-violet-400" />
+                    <span className="text-[10px] font-bold text-violet-400 uppercase tracking-wider">7-day recovery plan</span>
+                  </div>
+                  <div className="space-y-1.5">
+                    {result.sevenDayPlan.map(({ day, action }) => (
+                      <div key={day} className="flex items-start gap-2.5 bg-violet-950/20 border border-violet-800/20 rounded-xl px-3 py-2">
+                        <span className="text-[10px] font-bold text-violet-500 w-10 flex-shrink-0 mt-0.5">Day {day}</span>
+                        <p className="text-xs text-slate-300 leading-relaxed">{action}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Help resources (addiction support) */}
+              {result.helpResources && result.helpResources.length > 0 && (
+                <div className="bg-amber-950/25 border border-amber-800/25 rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Heart className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Support resources</span>
+                  </div>
+                  <div className="space-y-2">
+                    {result.helpResources.map((r, i) => (
+                      <a key={i} href={r.url} target="_blank" rel="noopener noreferrer"
+                        className="flex items-start gap-2.5 bg-amber-900/15 border border-amber-700/20 rounded-xl px-3 py-2 hover:border-amber-600/40 transition-colors group">
+                        <ExternalLink className="w-3 h-3 text-amber-500 flex-shrink-0 mt-0.5 group-hover:text-amber-400" />
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-amber-300 group-hover:text-amber-200">{r.name}</p>
+                          <p className="text-[10px] text-slate-500 mt-0.5">{r.desc}</p>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Remaining uses */}
               {result.remaining !== undefined && (

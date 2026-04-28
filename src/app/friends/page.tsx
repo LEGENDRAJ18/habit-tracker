@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { ArrowLeft, Users, Flame, Zap, Send, Check, X, Loader2, UserPlus, Trophy } from "lucide-react";
+import { ArrowLeft, Users, Flame, Zap, Send, Check, X, Loader2, UserPlus, Trophy, UserSearch } from "lucide-react";
 import BottomNav from "@/components/ui/BottomNav";
 
 interface FriendStat {
@@ -197,6 +197,23 @@ export default function FriendsPage() {
             </div>
           </div>
         )}
+
+        {/* Suggested friends */}
+        <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-violet-900/15 flex items-center gap-2">
+            <UserSearch className="w-4 h-4 text-violet-400" />
+            <h2 className="text-sm font-semibold text-white">Suggested</h2>
+          </div>
+          <div className="px-5 py-8 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-violet-900/20 border border-violet-800/25 flex items-center justify-center mx-auto mb-3">
+              <UserSearch className="w-5 h-5 text-violet-500" />
+            </div>
+            <p className="text-sm font-medium text-slate-300 mb-1">No suggestions yet</p>
+            <p className="text-xs text-slate-600 max-w-xs mx-auto leading-relaxed">
+              We&apos;ll suggest people you might know as more users join HabitAI. For now, invite friends by email above.
+            </p>
+          </div>
+        </div>
 
         {/* Leaderboard */}
         {loading ? (

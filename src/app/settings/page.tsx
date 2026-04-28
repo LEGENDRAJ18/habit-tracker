@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import BottomNav from "@/components/ui/BottomNav";
+import { useProfile } from "@/hooks/useProfile";
+import ReminderSettings from "@/components/dashboard/ReminderSettings";
 
 // ─── Field ────────────────────────────────────────────────────────────────────
 
@@ -111,6 +113,7 @@ function DeleteModal({
 export default function SettingsPage() {
   const router = useRouter();
   const supabase = useRef(createClient()).current;
+  const { reminderEnabled, reminderHour, reminderMinute, saveReminderPrefs, profileLoading: reminderLoading } = useProfile();
 
   const [email,       setEmail]       = useState("");
   const [name,        setName]        = useState("");
@@ -232,6 +235,16 @@ export default function SettingsPage() {
       </div>
 
       <main className="max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+
+        {/* ── Email Reminders ──────────────────────────────────────────────── */}
+        {!reminderLoading && (
+          <ReminderSettings
+            enabled={reminderEnabled}
+            hour={reminderHour}
+            minute={reminderMinute}
+            onSave={saveReminderPrefs}
+          />
+        )}
 
         {/* ── Profile ─────────────────────────────────────────────────────── */}
         <div>

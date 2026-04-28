@@ -142,8 +142,7 @@ export default function LeftSidebar({ xp, level, bestStreak, tier, onUpgradeClic
           </svg>
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-semibold leading-none">Join Community</p>
-          <p className="text-[10px] text-slate-500 mt-0.5">500+ members</p>
+          <p className="text-xs font-semibold leading-none">Join Discord</p>
         </div>
       </a>
 

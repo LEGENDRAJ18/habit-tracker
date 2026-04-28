@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Plus, Loader2, AlertCircle, CheckCircle2, Crown, Diamond, Shield, Share2, Sparkles } from "lucide-react";
+import { Plus, Loader2, AlertCircle, CheckCircle2, Shield, Share2, Sparkles } from "lucide-react";
 import type { Plan } from "@/types";
 import { useHabits } from "@/hooks/useHabits";
 import { useProfile } from "@/hooks/useProfile";
@@ -13,7 +13,6 @@ import UpgradeModal from "@/components/dashboard/UpgradeModal";
 import OnboardingModal from "@/components/dashboard/OnboardingModal";
 import StreakBrokenModal from "@/components/dashboard/StreakBrokenModal";
 import HabitRecommendations from "@/components/dashboard/HabitRecommendations";
-import ReminderSettings from "@/components/dashboard/ReminderSettings";
 import StatsBar from "@/components/dashboard/StatsBar";
 import MilestoneCards from "@/components/dashboard/MilestoneCards";
 import LevelUpModal from "@/components/dashboard/LevelUpModal";
@@ -215,120 +214,11 @@ function AllDoneCelebration({
   );
 }
 
-// ─── Plan banners ─────────────────────────────────────────────────────────────
-
-function PlusBanner() {
-  const chips = ["Unlimited habits", "Full history", "Streak protection"];
-  return (
-    <div className="relative overflow-hidden rounded-2xl border border-violet-500/30 mb-6">
-      <div className="absolute inset-0 bg-gradient-to-br from-violet-950 via-[#1a0f2e] to-violet-950/90" />
-      <div className="absolute inset-0 bg-gradient-to-b from-violet-500/18 to-transparent" />
-      <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-64 h-16 bg-violet-500/18 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="relative px-5 pt-4 pb-3.5">
-        {/* Top row */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-violet-600/30 border border-violet-500/40 flex items-center justify-center flex-shrink-0">
-              <Crown className="w-4 h-4 text-violet-300" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-violet-100 leading-none">Plus Plan</p>
-              <p className="text-[11px] text-violet-400/60 mt-0.5">Unlock more, achieve more</p>
-            </div>
-          </div>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-500/20 border border-violet-400/35 text-violet-300 uppercase tracking-widest flex-shrink-0">
-            Plus
-          </span>
-        </div>
-        {/* Feature chips */}
-        <div className="flex flex-wrap gap-1.5">
-          {chips.map((c) => (
-            <span
-              key={c}
-              className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-violet-800/40 border border-violet-600/30 text-violet-300"
-            >
-              {c}
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ProBanner() {
-  const chips = ["AI Coaching", "Advanced Analytics", "Priority Support", "Early Access"];
-  return (
-    <div
-      className="relative overflow-hidden rounded-2xl border border-amber-400/55 mb-6"
-      style={{
-        boxShadow:
-          "0 0 0 1px rgba(251,191,36,0.08), 0 8px 40px -8px rgba(245,158,11,0.30), 0 2px 0 0 rgba(251,191,36,0.15)",
-      }}
-    >
-      {/* Layered gold background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#1c1200] via-[#1f1400] to-[#1a1000]" />
-      <div className="absolute inset-0 bg-gradient-to-r from-yellow-950/60 via-amber-900/20 to-orange-950/60" />
-      {/* Top gold sheen */}
-      <div className="absolute inset-0 bg-gradient-to-b from-amber-400/30 via-amber-400/6 to-transparent" />
-      {/* Bottom depth */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/35 to-transparent" />
-      {/* Diagonal shimmer */}
-      <div className="absolute inset-0 bg-gradient-to-br from-yellow-200/10 via-transparent to-transparent pointer-events-none" />
-      {/* Bloom glows */}
-      <div className="absolute -top-10 left-4 w-48 h-16 bg-amber-400/40 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -top-10 right-6 w-32 h-14 bg-yellow-300/25 rounded-full blur-2xl pointer-events-none" />
-      {/* Bottom edge accent line */}
-      <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
-
-      <div className="relative px-5 pt-4 pb-3.5">
-        {/* Top row */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2.5">
-            <div
-              className="w-9 h-9 rounded-xl bg-amber-400/15 border border-amber-300/45 flex items-center justify-center flex-shrink-0"
-              style={{ boxShadow: "0 0 16px 3px rgba(251,191,36,0.28)" }}
-            >
-              <Diamond className="w-4 h-4 text-amber-200" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-bold text-amber-100 leading-none">Pro Plan</p>
-                <span className="text-[9px] font-semibold px-1.5 py-px rounded-full bg-amber-400/20 border border-amber-300/40 text-amber-300 uppercase tracking-widest">
-                  Premium
-                </span>
-              </div>
-              <p className="text-[11px] text-amber-400/60 mt-0.5">Everything in Plus, and beyond</p>
-            </div>
-          </div>
-          <span
-            className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-400/18 border border-amber-300/55 text-amber-200 uppercase tracking-widest flex-shrink-0"
-            style={{ boxShadow: "0 0 12px 2px rgba(251,191,36,0.35)" }}
-          >
-            Pro
-          </span>
-        </div>
-        {/* Feature chips */}
-        <div className="flex flex-wrap gap-1.5">
-          {chips.map((c) => (
-            <span
-              key={c}
-              className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-900/50 border border-amber-600/35 text-amber-300"
-            >
-              {c}
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function DashboardPage() {
   const { habits, loading, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, addHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength } =
     useHabits();
-  const { tier, profileLoading, onboardingCompleted, goal, freezeAvailable, freezeProtectedDate, applyFreeze, reminderEnabled, reminderHour, reminderMinute, saveReminderPrefs } = useProfile();
+  const { tier, profileLoading, onboardingCompleted, goal, freezeAvailable, freezeProtectedDate, applyFreeze } = useProfile();
   const { xp, level, achievements, totalCompletions, justLeveledUp, isDailyAchieved, onHabitCompleted, checkMilestones, dismissLevelUp } = useXP();
   // Local override so closing the modal doesn't require a page reload
   const [onboardingDone, setOnboardingDone] = useState(false);
@@ -492,10 +382,6 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Premium banner for paid users */}
-        {!profileLoading && tier === "plus" && <PlusBanner />}
-        {!profileLoading && tier === "pro" && <ProBanner />}
-
         {/* Three-column layout: left sidebar (lg+), center, right sidebar (xl+) */}
         <div className="lg:grid lg:grid-cols-[240px_1fr] xl:grid-cols-[240px_1fr_280px] lg:gap-6 lg:items-start">
 
@@ -536,17 +422,6 @@ export default function DashboardPage() {
             <div>
               <div className="flex items-center gap-3 mb-1">
                 <h2 className="text-lg font-semibold text-white">Today&apos;s Habits</h2>
-                <button
-                  onClick={() => setShowAIInsight(true)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all ${
-                    isPaid
-                      ? "bg-violet-600/20 border border-violet-500/30 text-violet-300 hover:bg-violet-600/30"
-                      : "bg-slate-800/50 border border-slate-700/40 text-slate-500 hover:border-violet-700/40 hover:text-violet-400"
-                  }`}
-                >
-                  <Sparkles className="w-3 h-3" />
-                  AI Insight
-                </button>
               </div>
               {habits.length > 0 && (
                 <p className="text-sm text-slate-400 mt-1">
@@ -637,6 +512,19 @@ export default function DashboardPage() {
         ) : (
           /* Habit list */
           <div className="space-y-3">
+            {/* Add habit button — always at top, prominent */}
+            <button
+              onClick={handleAddClick}
+              className={`w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed transition-all text-sm font-medium ${
+                !isPaid && habits.length >= FREE_HABIT_LIMIT
+                  ? "border-violet-700/30 text-violet-500 hover:text-violet-400 hover:bg-violet-950/20"
+                  : "border-violet-600/50 text-violet-400 hover:bg-violet-950/30 hover:border-violet-500/70"
+              }`}
+            >
+              <Plus className="w-4 h-4" />
+              {!isPaid && habits.length >= FREE_HABIT_LIMIT ? "Upgrade to add more habits" : "Add habit"}
+            </button>
+
             {habits.map((habit) => {
               const info = streakInfoMap.get(habit.id) ?? { streak: 0, freezeApplied: false, newFreezeUsed: false };
               const stackParent = habit.stack_after_id ? habits.find((h) => h.id === habit.stack_after_id) : undefined;
@@ -676,26 +564,6 @@ export default function DashboardPage() {
               );
             })}
 
-            {/* Add habit button — always visible for paid; gated for free */}
-            {(isPaid || habits.length < FREE_HABIT_LIMIT) && (
-              <button
-                onClick={handleAddClick}
-                className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl border border-dashed border-violet-800/40 text-slate-500 hover:text-violet-400 hover:border-violet-700/50 transition-all text-sm"
-              >
-                <Plus className="w-4 h-4" />
-                Add habit
-              </button>
-            )}
-
-            {!isPaid && habits.length >= FREE_HABIT_LIMIT && (
-              <button
-                onClick={handleAddClick}
-                className="w-full flex items-center justify-center gap-2 p-3.5 rounded-xl border border-dashed border-violet-700/30 text-violet-500 hover:text-violet-400 hover:bg-violet-950/30 transition-all text-sm"
-              >
-                <Plus className="w-4 h-4" />
-                Upgrade to add more habits
-              </button>
-            )}
           </div>
         )}
 
@@ -725,15 +593,6 @@ export default function DashboardPage() {
           />
         )}
 
-        {/* Reminder settings */}
-        {!profileLoading && (
-          <ReminderSettings
-            enabled={reminderEnabled}
-            hour={reminderHour}
-            minute={reminderMinute}
-            onSave={saveReminderPrefs}
-          />
-        )}
         </div>{/* end left column */}
 
         {/* ── Right sidebar (xl only) ────────────────────────────────────── */}
@@ -798,7 +657,6 @@ export default function DashboardPage() {
               </div>
               <div>
                 <p className="text-xs font-semibold text-white leading-none">Community</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">500+ members</p>
               </div>
             </div>
             <p className="text-[11px] text-slate-400 leading-relaxed mb-3">
