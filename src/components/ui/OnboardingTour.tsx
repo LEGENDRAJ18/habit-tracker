@@ -17,7 +17,7 @@ const STEPS: Step[] = [
   {
     emoji: "👋",
     title: "Add your first habit here",
-    body: "Tap "Add habit" to create your first habit. Be specific — "Walk 20 minutes" sticks better than "Exercise".",
+    body: 'Tap “Add habit” to create your first habit. Be specific — “Walk 20 minutes” sticks better than “Exercise”.',
     tourTarget: "add-habit",
     tipSide: "bottom",
   },
