@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { X, Sparkles, Loader2, AlertCircle, Zap, Target, Heart, CalendarDays, ExternalLink } from "lucide-react";
+import { X, Sparkles, Loader2, AlertCircle, Zap, Target, Heart, CalendarDays, ExternalLink, Crown } from "lucide-react";
+import type { Plan } from "@/types";
 
 interface CoachingResult {
   struggling: string;
@@ -15,14 +16,17 @@ interface CoachingResult {
 interface Props {
   onClose: () => void;
   onUpgrade: () => void;
-  isPaid: boolean;
+  tier: Plan;
 }
 
-export default function AIInsightModal({ onClose, onUpgrade, isPaid }: Props) {
-  const [loading, setLoading]         = useState(false);
-  const [result, setResult]           = useState<CoachingResult | null>(null);
-  const [error, setError]             = useState<string | null>(null);
-  const [fetched, setFetched]         = useState(false);
+export default function AIInsightModal({ onClose, onUpgrade, tier }: Props) {
+  const isPaid = tier === "plus" || tier === "pro";
+  const isPro  = tier === "pro";
+
+  const [loading, setLoading] = useState(false);
+  const [result, setResult]   = useState<CoachingResult | null>(null);
+  const [error, setError]     = useState<string | null>(null);
+  const [fetched, setFetched] = useState(false);
 
   async function fetchInsight() {
     setLoading(true);
@@ -44,9 +48,8 @@ export default function AIInsightModal({ onClose, onUpgrade, isPaid }: Props) {
     }
   }
 
-  // Trigger fetch on mount for paid users
   if (!fetched && !loading && !error && isPaid) {
-    setFetched(true);   // prevent double-fire
+    setFetched(true);
     fetchInsight();
   }
 
@@ -78,15 +81,15 @@ export default function AIInsightModal({ onClose, onUpgrade, isPaid }: Props) {
 
         {/* Body */}
         <div className="p-6 overflow-y-auto flex-1">
-          {/* Upgrade gate */}
+          {/* Upgrade gate — free users */}
           {!isPaid && (
             <div className="text-center py-4">
               <div className="w-12 h-12 rounded-2xl bg-violet-600/20 border border-violet-500/25 flex items-center justify-center mx-auto mb-4">
                 <Sparkles className="w-6 h-6 text-violet-400" />
               </div>
               <h3 className="text-base font-bold text-white mb-2">Plus & Pro Feature</h3>
-              <p className="text-sm text-slate-400 mb-5">
-                Get personalized AI coaching that analyzes your habit patterns and gives you a custom action plan.
+              <p className="text-sm text-slate-400 mb-5 leading-relaxed">
+                Get personalized AI coaching that analyzes your habit patterns and gives you a custom 7-day action plan.
               </p>
               <button
                 onClick={onUpgrade}
@@ -131,7 +134,6 @@ export default function AIInsightModal({ onClose, onUpgrade, isPaid }: Props) {
           {/* Results */}
           {isPaid && result && !loading && (
             <div className="space-y-4">
-              {/* Struggling section */}
               <div className="bg-violet-950/30 border border-violet-800/25 rounded-2xl p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Target className="w-3.5 h-3.5 text-violet-400" />
@@ -140,7 +142,6 @@ export default function AIInsightModal({ onClose, onUpgrade, isPaid }: Props) {
                 <p className="text-sm text-slate-200 leading-relaxed">{result.struggling}</p>
               </div>
 
-              {/* Fixes */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <Zap className="w-3.5 h-3.5 text-amber-400" />
@@ -158,7 +159,6 @@ export default function AIInsightModal({ onClose, onUpgrade, isPaid }: Props) {
                 </div>
               </div>
 
-              {/* Encouragement */}
               <div className="bg-emerald-950/25 border border-emerald-800/25 rounded-2xl p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Heart className="w-3.5 h-3.5 text-emerald-400" />
@@ -167,7 +167,6 @@ export default function AIInsightModal({ onClose, onUpgrade, isPaid }: Props) {
                 <p className="text-sm text-emerald-200/90 leading-relaxed">{result.encouragement}</p>
               </div>
 
-              {/* 7-day plan */}
               {result.sevenDayPlan && result.sevenDayPlan.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-3">
@@ -185,7 +184,6 @@ export default function AIInsightModal({ onClose, onUpgrade, isPaid }: Props) {
                 </div>
               )}
 
-              {/* Help resources (addiction support) */}
               {result.helpResources && result.helpResources.length > 0 && (
                 <div className="bg-amber-950/25 border border-amber-800/25 rounded-2xl p-4">
                   <div className="flex items-center gap-2 mb-3">
@@ -207,12 +205,17 @@ export default function AIInsightModal({ onClose, onUpgrade, isPaid }: Props) {
                 </div>
               )}
 
-              {/* Remaining uses */}
-              {result.remaining !== undefined && (
-                <p className="text-center text-[10px] text-slate-600">
-                  {result.remaining} AI insight{result.remaining !== 1 ? "s" : ""} remaining today
-                </p>
-              )}
+              {/* Insight count — Plus shows remaining, Pro shows unlimited */}
+              <p className="text-center text-[10px] text-slate-600">
+                {isPro ? (
+                  <span className="flex items-center justify-center gap-1">
+                    <Crown className="w-3 h-3 text-amber-400" />
+                    Unlimited insights · Pro plan
+                  </span>
+                ) : result.remaining !== undefined ? (
+                  `${result.remaining} AI insight${result.remaining !== 1 ? "s" : ""} remaining today`
+                ) : null}
+              </p>
             </div>
           )}
         </div>

@@ -74,15 +74,6 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Rate limit
-    const { allowed, remaining } = checkRateLimit(user.id);
-    if (!allowed) {
-      return NextResponse.json(
-        { error: "You've used all 5 AI insights for today. Come back tomorrow!" },
-        { status: 429 },
-      );
-    }
-
     const body = await request.json() as {
       mode?: string;
       missedHabitName?: string;
@@ -98,6 +89,28 @@ export async function POST(request: NextRequest) {
       admin.from("habit_logs").select("habit_id, completed_at").eq("user_id", user.id).gte("completed_at", daysAgo(30)),
       admin.from("profiles").select("goal, subscription_tier").eq("id", user.id).single(),
     ]);
+
+    // Tier gate — free users cannot use AI insights
+    const userTier = (profile?.subscription_tier ?? "free") as "free" | "plus" | "pro";
+    if (userTier === "free") {
+      return NextResponse.json(
+        { error: "AI coaching is a Plus & Pro feature. Upgrade to unlock personalised insights." },
+        { status: 403 },
+      );
+    }
+
+    // Rate limit — Plus: 5/day, Pro: unlimited
+    let remaining = 9999;
+    if (userTier === "plus") {
+      const { allowed, remaining: rem } = checkRateLimit(user.id);
+      if (!allowed) {
+        return NextResponse.json(
+          { error: "You've used all 5 AI insights for today. Come back tomorrow, or upgrade to Pro for unlimited insights!" },
+          { status: 429 },
+        );
+      }
+      remaining = rem;
+    }
 
     if (!habits || habits.length === 0) {
       return NextResponse.json({ error: "No habits to analyze yet" }, { status: 400 });

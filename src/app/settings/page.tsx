@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, User, Mail, Lock, Trash2, AlertCircle,
-  CheckCircle2, Loader2, Eye, EyeOff, X,
+  CheckCircle2, Loader2, Eye, EyeOff, X, Bell, Download, Crown, Zap,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import BottomNav from "@/components/ui/BottomNav";
@@ -108,12 +108,74 @@ function DeleteModal({
   );
 }
 
+// ─── CSV Export (Pro) ─────────────────────────────────────────────────────────
+
+function CsvExportSection() {
+  const supabase = createClient();
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const [{ data: habits }, { data: logs }] = await Promise.all([
+        supabase.from("habits").select("id, name, description, frequency, created_at").eq("user_id", user.id).order("created_at"),
+        supabase.from("habit_logs").select("habit_id, completed_at").eq("user_id", user.id).order("completed_at"),
+      ]);
+
+      const habitMap = new Map((habits ?? []).map((h) => [h.id, h.name]));
+
+      const rows = [
+        ["habit_name", "completed_date"],
+        ...(logs ?? []).map((l) => [
+          `"${(habitMap.get(l.habit_id) ?? l.habit_id).replace(/"/g, '""')}"`,
+          l.completed_at.split("T")[0],
+        ]),
+      ];
+
+      const csv = rows.map((r) => r.join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      a.download = `habitai-export-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <div className="bg-[#0f0f1a] border border-amber-600/25 rounded-2xl p-5">
+      <div className="flex items-center gap-2 mb-1">
+        <Download className="w-4 h-4 text-amber-400" />
+        <h2 className="text-sm font-semibold text-white">Export Data</h2>
+        <span className="ml-auto inline-flex items-center gap-1 bg-amber-900/30 border border-amber-600/40 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+          <Crown className="w-2.5 h-2.5" />Pro
+        </span>
+      </div>
+      <p className="text-xs text-slate-500 mb-4">Download your complete habit completion history as a CSV file.</p>
+      <button
+        onClick={handleExport}
+        disabled={exporting}
+        className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-600/30 text-amber-300 text-xs font-semibold rounded-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+        {exporting ? "Exporting…" : "Download CSV"}
+      </button>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
   const router = useRouter();
   const supabase = useRef(createClient()).current;
-  const { reminderEnabled, reminderHour, reminderMinute, saveReminderPrefs, profileLoading: reminderLoading } = useProfile();
+  const { reminderEnabled, reminderHour, reminderMinute, saveReminderPrefs, profileLoading: reminderLoading, tier } = useProfile();
 
   const [email,       setEmail]       = useState("");
   const [name,        setName]        = useState("");
@@ -238,12 +300,57 @@ export default function SettingsPage() {
 
         {/* ── Email Reminders ──────────────────────────────────────────────── */}
         {!reminderLoading && (
-          <ReminderSettings
-            enabled={reminderEnabled}
-            hour={reminderHour}
-            minute={reminderMinute}
-            onSave={saveReminderPrefs}
-          />
+          (tier === "plus" || tier === "pro") ? (
+            <ReminderSettings
+              enabled={reminderEnabled}
+              hour={reminderHour}
+              minute={reminderMinute}
+              onSave={saveReminderPrefs}
+            />
+          ) : (
+            <div className="bg-[#0f0f1a] border border-violet-900/20 rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-1">
+                <Bell className="w-4 h-4 text-violet-400" />
+                <h2 className="text-sm font-semibold text-white">Email Reminders</h2>
+                <span className="ml-auto inline-flex items-center gap-1 bg-violet-900/40 border border-violet-700/40 text-violet-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  <Zap className="w-2.5 h-2.5" />Plus
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mb-4">Get daily email reminders for your habits. Available on Plus and Pro.</p>
+              <Link
+                href="/billing"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-600/30 text-violet-300 text-xs font-semibold rounded-xl transition-all"
+              >
+                <Zap className="w-3 h-3" />
+                Upgrade to Plus — $7/mo
+              </Link>
+            </div>
+          )
+        )}
+
+        {/* ── CSV Export (Pro) ─────────────────────────────────────────────── */}
+        {!reminderLoading && (
+          tier === "pro" ? (
+            <CsvExportSection />
+          ) : (
+            <div className="bg-[#0f0f1a] border border-violet-900/20 rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-1">
+                <Download className="w-4 h-4 text-amber-400" />
+                <h2 className="text-sm font-semibold text-white">Export Data</h2>
+                <span className="ml-auto inline-flex items-center gap-1 bg-amber-900/30 border border-amber-600/40 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  <Crown className="w-2.5 h-2.5" />Pro
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mb-4">Download your full habit history as CSV. Available exclusively on Pro.</p>
+              <Link
+                href="/billing"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-600/30 text-amber-300 text-xs font-semibold rounded-xl transition-all"
+              >
+                <Crown className="w-3 h-3" />
+                Upgrade to Pro — $12/mo
+              </Link>
+            </div>
+          )
         )}
 
         {/* ── Profile ─────────────────────────────────────────────────────── */}

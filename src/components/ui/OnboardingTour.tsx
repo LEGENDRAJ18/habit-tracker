@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { X } from "lucide-react";
 
 const TOUR_KEY = "habitai_tour_v1_done";
+const MS_24H  = 24 * 60 * 60 * 1000;
 
 interface Step {
   emoji: string;
@@ -17,7 +18,7 @@ const STEPS: Step[] = [
   {
     emoji: "👋",
     title: "Add your first habit here",
-    body: 'Tap “Add habit” to create your first habit. Be specific — “Walk 20 minutes” sticks better than “Exercise”.',
+    body: 'Tap "Add habit" to create your first habit. Be specific — "Walk 20 minutes" sticks better than "Exercise".',
     tourTarget: "add-habit",
     tipSide: "bottom",
   },
@@ -46,10 +47,15 @@ function getRect(target: string): Rect | null {
   return { top: r.top, left: r.left, width: r.width, height: r.height };
 }
 
-export default function OnboardingTour() {
-  const [step, setStep]   = useState(0);
-  const [rect, setRect]   = useState<Rect | null>(null);
-  const [show, setShow]   = useState(false);
+interface Props {
+  habitCount: number;
+  signedUpAt: string | null;
+}
+
+export default function OnboardingTour({ habitCount, signedUpAt }: Props) {
+  const [step, setStep] = useState(0);
+  const [rect, setRect] = useState<Rect | null>(null);
+  const [show, setShow] = useState(false);
 
   const updateRect = useCallback(() => {
     setRect(getRect(STEPS[step]?.tourTarget ?? ""));
@@ -57,11 +63,15 @@ export default function OnboardingTour() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Never show to users with existing habits
+    if (habitCount > 0) return;
+    // Never show to users who signed up more than 24 hours ago
+    if (!signedUpAt || Date.now() - new Date(signedUpAt).getTime() > MS_24H) return;
+    // Never show if already dismissed
     if (localStorage.getItem(TOUR_KEY)) return;
-    // Delay to let layout paint
     const t = setTimeout(() => { setShow(true); updateRect(); }, 1200);
     return () => clearTimeout(t);
-  }, [updateRect]);
+  }, [habitCount, signedUpAt, updateRect]);
 
   useEffect(() => {
     if (!show) return;
@@ -86,7 +96,6 @@ export default function OnboardingTour() {
   const hasRect  = rect && rect.width > 0;
   const PAD = 8;
 
-  // Spotlight box coords
   const spotStyle = hasRect
     ? {
         top:    rect.top  - PAD,
@@ -96,7 +105,6 @@ export default function OnboardingTour() {
       }
     : null;
 
-  // Tooltip card position
   function tooltipStyle(): React.CSSProperties {
     if (!hasRect || !spotStyle) {
       return { bottom: 96, left: "50%", transform: "translateX(-50%)" };
@@ -108,11 +116,10 @@ export default function OnboardingTour() {
 
     if (current.tipSide === "bottom") {
       const bottom = vh - (rect.top + rect.height + PAD);
-      const isOff  = bottom < cardH + 16;
-      if (!isOff) {
+      if (bottom >= cardH + 16) {
         return {
-          top:   rect.top + rect.height + PAD + 12,
-          left:  Math.min(Math.max(rect.left + rect.width / 2 - cardW / 2, 12), vw - cardW - 12),
+          top:  rect.top + rect.height + PAD + 12,
+          left: Math.min(Math.max(rect.left + rect.width / 2 - cardW / 2, 12), vw - cardW - 12),
         };
       }
     }
@@ -128,7 +135,6 @@ export default function OnboardingTour() {
         return { top: rect.top, left: tipLeft };
       }
     }
-    // Fallback: below the element or center
     return {
       top:  Math.min(rect.top + rect.height + 16, vh - cardH - 16),
       left: Math.min(Math.max(rect.left + rect.width / 2 - cardW / 2, 12), vw - cardW - 12),
@@ -137,10 +143,8 @@ export default function OnboardingTour() {
 
   return (
     <div className="fixed inset-0 z-[60]" aria-live="polite">
-      {/* Dark overlay */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
 
-      {/* Spotlight cutout via box-shadow trick */}
       {spotStyle && (
         <div
           className="absolute pointer-events-none rounded-xl ring-2 ring-violet-400/70"
@@ -155,12 +159,10 @@ export default function OnboardingTour() {
         />
       )}
 
-      {/* Tooltip card */}
       <div
         className="absolute z-10 w-[280px] bg-[#0f0f1a] border border-violet-600/40 rounded-2xl shadow-2xl shadow-violet-950/60 p-5"
         style={tooltipStyle()}
       >
-        {/* Close */}
         <button
           onClick={done}
           aria-label="Skip tour"
@@ -169,7 +171,6 @@ export default function OnboardingTour() {
           <X className="w-3.5 h-3.5" />
         </button>
 
-        {/* Step indicator */}
         <div className="flex items-center gap-1.5 mb-3">
           {STEPS.map((_, i) => (
             <div

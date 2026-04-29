@@ -222,8 +222,8 @@ export default function BillingPage() {
                 const meta = PLAN_META[plan];
                 const features =
                   plan === "plus"
-                    ? ["Unlimited habits & reminders", "Full history", "Streak protection", "Advanced analytics"]
-                    : ["Everything in Plus", "AI Coaching (GPT-4)", "Weekly AI email report", "Custom recovery plans"];
+                    ? ["Unlimited habits", "Full analytics dashboard", "5 AI insights/day", "Streak protection", "Daily email reminders"]
+                    : ["Everything in Plus", "Unlimited AI insights", "Weekly AI email report", "CSV data export"];
 
                 return (
                   <div

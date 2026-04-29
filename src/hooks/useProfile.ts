@@ -14,11 +14,13 @@ export function useProfile() {
   const [reminderEnabled, setReminderEnabled]         = useState(false);
   const [reminderHour, setReminderHour]               = useState(8);
   const [reminderMinute, setReminderMinute]           = useState(0);
+  const [signedUpAt, setSignedUpAt]                   = useState<string | null>(null);
   const supabase = useRef(createClient()).current;
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) { setProfileLoading(false); return; }
+      setSignedUpAt(user.created_at ?? null);
       supabase
         .from("profiles")
         .select(
@@ -98,5 +100,6 @@ export function useProfile() {
     reminderHour,
     reminderMinute,
     saveReminderPrefs,
+    signedUpAt,
   };
 }

@@ -18,32 +18,29 @@ function Soon() {
 type FeatureItem = { label: string; soon?: boolean };
 
 const FREE_FEATURES: FeatureItem[] = [
-  { label: "5 active habits" },
+  { label: "Up to 5 active habits" },
   { label: "Basic streak counters" },
-  { label: "7-day history" },
-  { label: "Basic daily reminders" },
-  { label: "Access to Global Challenges" },
+  { label: "7-day completion heatmap" },
+  { label: "XP & level system" },
+  { label: "Friends & leaderboard" },
 ];
 
 const PLUS_FEATURES: FeatureItem[] = [
-  { label: "Unlimited habits & reminders" },
-  { label: "Full history" },
-  { label: "Off Mode for rest days" },
-  { label: "Habit checklists" },
-  { label: "Predictive nudges" },
-  { label: "Advanced streak protection" },
-  { label: "Apple Health & Google Calendar sync", soon: true },
+  { label: "Unlimited habits" },
+  { label: "Full analytics dashboard" },
+  { label: "5 AI coaching insights per day" },
+  { label: "Streak protection (freeze)" },
+  { label: "Daily email reminders" },
+  { label: "Full habit history" },
 ];
 
 const PRO_FEATURES: FeatureItem[] = [
   { label: "Everything in Plus" },
-  { label: "Autonomous AI Coach" },
-  { label: "Weekly AI reflection sessions" },
+  { label: "Unlimited AI coaching insights" },
+  { label: "Weekly AI email report" },
+  { label: "CSV data export" },
   { label: "Custom recovery plans" },
-  { label: "API & Webhook access" },
-  { label: "Identity & Sentiment analysis" },
-  { label: "Team & Family Spaces", soon: true },
-  { label: "Zapier / IFTTT integration", soon: true },
+  { label: "Priority support" },
 ];
 
 function PaidPlanButton({

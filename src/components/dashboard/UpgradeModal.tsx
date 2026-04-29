@@ -1,20 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { X, Sparkles, Check, Minus, Zap, Loader2, Brain, Clock } from "lucide-react";
+import { X, Sparkles, Check, Minus, Zap, Loader2, Brain, Crown, Lock } from "lucide-react";
 import { FREE_HABIT_LIMIT } from "@/types";
+
+export type UpgradeReason = "habits" | "ai" | "reminders" | "export" | "pro_feature";
 
 interface Props {
   onClose: () => void;
-}
-
-function Soon() {
-  return (
-    <span className="inline-flex items-center gap-0.5 bg-violet-950 border border-violet-700/40 text-violet-400 text-[9px] font-bold px-1.5 py-0.5 rounded-full ml-1 leading-none">
-      <Clock className="w-2 h-2" />
-      Soon
-    </span>
-  );
+  reason?: UpgradeReason;
+  fromPlus?: boolean; // Plus → Pro only modal
 }
 
 async function startCheckout(priceId: string): Promise<void> {
@@ -31,37 +26,29 @@ async function startCheckout(priceId: string): Promise<void> {
   }
 }
 
-type Cell = "yes" | "no" | "soon" | string;
+type Cell = "yes" | "no" | string;
 
-interface ComparisonRow {
-  label: string;
-  free: Cell;
-  plus: Cell;
-  pro: Cell;
-  soon?: boolean;
-}
+interface ComparisonRow { label: string; free: Cell; plus: Cell; pro: Cell; proOnly?: boolean }
 
 const ROWS: ComparisonRow[] = [
-  { label: "Active habits",            free: "5",          plus: "Unlimited",  pro: "Unlimited" },
-  { label: "Streak tracking",          free: "yes",        plus: "yes",        pro: "yes" },
-  { label: "History",                  free: "7 days",     plus: "Full",       pro: "Full" },
-  { label: "Daily reminders",          free: "Basic",      plus: "Unlimited",  pro: "Unlimited" },
-  { label: "Global Challenges",        free: "yes",        plus: "yes",        pro: "yes" },
-  { label: "Off Mode (rest days)",     free: "no",         plus: "yes",        pro: "yes" },
-  { label: "Habit checklists",         free: "no",         plus: "yes",        pro: "yes" },
-  { label: "Predictive nudges",        free: "no",         plus: "yes",        pro: "yes" },
-  { label: "Advanced streak protect",  free: "no",         plus: "yes",        pro: "yes" },
-  { label: "Health & Calendar sync",   free: "no",         plus: "soon",       pro: "soon" },
-  { label: "Autonomous AI Coach",      free: "no",         plus: "no",         pro: "yes" },
-  { label: "AI reflection sessions",   free: "no",         plus: "no",         pro: "yes" },
-  { label: "Custom recovery plans",    free: "no",         plus: "no",         pro: "yes" },
-  { label: "API & Webhook access",     free: "no",         plus: "no",         pro: "yes" },
-  { label: "Identity & Sentiment AI",  free: "no",         plus: "no",         pro: "yes" },
-  { label: "Team & Family Spaces",     free: "no",         plus: "no",         pro: "soon" },
-  { label: "Zapier / IFTTT",           free: "no",         plus: "no",         pro: "soon" },
+  { label: "Active habits",          free: `${FREE_HABIT_LIMIT}`,  plus: "Unlimited",  pro: "Unlimited"  },
+  { label: "Full analytics",         free: "Basic",   plus: "yes",        pro: "yes"        },
+  { label: "AI coaching insights",   free: "no",      plus: "5 / day",    pro: "Unlimited", proOnly: true },
+  { label: "Streak protection",      free: "no",      plus: "yes",        pro: "yes"        },
+  { label: "Email reminders",        free: "no",      plus: "yes",        pro: "yes"        },
+  { label: "Weekly AI email report", free: "no",      plus: "no",         pro: "yes",       proOnly: true },
+  { label: "CSV data export",        free: "no",      plus: "no",         pro: "yes",       proOnly: true },
 ];
 
-function CellValue({ value, highlight }: { value: Cell; highlight?: boolean }) {
+const REASON_COPY: Record<UpgradeReason, { title: string; sub: string }> = {
+  habits:      { title: `You've hit the ${FREE_HABIT_LIMIT} habit limit`, sub: "Upgrade to Plus for unlimited habits and full analytics." },
+  ai:          { title: "AI coaching is a Plus & Pro feature",            sub: "Upgrade to unlock personalized AI insights and 7-day plans." },
+  reminders:   { title: "Email reminders are a Plus feature",             sub: "Upgrade to Plus to set daily reminder emails for your habits." },
+  export:      { title: "Data export is a Pro feature",                   sub: "Upgrade to Pro to download your full habit history as CSV." },
+  pro_feature: { title: "This is a Pro-exclusive feature",                sub: "Upgrade to Pro to unlock unlimited AI, weekly reports, and data export." },
+};
+
+function CellValue({ value, highlight, proOnly }: { value: Cell; highlight?: boolean; proOnly?: boolean }) {
   if (value === "yes") {
     return (
       <div className="flex justify-center">
@@ -76,26 +63,26 @@ function CellValue({ value, highlight }: { value: Cell; highlight?: boolean }) {
       </div>
     );
   }
-  if (value === "soon") {
-    return (
-      <div className="flex justify-center">
-        <span className="inline-flex items-center gap-0.5 bg-violet-950 border border-violet-700/40 text-violet-400 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">
-          <Clock className="w-2 h-2" />
-          Soon
-        </span>
-      </div>
-    );
-  }
   return (
-    <p className={`text-center text-xs font-medium ${highlight ? "text-slate-200" : "text-slate-400"}`}>
+    <p className={`text-center text-xs font-medium ${highlight ? proOnly ? "text-amber-300" : "text-slate-200" : "text-slate-400"}`}>
       {value}
     </p>
   );
 }
 
-export default function UpgradeModal({ onClose }: Props) {
+function ProBadge() {
+  return (
+    <span className="inline-flex items-center gap-0.5 bg-amber-900/30 border border-amber-600/40 text-amber-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full ml-1 leading-none">
+      <Crown className="w-2 h-2" />
+      PRO
+    </span>
+  );
+}
+
+export default function UpgradeModal({ onClose, reason = "habits", fromPlus = false }: Props) {
   const [loading, setLoading] = useState<"plus" | "pro" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const copy = REASON_COPY[reason];
 
   const handleCheckout = async (plan: "plus" | "pro") => {
     setLoading(plan);
@@ -129,20 +116,16 @@ export default function UpgradeModal({ onClose }: Props) {
           </button>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-xl bg-violet-600/30 border border-violet-600/40 flex items-center justify-center">
-              <Zap className="w-5 h-5 text-violet-400" />
+              {fromPlus ? <Crown className="w-5 h-5 text-amber-400" /> : <Lock className="w-5 h-5 text-violet-400" />}
             </div>
             <div>
               <p className="text-xs text-violet-400 font-semibold uppercase tracking-wider">
-                Free plan limit reached
+                {fromPlus ? "Upgrade to Pro" : "Upgrade your plan"}
               </p>
-              <h2 className="text-lg font-bold text-white">Choose your plan</h2>
+              <h2 className="text-lg font-bold text-white">{copy.title}</h2>
             </div>
           </div>
-          <p className="text-sm text-slate-400">
-            You&apos;ve reached the{" "}
-            <span className="text-violet-400 font-medium">{FREE_HABIT_LIMIT} habit limit</span> on
-            the free plan. Upgrade to unlock everything.
-          </p>
+          <p className="text-sm text-slate-400">{copy.sub}</p>
         </div>
 
         {/* Scrollable body */}
@@ -153,122 +136,131 @@ export default function UpgradeModal({ onClose }: Props) {
             </p>
           )}
 
-          {/* Plan cards — 3 columns */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
-            {/* Free */}
-            <div className="bg-[#0a0a14] border border-violet-900/20 rounded-xl p-4 flex flex-col">
-              <div className="flex items-center gap-1.5 mb-1">
-                <Zap className="w-3.5 h-3.5 text-slate-500" />
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Free</span>
+          {/* Plan cards */}
+          <div className={`grid gap-3 mb-6 ${fromPlus ? "grid-cols-1 max-w-xs mx-auto" : "grid-cols-3"}`}>
+            {!fromPlus && (
+              <div className="bg-[#0a0a14] border border-violet-900/20 rounded-xl p-4 flex flex-col">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Zap className="w-3.5 h-3.5 text-slate-500" />
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Free</span>
+                </div>
+                <p className="text-[10px] text-slate-600 mb-2 font-medium">The Foundation</p>
+                <div className="mb-4">
+                  <span className="text-2xl font-extrabold text-white">$0</span>
+                  <span className="text-slate-600 text-xs ml-1">/ mo</span>
+                </div>
+                <div className="mt-auto">
+                  <button
+                    onClick={onClose}
+                    className="w-full py-2 border border-violet-900/40 text-slate-500 text-xs font-semibold rounded-lg transition-all hover:text-slate-300 hover:border-violet-800/50"
+                  >
+                    Current plan
+                  </button>
+                </div>
               </div>
-              <p className="text-[10px] text-slate-600 mb-2 font-medium">The Foundation</p>
-              <div className="mb-4">
-                <span className="text-2xl font-extrabold text-white">$0</span>
-                <span className="text-slate-600 text-xs ml-1">/ mo</span>
-              </div>
-              <div className="mt-auto">
-                <button
-                  onClick={onClose}
-                  className="w-full py-2 border border-violet-900/40 text-slate-500 text-xs font-semibold rounded-lg transition-all hover:text-slate-300 hover:border-violet-800/50"
-                >
-                  Current plan
-                </button>
-              </div>
-            </div>
+            )}
 
-            {/* Plus */}
-            <div className="relative bg-violet-950/30 border border-violet-600/50 rounded-xl p-4 flex flex-col">
-              <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
-                <span className="inline-flex items-center gap-0.5 bg-violet-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg shadow-violet-900/40">
-                  <Sparkles className="w-2.5 h-2.5" />
-                  Most Popular
-                </span>
+            {!fromPlus && (
+              <div className="relative bg-violet-950/30 border border-violet-600/50 rounded-xl p-4 flex flex-col">
+                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
+                  <span className="inline-flex items-center gap-0.5 bg-violet-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg shadow-violet-900/40">
+                    <Sparkles className="w-2.5 h-2.5" />
+                    Most Popular
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Zap className="w-3.5 h-3.5 text-violet-400" />
+                  <span className="text-[11px] font-bold text-violet-300 uppercase tracking-wide">Plus</span>
+                </div>
+                <p className="text-[10px] text-violet-400/70 mb-2 font-medium">The Optimizer</p>
+                <div className="mb-4">
+                  <span className="text-2xl font-extrabold text-white">$7</span>
+                  <span className="text-slate-400 text-xs ml-1">/ mo</span>
+                </div>
+                <ul className="space-y-1 mb-4">
+                  {["Unlimited habits", "Full analytics", "5 AI insights/day", "Streak protection", "Email reminders"].map((f) => (
+                    <li key={f} className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                      <Check className="w-3 h-3 text-violet-500 flex-shrink-0" />{f}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-auto">
+                  <button
+                    onClick={() => handleCheckout("plus")}
+                    disabled={loading !== null}
+                    className="w-full py-2 border border-violet-500/60 hover:border-violet-400 text-violet-300 hover:text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {loading === "plus" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                    Get Plus
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-1.5 mb-1">
-                <Zap className="w-3.5 h-3.5 text-violet-400" />
-                <span className="text-[11px] font-bold text-violet-300 uppercase tracking-wide">Plus</span>
-              </div>
-              <p className="text-[10px] text-violet-400/70 mb-2 font-medium">The Optimizer</p>
-              <div className="mb-4">
-                <span className="text-2xl font-extrabold text-white">$7</span>
-                <span className="text-slate-400 text-xs ml-1">/ mo</span>
-              </div>
-              <div className="mt-auto">
-                <button
-                  onClick={() => handleCheckout("plus")}
-                  disabled={loading !== null}
-                  className="w-full py-2 border border-violet-500/60 hover:border-violet-400 text-violet-300 hover:text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {loading === "plus" ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : null}
-                  Get Plus
-                </button>
-              </div>
-            </div>
+            )}
 
-            {/* Pro */}
-            <div className="relative bg-gradient-to-b from-violet-900/35 to-violet-950/20 border border-violet-500/60 rounded-xl p-4 flex flex-col shadow-lg shadow-violet-950/30">
+            <div className="relative bg-gradient-to-b from-violet-900/35 to-violet-950/20 border border-amber-500/40 rounded-xl p-4 flex flex-col shadow-lg shadow-violet-950/30">
               <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
                 <span className="inline-flex items-center gap-0.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg shadow-orange-900/40">
                   <Brain className="w-2.5 h-2.5" />
-                  Best Value
+                  {fromPlus ? "Unlock Everything" : "Best Value"}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 mb-1">
-                <Brain className="w-3.5 h-3.5 text-violet-400" />
-                <span className="text-[11px] font-bold text-violet-300 uppercase tracking-wide">Pro</span>
+                <Brain className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[11px] font-bold text-amber-300 uppercase tracking-wide">Pro</span>
               </div>
-              <p className="text-[10px] text-violet-400/70 mb-2 font-medium">Behavioral Scientist</p>
+              <p className="text-[10px] text-amber-400/70 mb-2 font-medium">The Behavioral Scientist</p>
               <div className="mb-4">
                 <span className="text-2xl font-extrabold text-white">$12</span>
                 <span className="text-slate-400 text-xs ml-1">/ mo</span>
               </div>
+              <ul className="space-y-1 mb-4">
+                {["Everything in Plus", "Unlimited AI insights", "Weekly AI email report", "CSV data export"].map((f) => (
+                  <li key={f} className="flex items-center gap-1.5 text-[10px] text-amber-200/80">
+                    <Check className="w-3 h-3 text-amber-400 flex-shrink-0" />{f}
+                  </li>
+                ))}
+              </ul>
               <div className="mt-auto">
                 <button
                   onClick={() => handleCheckout("pro")}
                   disabled={loading !== null}
-                  className="w-full py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-violet-900/30 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-orange-900/20 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {loading === "pro" ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-3 h-3" />
-                  )}
-                  Get Pro
+                  {loading === "pro" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Crown className="w-3 h-3" />}
+                  Get Pro — $12/mo
                 </button>
               </div>
             </div>
           </div>
 
           {/* Comparison table */}
-          <div className="border border-violet-900/25 rounded-xl overflow-hidden">
-            {/* Table header */}
-            <div className="grid grid-cols-[1fr_72px_72px_72px] bg-[#0a0a14] border-b border-violet-900/20 px-4 py-2.5">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Feature</p>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Free</p>
-              <p className="text-[10px] font-bold text-violet-400 uppercase tracking-wider text-center">Plus</p>
-              <p className="text-[10px] font-bold text-violet-300 uppercase tracking-wider text-center">Pro</p>
-            </div>
-
-            {/* Rows */}
-            {ROWS.map((row, i) => (
-              <div
-                key={row.label}
-                className={`grid grid-cols-[1fr_72px_72px_72px] px-4 py-2.5 items-center ${
-                  i % 2 === 0 ? "bg-[#0f0f1a]" : "bg-[#0a0a14]"
-                }`}
-              >
-                <p className="text-xs text-slate-400">{row.label}</p>
-                <CellValue value={row.free} />
-                <CellValue value={row.plus} highlight />
-                <CellValue value={row.pro} highlight />
+          {!fromPlus && (
+            <div className="border border-violet-900/25 rounded-xl overflow-hidden">
+              <div className="grid grid-cols-[1fr_72px_72px_72px] bg-[#0a0a14] border-b border-violet-900/20 px-4 py-2.5">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Feature</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Free</p>
+                <p className="text-[10px] font-bold text-violet-400 uppercase tracking-wider text-center">Plus</p>
+                <p className="text-[10px] font-bold text-amber-400 uppercase tracking-wider text-center">Pro</p>
               </div>
-            ))}
-          </div>
+              {ROWS.map((row, i) => (
+                <div
+                  key={row.label}
+                  className={`grid grid-cols-[1fr_72px_72px_72px] px-4 py-2.5 items-center ${i % 2 === 0 ? "bg-[#0f0f1a]" : "bg-[#0a0a14]"}`}
+                >
+                  <p className="text-xs text-slate-400">
+                    {row.label}
+                    {row.proOnly && <ProBadge />}
+                  </p>
+                  <CellValue value={row.free} />
+                  <CellValue value={row.plus} highlight />
+                  <CellValue value={row.pro} highlight proOnly={row.proOnly} />
+                </div>
+              ))}
+            </div>
+          )}
 
           <p className="text-center text-xs text-slate-600 mt-4">
-            14-day free trial · Cancel anytime · No credit card required
+            Cancel anytime · No credit card required for free plan
           </p>
 
           <button

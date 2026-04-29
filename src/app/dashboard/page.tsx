@@ -220,7 +220,7 @@ function AllDoneCelebration({
 export default function DashboardPage() {
   const { habits, loading, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, addHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength } =
     useHabits();
-  const { tier, profileLoading, onboardingCompleted, goal, freezeAvailable, freezeProtectedDate, applyFreeze } = useProfile();
+  const { tier, profileLoading, onboardingCompleted, goal, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt } = useProfile();
   const { xp, level, achievements, totalCompletions, justLeveledUp, isDailyAchieved, onHabitCompleted, checkMilestones, dismissLevelUp } = useXP();
   // Local override so closing the modal doesn't require a page reload
   const [onboardingDone, setOnboardingDone] = useState(false);
@@ -228,6 +228,7 @@ export default function DashboardPage() {
 
   const [showAdd, setShowAdd] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState<import("@/components/dashboard/UpgradeModal").UpgradeReason>("habits");
   const [upgradeSuccess, setUpgradeSuccess] = useState(false);
   const [showCelebration, setShowCelebration]   = useState(false);
   const [showStreakBroken, setShowStreakBroken] = useState(false);
@@ -351,6 +352,7 @@ export default function DashboardPage() {
 
   const handleAddClick = useCallback(() => {
     if (!isPaid && habits.length >= FREE_HABIT_LIMIT) {
+      setUpgradeReason("habits");
       setShowUpgrade(true);
     } else {
       setShowAdd(true);
@@ -691,7 +693,7 @@ export default function DashboardPage() {
                 {isPaid ? "Analyse My Habits" : "Upgrade to Unlock"}
               </button>
               <p className="text-[10px] text-slate-600 text-center mt-2">
-                {isPaid ? "5 insights remaining today" : "Available on Plus & Pro"}
+                {tier === "pro" ? "Unlimited insights · Pro" : isPaid ? "5 insights / day · Plus" : "Available on Plus & Pro"}
               </p>
             </div>
           </div>
@@ -763,7 +765,7 @@ export default function DashboardPage() {
       )}
 
       {showUpgrade && (
-        <UpgradeModal onClose={() => setShowUpgrade(false)} />
+        <UpgradeModal onClose={() => setShowUpgrade(false)} reason={upgradeReason} />
       )}
 
       {(showOnboarding || showReOnboard) && (
@@ -791,9 +793,9 @@ export default function DashboardPage() {
 
       {showAIInsight && (
         <AIInsightModal
-          isPaid={isPaid}
+          tier={tier}
           onClose={() => setShowAIInsight(false)}
-          onUpgrade={() => { setShowAIInsight(false); setShowUpgrade(true); }}
+          onUpgrade={() => { setShowAIInsight(false); setUpgradeReason("ai"); setShowUpgrade(true); }}
         />
       )}
 
@@ -821,7 +823,9 @@ export default function DashboardPage() {
       <HelpModal />
 
       {/* First-visit onboarding tour (3 steps) */}
-      {!loading && !profileLoading && <OnboardingTour />}
+      {!loading && !profileLoading && (
+        <OnboardingTour habitCount={habits.length} signedUpAt={signedUpAt} />
+      )}
     </div>
   );
 }

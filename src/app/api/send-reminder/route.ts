@@ -176,8 +176,9 @@ async function runWeeklyReport(supabase: ReturnType<typeof createAdminClient>): 
 
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("id, reminder_enabled")
-    .eq("reminder_enabled", true);
+    .select("id, reminder_enabled, subscription_tier")
+    .eq("reminder_enabled", true)
+    .eq("subscription_tier", "pro");
 
   if (!profiles || profiles.length === 0) return { sent: 0, skipped: 0 };
 
