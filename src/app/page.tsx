@@ -4,7 +4,7 @@ import Link from "next/link";
 import {
   ArrowRight, Check, Sparkles, Flame, Users, Brain,
   Smartphone, Cigarette, Dumbbell, Moon, X as XIcon,
-  ChevronRight, Download, Crown,
+  Download, Crown, Play,
 } from "lucide-react";
 
 const Navbar  = dynamic(() => import("@/components/landing/Navbar"));
@@ -356,6 +356,99 @@ function WhoItsFor() {
 // ─── 5. PRICING ───────────────────────────────────────────────────────────────
 // Uses the existing Pricing component (already updated with accurate feature lists)
 
+// ─── DEMO VIDEO ───────────────────────────────────────────────────────────────
+
+function DemoSection() {
+  return (
+    <section className="py-24 px-4 sm:px-6 bg-[#060609]">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            See it in action
+          </h2>
+          <p className="text-slate-400 max-w-lg mx-auto">
+            Watch how HabitAI helped someone quit doom scrolling in 21 days.
+          </p>
+        </div>
+
+        {/* Video placeholder */}
+        <div className="relative group cursor-pointer rounded-2xl overflow-hidden border border-violet-700/30 shadow-2xl shadow-violet-950/50">
+          {/* Gradient background stand-in */}
+          <div className="relative aspect-video bg-gradient-to-br from-[#0d0d1f] via-[#0f0a1e] to-[#0a0a16] flex items-center justify-center">
+            {/* Ambient glow */}
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-900/20 via-transparent to-purple-900/15 pointer-events-none" />
+            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Mockup content behind video */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none select-none">
+              <div className="w-64 bg-[#0f0f1a] border border-violet-800/30 rounded-xl p-4 text-left">
+                <p className="text-xs text-slate-500 mb-2">HabitAI — Day 21</p>
+                <div className="space-y-1.5">
+                  {["No phone before 9am ✓", "Read 20 pages ✓", "No social media ✓"].map((t) => (
+                    <div key={t} className="text-xs text-violet-300 bg-violet-900/30 rounded-lg px-3 py-1.5">{t}</div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Play button */}
+            <div className="relative z-10 flex flex-col items-center gap-4">
+              <div
+                className="w-20 h-20 rounded-full bg-violet-600/90 hover:bg-violet-500 flex items-center justify-center shadow-2xl shadow-violet-900/60 transition-all duration-300 group-hover:scale-110"
+                style={{ boxShadow: "0 0 0 12px rgba(139,92,246,0.12), 0 0 40px rgba(139,92,246,0.4)" }}
+              >
+                <Play className="w-8 h-8 text-white ml-1" fill="white" />
+              </div>
+              <span className="text-xs text-violet-400/80 tracking-wide font-medium">Coming soon</span>
+            </div>
+
+            {/* Duration badge */}
+            <div className="absolute bottom-4 right-4 bg-black/60 text-white text-xs font-mono px-2 py-1 rounded-md">
+              3:21
+            </div>
+          </div>
+        </div>
+
+        <p className="text-center text-sm text-slate-500 mt-5">
+          No demo yet — but the app is live. Start your own story today.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+// ─── ABOUT SECTION ────────────────────────────────────────────────────────────
+
+function AboutSection() {
+  return (
+    <section className="py-20 px-4 sm:px-6">
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-gradient-to-br from-violet-950/40 to-[#0f0f1a] border border-violet-800/25 rounded-3xl p-8 sm:p-10 text-center"
+          style={{ boxShadow: "0 0 60px rgba(139,92,246,0.06)" }}>
+          <div className="text-4xl mb-5">👋</div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6">
+            Why we built this
+          </h2>
+          <p className="text-base text-slate-300 leading-relaxed mb-4">
+            HabitAI was built by a teenager from New Zealand who got tired of doom scrolling and couldn&apos;t find an app that actually helped. So he built one.
+          </p>
+          <p className="text-sm text-slate-500 leading-relaxed mb-6">
+            No VC funding. No corporate agenda. Just a genuine tool built to solve a real problem — for people who actually want to change, not just track.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
+            {["Built by a real person", "No corporate agenda", "Honest & ad-free"].map((t) => (
+              <span key={t} className="flex items-center gap-1.5 text-xs text-violet-300 bg-violet-950/60 border border-violet-800/30 px-3 py-1.5 rounded-full">
+                <Check className="w-3 h-3 text-violet-500" />
+                {t}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── 6. FINAL CTA ─────────────────────────────────────────────────────────────
 
 function FinalCta() {
@@ -489,12 +582,14 @@ export default function LandingPage() {
       <Navbar />
       <main>
         <Hero />
+        <DemoSection />
         <ProblemSection />
         <SolutionSection />
         <WhoItsFor />
         <div id="pricing">
           <Pricing />
         </div>
+        <AboutSection />
         <FinalCta />
       </main>
       <Footer />

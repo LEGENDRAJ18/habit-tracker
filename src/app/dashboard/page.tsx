@@ -28,6 +28,7 @@ import SmartNotification from "@/components/ui/SmartNotification";
 import { toast } from "@/components/ui/Toast";
 import HelpModal from "@/components/ui/HelpModal";
 import OnboardingTour from "@/components/ui/OnboardingTour";
+import HabitTemplatesModal from "@/components/dashboard/HabitTemplatesModal";
 
 // ─── Greeting & quote ─────────────────────────────────────────────────────────
 
@@ -226,7 +227,8 @@ export default function DashboardPage() {
   const [onboardingDone, setOnboardingDone] = useState(false);
   const showOnboarding = !profileLoading && !onboardingCompleted && !onboardingDone;
 
-  const [showAdd, setShowAdd] = useState(false);
+  const [showAdd, setShowAdd]           = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState<import("@/components/dashboard/UpgradeModal").UpgradeReason>("habits");
   const [upgradeSuccess, setUpgradeSuccess] = useState(false);
@@ -562,6 +564,15 @@ export default function DashboardPage() {
                 {!isPaid && habits.length >= FREE_HABIT_LIMIT ? "Upgrade to add more habits" : "Add habit"}
                 <kbd className="ml-auto text-[10px] text-violet-600 bg-violet-950/60 border border-violet-800/40 rounded px-1.5 py-0.5 hidden sm:block">N</kbd>
               </button>
+              <button
+                onClick={() => setShowTemplates(true)}
+                aria-label="Browse habit templates"
+                title="Browse templates"
+                className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-violet-800/30 text-slate-500 hover:text-violet-300 hover:border-violet-700/50 hover:bg-violet-950/20 transition-all text-xs font-medium flex-shrink-0"
+              >
+                <span className="text-sm">✨</span>
+                <span className="hidden sm:inline">Templates</span>
+              </button>
             </div>
 
             {/* Search bar — shown when there are 3+ habits */}
@@ -807,6 +818,16 @@ export default function DashboardPage() {
             setShareData({ type: "level", value: justLeveledUp, tier: levelName(justLeveledUp) });
             dismissLevelUp();
           }}
+        />
+      )}
+
+      {showTemplates && (
+        <HabitTemplatesModal
+          onClose={() => setShowTemplates(false)}
+          existingHabits={habits}
+          canAddMore={isPaid || habits.length < FREE_HABIT_LIMIT}
+          onAdd={addHabit}
+          onHitLimit={() => { setShowTemplates(false); setUpgradeReason("habits"); setShowUpgrade(true); }}
         />
       )}
 

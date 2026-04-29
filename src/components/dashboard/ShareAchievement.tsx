@@ -1,13 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { X, Download, Link2, Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Download, Link2, Check, Copy } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 interface Props {
   type: "streak" | "level" | "daily";
   value: number;
   tier?: string;
   onClose: () => void;
+}
+
+function encodeShareId(type: string, value: number, username: string): string {
+  const json  = JSON.stringify({ type, value, username });
+  const b64   = btoa(json);
+  // Make URL-safe: replace +/= chars
+  return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
 }
 
 function DiscordIcon() {
@@ -19,22 +27,41 @@ function DiscordIcon() {
 }
 
 export default function ShareAchievement({ type, value, tier, onClose }: Props) {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied]         = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [username, setUsername]     = useState("HabitAI User");
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://habitai.app";
+
+  // Fetch display name for share link
+  useEffect(() => {
+    createClient().auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      const meta = user.user_metadata?.full_name as string | undefined;
+      if (meta) {
+        setUsername(meta.split(/[\s_\-+@]/)[0] ?? meta);
+      } else if (user.email) {
+        const local = user.email.split("@")[0];
+        setUsername(local.split(/[._\-+]/)[0] ?? local);
+      }
+    });
+  }, []);
+
+  const shareId   = encodeShareId(type, value, username);
+  const shareLink = `${appUrl}/share/${shareId}`;
 
   const cardUrl = `/api/share-card?type=${type}&value=${value}${tier ? `&tier=${encodeURIComponent(tier)}` : ""}`;
 
   const shareText =
     type === "streak"
-      ? `I just hit a ${value}-day habit streak on @HabitAI! 🔥 Consistency compounds. Build yours → `
+      ? `I just hit a ${value}-day habit streak on HabitAI! 🔥 Consistency compounds. `
       : type === "daily"
-      ? `I completed ALL my habits today on @HabitAI! 🎯 One day at a time → `
-      : `I just reached Level ${value} on @HabitAI! ⚡ Making habits a game makes them stick → `;
+      ? `I completed ALL my habits today on HabitAI! 🎯 One day at a time. `
+      : `I just reached Level ${value} on HabitAI! ⚡ Making habits a game makes them stick. `;
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://habitai.app";
-  const twitterUrl   = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText + appUrl)}`;
-  const whatsappUrl  = `https://wa.me/?text=${encodeURIComponent(shareText + appUrl)}`;
-  const facebookUrl  = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(appUrl)}&quote=${encodeURIComponent(shareText)}`;
+  const twitterUrl  = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText + shareLink)}`;
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + shareLink)}`;
+  const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}&quote=${encodeURIComponent(shareText)}`;
 
   const handleDownload = async () => {
     setDownloading(true);
@@ -50,10 +77,10 @@ export default function ShareAchievement({ type, value, tier, onClose }: Props) 
     }
   };
 
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(shareText + appUrl);
+  const handleCopyLink = async () => {
+    await navigator.clipboard.writeText(shareLink);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 2500);
   };
 
   return (
@@ -65,8 +92,8 @@ export default function ShareAchievement({ type, value, tier, onClose }: Props) 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-violet-900/20">
           <p className="text-sm font-semibold text-white">
-          {type === "daily" ? "Share your win" : "Share your achievement"}
-        </p>
+            {type === "daily" ? "Share your win" : "Share your achievement"}
+          </p>
           <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50">
             <X className="w-4 h-4" />
           </button>
@@ -76,16 +103,23 @@ export default function ShareAchievement({ type, value, tier, onClose }: Props) 
           {/* Card preview */}
           <div className="relative rounded-xl overflow-hidden border border-violet-800/30 mb-5 bg-[#09090f] aspect-square">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={cardUrl}
-              alt="Share card preview"
-              className="w-full h-full object-cover"
-            />
+            <img src={cardUrl} alt="Share card preview" className="w-full h-full object-cover" />
+          </div>
+
+          {/* Share link — copy button */}
+          <div className="flex items-center gap-2 bg-violet-950/40 border border-violet-800/30 rounded-xl px-3 py-2.5 mb-4">
+            <span className="flex-1 text-xs text-slate-500 truncate font-mono">{shareLink}</span>
+            <button
+              onClick={handleCopyLink}
+              className="flex items-center gap-1 text-xs text-violet-400 hover:text-violet-300 transition-colors flex-shrink-0"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? "Copied!" : "Copy"}
+            </button>
           </div>
 
           {/* Action buttons */}
           <div className="space-y-2.5">
-            {/* Download */}
             <button
               onClick={handleDownload}
               disabled={downloading}
@@ -95,7 +129,6 @@ export default function ShareAchievement({ type, value, tier, onClose }: Props) 
               {downloading ? "Downloading…" : "Download image"}
             </button>
 
-            {/* Twitter */}
             <a
               href={twitterUrl}
               target="_blank"
@@ -108,7 +141,6 @@ export default function ShareAchievement({ type, value, tier, onClose }: Props) 
               Share on Twitter / X
             </a>
 
-            {/* WhatsApp */}
             <a
               href={whatsappUrl}
               target="_blank"
@@ -121,7 +153,6 @@ export default function ShareAchievement({ type, value, tier, onClose }: Props) 
               Share on WhatsApp
             </a>
 
-            {/* Facebook */}
             <a
               href={facebookUrl}
               target="_blank"
@@ -134,7 +165,6 @@ export default function ShareAchievement({ type, value, tier, onClose }: Props) 
               Share on Facebook
             </a>
 
-            {/* Discord */}
             <a
               href="https://discord.gg/habitai"
               target="_blank"
@@ -145,13 +175,12 @@ export default function ShareAchievement({ type, value, tier, onClose }: Props) 
               Share in Discord community
             </a>
 
-            {/* Copy link */}
             <button
-              onClick={handleCopy}
+              onClick={handleCopyLink}
               className="w-full flex items-center justify-center gap-2.5 py-2.5 text-slate-500 hover:text-slate-300 text-sm transition-colors"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Link2 className="w-3.5 h-3.5" />}
-              {copied ? "Copied!" : "Copy text"}
+              {copied ? "Link copied!" : "Copy share link"}
             </button>
           </div>
         </div>
