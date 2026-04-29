@@ -658,6 +658,7 @@ export default function DashboardPage() {
               isDailyAchieved={isDailyAchieved}
               hasStreak7={achievements.includes("streak_7")}
               hasStreak30={achievements.includes("streak_30")}
+              onShare={(type, value) => setShareData({ type, value })}
             />
           )}
         </div>
@@ -720,6 +721,7 @@ export default function DashboardPage() {
                 hasStreak7={achievements.includes("streak_7")}
                 hasStreak30={achievements.includes("streak_30")}
                 sidebar
+                onShare={(type, value) => setShareData({ type, value })}
               />
             </div>
           )}
@@ -836,6 +838,9 @@ export default function DashboardPage() {
           type={shareData.type}
           value={shareData.value}
           tier={shareData.tier}
+          userStreak={bestStreak}
+          userLevel={level}
+          userXp={xp}
           onClose={() => setShareData(null)}
         />
       )}
