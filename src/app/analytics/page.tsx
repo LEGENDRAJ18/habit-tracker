@@ -328,12 +328,16 @@ export default function AnalyticsPage() {
           .order("completed_at", { ascending: false }),
         supabase.from("profiles").select("subscription_tier").eq("id", user.id).single(),
       ]);
-      setHabits(h ?? []);
+      if (!h || h.length === 0) {
+        router.replace("/dashboard");
+        return;
+      }
+      setHabits(h);
       setLogs(l ?? []);
       setTier((p?.subscription_tier as Plan) ?? "free");
       setLoading(false);
     })();
-  }, []);
+  }, [router]);
 
   const habitDateSets = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -366,13 +370,7 @@ export default function AnalyticsPage() {
 
   const isPaid = tier === "plus" || tier === "pro";
 
-  useEffect(() => {
-    if (!loading && habits.length === 0) {
-      router.replace("/dashboard");
-    }
-  }, [loading, habits.length, router]);
-
-  if (loading || (!loading && habits.length === 0)) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#09090f] flex items-center justify-center">
         <Loader2 className="w-6 h-6 text-violet-500 animate-spin" />
@@ -399,9 +397,8 @@ export default function AnalyticsPage() {
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 pb-8 space-y-6 page-fade">
-        {habits.length > 0 && (
-          <>
-            {/* Stat cards — always visible */}
+        <>
+          {/* Stat cards — always visible */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
                 icon={<CheckCircle2 className="w-4 h-4" />}
@@ -489,8 +486,7 @@ export default function AnalyticsPage() {
                 </div>
               </BlurGate>
             )}
-          </>
-        )}
+        </>
       </main>
       <BottomNav />
     </div>
