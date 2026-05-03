@@ -137,6 +137,7 @@ export function useHabits() {
     whenTime?: string | null,
     whereLocation?: string | null,
     howLong?: string | null,
+    validityScore?: "valid" | "partial" | "invalid",
   ): Promise<{ error: string | null }> => {
     const {
       data: { user },
@@ -146,20 +147,37 @@ export function useHabits() {
     const { data, error } = await supabase
       .from("habits")
       .insert({
-        user_id:       user.id,
+        user_id:        user.id,
         name,
-        description:   description || null,
+        description:    description || null,
         frequency,
-        stack_after_id: stackAfterId ?? null,
-        when_time:     whenTime     ?? null,
-        where_location:   whereLocation   ?? null,
-        how_long:      howLong      ?? null,
+        stack_after_id: stackAfterId  ?? null,
+        when_time:      whenTime      ?? null,
+        where_location: whereLocation ?? null,
+        how_long:       howLong       ?? null,
+        validity_score: validityScore ?? "valid",
       })
       .select()
       .single();
 
     if (error) return { error: error.message };
     if (data) setHabits((prev) => [...prev, data]);
+    return { error: null };
+  };
+
+  const renameHabit = async (
+    habitId: string,
+    newName: string,
+    validityScore: "valid" | "partial" | "invalid",
+  ): Promise<{ error: string | null }> => {
+    const { error } = await supabase
+      .from("habits")
+      .update({ name: newName, validity_score: validityScore })
+      .eq("id", habitId);
+    if (error) return { error: error.message };
+    setHabits((prev) =>
+      prev.map((h) => h.id === habitId ? { ...h, name: newName, validity_score: validityScore } : h),
+    );
     return { error: null };
   };
 
@@ -353,6 +371,7 @@ export function useHabits() {
     error,
     completedCount,
     addHabit,
+    renameHabit,
     toggleHabit,
     deleteHabit,
     removeHabitOptimistic,

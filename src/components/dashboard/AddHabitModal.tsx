@@ -20,6 +20,7 @@ interface Props {
     whenTime?: string | null,
     whereLocation?: string | null,
     howLong?: string | null,
+    validityScore?: "valid" | "partial" | "invalid",
   ) => Promise<{ error: string | null }>;
 }
 
@@ -53,14 +54,18 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
     setLoading(true);
     setError(null);
 
+    const validityScore: "valid" | "partial" | "invalid" =
+      aiValidation.status === "warning" ? "partial" : "valid";
+
     const { error } = await onAdd(
       name.trim(),
       description.trim(),
       frequency,
-      stackAfterId    || null,
-      whenTime        || null,
-      whereLocation   || null,
-      howLong         || null,
+      stackAfterId  || null,
+      whenTime      || null,
+      whereLocation || null,
+      howLong       || null,
+      validityScore,
     );
 
     if (error) {

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Trash2, Check, Flame, Snowflake, ArrowRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Trash2, Check, Flame, Snowflake, ArrowRight, Pencil, X, Loader2 } from "lucide-react";
 import type { Habit } from "@/types";
 
 interface Props {
@@ -11,9 +11,11 @@ interface Props {
   strength: number;
   isProtected?: boolean;
   stackAfterName?: string;
+  isEditing?: boolean;
   onToggle: () => void;
   onDelete: () => void;
   onCompleted?: () => void;
+  onRename?: (newName: string, validityScore: "valid" | "partial" | "invalid") => Promise<void>;
 }
 
 const PARTICLE_DIRS = [
@@ -62,14 +64,48 @@ function getTimeEmoji(whenTime: string | null): string | null {
 }
 
 export default function HabitCard({
-  habit, completed, streak, strength, isProtected, stackAfterName,
-  onToggle, onDelete, onCompleted,
+  habit, completed, streak, strength, isProtected, stackAfterName, isEditing,
+  onToggle, onDelete, onCompleted, onRename,
 }: Props) {
   const [toggling, setToggling]     = useState(false);
   const [deleting, setDeleting]     = useState(false);
   const [showParticles, setShowParticles] = useState(false);
   const [justCompleted, setJustCompleted] = useState(false);
   const [showStrTooltip, setShowStrTooltip] = useState(false);
+  const [editMode, setEditMode]     = useState(false);
+  const [editName, setEditName]     = useState(habit.name);
+  const [editSaving, setEditSaving] = useState(false);
+
+  useEffect(() => {
+    if (isEditing) { setEditName(habit.name); setEditMode(true); }
+  }, [isEditing, habit.name]);
+
+  const handleRename = async () => {
+    if (!onRename) return;
+    const trimmed = editName.trim();
+    if (!trimmed || trimmed === habit.name) { setEditMode(false); return; }
+    setEditSaving(true);
+    try {
+      let validityScore: "valid" | "partial" | "invalid" = "valid";
+      try {
+        const res = await fetch("/api/validate-habit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ habitName: trimmed }),
+        });
+        if (res.ok) {
+          const data = await res.json() as { status: "good" | "warning" | "blocked" };
+          validityScore = data.status === "warning" ? "partial" : data.status === "blocked" ? "invalid" : "valid";
+        }
+      } catch { /* silently use "valid" on network error */ }
+      await onRename(trimmed, validityScore);
+      setEditMode(false);
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const validity = habit.validity_score;
 
   const handleToggle = async () => {
     if (!completed) {
@@ -140,20 +176,71 @@ export default function HabitCard({
 
         {/* Name + description */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            {getTimeEmoji(habit.when_time) && !completed && (
-              <span className="text-sm leading-none flex-shrink-0">{getTimeEmoji(habit.when_time)}</span>
-            )}
-            <p className={`text-sm font-medium truncate transition-all duration-300 ${
-              completed ? "text-slate-500 line-through" : "text-slate-100"
-            }`}>
-              {habit.name}
-            </p>
-          </div>
-          {habit.description && (
+          {editMode && onRename ? (
+            <div className="flex items-center gap-1.5">
+              <input
+                autoFocus
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                maxLength={100}
+                className="flex-1 min-w-0 bg-violet-950/40 border border-violet-700/50 rounded-lg px-2 py-1 text-sm text-white outline-none focus:border-violet-500/70"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleRename();
+                  if (e.key === "Escape") { setEditMode(false); setEditName(habit.name); }
+                }}
+              />
+              <button
+                onClick={handleRename}
+                disabled={editSaving}
+                className="flex-shrink-0 p-1 text-emerald-400 hover:text-emerald-300 transition-colors"
+                title="Save"
+              >
+                {editSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+              </button>
+              <button
+                onClick={() => { setEditMode(false); setEditName(habit.name); }}
+                className="flex-shrink-0 p-1 text-slate-500 hover:text-slate-300 transition-colors"
+                title="Cancel"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              {getTimeEmoji(habit.when_time) && !completed && (
+                <span className="text-sm leading-none flex-shrink-0">{getTimeEmoji(habit.when_time)}</span>
+              )}
+              <p className={`text-sm font-medium truncate transition-all duration-300 ${
+                completed ? "text-slate-500 line-through" : "text-slate-100"
+              }`}>
+                {habit.name}
+              </p>
+              {!completed && onRename && (validity === "partial" || validity === "invalid") && (
+                <button
+                  onClick={() => { setEditName(habit.name); setEditMode(true); }}
+                  className="flex-shrink-0 p-0.5 text-violet-600/60 hover:text-violet-400 opacity-0 group-hover:opacity-100 transition-all"
+                  title="Edit habit name"
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {!editMode && habit.description && (
             <p className={`text-xs truncate mt-0.5 transition-colors duration-300 ${completed ? "text-slate-700" : "text-slate-600"}`}>
               {habit.description}
             </p>
+          )}
+
+          {!editMode && !completed && validity && validity !== "valid" && (
+            <span className={`inline-flex items-center gap-1 text-[10px] border px-1.5 py-0.5 rounded-full mt-0.5 ${
+              validity === "partial"
+                ? "bg-amber-950/40 border-amber-600/30 text-amber-400"
+                : "bg-red-950/40 border-red-600/30 text-red-400"
+            }`}>
+              {validity === "partial" ? "⚠️ Partial XP" : "❌ No XP"}
+            </span>
           )}
         </div>
 

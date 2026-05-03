@@ -122,7 +122,7 @@ export function useXP() {
   );
 
   // Called every time a habit is toggled TO completed
-  const onHabitCompleted = useCallback(async () => {
+  const onHabitCompleted = useCallback(async (validityScore?: "valid" | "partial" | "invalid") => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -134,7 +134,11 @@ export function useXP() {
       .update({ total_completions: newTotal })
       .eq("id", user.id);
 
-    await awardXP(XP_PER_HABIT);
+    const xpToAward =
+      validityScore === "invalid" ? 0
+      : validityScore === "partial" ? 5
+      : XP_PER_HABIT;
+    if (xpToAward > 0) await awardXP(xpToAward);
   }, [supabase, awardXP]);
 
   // Check daily + streak milestones; award XP for newly unlocked ones.

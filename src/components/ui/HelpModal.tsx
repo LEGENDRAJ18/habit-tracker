@@ -106,7 +106,7 @@ export default function HelpModal() {
               <p className="text-[11px] text-slate-600 text-center">
                 Need more help?{" "}
                 <a
-                  href="https://discord.gg/habitai"
+                  href="https://discord.gg/U3FFHFq3"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-violet-500 hover:text-violet-400 transition-colors"

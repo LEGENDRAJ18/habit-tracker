@@ -507,7 +507,7 @@ const FOOTER_LINKS = {
     { label: "Features",   href: "#how-it-works" },
     { label: "Pricing",    href: "#pricing"       },
     { label: "Changelog",  href: "/changelog"     },
-    { label: "Community",  href: "https://discord.gg/habitai" },
+    { label: "Community",  href: "https://discord.gg/U3FFHFq3" },
   ],
   Legal: [
     { label: "Privacy Policy",   href: "/privacy" },

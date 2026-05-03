@@ -69,9 +69,12 @@ export default function OnboardingTour({ habitCount, signedUpAt }: Props) {
     if (!signedUpAt || Date.now() - new Date(signedUpAt).getTime() > MS_24H) return;
     // Never show if already dismissed
     if (localStorage.getItem(TOUR_KEY)) return;
-    const t = setTimeout(() => { setShow(true); updateRect(); }, 1200);
+    const t = setTimeout(() => setShow(true), 1200);
     return () => clearTimeout(t);
-  }, [habitCount, signedUpAt, updateRect]);
+  // updateRect intentionally excluded — it changes on every step advance and
+  // would restart the show-timer each time the user clicks Next.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [habitCount, signedUpAt]);
 
   useEffect(() => {
     if (!show) return;

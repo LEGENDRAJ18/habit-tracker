@@ -219,7 +219,7 @@ function AllDoneCelebration({
 
 
 export default function DashboardPage() {
-  const { habits, loading, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, addHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength } =
+  const { habits, loading, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength } =
     useHabits();
   const { tier, profileLoading, onboardingCompleted, goal, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt } = useProfile();
   const { xp, level, achievements, totalCompletions, justLeveledUp, isDailyAchieved, onHabitCompleted, checkMilestones, dismissLevelUp } = useXP();
@@ -227,6 +227,7 @@ export default function DashboardPage() {
   const [onboardingDone, setOnboardingDone] = useState(false);
   const showOnboarding = !profileLoading && !onboardingCompleted && !onboardingDone;
 
+  const [editingHabitId, setEditingHabitId] = useState<string | null>(null);
   const [showAdd, setShowAdd]           = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
@@ -640,7 +641,24 @@ export default function DashboardPage() {
                     dismiss();
                   }, 5000);
                 }}
-                onCompleted={() => { playSound("complete"); onHabitCompleted(); }}
+                isEditing={editingHabitId === habit.id}
+                onCompleted={() => {
+                  const validity = habit.validity_score ?? "valid";
+                  playSound("complete");
+                  onHabitCompleted(validity);
+                  if (validity === "invalid") {
+                    toast(
+                      `"${habit.name}" earns no XP — edit the name to earn points`,
+                      "error",
+                      { label: "Edit", onClick: () => setEditingHabitId(habit.id) },
+                      5000,
+                    );
+                  }
+                }}
+                onRename={async (newName, validityScore) => {
+                  await renameHabit(habit.id, newName, validityScore);
+                  setEditingHabitId(null);
+                }}
               />
               );
             })}
@@ -728,7 +746,7 @@ export default function DashboardPage() {
 
           {/* Community card */}
           <a
-            href="https://discord.gg/habitai"
+            href="https://discord.gg/U3FFHFq3"
             target="_blank"
             rel="noopener noreferrer"
             className="block bg-[#0c0c18] border border-[#5865F2]/25 hover:border-[#5865F2]/50 rounded-2xl p-4 transition-all group"

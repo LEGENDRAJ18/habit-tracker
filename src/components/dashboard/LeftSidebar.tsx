@@ -143,7 +143,7 @@ export default function LeftSidebar({ xp, level, bestStreak, tier, onUpgradeClic
 
       {/* Discord */}
       <a
-        href="https://discord.gg/habitai"
+        href="https://discord.gg/U3FFHFq3"
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-[#5865F2]/25 hover:border-[#5865F2]/50 text-[#8891F7] hover:text-[#a5adf9] transition-all mb-2"

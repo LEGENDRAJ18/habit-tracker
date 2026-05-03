@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Users } from "lucide-react";
 
-const DISCORD_URL = "https://discord.gg/habitai";
+const DISCORD_URL = "https://discord.gg/U3FFHFq3";
 
 function DiscordIcon() {
   return (

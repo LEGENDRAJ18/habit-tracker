@@ -10,6 +10,7 @@ export interface Habit {
   when_time: string | null;
   where_location: string | null;
   how_long: string | null;
+  validity_score?: "valid" | "partial" | "invalid";
 }
 
 export interface HabitLog {
