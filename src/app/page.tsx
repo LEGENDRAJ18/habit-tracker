@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   ArrowRight, Check, Sparkles, Flame, Users, Brain,
   Smartphone, Cigarette, Dumbbell, Moon, X as XIcon,
   Download, Crown, Play,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
 
 const Navbar  = dynamic(() => import("@/components/landing/Navbar"));
 const Pricing = dynamic(() => import("@/components/landing/Pricing"));
@@ -79,19 +81,13 @@ function Hero() {
         </p>
 
         {/* CTAs */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+        <div className="flex justify-center mb-8">
           <Link
-            href="/auth/signup"
+            href="/auth/login"
             className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-violet-900/40 hover:shadow-violet-800/50 hover:-translate-y-0.5 text-base"
           >
-            Start for free
+            Open HabitAI
             <ArrowRight className="w-4 h-4" />
-          </Link>
-          <Link
-            href="#how-it-works"
-            className="inline-flex items-center justify-center px-8 py-3.5 bg-violet-950/50 border border-violet-800/40 hover:bg-violet-950/80 text-slate-300 hover:text-white font-semibold rounded-xl transition-all duration-200 text-base"
-          >
-            See how it works
           </Link>
         </div>
 
@@ -472,10 +468,10 @@ function FinalCta() {
             </p>
 
             <Link
-              href="/auth/signup"
+              href="/auth/login"
               className="inline-flex items-center gap-2 px-10 py-4 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all duration-200 shadow-xl shadow-violet-900/40 hover:-translate-y-0.5 text-base mb-4"
             >
-              Create your free account
+              Open HabitAI
               <ArrowRight className="w-5 h-5" />
             </Link>
 
@@ -576,7 +572,11 @@ function Footer() {
 
 // ─── PAGE ─────────────────────────────────────────────────────────────────────
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) redirect("/dashboard");
+
   return (
     <div className="bg-[#09090f] min-h-screen">
       <Navbar />

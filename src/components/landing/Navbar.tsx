@@ -42,18 +42,12 @@ export default function Navbar() {
           </div>
 
           {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center">
             <Link
               href="/auth/login"
-              className="text-sm text-slate-300 hover:text-white transition-colors px-4 py-2"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/auth/signup"
               className="text-sm font-medium bg-violet-600 hover:bg-violet-500 text-white px-4 py-2 rounded-lg transition-colors"
             >
-              Get Started
+              Open HabitAI
             </Link>
           </div>
 
@@ -84,18 +78,12 @@ export default function Navbar() {
           >
             Pricing
           </Link>
-          <div className="pt-2 flex flex-col gap-2 border-t border-violet-900/20">
+          <div className="pt-2 border-t border-violet-900/20">
             <Link
               href="/auth/login"
-              className="text-center text-sm text-slate-300 border border-violet-800/40 rounded-lg py-2"
+              className="block text-center text-sm font-medium bg-violet-600 text-white rounded-lg py-2"
             >
-              Sign In
-            </Link>
-            <Link
-              href="/auth/signup"
-              className="text-center text-sm font-medium bg-violet-600 text-white rounded-lg py-2"
-            >
-              Get Started Free
+              Open HabitAI
             </Link>
           </div>
         </div>
