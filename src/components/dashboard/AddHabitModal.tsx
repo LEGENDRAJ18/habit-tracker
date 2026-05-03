@@ -1,76 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { X, Loader2, Plus, ArrowRight, Link2, ChevronDown } from "lucide-react";
+import { X, Loader2, Plus, ArrowRight, Link2, ChevronDown, CheckCircle2, AlertTriangle, XCircle, Sparkles } from "lucide-react";
 import type { Habit } from "@/types";
+import { useHabitValidation } from "@/hooks/useHabitValidation";
 
 const WHERE_OPTIONS    = ["Bedroom", "Gym", "Office", "Kitchen", "Living room", "Outdoors", "On commute"];
 const HOW_LONG_OPTIONS = ["5 min", "10 min", "20 min", "30 min", "45 min", "1 hour", "2+ hours"];
 
-// ─── Habit name validation ────────────────────────────────────────────────────
-
-const HARMFUL_PATTERNS = [
-  /\b(smoke|smok(ing)?|cigarette|tobacco|vape|vaping)\b/i,
-  /\b(drink(ing)?\s*(beer|alcohol|wine|whiskey|vodka|liquor|spirits))\b/i,
-  /\b(get\s*drunk|binge\s*drink)\b/i,
-  /\b(drug|cocaine|heroin|meth|marijuana|weed|cannabis|fentanyl)\b/i,
-  /\b(self[\s-]?harm|cut\s*myself|starve|purge)\b/i,
-  /\b(gambl(e|ing)|bet\s+money)\b/i,
-  /\b(skip\s*(all\s*)?meals?|not\s*eat)\b/i,
-];
-
-const VAGUE_PATTERNS = [
-  /^(be\s+)?(better|good|healthy|happy|productive|successful|awesome|nice|great)$/i,
-  /^(do\s+)?more$/i,
-  /^stuff$/i,
-  /^things?$/i,
-  /^exercise$/i,
-  /^work(out)?$/i,
-  /^study$/i,
-  /^read$/i,
-  /^sleep$/i,
-];
-
-const VAGUE_SUGGESTIONS: Record<string, string> = {
-  exercise:   'e.g. "Walk for 20 minutes" or "Do 15 push-ups"',
-  workout:    'e.g. "Gym session for 45 minutes" or "Run 2km"',
-  study:      'e.g. "Study Chapter 3 for 30 minutes" or "Review flashcards"',
-  read:       'e.g. "Read 20 pages of my current book"',
-  sleep:      'e.g. "In bed by 10:30 PM with no screens"',
-  healthy:    'e.g. "Eat a vegetable with every meal"',
-  better:     'e.g. "Journal one thing I\'m grateful for each day"',
-  productive: 'e.g. "Plan tomorrow\'s top 3 tasks each evening"',
-};
-
-function validateHabitName(name: string): string | null {
-  const trimmed = name.trim();
-  if (!trimmed) return null;
-
-  for (const pattern of HARMFUL_PATTERNS) {
-    if (pattern.test(trimmed)) {
-      return 'HabitAI is designed to build positive habits. Try something like "Drink more water" or "Exercise for 30 minutes" instead.';
-    }
-  }
-
-  const vagueKey = Object.keys(VAGUE_SUGGESTIONS).find(
-    (k) => new RegExp(`^${k}$`, "i").test(trimmed),
-  );
-  if (vagueKey) {
-    return `That habit is a bit vague — specific habits are 3× more likely to stick. Try ${VAGUE_SUGGESTIONS[vagueKey]}.`;
-  }
-
-  for (const pattern of VAGUE_PATTERNS) {
-    if (pattern.test(trimmed)) {
-      return "That habit is a bit vague. Adding a specific action, duration, or time makes it much easier to follow through.";
-    }
-  }
-
-  if (trimmed.length < 5) {
-    return "Habit name must be at least 5 characters.";
-  }
-
-  return null;
-}
 
 interface Props {
   onClose: () => void;
@@ -102,39 +39,16 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
   const [showIntentions, setShowIntentions] = useState(false);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState<string | null>(null);
-  const [nameWarning, setNameWarning] = useState<string | null>(null);
 
-  const stackParent = existingHabits.find((h) => h.id === stackAfterId);
+  const aiValidation = useHabitValidation(name);
+  const duplicate    = name.trim().length > 2 && isDuplicate(name, existingHabits);
+  const stackParent  = existingHabits.find((h) => h.id === stackAfterId);
 
-  const handleNameChange = (val: string) => {
-    setName(val);
-    if (val.length > 2) {
-      if (isDuplicate(val, existingHabits)) {
-        setNameWarning("You already have a habit with this name.");
-      } else {
-        setNameWarning(validateHabitName(val));
-      }
-    } else {
-      setNameWarning(null);
-    }
-  };
+  const isBlocked = duplicate || aiValidation.status === "blocked";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
-
-    // Block duplicates at submit time
-    if (isDuplicate(name, existingHabits)) {
-      setError("You already have a habit with this name.");
-      return;
-    }
-
-    // Block harmful habits at submit time too
-    const validationMsg = validateHabitName(name.trim());
-    if (validationMsg && validationMsg.startsWith("HabitAI is designed")) {
-      setError(validationMsg);
-      return;
-    }
+    if (!name.trim() || isBlocked) return;
 
     setLoading(true);
     setError(null);
@@ -185,17 +99,76 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
               Habit name <span className="text-violet-500">*</span>
             </label>
             <input
-              type="text" value={name} onChange={(e) => handleNameChange(e.target.value)}
-              placeholder="e.g. Meditate for 10 minutes" required maxLength={100} autoFocus
-              className={`${inputCls} ${nameWarning ? "border-amber-600/50 focus:border-amber-500/60" : ""}`}
+              type="text"
+              value={name}
+              onChange={(e) => { setName(e.target.value); setError(null); }}
+              placeholder="e.g. Meditate for 10 minutes"
+              required
+              maxLength={100}
+              autoFocus
+              className={`${inputCls} ${
+                duplicate
+                  ? "border-amber-600/50 focus:border-amber-500/60"
+                  : aiValidation.status === "blocked"
+                  ? "border-red-600/50 focus:border-red-500/60"
+                  : aiValidation.status === "warning"
+                  ? "border-amber-600/50 focus:border-amber-500/60"
+                  : aiValidation.status === "good"
+                  ? "border-emerald-600/40 focus:border-emerald-500/50"
+                  : ""
+              }`}
             />
-            <div className="flex items-start justify-between mt-1.5">
-              {nameWarning ? (
-                <p className="text-[11px] text-amber-400 leading-relaxed">💡 {nameWarning}</p>
-              ) : (
-                <span />
-              )}
-              <span className={`text-[10px] flex-shrink-0 ml-2 ${name.length > 90 ? "text-amber-400" : "text-slate-700"}`}>
+
+            {/* Feedback row */}
+            <div className="flex items-start justify-between mt-1.5 min-h-[20px]">
+              <div className="flex-1">
+                {/* Duplicate warning */}
+                {duplicate && (
+                  <p className="text-[11px] text-amber-400 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                    You already have a habit with this name.
+                  </p>
+                )}
+
+                {/* AI validation feedback */}
+                {!duplicate && aiValidation.status === "validating" && (
+                  <span className="text-[11px] text-slate-500 flex items-center gap-1.5">
+                    <Sparkles className="w-3 h-3 animate-pulse text-violet-500" />
+                    Checking…
+                  </span>
+                )}
+                {!duplicate && aiValidation.status === "good" && aiValidation.message && (
+                  <span className="text-[11px] text-emerald-400 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 flex-shrink-0" />
+                    {aiValidation.message}
+                  </span>
+                )}
+                {!duplicate && aiValidation.status === "warning" && (
+                  <div>
+                    <p className="text-[11px] text-amber-400 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                      {aiValidation.message}
+                    </p>
+                    {aiValidation.suggestion && (
+                      <button
+                        type="button"
+                        onClick={() => setName(aiValidation.suggestion!)}
+                        className="mt-1 text-[11px] text-violet-400 hover:text-violet-300 underline underline-offset-2 transition-colors"
+                      >
+                        Try: &ldquo;{aiValidation.suggestion}&rdquo; →
+                      </button>
+                    )}
+                  </div>
+                )}
+                {!duplicate && aiValidation.status === "blocked" && (
+                  <p className="text-[11px] text-red-400 flex items-center gap-1">
+                    <XCircle className="w-3 h-3 flex-shrink-0" />
+                    {aiValidation.message}
+                  </p>
+                )}
+              </div>
+
+              <span className={`text-[10px] flex-shrink-0 ml-2 mt-0.5 ${name.length > 90 ? "text-amber-400" : "text-slate-700"}`}>
                 {name.length}/100
               </span>
             </div>
@@ -369,7 +342,7 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
             >
               Cancel
             </button>
-            <button type="submit" disabled={loading || !name.trim()}
+            <button type="submit" disabled={loading || !name.trim() || isBlocked}
               className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl text-sm transition-all flex items-center justify-center gap-2"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4" /> Add Habit</>}
