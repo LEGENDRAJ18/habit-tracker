@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { X } from "lucide-react";
 
-const TOUR_KEY = "habitai_tour_v1_done";
-const MS_24H  = 24 * 60 * 60 * 1000;
+export const TOUR_STORAGE_KEY  = "onboarding_complete";
+export const TOUR_SESSION_KEY  = "habitai_tour_this_session";
+const MS_24H = 24 * 60 * 60 * 1000;
 
 interface Step {
   emoji: string;
@@ -61,20 +62,27 @@ export default function OnboardingTour({ habitCount, signedUpAt }: Props) {
     setRect(getRect(STEPS[step]?.tourTarget ?? ""));
   }, [step]);
 
+  // Decide once at mount — parent gates rendering until data is loaded,
+  // so habitCount and signedUpAt already reflect final values here.
+  // Using an empty dep array prevents the timer from restarting when the
+  // user advances steps (which would change updateRect's reference).
   useEffect(() => {
     if (typeof window === "undefined") return;
-    // Never show to users with existing habits
+    // Permanently dismissed
+    if (localStorage.getItem(TOUR_STORAGE_KEY)) return;
+    // Already shown in this browser session — don't show again when navigating back
+    if (sessionStorage.getItem(TOUR_SESSION_KEY)) return;
+    // Only for brand-new users with no habits
     if (habitCount > 0) return;
-    // Never show to users who signed up more than 24 hours ago
     if (!signedUpAt || Date.now() - new Date(signedUpAt).getTime() > MS_24H) return;
-    // Never show if already dismissed
-    if (localStorage.getItem(TOUR_KEY)) return;
+
+    // Reserve this session immediately so a navigation-triggered remount won't re-show
+    sessionStorage.setItem(TOUR_SESSION_KEY, "1");
+
     const t = setTimeout(() => setShow(true), 1200);
     return () => clearTimeout(t);
-  // updateRect intentionally excluded — it changes on every step advance and
-  // would restart the show-timer each time the user clicks Next.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [habitCount, signedUpAt]);
+  }, []); // intentionally empty — see comment above
 
   useEffect(() => {
     if (!show) return;
@@ -84,7 +92,7 @@ export default function OnboardingTour({ habitCount, signedUpAt }: Props) {
   }, [show, step, updateRect]);
 
   const done = useCallback(() => {
-    localStorage.setItem(TOUR_KEY, "1");
+    localStorage.setItem(TOUR_STORAGE_KEY, "true");
     setShow(false);
   }, []);
 

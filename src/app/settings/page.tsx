@@ -6,11 +6,12 @@ import Link from "next/link";
 import {
   ChevronLeft, User, Mail, Lock, Trash2, AlertCircle,
   CheckCircle2, Loader2, Eye, EyeOff, X, Bell, Download,
-  Crown, Zap, Palette, Check,
+  Crown, Zap, Palette, Check, RotateCcw,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import BottomNav from "@/components/ui/BottomNav";
 import { useProfile } from "@/hooks/useProfile";
+import { TOUR_STORAGE_KEY, TOUR_SESSION_KEY } from "@/components/ui/OnboardingTour";
 import ReminderSettings from "@/components/dashboard/ReminderSettings";
 import {
   useAppearance, ACCENT_PALETTE,
@@ -221,6 +222,7 @@ function ToggleRow({
 // ─── Appearance section ───────────────────────────────────────────────────────
 
 function AppearanceSection() {
+  const router = useRouter();
   const {
     accent,              setAccent,
     fontSize,            setFontSize,
@@ -372,6 +374,27 @@ function AppearanceSection() {
             value={showLevelUpAnimation}
             onChange={setShowLevelUpAnimation}
           />
+        </div>
+
+        {/* ── Onboarding tour ───────────────────────────────────────────── */}
+        <div className="border-t border-violet-900/20 pt-5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-medium text-white">Retake the app tour</p>
+              <p className="text-[11px] text-slate-600 mt-0.5">See the getting started guide again</p>
+            </div>
+            <button
+              onClick={() => {
+                localStorage.removeItem(TOUR_STORAGE_KEY);
+                sessionStorage.removeItem(TOUR_SESSION_KEY);
+                router.push("/dashboard");
+              }}
+              className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-violet-400 hover:text-violet-300 px-3 py-1.5 border border-violet-800/40 hover:border-violet-600/50 rounded-xl transition-all bg-violet-950/30 hover:bg-violet-950/50"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Restart tour
+            </button>
+          </div>
         </div>
 
       </div>
