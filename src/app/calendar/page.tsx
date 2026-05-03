@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  ChevronLeft, ChevronRight, ArrowLeft, Calendar as CalendarIcon,
+  ChevronLeft, ChevronRight, Calendar as CalendarIcon,
   X, Check, Clock, Sparkles, TrendingUp, CalendarDays, Flame,
   Plus, Trash2, Brain,
 } from "lucide-react";
@@ -653,12 +653,16 @@ export default function CalendarPage() {
     <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
       {/* Sticky header */}
       <div className="border-b border-violet-900/20 bg-[#09090f]/90 backdrop-blur-xl sticky top-0 z-40">
-        <div className="max-w-[1340px] mx-auto px-4 sm:px-6 h-14 flex items-center gap-4">
-          <Link href="/dashboard" className="text-slate-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-violet-950/40">
-            <ArrowLeft className="w-4 h-4" />
+        <div className="max-w-[1340px] mx-auto px-4 sm:px-6 h-14 flex items-center gap-2">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-1 text-slate-500 hover:text-white text-xs transition-colors py-1.5 px-2 -ml-2 rounded-lg hover:bg-violet-950/40"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline font-medium">Dashboard</span>
           </Link>
-          <CalendarIcon className="w-4 h-4 text-violet-400" />
-          <h1 className="text-sm font-semibold text-white">Calendar</h1>
+          <span className="text-slate-700 text-sm">/</span>
+          <span className="text-sm font-semibold text-white">📅 Calendar</span>
         </div>
       </div>
 

@@ -5,8 +5,22 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* ─── Accent color CSS variables (violet default, overridden by AppearanceProvider) ── */
+:root {
+  --a-400: #a78bfa;
+  --a-500: #8b5cf6;
+  --a-600: #7c3aed;
+  --a-700: #6d28d9;
+  --a-900: #4c1d95;
+  --a-r: 124;
+  --a-g: 58;
+  --a-b: 237;
+  --base-font: 16px;
+}
+
 html {
   scroll-behavior: smooth;
+  font-size: var(--base-font, 16px);
 }
 
 body {

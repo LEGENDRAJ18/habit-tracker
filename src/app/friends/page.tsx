@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
-import { ArrowLeft, Users, Flame, Zap, Send, Check, X, Loader2, UserPlus, Trophy, UserSearch } from "lucide-react";
+import { Users, Flame, Zap, Send, Check, X, Loader2, UserPlus, Trophy, UserSearch } from "lucide-react";
+import PageNav from "@/components/layout/PageNav";
 import BottomNav from "@/components/ui/BottomNav";
 
 interface FriendStat {
@@ -113,20 +113,14 @@ export default function FriendsPage() {
 
   return (
     <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
-      {/* Nav */}
-      <div className="border-b border-violet-900/20 bg-[#09090f]/90 backdrop-blur-xl sticky top-0 z-40">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-4">
-          <Link href="/dashboard" className="text-slate-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-violet-950/40">
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-violet-400" />
-            <h1 className="text-sm font-semibold text-white">Friends</h1>
-          </div>
-        </div>
-      </div>
+      <PageNav
+        emoji="👥"
+        title="Friends"
+        subtitle="Compete and stay accountable with your friends"
+        maxWidth="max-w-2xl"
+      />
 
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 pb-8 space-y-6">
 
         {/* Invite form */}
         <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-5">

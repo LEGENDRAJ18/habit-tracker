@@ -4,13 +4,18 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  ArrowLeft, User, Mail, Lock, Trash2, AlertCircle,
-  CheckCircle2, Loader2, Eye, EyeOff, X, Bell, Download, Crown, Zap,
+  ChevronLeft, User, Mail, Lock, Trash2, AlertCircle,
+  CheckCircle2, Loader2, Eye, EyeOff, X, Bell, Download,
+  Crown, Zap, Palette, Check,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import BottomNav from "@/components/ui/BottomNav";
 import { useProfile } from "@/hooks/useProfile";
 import ReminderSettings from "@/components/dashboard/ReminderSettings";
+import {
+  useAppearance, ACCENT_PALETTE,
+  type AccentColor, type FontSize, type DashboardLayout,
+} from "@/contexts/AppearanceContext";
 
 // ─── Field ────────────────────────────────────────────────────────────────────
 
@@ -170,6 +175,210 @@ function CsvExportSection() {
   );
 }
 
+// ─── Toggle row ───────────────────────────────────────────────────────────────
+
+function ToggleRow({
+  label, sub, value, onChange,
+}: { label: string; sub?: string; value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-medium text-white">{label}</p>
+        {sub && <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">{sub}</p>}
+      </div>
+      <button
+        onClick={() => onChange(!value)}
+        role="switch"
+        aria-checked={value}
+        style={{
+          position:        "relative",
+          width:           "2.5rem",
+          height:          "1.375rem",
+          borderRadius:    "9999px",
+          backgroundColor: value ? "var(--a-600, #7c3aed)" : "#374151",
+          transition:      "background-color 0.2s",
+          flexShrink:      0,
+        }}
+      >
+        <span
+          style={{
+            position:        "absolute",
+            top:             "0.125rem",
+            left:            value ? "calc(100% - 1.25rem)" : "0.125rem",
+            width:           "1.125rem",
+            height:          "1.125rem",
+            borderRadius:    "9999px",
+            backgroundColor: "white",
+            boxShadow:       "0 1px 3px rgba(0,0,0,0.4)",
+            transition:      "left 0.2s",
+          }}
+        />
+      </button>
+    </div>
+  );
+}
+
+// ─── Appearance section ───────────────────────────────────────────────────────
+
+function AppearanceSection() {
+  const {
+    accent,              setAccent,
+    fontSize,            setFontSize,
+    dashboardLayout,     setDashboardLayout,
+    showTimeEmojis,      setShowTimeEmojis,
+    showHabitStreak,     setShowHabitStreak,
+    showHabitXP,         setShowHabitXP,
+    showAchievementPopups, setShowAchievementPopups,
+    showLevelUpAnimation,  setShowLevelUpAnimation,
+  } = useAppearance();
+
+  const cardCls = "bg-[#0f0f1a] border border-violet-900/20 rounded-2xl p-6 space-y-6";
+
+  const optionBtn = (active: boolean) =>
+    `flex-1 py-2.5 rounded-xl text-xs font-semibold border transition-all capitalize ${
+      active
+        ? "border-transparent text-white"
+        : "bg-transparent border-violet-900/20 text-slate-500 hover:text-slate-300 hover:border-violet-900/40"
+    }`;
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-4">
+        <Palette className="w-4 h-4" style={{ color: "var(--a-400)" }} />
+        <h2 className="text-sm font-semibold text-white">Appearance</h2>
+      </div>
+
+      <div className={cardCls}>
+
+        {/* ── Theme Color ───────────────────────────────────────────────── */}
+        <div>
+          <p className="text-xs font-medium text-slate-400 mb-3">Theme Color</p>
+          <div className="grid grid-cols-4 gap-2.5">
+            {(Object.entries(ACCENT_PALETTE) as [AccentColor, typeof ACCENT_PALETTE[AccentColor]][]).map(([key, p]) => (
+              <button
+                key={key}
+                onClick={() => setAccent(key)}
+                title={p.name}
+                className={`relative flex flex-col items-center gap-2 py-3 px-2 rounded-xl border transition-all ${
+                  accent === key
+                    ? "border-white/20 bg-white/5"
+                    : "border-violet-900/20 hover:bg-white/3 hover:border-violet-900/40"
+                }`}
+              >
+                <div
+                  className="w-7 h-7 rounded-full"
+                  style={{
+                    backgroundColor: p.swatch,
+                    boxShadow: accent === key ? `0 0 16px ${p.swatch}99, 0 0 6px ${p.swatch}66` : "none",
+                  }}
+                />
+                <span className={`text-[10px] font-medium ${accent === key ? "text-white" : "text-slate-500"}`}>
+                  {p.name}
+                </span>
+                {accent === key && (
+                  <div className="absolute top-1.5 right-1.5 w-3.5 h-3.5 rounded-full bg-white flex items-center justify-center">
+                    <Check className="w-2 h-2 text-black" strokeWidth={3} />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-slate-600 mt-2.5">Applied to buttons, nav highlights, and progress bars</p>
+        </div>
+
+        {/* ── Font Size ─────────────────────────────────────────────────── */}
+        <div className="border-t border-violet-900/20 pt-5">
+          <p className="text-xs font-medium text-slate-400 mb-3">Font Size</p>
+          <div className="flex gap-2.5">
+            {(["small", "medium", "large"] as FontSize[]).map((s) => (
+              <button
+                key={s}
+                onClick={() => setFontSize(s)}
+                className={optionBtn(fontSize === s)}
+                style={fontSize === s ? {
+                  backgroundColor: "rgba(var(--a-r), var(--a-g), var(--a-b), 0.2)",
+                  borderColor:     "var(--a-600)",
+                  color:           "var(--a-300, #c4b5fd)",
+                } : undefined}
+              >
+                {s === "small" ? "Small" : s === "medium" ? "Medium" : "Large"}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-slate-600 mt-2">
+            {fontSize === "small" ? "14px — more content visible"
+              : fontSize === "large" ? "18px — easier to read"
+              : "16px — default"}
+          </p>
+        </div>
+
+        {/* ── Dashboard Layout ──────────────────────────────────────────── */}
+        <div className="border-t border-violet-900/20 pt-5">
+          <p className="text-xs font-medium text-slate-400 mb-3">Dashboard Layout</p>
+          <div className="flex gap-2.5">
+            {(["compact", "comfortable", "spacious"] as DashboardLayout[]).map((l) => (
+              <button
+                key={l}
+                onClick={() => setDashboardLayout(l)}
+                className={optionBtn(dashboardLayout === l)}
+                style={dashboardLayout === l ? {
+                  backgroundColor: "rgba(var(--a-r), var(--a-g), var(--a-b), 0.2)",
+                  borderColor:     "var(--a-600)",
+                  color:           "var(--a-300, #c4b5fd)",
+                } : undefined}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-slate-600 mt-2">Adjusts spacing and card size on the dashboard</p>
+        </div>
+
+        {/* ── Habit Display ─────────────────────────────────────────────── */}
+        <div className="border-t border-violet-900/20 pt-5 space-y-4">
+          <p className="text-xs font-medium text-slate-400">Habit Card Display</p>
+          <ToggleRow
+            label="Show time-of-day emojis"
+            sub="Morning ☀️  Afternoon 🌤  Evening 🌙"
+            value={showTimeEmojis}
+            onChange={setShowTimeEmojis}
+          />
+          <ToggleRow
+            label="Show streak on each habit"
+            sub="Displays the current streak count on habit cards"
+            value={showHabitStreak}
+            onChange={setShowHabitStreak}
+          />
+          <ToggleRow
+            label="Show XP value on each habit"
+            sub="Shows XP reward for completing each habit"
+            value={showHabitXP}
+            onChange={setShowHabitXP}
+          />
+        </div>
+
+        {/* ── In-App Notifications ──────────────────────────────────────── */}
+        <div className="border-t border-violet-900/20 pt-5 space-y-4">
+          <p className="text-xs font-medium text-slate-400">In-App Notifications</p>
+          <ToggleRow
+            label="Achievement popups"
+            sub="Show a celebration popup when you earn an achievement"
+            value={showAchievementPopups}
+            onChange={setShowAchievementPopups}
+          />
+          <ToggleRow
+            label="Level up animation"
+            sub="Play an animation when you level up"
+            value={showLevelUpAnimation}
+            onChange={setShowLevelUpAnimation}
+          />
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
@@ -283,20 +492,26 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-[#09090f]/90 backdrop-blur-xl border-b border-violet-900/20">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-2">
           <Link
             href="/dashboard"
-            className="flex items-center gap-1.5 text-slate-500 hover:text-white text-xs transition-colors"
+            className="flex items-center gap-1 text-slate-500 hover:text-white text-xs transition-colors py-1.5 px-2 -ml-2 rounded-lg hover:bg-violet-950/40"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Dashboard
+            <ChevronLeft className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline font-medium">Dashboard</span>
           </Link>
-          <span className="text-slate-700">/</span>
-          <span className="text-sm font-semibold text-white">Account Settings</span>
+          <span className="text-slate-700 text-sm">/</span>
+          <span className="text-sm font-semibold text-white">⚙️ Settings</span>
         </div>
       </div>
 
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      {/* Page hero */}
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-8 pb-3">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">⚙️ Settings</h1>
+        <p className="text-sm text-slate-500 mt-1.5">Manage your account, appearance, and preferences</p>
+      </div>
+
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 pb-8 space-y-6">
 
         {/* ── Email Reminders ──────────────────────────────────────────────── */}
         {!reminderLoading && (
@@ -352,6 +567,9 @@ export default function SettingsPage() {
             </div>
           )
         )}
+
+        {/* ── Appearance ──────────────────────────────────────────────────── */}
+        <AppearanceSection />
 
         {/* ── Profile ─────────────────────────────────────────────────────── */}
         <div>

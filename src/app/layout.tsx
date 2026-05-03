@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/react";
 import ServiceWorkerRegistration from "@/components/pwa/ServiceWorkerRegistration";
 import InstallBanner from "@/components/pwa/InstallBanner";
 import ToastContainer from "@/components/ui/Toast";
+import { AppearanceProvider } from "@/contexts/AppearanceContext";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -75,7 +76,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
-        {children}
+        <AppearanceProvider>
+          {children}
+        </AppearanceProvider>
         <Analytics />
         <ServiceWorkerRegistration />
         <InstallBanner />

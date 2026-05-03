@@ -3,9 +3,10 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft, Flame, Zap, CheckCircle2, TrendingUp,
+  Flame, Zap, CheckCircle2, TrendingUp,
   Calendar, BarChart2, Loader2, Lock,
 } from "lucide-react";
+import PageNav from "@/components/layout/PageNav";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell,
@@ -373,29 +374,23 @@ export default function AnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
-      {/* Header */}
-      <div className="border-b border-violet-900/20 bg-[#09090f]/90 backdrop-blur-xl sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-4">
-          <Link href="/dashboard" className="text-slate-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-violet-950/40">
-            <ArrowLeft className="w-4 h-4" />
+      <PageNav
+        emoji="📊"
+        title="Analytics"
+        subtitle="Track your progress and build better habits over time"
+        maxWidth="max-w-7xl"
+        action={!isPaid ? (
+          <Link
+            href="/dashboard?checkout=plus"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/20 border border-violet-500/30 text-violet-300 text-xs font-semibold rounded-xl hover:bg-violet-600/30 transition-all"
+          >
+            <Lock className="w-3 h-3" />
+            Unlock full analytics
           </Link>
-          <div className="flex items-center gap-2">
-            <BarChart2 className="w-4 h-4 text-violet-400" />
-            <h1 className="text-sm font-semibold text-white">Analytics</h1>
-          </div>
-          {!isPaid && (
-            <Link
-              href="/dashboard?checkout=plus"
-              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/20 border border-violet-500/30 text-violet-300 text-xs font-semibold rounded-xl hover:bg-violet-600/30 transition-all"
-            >
-              <Lock className="w-3 h-3" />
-              Unlock full analytics
-            </Link>
-          )}
-        </div>
-      </div>
+        ) : undefined}
+      />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6 page-fade">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 pb-8 space-y-6 page-fade">
         {habits.length === 0 ? (
           <div className="text-center py-24">
             <BarChart2 className="w-12 h-12 text-violet-800/50 mx-auto mb-4" />

@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, Lock, Flame, Zap, Trophy, CalendarDays } from "lucide-react";
+import { Lock, Flame, Zap, Trophy, CalendarDays } from "lucide-react";
+import PageNav from "@/components/layout/PageNav";
 import BottomNav from "@/components/ui/BottomNav";
 import { useXP, ACHIEVEMENT_META, type AchievementId } from "@/hooks/useXP";
 import { levelName, levelColorKey, xpProgressPct, xpIntoLevel, xpSpanOfLevel, type LevelColorKey } from "@/lib/xp";
@@ -79,22 +80,14 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-[#09090f]/90 backdrop-blur-xl border-b border-violet-900/20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-1.5 text-slate-500 hover:text-white text-xs transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Dashboard
-          </Link>
-          <span className="text-slate-700">/</span>
-          <span className="text-sm font-semibold text-white">Profile</span>
-        </div>
-      </div>
+      <PageNav
+        emoji="👤"
+        title="Profile"
+        subtitle="Your journey so far — levels, achievements, and stats"
+        maxWidth="max-w-4xl"
+      />
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 pb-8">
         {xpLoading ? (
           <div className="flex items-center justify-center py-24">
             <div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />

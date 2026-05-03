@@ -78,22 +78,32 @@ export default function LeftSidebar({ xp, level, bestStreak, tier, onUpgradeClic
 
       {/* Nav links */}
       <nav className="space-y-0.5 mb-5">
-        {NAV_LINKS.map(({ href, icon: Icon, label }) => (
-          <Link
-            key={href}
-            href={href}
-            data-tour={href === "/analytics" ? "analytics-nav" : undefined}
-            aria-label={label}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-              pathname === href
-                ? "bg-violet-950/60 text-violet-300 border border-violet-800/40"
-                : "text-slate-500 hover:text-slate-300 hover:bg-violet-950/30"
-            }`}
-          >
-            <Icon className="w-4 h-4 flex-shrink-0" />
-            {label}
-          </Link>
-        ))}
+        {NAV_LINKS.map(({ href, icon: Icon, label }) => {
+          const isActive = pathname === href;
+          return (
+            <Link
+              key={href}
+              href={href}
+              data-tour={href === "/analytics" ? "analytics-nav" : undefined}
+              aria-label={label}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
+                isActive
+                  ? "text-white font-bold"
+                  : "text-slate-600 hover:text-slate-300 hover:bg-white/5 font-medium"
+              }`}
+              style={isActive ? {
+                backgroundColor: "rgba(var(--a-r), var(--a-g), var(--a-b), 0.2)",
+                boxShadow: "inset 3px 0 0 0 var(--a-600), 0 0 24px rgba(var(--a-r), var(--a-g), var(--a-b), 0.12)",
+              } : undefined}
+            >
+              <Icon
+                className="w-4 h-4 flex-shrink-0 transition-colors"
+                style={isActive ? { color: "var(--a-400)" } : undefined}
+              />
+              {label}
+            </Link>
+          );
+        })}
       </nav>
 
       {/* XP + level card */}

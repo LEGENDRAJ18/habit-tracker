@@ -7,6 +7,7 @@ import {
   Sparkles, LogOut, Zap, ChevronDown, BarChart2,
   Download, User, Settings, CreditCard, HelpCircle,
   Keyboard, Users, Calendar, ChevronLeft, ChevronRight,
+  LayoutDashboard,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
@@ -67,6 +68,15 @@ export default function DashboardNav({ habitCount, tier, onUpgradeClick }: Props
 
   const isFree = tier === "free";
 
+  const PAGE_META: Record<string, { label: string; Icon: React.ElementType }> = {
+    "/dashboard": { label: "Dashboard", Icon: LayoutDashboard },
+    "/analytics": { label: "Analytics", Icon: BarChart2 },
+    "/calendar":  { label: "Calendar",  Icon: Calendar  },
+    "/friends":   { label: "Friends",   Icon: Users     },
+    "/profile":   { label: "Profile",   Icon: User      },
+  };
+  const pageMeta = PAGE_META[pathname];
+
   // Fetch user email for initials
   useEffect(() => {
     createClient().auth.getUser().then(({ data: { user } }) => {
@@ -115,25 +125,41 @@ export default function DashboardNav({ habitCount, tier, onUpgradeClick }: Props
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="relative flex items-center justify-between h-16">
 
-          {/* Left — back/forward on desktop, nav links on tablet */}
+          {/* Left — back/forward + page label on desktop, nav links on tablet */}
           <div className="flex items-center gap-1 z-10">
-            <div className="hidden lg:flex items-center gap-0.5">
+            <div className="hidden lg:flex items-center gap-2">
               <button
                 onClick={() => router.back()}
                 aria-label="Go back"
                 title="Go back"
-                className="w-8 h-8 flex items-center justify-center rounded-full text-slate-600 hover:text-slate-300 hover:bg-violet-950/40 transition-all"
+                className="w-7 h-7 flex items-center justify-center rounded-full text-slate-600 hover:text-slate-300 hover:bg-violet-950/40 transition-all"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => router.forward()}
                 aria-label="Go forward"
                 title="Go forward"
-                className="w-8 h-8 flex items-center justify-center rounded-full text-slate-600 hover:text-slate-300 hover:bg-violet-950/40 transition-all"
+                className="w-7 h-7 flex items-center justify-center rounded-full text-slate-600 hover:text-slate-300 hover:bg-violet-950/40 transition-all"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
+              {/* Current page label pill */}
+              {pageMeta && (
+                <div
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border"
+                  style={{
+                    backgroundColor: "rgba(var(--a-r), var(--a-g), var(--a-b), 0.08)",
+                    borderColor:     "rgba(var(--a-r), var(--a-g), var(--a-b), 0.2)",
+                  }}
+                >
+                  <pageMeta.Icon
+                    className="w-3.5 h-3.5"
+                    style={{ color: "var(--a-400)" }}
+                  />
+                  <span className="text-xs font-semibold text-white">{pageMeta.label}</span>
+                </div>
+              )}
             </div>
             <div className="hidden sm:flex lg:hidden items-center gap-0.5">
               {navLink("/analytics", <BarChart2 className="w-3.5 h-3.5" />, "Analytics")}
