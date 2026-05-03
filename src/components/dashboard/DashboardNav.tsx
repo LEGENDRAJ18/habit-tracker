@@ -74,6 +74,7 @@ export default function DashboardNav({ habitCount, tier, onUpgradeClick }: Props
     "/calendar":  { label: "Calendar",  Icon: Calendar  },
     "/friends":   { label: "Friends",   Icon: Users     },
     "/profile":   { label: "Profile",   Icon: User      },
+    "/settings":  { label: "Settings",  Icon: Settings  },
   };
   const pageMeta = PAGE_META[pathname];
 
@@ -247,7 +248,7 @@ export default function DashboardNav({ habitCount, tier, onUpgradeClick }: Props
 
                   {/* Menu items — section 1 */}
                   <div className="py-1.5">
-                    <MenuItem icon={<Settings className="w-3.5 h-3.5" />} label="Account Settings" href="/profile" onClick={() => setMenuOpen(false)} />
+                    <MenuItem icon={<Settings className="w-3.5 h-3.5" />} label="Account Settings" href="/settings" onClick={() => setMenuOpen(false)} />
                     <MenuItem
                       icon={<CreditCard className="w-3.5 h-3.5" />}
                       label="Billing & Subscription"

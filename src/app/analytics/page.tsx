@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Flame, Zap, CheckCircle2, TrendingUp,
   Calendar, BarChart2, Loader2, Lock,
@@ -307,6 +308,7 @@ function BlurGate({ children }: { children: React.ReactNode }) {
 // ─── page ─────────────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
+  const router = useRouter();
   const [habits, setHabits]   = useState<Habit[]>([]);
   const [logs, setLogs]       = useState<Pick<HabitLog, "habit_id" | "completed_at">[]>([]);
   const [loading, setLoading] = useState(true);
@@ -364,7 +366,13 @@ export default function AnalyticsPage() {
 
   const isPaid = tier === "plus" || tier === "pro";
 
-  if (loading) {
+  useEffect(() => {
+    if (!loading && habits.length === 0) {
+      router.replace("/dashboard");
+    }
+  }, [loading, habits.length, router]);
+
+  if (loading || (!loading && habits.length === 0)) {
     return (
       <div className="min-h-screen bg-[#09090f] flex items-center justify-center">
         <Loader2 className="w-6 h-6 text-violet-500 animate-spin" />
@@ -391,21 +399,7 @@ export default function AnalyticsPage() {
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 pb-8 space-y-6 page-fade">
-        {habits.length === 0 ? (
-          <div className="text-center py-24">
-            <BarChart2 className="w-12 h-12 text-violet-800/50 mx-auto mb-4" />
-            <h2 className="text-lg font-semibold text-slate-300 mb-2">No data yet</h2>
-            <p className="text-slate-500 text-sm mb-6">
-              Add habits and complete them to see your analytics here.
-            </p>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-medium rounded-xl transition-all text-sm"
-            >
-              Go to Dashboard
-            </Link>
-          </div>
-        ) : (
+        {habits.length > 0 && (
           <>
             {/* Stat cards — always visible */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

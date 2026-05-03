@@ -123,7 +123,7 @@ export default function FriendsPage() {
       <main className="max-w-2xl mx-auto px-4 sm:px-6 pb-8 space-y-6">
 
         {/* Invite form */}
-        <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-5">
+        <div id="invite-form" className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-4">
             <UserPlus className="w-4 h-4 text-violet-400" />
             <h2 className="text-sm font-semibold text-white">Invite a friend</h2>
@@ -216,11 +216,26 @@ export default function FriendsPage() {
           </div>
         ) : friends.length === 0 ? (
           <div className="text-center py-16">
-            <Users className="w-12 h-12 text-violet-800/50 mx-auto mb-4" />
+            <div className="w-14 h-14 rounded-2xl bg-violet-900/20 border border-violet-800/25 flex items-center justify-center mx-auto mb-4">
+              <Users className="w-7 h-7 text-violet-500" />
+            </div>
             <h2 className="text-base font-semibold text-slate-300 mb-2">No friends yet</h2>
-            <p className="text-sm text-slate-500 max-w-xs mx-auto">
+            <p className="text-sm text-slate-500 max-w-xs mx-auto mb-5">
               Invite friends to compete on streaks and cheer each other on.
             </p>
+            <button
+              onClick={() => {
+                document.getElementById("invite-form")?.scrollIntoView({ behavior: "smooth" });
+                setTimeout(() => {
+                  const input = document.querySelector<HTMLInputElement>("#invite-form input[type='email']");
+                  input?.focus();
+                }, 400);
+              }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-all text-sm"
+            >
+              <UserPlus className="w-4 h-4" />
+              Invite friends
+            </button>
           </div>
         ) : (
           <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl overflow-hidden">

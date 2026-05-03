@@ -244,11 +244,8 @@ export default function OnboardingModal({ onComplete }: Props) {
               {/* Stat hook */}
               <div className="bg-violet-950/40 border border-violet-700/30 rounded-2xl px-5 py-4 mb-6 text-left">
                 <p className="text-xs font-bold text-violet-400 uppercase tracking-wider mb-2">Did you know?</p>
-                <p className="text-white font-semibold text-base leading-snug mb-1">
+                <p className="text-white font-semibold text-base leading-snug">
                   92% of people fail their habits within 7 days.
-                </p>
-                <p className="text-slate-400 text-sm leading-relaxed">
-                  HabitAI users average <span className="text-violet-300 font-semibold">34 days</span>. Here&apos;s why&hellip;
                 </p>
               </div>
 

@@ -649,6 +649,42 @@ export default function CalendarPage() {
     );
   }
 
+  if (habits.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
+        <div className="border-b border-violet-900/20 bg-[#09090f]/90 backdrop-blur-xl sticky top-0 z-40">
+          <div className="max-w-[1340px] mx-auto px-4 sm:px-6 h-14 flex items-center gap-2">
+            <Link href="/dashboard" className="flex items-center gap-1 text-slate-500 hover:text-white text-xs transition-colors py-1.5 px-2 -ml-2 rounded-lg hover:bg-violet-950/40">
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline font-medium">Dashboard</span>
+            </Link>
+            <span className="text-slate-700 text-sm">/</span>
+            <span className="text-sm font-semibold text-white">📅 Calendar</span>
+          </div>
+        </div>
+        <main className="max-w-[1340px] mx-auto px-4 sm:px-6 py-8">
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-violet-900/20 border border-violet-800/25 flex items-center justify-center mx-auto mb-5">
+              <CalendarIcon className="w-8 h-8 text-violet-500" />
+            </div>
+            <h2 className="text-xl font-bold text-white mb-2">No habits to track yet</h2>
+            <p className="text-slate-400 text-sm mb-6 max-w-xs leading-relaxed">
+              Add your first habit and start building consistency. Your calendar will fill up as you complete habits each day.
+            </p>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-all shadow-lg shadow-violet-900/40 hover:-translate-y-0.5 text-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Add your first habit
+            </Link>
+          </div>
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
       {/* Sticky header */}
