@@ -45,7 +45,7 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
   const duplicate    = name.trim().length > 2 && isDuplicate(name, existingHabits);
   const stackParent  = existingHabits.find((h) => h.id === stackAfterId);
 
-  const isBlocked = duplicate || aiValidation.status === "blocked";
+  const isBlocked = duplicate;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,7 +149,7 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
             {!duplicate && aiValidation.status === "good" && (
               <div className="mt-2 flex items-center gap-2.5 bg-emerald-950/40 border border-emerald-600/30 rounded-xl px-3.5 py-2.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <p className="text-xs font-semibold text-emerald-300">Great habit! Full XP earned ✅</p>
+                <p className="text-xs font-semibold text-emerald-300">Great habit! You&apos;ll earn full XP for this one 🎯</p>
               </div>
             )}
 
@@ -157,7 +157,7 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
               <div className="mt-2 bg-amber-950/40 border border-amber-600/30 rounded-xl px-3.5 py-2.5">
                 <div className="flex items-center gap-2.5">
                   <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                  <p className="text-xs font-semibold text-amber-300">Too vague — 50% XP. Be more specific ⚠️</p>
+                  <p className="text-xs font-semibold text-amber-300">Too vague — you&apos;ll earn 50% XP. Try being more specific</p>
                 </div>
                 {aiValidation.suggestion && (
                   <button
@@ -175,7 +175,7 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
             {!duplicate && aiValidation.status === "blocked" && (
               <div className="mt-2 flex items-center gap-2.5 bg-red-950/40 border border-red-600/30 rounded-xl px-3.5 py-2.5">
                 <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-                <p className="text-xs font-semibold text-red-300">Invalid habit — 0 XP earned ❌</p>
+                <p className="text-xs font-semibold text-red-300">This doesn&apos;t look like a valid habit — no XP will be earned</p>
               </div>
             )}
           </div>
@@ -349,11 +349,20 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
               Cancel
             </button>
             <button type="submit" disabled={loading || !name.trim() || isBlocked}
-              className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+              className={`flex-1 py-2.5 text-white font-medium rounded-xl text-sm transition-all flex items-center justify-center gap-2 ${
+                aiValidation.status === "blocked"
+                  ? "bg-violet-600/50 hover:bg-violet-600/60 opacity-70"
+                  : "bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              }`}
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4" /> Add Habit</>}
             </button>
           </div>
+          {!isBlocked && aiValidation.status === "blocked" && (
+            <p className="text-center text-[11px] text-slate-600 -mt-1">
+              You can still add this but won&apos;t earn XP
+            </p>
+          )}
         </form>
       </div>
     </div>
