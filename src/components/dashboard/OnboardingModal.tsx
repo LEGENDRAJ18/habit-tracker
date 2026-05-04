@@ -2,8 +2,7 @@
 
 import { useState, useMemo } from "react";
 import {
-  Sparkles, ChevronRight, ArrowLeft, Loader2, Check,
-  Bot, Shield, Users, Clock, MapPin, Timer,
+  ChevronRight, ArrowLeft, Loader2, Check, Bot, Shield, Users, Zap,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -18,41 +17,12 @@ const GOALS = [
   { id: "custom",     emoji: "🎯", label: "Custom goal"           },
 ] as const;
 
-const IDENTITY_SUFFIX: Record<string, string> = {
-  fitness:    "prioritizes their health every single day",
-  learn:      "grows a little smarter every single day",
-  mental:     "protects their peace of mind every single day",
-  productive: "makes the most of every single day",
-  sleep:      "wakes up rested and energized every single day",
-  custom:     "",
-};
-
-const HABIT_COUNTS = [
-  { id: "1-2", emoji: "🌱", label: "Just 1–2", sub: "Easy start — build the habit first" },
-  { id: "3-5", emoji: "⚡", label: "3–5",      sub: "Balanced — steady daily growth"     },
-  { id: "6+",  emoji: "🔥", label: "6+",       sub: "Full commitment — go all in"        },
-] as const;
-
-const REMINDER_TIMES = [
-  { id: "morning",   emoji: "🌅", label: "Morning",   sub: "7–9 am"  },
-  { id: "afternoon", emoji: "☀️", label: "Afternoon", sub: "12–2 pm" },
-  { id: "evening",   emoji: "🌙", label: "Evening",   sub: "7–9 pm"  },
-] as const;
-
-const WHERE_OPTIONS = [
-  "Home", "Bedroom", "Gym", "Office", "Kitchen", "Outdoors", "On commute",
-] as const;
-
-const DURATION_OPTIONS = [
-  "5 min", "10 min", "20 min", "30 min", "1 hr+",
-] as const;
-
 const CONFETTI_COLORS = [
   "#8b5cf6","#a78bfa","#c4b5fd","#fbbf24","#f59e0b",
   "#e879f9","#60a5fa","#34d399","#fb923c","#f472b6","#ffffff",
 ];
 
-const TOTAL_STEPS = 7;
+const TOTAL_STEPS = 5;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -112,38 +82,6 @@ function SelectDot({ selected }: { selected: boolean }) {
   );
 }
 
-function NextButton({ onClick, disabled = false, children }: {
-  onClick: () => void; disabled?: boolean; children: React.ReactNode;
-}) {
-  return (
-    <button type="button" onClick={onClick} disabled={disabled}
-      className="w-full py-3 bg-violet-600 hover:bg-violet-500 disabled:opacity-35 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-violet-900/30"
-    >
-      {children}
-    </button>
-  );
-}
-
-function PillToggle({ options, value, onChange }: {
-  options: readonly string[]; value: string; onChange: (v: string) => void;
-}) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      {options.map((o) => (
-        <button key={o} type="button" onClick={() => onChange(o)}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-            value === o
-              ? "bg-violet-600/25 border-violet-500/60 text-violet-200"
-              : "bg-[#0f0f1a] border-violet-900/25 text-slate-500 hover:border-violet-700/40 hover:text-slate-300"
-          }`}
-        >
-          {o}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 interface Props { onComplete: () => void; }
@@ -152,32 +90,14 @@ export default function OnboardingModal({ onComplete }: Props) {
   const [step, setStep]             = useState(1);
   const [goal, setGoal]             = useState("");
   const [customGoal, setCustomGoal] = useState("");
-  const [habitCount, setHabitCount] = useState("");
-  const [reminderTime, setReminderTime] = useState("");
-  // implementation intentions
-  const [implWhen, setImplWhen]         = useState("");
-  const [implWhere, setImplWhere]       = useState("");
-  const [implDuration, setImplDuration] = useState("");
-  const [saving, setSaving]             = useState(false);
+  const [saving, setSaving]         = useState(false);
 
   const selectedGoal = GOALS.find((g) => g.id === goal);
-  const goalEmoji    = selectedGoal?.emoji ?? "🎯";
-  const goalLabel    = goal === "custom"
+  const goalLabel = goal === "custom"
     ? (customGoal.trim() || "Your goal")
     : (selectedGoal?.label ?? "");
 
-  const identitySuffix = goal === "custom"
-    ? (customGoal.trim() || "builds powerful habits every day")
-    : (IDENTITY_SUFFIX[goal] ?? "builds powerful habits every day");
-
-  const canProceed =
-    step === 1 ? true
-    : step === 2 ? goal !== "" && (goal !== "custom" || customGoal.trim() !== "")
-    : step === 3 ? true   // identity — no input
-    : step === 4 ? habitCount !== ""
-    : step === 5 ? reminderTime !== ""
-    : step === 6 ? true   // implementation intentions — optional
-    : true;
+  const canFinish = goal !== "" && (goal !== "custom" || customGoal.trim() !== "");
 
   const next = () => setStep((s) => s + 1);
   const back = () => setStep((s) => s - 1);
@@ -189,13 +109,8 @@ export default function OnboardingModal({ onComplete }: Props) {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await supabase.from("profiles").update({
-          onboarding_completed:    true,
-          goal:                    goalLabel,
-          habit_count_preference:  habitCount,
-          reminder_time:           reminderTime,
-          implementation_when:     implWhen || null,
-          implementation_where:    implWhere || null,
-          implementation_duration: implDuration || null,
+          onboarding_completed: true,
+          goal:                 goalLabel,
         }).eq("id", user.id);
       }
     } catch {
@@ -234,27 +149,27 @@ export default function OnboardingModal({ onComplete }: Props) {
 
         <div key={step} style={{ animation: "stepIn 0.28s ease-out both" }}>
 
-          {/* ── Step 1: Stats-driven welcome ─────────────────────────────── */}
+          {/* ── Step 1: You're about to join the 8% ──────────────────────── */}
           {step === 1 && (
             <div className="text-center">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center mx-auto mb-7 shadow-2xl shadow-violet-900/50">
-                <Sparkles className="w-9 h-9 text-white" />
+              <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+                🔥
               </div>
 
-              {/* Stat hook */}
-              <div className="bg-violet-950/40 border border-violet-700/30 rounded-2xl px-5 py-4 mb-6 text-left">
-                <p className="text-xs font-bold text-violet-400 uppercase tracking-wider mb-2">Did you know?</p>
-                <p className="text-white font-semibold text-base leading-snug">
-                  92% of people fail their habits within 7 days.
-                </p>
-              </div>
+              <h1 className="text-3xl font-extrabold text-white mb-3 leading-tight tracking-tight">
+                You&apos;re about to<br />join the 8%
+              </h1>
+              <p className="text-slate-400 text-sm mb-7 leading-relaxed">
+                92% of people abandon their habits within 7 days.<br />
+                <span className="text-violet-300 font-semibold">HabitAI exists to make sure you&apos;re not one of them.</span>
+              </p>
 
-              {/* 3 reasons */}
               <div className="space-y-2.5 mb-8 text-left">
                 {[
-                  { icon: Bot,    color: "text-violet-400", bg: "bg-violet-900/30", title: "AI coaching",            desc: "Personalised guidance that adapts to your life" },
-                  { icon: Shield, color: "text-blue-400",   bg: "bg-blue-900/30",   title: "Streak protection",       desc: "Miss a day — never lose your progress overnight" },
-                  { icon: Users,  color: "text-emerald-400",bg: "bg-emerald-900/30",title: "Community accountability",desc: "People who push you forward when motivation dips" },
+                  { icon: Bot,    color: "text-violet-400", bg: "bg-violet-900/30", title: "AI coaching",              desc: "Personalised guidance that adapts to your life" },
+                  { icon: Shield, color: "text-blue-400",   bg: "bg-blue-900/30",   title: "Streak protection",         desc: "Miss a day — never lose your progress overnight" },
+                  { icon: Users,  color: "text-emerald-400",bg: "bg-emerald-900/30",title: "Community accountability",  desc: "People who push you when motivation dips"        },
+                  { icon: Zap,    color: "text-amber-400",  bg: "bg-amber-900/30",  title: "XP & levels",               desc: "Turn discipline into a game you actually enjoy"  },
                 ].map(({ icon: Icon, color, bg, title, desc }) => (
                   <div key={title} className="flex items-start gap-3 bg-[#0f0f1a] border border-violet-900/15 rounded-xl px-4 py-3">
                     <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
@@ -269,18 +184,141 @@ export default function OnboardingModal({ onComplete }: Props) {
               </div>
 
               <button type="button" onClick={next}
-                className="inline-flex items-center gap-2 px-8 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-all shadow-lg shadow-violet-900/30 text-sm"
+                className="w-full py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-xl shadow-violet-900/40"
+                style={{ animation: "ctaPulse 2s ease-in-out 1.2s infinite" }}
               >
-                Join the 8% <ChevronRight className="w-4 h-4" />
+                I want to be in the 8% <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           )}
 
-          {/* ── Step 2: Goal ─────────────────────────────────────────────── */}
+          {/* ── Step 2: Your AI coach is ready ───────────────────────────── */}
           {step === 2 && (
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-1.5">What&apos;s your main goal?</h2>
-              <p className="text-slate-400 text-sm mb-6">We&apos;ll personalise your entire experience around it.</p>
+            <div className="text-center">
+              <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+                🤖
+              </div>
+              <h1 className="text-3xl font-extrabold text-white mb-3 leading-tight">
+                Your AI coach<br />is ready
+              </h1>
+              <p className="text-slate-400 text-sm mb-7 leading-relaxed">
+                It analyses your habits, spots patterns, and delivers a <span className="text-violet-300 font-semibold">personalised weekly game plan</span> — tailored exactly to where you are.
+              </p>
+
+              <div className="bg-gradient-to-b from-violet-950/60 to-[#0f0f1a] border border-violet-600/30 rounded-2xl px-6 py-5 mb-8 text-left"
+                   style={{ boxShadow: "0 0 40px rgba(139,92,246,0.1)" }}>
+                <p className="text-xs text-violet-400 font-bold uppercase tracking-wider mb-3">What your AI coach does</p>
+                {[
+                  "Diagnoses which habits need attention",
+                  "Suggests specific tweaks to boost streaks",
+                  "Adapts your plan as your life changes",
+                  "Celebrates wins so you stay motivated",
+                ].map((line) => (
+                  <div key={line} className="flex items-start gap-2.5 mb-2.5 last:mb-0">
+                    <div className="w-4 h-4 rounded-full bg-violet-600/30 border border-violet-500/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Check className="w-2.5 h-2.5 text-violet-400 stroke-[2.5]" />
+                    </div>
+                    <p className="text-sm text-slate-300 leading-snug">{line}</p>
+                  </div>
+                ))}
+              </div>
+
+              <button type="button" onClick={next}
+                className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-violet-900/30"
+              >
+                Next <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* ── Step 3: Never lose your streak again ─────────────────────── */}
+          {step === 3 && (
+            <div className="text-center">
+              <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+                🛡️
+              </div>
+              <h1 className="text-3xl font-extrabold text-white mb-3 leading-tight">
+                Never lose your<br />streak again
+              </h1>
+              <p className="text-slate-400 text-sm mb-7 leading-relaxed">
+                Life happens. Travel, illness, emergencies — <span className="text-blue-300 font-semibold">Streak Shield</span> protects your streak when you have to miss a day.
+              </p>
+
+              <div className="grid grid-cols-2 gap-3 mb-8">
+                {[
+                  { emoji: "🔥", stat: "21 days",  label: "Average streak on HabitAI"  },
+                  { emoji: "🛡️", stat: "1 skip",   label: "Protected free every week"   },
+                  { emoji: "📈", stat: "3×",        label: "More likely to reach 30 days" },
+                  { emoji: "⚡", stat: "10 XP",     label: "Earned per habit completed"  },
+                ].map(({ emoji, stat, label }) => (
+                  <div key={label} className="bg-[#0f0f1a] border border-violet-900/20 rounded-xl px-4 py-3.5 text-center">
+                    <div className="text-2xl mb-1.5 leading-none">{emoji}</div>
+                    <p className="text-lg font-extrabold text-white leading-none">{stat}</p>
+                    <p className="text-[11px] text-slate-500 mt-1 leading-snug">{label}</p>
+                  </div>
+                ))}
+              </div>
+
+              <button type="button" onClick={next}
+                className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-violet-900/30"
+              >
+                Next <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* ── Step 4: Your squad keeps you honest ──────────────────────── */}
+          {step === 4 && (
+            <div className="text-center">
+              <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+                👥
+              </div>
+              <h1 className="text-3xl font-extrabold text-white mb-3 leading-tight">
+                Your squad keeps<br />you honest
+              </h1>
+              <p className="text-slate-400 text-sm mb-7 leading-relaxed">
+                Invite friends, compare streaks, and compete on leaderboards. <span className="text-emerald-300 font-semibold">Accountability is the #1 predictor of long-term habit success.</span>
+              </p>
+
+              <div className="bg-[#0f0f1a] border border-emerald-700/25 rounded-2xl px-5 py-5 mb-8 text-left">
+                <p className="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-4">What friends unlock</p>
+                {[
+                  { emoji: "🏆", text: "Weekly leaderboards with your circle"       },
+                  { emoji: "📣", text: "Streak shout-outs when you hit milestones"  },
+                  { emoji: "💬", text: "Habit challenges you can do together"        },
+                  { emoji: "🔔", text: "Nudge friends who are falling behind"        },
+                ].map(({ emoji, text }) => (
+                  <div key={text} className="flex items-center gap-3 mb-3 last:mb-0">
+                    <span className="text-xl leading-none">{emoji}</span>
+                    <p className="text-sm text-slate-300">{text}</p>
+                  </div>
+                ))}
+              </div>
+
+              <button type="button" onClick={next}
+                className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-violet-900/30"
+              >
+                Next <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* ── Step 5: Let's build something that lasts ─────────────────── */}
+          {step === 5 && (
+            <div className="relative">
+              <Confetti />
+              <div className="relative text-center mb-7">
+                <div className="text-6xl mb-5 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+                  💪
+                </div>
+                <h1 className="text-3xl font-extrabold text-white mb-2 leading-tight">
+                  Let&apos;s build something<br />that lasts
+                </h1>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  One last thing — what are you building towards?
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-2 mb-3">
                 {GOALS.map((g) => (
                   <OptionCard key={g.id} selected={goal === g.id} onClick={() => setGoal(g.id)}>
@@ -289,197 +327,39 @@ export default function OnboardingModal({ onComplete }: Props) {
                       <span className={`text-xs font-medium leading-snug ${goal === g.id ? "text-violet-100" : "text-slate-300"}`}>
                         {g.label}
                       </span>
+                      <SelectDot selected={goal === g.id} />
                     </div>
                   </OptionCard>
                 ))}
               </div>
+
               {goal === "custom" && (
-                <input autoFocus value={customGoal}
+                <input
+                  autoFocus
+                  value={customGoal}
                   onChange={(e) => setCustomGoal(e.target.value)}
-                  placeholder="Describe your goal…" maxLength={80}
-                  className="w-full bg-violet-950/40 border border-violet-700/40 focus:border-violet-500/60 focus:outline-none focus:ring-2 focus:ring-violet-500/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 mb-4 transition-all"
+                  placeholder="Describe your goal…"
+                  maxLength={80}
+                  className="w-full bg-violet-950/40 border border-violet-700/40 focus:border-violet-500/60 focus:outline-none focus:ring-2 focus:ring-violet-500/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 mb-4 mt-2 transition-all"
                 />
               )}
-              <div className="mt-4">
-                <NextButton onClick={next} disabled={!canProceed}>
-                  Continue <ChevronRight className="w-4 h-4" />
-                </NextButton>
-              </div>
-            </div>
-          )}
 
-          {/* ── Step 3: Identity framing ──────────────────────────────────── */}
-          {step === 3 && (
-            <div className="text-center">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600/40 to-fuchsia-600/30 border border-violet-500/30 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-violet-950/40">
-                <span className="text-3xl leading-none">{goalEmoji}</span>
-              </div>
-
-              <p className="text-xs font-bold text-violet-400 uppercase tracking-wider mb-4">
-                Your new identity
-              </p>
-
-              {/* The statement */}
-              <div className="bg-gradient-to-b from-violet-950/60 to-[#0f0f1a] border border-violet-600/30 rounded-2xl px-6 py-6 mb-6"
-                   style={{ boxShadow: "0 0 40px rgba(139,92,246,0.12)" }}>
-                <p className="text-slate-400 text-sm mb-2 leading-relaxed">From this day forward&hellip;</p>
-                <p className="text-2xl font-extrabold text-white leading-tight">
-                  You are becoming{" "}
-                  <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
-                    someone who
-                  </span>
-                </p>
-                <p className="text-xl font-bold text-white/90 mt-1 leading-snug">
-                  {identitySuffix}.
-                </p>
-              </div>
-
-              <p className="text-slate-500 text-sm leading-relaxed mb-8 max-w-xs mx-auto">
-                Identity-based habits are 3× more likely to stick. Every action you take is a vote for the person you&apos;re becoming.
-              </p>
-
-              <NextButton onClick={next}>
-                This is me <ChevronRight className="w-4 h-4" />
-              </NextButton>
-            </div>
-          )}
-
-          {/* ── Step 4: Habit count ──────────────────────────────────────── */}
-          {step === 4 && (
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-1.5">How many to start?</h2>
-              <p className="text-slate-400 text-sm mb-6">Small wins build momentum. You can always add more later.</p>
-              <div className="space-y-2.5 mb-8">
-                {HABIT_COUNTS.map((h) => (
-                  <OptionCard key={h.id} selected={habitCount === h.id} onClick={() => setHabitCount(h.id)}>
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl leading-none flex-shrink-0">{h.emoji}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-semibold ${habitCount === h.id ? "text-violet-100" : "text-slate-200"}`}>{h.label}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{h.sub}</p>
-                      </div>
-                      <SelectDot selected={habitCount === h.id} />
-                    </div>
-                  </OptionCard>
-                ))}
-              </div>
-              <NextButton onClick={next} disabled={!canProceed}>
-                Continue <ChevronRight className="w-4 h-4" />
-              </NextButton>
-            </div>
-          )}
-
-          {/* ── Step 5: Reminder time ────────────────────────────────────── */}
-          {step === 5 && (
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-1.5">Best time for reminders?</h2>
-              <p className="text-slate-400 text-sm mb-6">Pick when you&apos;re most likely to check in.</p>
-              <div className="space-y-2.5 mb-8">
-                {REMINDER_TIMES.map((r) => (
-                  <OptionCard key={r.id} selected={reminderTime === r.id} onClick={() => setReminderTime(r.id)}>
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl leading-none flex-shrink-0">{r.emoji}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-semibold ${reminderTime === r.id ? "text-violet-100" : "text-slate-200"}`}>{r.label}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{r.sub}</p>
-                      </div>
-                      <SelectDot selected={reminderTime === r.id} />
-                    </div>
-                  </OptionCard>
-                ))}
-              </div>
-              <NextButton onClick={next} disabled={!canProceed}>
-                Continue <ChevronRight className="w-4 h-4" />
-              </NextButton>
-            </div>
-          )}
-
-          {/* ── Step 6: Implementation intentions ───────────────────────── */}
-          {step === 6 && (
-            <div>
-              {/* Stat banner */}
-              <div className="flex items-center gap-2.5 bg-emerald-950/30 border border-emerald-700/30 rounded-xl px-4 py-3 mb-6">
-                <span className="text-lg leading-none">📈</span>
-                <p className="text-xs text-emerald-300 leading-snug">
-                  <span className="font-bold">Research shows:</span> people who plan when and where to act are{" "}
-                  <span className="font-bold text-emerald-200">91% more likely</span> to follow through.
-                </p>
-              </div>
-
-              <h2 className="text-2xl font-bold text-white mb-1.5">Plan your habit routine</h2>
-              <p className="text-slate-400 text-sm mb-7">All optional — but the more specific, the better.</p>
-
-              {/* WHEN */}
-              <div className="mb-5">
-                <label className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2.5">
-                  <Clock className="w-3.5 h-3.5 text-violet-400" /> When will you do your habits?
-                </label>
-                <input type="time" value={implWhen}
-                  onChange={(e) => setImplWhen(e.target.value)}
-                  style={{ colorScheme: "dark" }}
-                  className="bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none focus:ring-2 focus:ring-violet-600/20 rounded-xl px-4 py-2.5 text-sm text-white transition-all"
-                />
-              </div>
-
-              {/* WHERE */}
-              <div className="mb-5">
-                <label className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2.5">
-                  <MapPin className="w-3.5 h-3.5 text-violet-400" /> Where will you do them?
-                </label>
-                <PillToggle options={WHERE_OPTIONS} value={implWhere} onChange={setImplWhere} />
-              </div>
-
-              {/* HOW LONG */}
-              <div className="mb-8">
-                <label className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2.5">
-                  <Timer className="w-3.5 h-3.5 text-violet-400" /> How long per session?
-                </label>
-                <PillToggle options={DURATION_OPTIONS} value={implDuration} onChange={setImplDuration} />
-              </div>
-
-              <NextButton onClick={next}>
-                {implWhen || implWhere || implDuration ? "Lock it in" : "Skip for now"}
-                {" "}<ChevronRight className="w-4 h-4" />
-              </NextButton>
-            </div>
-          )}
-
-          {/* ── Step 7: All set ───────────────────────────────────────────── */}
-          {step === 7 && (
-            <div className="relative text-center">
-              <Confetti />
-              <div className="relative">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-600/30 to-fuchsia-600/20 border border-violet-500/30 flex items-center justify-center mx-auto mb-7 shadow-xl shadow-violet-950/40"
-                     style={{ boxShadow: "0 0 40px 8px rgba(139,92,246,0.18)" }}>
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg">
-                    <Check className="w-8 h-8 text-white stroke-[2.5]" />
-                  </div>
-                </div>
-
-                <h2 className="text-3xl font-bold text-white mb-2">You&apos;re all set!</h2>
-                <p className="text-slate-400 text-sm mb-8">Your transformation starts now. Stay consistent — every single day counts.</p>
-
-                <div className="flex items-center gap-3 bg-[#0f0f1a] border border-violet-800/30 rounded-2xl px-5 py-4 mb-8 text-left">
-                  <span className="text-3xl leading-none flex-shrink-0">{goalEmoji}</span>
-                  <div>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold mb-0.5">Your identity</p>
-                    <p className="text-sm font-semibold text-violet-100 leading-snug">
-                      Someone who {identitySuffix}
-                    </p>
-                  </div>
-                  <div className="ml-auto w-6 h-6 rounded-full bg-violet-600/25 border border-violet-500/35 flex items-center justify-center flex-shrink-0">
-                    <Check className="w-3.5 h-3.5 text-violet-400 stroke-[2.5]" />
-                  </div>
-                </div>
-
-                <button type="button" onClick={handleFinish} disabled={saving}
-                  className="w-full py-3.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-60 text-white font-semibold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-xl shadow-violet-900/40"
+              <div className="mt-5">
+                <button
+                  type="button"
+                  onClick={handleFinish}
+                  disabled={saving || !canFinish}
+                  className="w-full py-4 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all text-base flex items-center justify-center gap-2 shadow-xl shadow-violet-900/50"
+                  style={canFinish ? { animation: "ctaPulse 2s ease-in-out infinite" } : undefined}
                 >
                   {saving
                     ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</>
-                    : <>Start Tracking <ChevronRight className="w-4 h-4" /></>
+                    : <>I&apos;m ready. Let&apos;s go! <ChevronRight className="w-5 h-5" /></>
                   }
                 </button>
+                {!canFinish && (
+                  <p className="text-[11px] text-slate-600 text-center mt-2">Pick a goal to continue</p>
+                )}
               </div>
             </div>
           )}
@@ -496,6 +376,15 @@ export default function OnboardingModal({ onComplete }: Props) {
           0%   { transform: translateY(-10px) rotate(var(--rot)); opacity: 1; }
           70%  { opacity: 1; }
           100% { transform: translateY(105vh) rotate(calc(var(--rot) + 600deg)); opacity: 0; }
+        }
+        @keyframes bouncePop {
+          0%   { transform: scale(0.5);  opacity: 0; }
+          60%  { transform: scale(1.2);  opacity: 1; }
+          100% { transform: scale(1);    opacity: 1; }
+        }
+        @keyframes ctaPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(139,92,246,0.5), 0 8px 32px rgba(139,92,246,0.35); }
+          50%       { box-shadow: 0 0 0 8px rgba(139,92,246,0), 0 8px 32px rgba(139,92,246,0.35); }
         }
       `}</style>
     </div>

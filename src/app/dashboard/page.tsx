@@ -223,9 +223,25 @@ export default function DashboardPage() {
     useHabits();
   const { tier, profileLoading, onboardingCompleted, goal, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt } = useProfile();
   const { xp, level, achievements, totalCompletions, justLeveledUp, isDailyAchieved, onHabitCompleted, checkMilestones, dismissLevelUp } = useXP();
-  // Local override so closing the modal doesn't require a page reload
-  const [onboardingDone, setOnboardingDone] = useState(false);
-  const showOnboarding = !profileLoading && !onboardingCompleted && !onboardingDone;
+
+  // Persisted across tab navigation via sessionStorage so remounts don't re-show the modal.
+  // Also guarded by: onboardingCompleted (Supabase), signedUpAt < 1h, and habits.length === 0.
+  const [onboardingDone, setOnboardingDone] = useState(() => {
+    if (typeof window !== "undefined") {
+      return !!sessionStorage.getItem("habitai_onboarding_done");
+    }
+    return false;
+  });
+
+  const MS_1H = 60 * 60 * 1000;
+  const isNewUser = !signedUpAt || (Date.now() - new Date(signedUpAt).getTime()) < MS_1H;
+  const showOnboarding =
+    !profileLoading &&
+    !loading &&
+    !onboardingCompleted &&
+    !onboardingDone &&
+    isNewUser &&
+    habits.length === 0;
 
   const [editingHabitId, setEditingHabitId] = useState<string | null>(null);
   const [showAdd, setShowAdd]           = useState(false);
@@ -800,7 +816,11 @@ export default function DashboardPage() {
       )}
 
       {(showOnboarding || showReOnboard) && (
-        <OnboardingModal onComplete={() => { setOnboardingDone(true); setShowReOnboard(false); }} />
+        <OnboardingModal onComplete={() => {
+          sessionStorage.setItem("habitai_onboarding_done", "1");
+          setOnboardingDone(true);
+          setShowReOnboard(false);
+        }} />
       )}
 
       {showCelebration && (
