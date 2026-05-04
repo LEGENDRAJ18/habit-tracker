@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Zap, Share2 } from "lucide-react";
-import { levelName, levelColorKey, type LevelColorKey } from "@/lib/xp";
+import { levelName, levelColorKey, xpForLevel, type LevelColorKey } from "@/lib/xp";
 
 interface Props {
   newLevel: number;
@@ -37,10 +37,13 @@ export default function LevelUpModal({ newLevel, onDismiss, onShare }: Props) {
     return () => { clearTimeout(t); clearTimeout(auto); };
   }, [onDismiss]);
 
-  const colorKey = levelColorKey(newLevel);
-  const style    = STYLES[colorKey];
-  const name     = levelName(newLevel);
-  const isGold   = colorKey === "gold";
+  const colorKey   = levelColorKey(newLevel);
+  const style      = STYLES[colorKey];
+  const name       = levelName(newLevel);
+  const isGold     = colorKey === "gold";
+  const nextXP     = xpForLevel(newLevel + 1);
+  const currentXP  = xpForLevel(newLevel);
+  const xpToNext   = (nextXP - currentXP).toLocaleString();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onDismiss}>
@@ -92,7 +95,17 @@ export default function LevelUpModal({ newLevel, onDismiss, onShare }: Props) {
           Level Up!
         </p>
         <h2 className="text-2xl font-extrabold text-white mb-1">Level {newLevel}</h2>
-        <p className={`text-base font-semibold mb-5 ${style.text}`}>{name}</p>
+        <p className={`text-base font-semibold ${style.text}`}>{name}</p>
+        {newLevel < 100 && (
+          <p className="text-[11px] text-slate-600 mt-1.5 mb-5">
+            Next level · <span className="text-slate-500 font-medium">{xpToNext} XP</span> to go
+          </p>
+        )}
+        {newLevel === 100 && (
+          <p className="text-[11px] text-amber-600 mt-1.5 mb-5 font-medium">
+            Maximum rank achieved 👑
+          </p>
+        )}
 
         <div className="flex flex-col gap-2 w-full">
           {onShare && (

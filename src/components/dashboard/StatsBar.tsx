@@ -68,7 +68,7 @@ export default function StatsBar({ xp, level, bestStreak, totalCompletions, side
         <div className="mb-4">
           <div className="flex justify-between text-[10px] mb-1.5">
             <span className={style.text}>{into.toLocaleString()} XP</span>
-            <span className="text-slate-600">{span.toLocaleString()} needed</span>
+            <span className="text-slate-600">{span.toLocaleString()} total</span>
           </div>
           <div className="w-full h-2.5 bg-violet-950/60 rounded-full overflow-hidden">
             <div
@@ -77,7 +77,7 @@ export default function StatsBar({ xp, level, bestStreak, totalCompletions, side
             />
           </div>
           <p className="text-[10px] text-slate-600 mt-1.5">
-            Next level at {xpForLevel(level + 1).toLocaleString()} total XP
+            Level {level + 1} — {(span - into).toLocaleString()} XP to next level
           </p>
         </div>
 
@@ -111,7 +111,7 @@ export default function StatsBar({ xp, level, bestStreak, totalCompletions, side
             style={{ width: `${pct}%` }}
           />
         </div>
-        <p className="text-[10px] text-slate-600 mt-0.5">Level {level + 1} at {xpForLevel(level + 1).toLocaleString()} XP</p>
+        <p className="text-[10px] text-slate-600 mt-0.5">Level {level + 1} — {(span - into).toLocaleString()} XP to next level</p>
       </div>
       <div className="flex items-center gap-4 flex-shrink-0">
         <div className="flex items-center gap-1.5 text-xs text-slate-500">
