@@ -65,7 +65,15 @@ export default function FriendsPage() {
       loadFriends();
     } else {
       setInviteStatus("error");
-      setInviteMsg(data.error ?? "Something went wrong");
+      setInviteMsg(
+        data.error === "User not found"
+          ? "No user found with that email."
+          : data.error === "Already friends"
+          ? "You're already friends with this person."
+          : data.error === "Request already sent"
+          ? "You've already sent this person a request."
+          : "Couldn't send invite — please try again.",
+      );
     }
     setInviting(false);
   };

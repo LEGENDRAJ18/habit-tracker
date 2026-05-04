@@ -2,10 +2,9 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Flame, Zap, CheckCircle2, TrendingUp,
-  Calendar, BarChart2, Loader2, Lock,
+  Calendar, BarChart2, Loader2, Lock, BarChart as BarChartIcon,
 } from "lucide-react";
 import PageNav from "@/components/layout/PageNav";
 import {
@@ -308,11 +307,11 @@ function BlurGate({ children }: { children: React.ReactNode }) {
 // ─── page ─────────────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
-  const router = useRouter();
-  const [habits, setHabits]   = useState<Habit[]>([]);
-  const [logs, setLogs]       = useState<Pick<HabitLog, "habit_id" | "completed_at">[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [tier, setTier]       = useState<Plan>("free");
+  const [habits, setHabits]     = useState<Habit[]>([]);
+  const [logs, setLogs]         = useState<Pick<HabitLog, "habit_id" | "completed_at">[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [noHabits, setNoHabits] = useState(false);
+  const [tier, setTier]         = useState<Plan>("free");
 
   useEffect(() => {
     const supabase = createClient();
@@ -329,7 +328,8 @@ export default function AnalyticsPage() {
         supabase.from("profiles").select("subscription_tier").eq("id", user.id).single(),
       ]);
       if (!h || h.length === 0) {
-        router.replace("/dashboard");
+        setNoHabits(true);
+        setLoading(false);
         return;
       }
       setHabits(h);
@@ -337,7 +337,7 @@ export default function AnalyticsPage() {
       setTier((p?.subscription_tier as Plan) ?? "free");
       setLoading(false);
     })();
-  }, [router]);
+  }, []);
 
   const habitDateSets = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -374,6 +374,37 @@ export default function AnalyticsPage() {
     return (
       <div className="min-h-screen bg-[#09090f] flex items-center justify-center">
         <Loader2 className="w-6 h-6 text-violet-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (noHabits) {
+    return (
+      <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
+        <PageNav
+          emoji="📊"
+          title="Analytics"
+          subtitle="Track your progress and build better habits over time"
+          maxWidth="max-w-7xl"
+        />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 pb-8">
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-violet-900/20 border border-violet-800/25 flex items-center justify-center mx-auto mb-5">
+              <BarChartIcon className="w-8 h-8 text-violet-500" />
+            </div>
+            <h2 className="text-xl font-bold text-white mb-2">📊 No data yet</h2>
+            <p className="text-sm text-slate-500 max-w-xs leading-relaxed mb-6">
+              Complete your first habit to see your analytics, streaks, and progress charts here.
+            </p>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-all text-sm min-h-[44px]"
+            >
+              Go to Dashboard
+            </Link>
+          </div>
+        </main>
+        <BottomNav />
       </div>
     );
   }

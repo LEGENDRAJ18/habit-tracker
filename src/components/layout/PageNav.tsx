@@ -25,10 +25,10 @@ export default function PageNav({
         <div className={`${maxWidth} mx-auto px-4 sm:px-6 h-14 flex items-center gap-2`}>
           <Link
             href="/dashboard"
-            className="flex items-center gap-1 text-slate-500 hover:text-white text-xs transition-colors py-1.5 px-2 -ml-2 rounded-lg hover:bg-violet-950/40 flex-shrink-0"
+            className="flex items-center gap-1 text-slate-500 hover:text-white text-xs transition-colors py-1.5 px-2 -ml-2 rounded-lg hover:bg-violet-950/40 flex-shrink-0 min-h-[44px]"
           >
             <ChevronLeft className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline font-medium">Dashboard</span>
+            <span className="font-medium">Dashboard</span>
           </Link>
           <span className="text-slate-700 text-sm">/</span>
           <span className="text-sm font-semibold text-white">{emoji} {title}</span>

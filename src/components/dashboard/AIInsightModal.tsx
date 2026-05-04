@@ -120,11 +120,14 @@ export default function AIInsightModal({ onClose, onUpgrade, tier }: Props) {
           {/* Error */}
           {isPaid && error && (
             <div className="flex flex-col items-center gap-3 py-6">
-              <AlertCircle className="w-8 h-8 text-red-400" />
-              <p className="text-sm text-slate-400 text-center">{error}</p>
+              <AlertCircle className="w-8 h-8 text-amber-400" />
+              <div className="text-center">
+                <p className="text-sm font-medium text-slate-300 mb-1">AI is taking a break</p>
+                <p className="text-xs text-slate-500">Try again in a moment — it&apos;ll be back shortly.</p>
+              </div>
               <button
                 onClick={() => { setError(null); setFetched(false); }}
-                className="text-xs text-violet-400 hover:text-violet-300 transition-colors"
+                className="px-4 py-2 text-xs font-semibold text-violet-400 hover:text-violet-300 border border-violet-800/40 hover:border-violet-600/50 rounded-xl transition-all bg-violet-950/30 min-h-[44px]"
               >
                 Try again
               </button>

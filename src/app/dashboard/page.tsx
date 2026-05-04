@@ -228,7 +228,10 @@ export default function DashboardPage() {
   // Also guarded by: onboardingCompleted (Supabase), signedUpAt < 1h, and habits.length === 0.
   const [onboardingDone, setOnboardingDone] = useState(() => {
     if (typeof window !== "undefined") {
-      return !!sessionStorage.getItem("habitai_onboarding_done");
+      return (
+        !!localStorage.getItem("habitai_onboarding_done") ||
+        !!sessionStorage.getItem("habitai_onboarding_done")
+      );
     }
     return false;
   });
@@ -817,6 +820,7 @@ export default function DashboardPage() {
 
       {(showOnboarding || showReOnboard) && (
         <OnboardingModal onComplete={() => {
+          localStorage.setItem("habitai_onboarding_done", "1");
           sessionStorage.setItem("habitai_onboarding_done", "1");
           setOnboardingDone(true);
           setShowReOnboard(false);
