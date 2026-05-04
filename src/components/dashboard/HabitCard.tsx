@@ -239,7 +239,7 @@ export default function HabitCard({
                 ? "bg-amber-950/40 border-amber-600/30 text-amber-400"
                 : "bg-red-950/40 border-red-600/30 text-red-400"
             }`}>
-              {validity === "partial" ? "⚠️ Partial XP" : "❌ No XP"}
+              {validity === "partial" ? "⚠️ 5 XP/completion — edit to earn 10" : "❌ 0 XP — rename to start earning"}
             </span>
           )}
         </div>

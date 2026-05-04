@@ -124,59 +124,69 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
               }`}
             />
 
-            {/* Feedback row */}
-            <div className="flex items-start justify-between mt-1.5 min-h-[20px]">
-              <div className="flex-1">
-                {/* Duplicate warning */}
-                {duplicate && (
-                  <p className="text-[11px] text-amber-400 flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3 flex-shrink-0" />
-                    You already have a habit with this name.
-                  </p>
-                )}
-
-                {/* AI validation feedback */}
-                {!duplicate && aiValidation.status === "validating" && (
-                  <span className="text-[11px] text-slate-500 flex items-center gap-1.5">
-                    <Sparkles className="w-3 h-3 animate-pulse text-violet-500" />
-                    Checking…
-                  </span>
-                )}
-                {!duplicate && aiValidation.status === "good" && aiValidation.message && (
-                  <span className="text-[11px] text-emerald-400 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 flex-shrink-0" />
-                    {aiValidation.message}
-                  </span>
-                )}
-                {!duplicate && aiValidation.status === "warning" && (
-                  <div>
-                    <p className="text-[11px] text-amber-400 flex items-center gap-1">
-                      <AlertTriangle className="w-3 h-3 flex-shrink-0" />
-                      {aiValidation.message}
-                    </p>
-                    {aiValidation.suggestion && (
-                      <button
-                        type="button"
-                        onClick={() => setName(aiValidation.suggestion!)}
-                        className="mt-1 text-[11px] text-violet-400 hover:text-violet-300 underline underline-offset-2 transition-colors"
-                      >
-                        Try: &ldquo;{aiValidation.suggestion}&rdquo; →
-                      </button>
-                    )}
-                  </div>
-                )}
-                {!duplicate && aiValidation.status === "blocked" && (
-                  <p className="text-[11px] text-red-400 flex items-center gap-1">
-                    <XCircle className="w-3 h-3 flex-shrink-0" />
-                    {aiValidation.message}
-                  </p>
-                )}
-              </div>
-
-              <span className={`text-[10px] flex-shrink-0 ml-2 mt-0.5 ${name.length > 90 ? "text-amber-400" : "text-slate-700"}`}>
+            {/* Char counter */}
+            <div className="flex justify-end mt-1">
+              <span className={`text-[10px] ${name.length > 90 ? "text-amber-400" : "text-slate-700"}`}>
                 {name.length}/100
               </span>
             </div>
+
+            {/* Feedback cards */}
+            {duplicate && (
+              <div className="mt-2 flex items-start gap-2.5 bg-amber-950/40 border border-amber-600/30 rounded-xl px-3.5 py-2.5">
+                <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-300 leading-snug">You already have a habit with this name.</p>
+              </div>
+            )}
+
+            {!duplicate && aiValidation.status === "validating" && (
+              <div className="mt-2 flex items-center gap-2 px-3.5 py-2">
+                <Sparkles className="w-3.5 h-3.5 animate-pulse text-violet-500 flex-shrink-0" />
+                <span className="text-[11px] text-slate-500">Checking your habit…</span>
+              </div>
+            )}
+
+            {!duplicate && aiValidation.status === "good" && (
+              <div className="mt-2 flex items-start gap-2.5 bg-emerald-950/40 border border-emerald-600/30 rounded-xl px-3.5 py-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-semibold text-emerald-300">Great habit!</p>
+                  <p className="text-[11px] text-emerald-500 mt-0.5">You&apos;ll earn full XP for this.</p>
+                </div>
+              </div>
+            )}
+
+            {!duplicate && aiValidation.status === "warning" && (
+              <div className="mt-2 bg-amber-950/40 border border-amber-600/30 rounded-xl px-3.5 py-2.5">
+                <div className="flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-amber-300">This habit is a bit vague</p>
+                    <p className="text-[11px] text-amber-500 mt-0.5">You&apos;ll earn 50% XP. Edit to earn full points.</p>
+                  </div>
+                </div>
+                {aiValidation.suggestion && (
+                  <button
+                    type="button"
+                    onClick={() => setName(aiValidation.suggestion!)}
+                    className="mt-2 ml-6 text-[11px] text-violet-400 hover:text-violet-300 flex items-center gap-1 transition-colors"
+                  >
+                    <ArrowRight className="w-3 h-3" />
+                    Try: &ldquo;{aiValidation.suggestion}&rdquo;
+                  </button>
+                )}
+              </div>
+            )}
+
+            {!duplicate && aiValidation.status === "blocked" && (
+              <div className="mt-2 flex items-start gap-2.5 bg-red-950/40 border border-red-600/30 rounded-xl px-3.5 py-2.5">
+                <XCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-semibold text-red-300">This doesn&apos;t look like a valid habit</p>
+                  <p className="text-[11px] text-red-500 mt-0.5">No XP will be earned. Try making it more specific.</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Description */}

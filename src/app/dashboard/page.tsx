@@ -94,22 +94,92 @@ function QuickStats({
   bestStreak: number;
   totalXP: number;
 }) {
+  const [showXPInfo, setShowXPInfo] = useState(false);
   const pct = totalHabits > 0 ? Math.round((completedCount / totalHabits) * 100) : 0;
+
   return (
-    <div className="grid grid-cols-3 gap-2 mb-6">
-      {[
-        { label: "Today",   value: `${pct}%`,          sub: "done",        color: "text-violet-400" },
-        { label: "Streak",  value: `${bestStreak}d`,   sub: "best",        color: "text-orange-400" },
-        { label: "XP",      value: totalXP.toLocaleString(), sub: "earned", color: "text-amber-400", title: "XP = Experience Points earned by completing habits"  },
-      ].map(({ label, value, sub, color, title }: { label: string; value: string; sub: string; color: string; title?: string }) => (
-        <div key={label} className="bg-[#0c0c18] border border-violet-900/20 rounded-xl px-3 py-2.5 text-center" title={title}>
-          <p className={`text-lg font-bold leading-none ${color}`} style={{ animation: "countUp 0.5s ease-out both" }}>
-            {value}
-          </p>
-          <p className="text-[10px] text-slate-600 mt-1 uppercase tracking-wider font-medium">{label} · {sub}</p>
+    <>
+      <div className="grid grid-cols-3 gap-2 mb-6">
+        <div className="bg-[#0c0c18] border border-violet-900/20 rounded-xl px-3 py-2.5 text-center">
+          <p className="text-lg font-bold leading-none text-violet-400" style={{ animation: "countUp 0.5s ease-out both" }}>{pct}%</p>
+          <p className="text-[10px] text-slate-600 mt-1 uppercase tracking-wider font-medium">Today · done</p>
         </div>
-      ))}
-    </div>
+
+        <div className="bg-[#0c0c18] border border-violet-900/20 rounded-xl px-3 py-2.5 text-center">
+          <p className="text-lg font-bold leading-none text-orange-400" style={{ animation: "countUp 0.5s ease-out both" }}>{bestStreak}d</p>
+          <p className="text-[10px] text-slate-600 mt-1 uppercase tracking-wider font-medium">Streak · best</p>
+        </div>
+
+        <div className="bg-[#0c0c18] border border-violet-900/20 rounded-xl px-3 py-2.5 text-center">
+          <div className="flex items-center justify-center gap-1">
+            <p className="text-lg font-bold leading-none text-amber-400" style={{ animation: "countUp 0.5s ease-out both" }}>
+              {totalXP.toLocaleString()}
+            </p>
+            <button
+              onClick={() => setShowXPInfo(true)}
+              className="w-3.5 h-3.5 rounded-full bg-slate-700/60 text-slate-500 hover:text-white hover:bg-slate-600 text-[9px] font-bold flex items-center justify-center flex-shrink-0 transition-colors leading-none"
+              title="How XP works"
+            >
+              ?
+            </button>
+          </div>
+          <p className="text-[10px] text-slate-600 mt-1 uppercase tracking-wider font-medium">XP · earned</p>
+        </div>
+      </div>
+
+      {showXPInfo && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowXPInfo(false)}
+        >
+          <div
+            className="w-full max-w-sm bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl shadow-violet-950/50 p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-base font-bold text-white mb-5">How XP works 💡</h3>
+            <div className="space-y-3 mb-5">
+              {([
+                {
+                  icon: "✅", label: "Valid habit completed",   xp: "10 XP",
+                  desc: "Specific, actionable habits",
+                  color: "text-emerald-300", border: "border-emerald-800/30", bg: "bg-emerald-950/20",
+                },
+                {
+                  icon: "⚠️", label: "Partial habit completed", xp: "5 XP",
+                  desc: 'Vague habits like "be healthy"',
+                  color: "text-amber-300",  border: "border-amber-800/30",  bg: "bg-amber-950/20",
+                },
+                {
+                  icon: "❌", label: "Invalid habit completed", xp: "0 XP",
+                  desc: "Nonsense or inappropriate habits",
+                  color: "text-red-300",    border: "border-red-800/30",    bg: "bg-red-950/20",
+                },
+              ] as const).map(({ icon, label, xp, desc, color, border, bg }) => (
+                <div key={label} className={`flex items-start gap-3 ${bg} border ${border} rounded-xl px-4 py-3`}>
+                  <span className="text-lg leading-none flex-shrink-0">{icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-semibold text-white leading-snug">{label}</p>
+                      <span className={`text-xs font-bold ${color} flex-shrink-0`}>{xp}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-0.5">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-violet-300 font-medium text-center mb-5">
+              Make your habits specific to earn maximum XP!
+            </p>
+            <button
+              onClick={() => setShowXPInfo(false)}
+              className="w-full py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl text-sm transition-all"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
