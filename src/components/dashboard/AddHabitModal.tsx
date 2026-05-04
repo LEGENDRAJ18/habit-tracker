@@ -55,7 +55,9 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
     setError(null);
 
     const validityScore: "valid" | "partial" | "invalid" =
-      aiValidation.status === "warning" ? "partial" : "valid";
+      aiValidation.status === "blocked" ? "invalid"
+      : aiValidation.status === "warning" ? "partial"
+      : "valid";
 
     const { error } = await onAdd(
       name.trim(),
@@ -349,11 +351,7 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
               Cancel
             </button>
             <button type="submit" disabled={loading || !name.trim() || isBlocked}
-              className={`flex-1 py-2.5 text-white font-medium rounded-xl text-sm transition-all flex items-center justify-center gap-2 ${
-                aiValidation.status === "blocked"
-                  ? "bg-violet-600/50 hover:bg-violet-600/60 opacity-70"
-                  : "bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              }`}
+              className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl text-sm transition-all flex items-center justify-center gap-2"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4" /> Add Habit</>}
             </button>
