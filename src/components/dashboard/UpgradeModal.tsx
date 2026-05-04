@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { X, Sparkles, Check, Minus, Zap, Loader2, Brain, Crown, Lock } from "lucide-react";
 import { FREE_HABIT_LIMIT } from "@/types";
 
@@ -261,6 +262,14 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
 
           <p className="text-center text-xs text-slate-600 mt-4">
             Cancel anytime · No credit card required for free plan
+          </p>
+
+          <p className="text-center text-[11px] text-slate-700 mt-3">
+            By subscribing you agree to our{" "}
+            <Link href="/payment-policy" className="text-slate-600 hover:text-slate-400 underline underline-offset-2 transition-colors" target="_blank">
+              Payment Policy
+            </Link>
+            {" "}· 7-day money-back guarantee
           </p>
 
           <button

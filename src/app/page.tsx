@@ -510,8 +510,9 @@ const FOOTER_LINKS = {
     { label: "Community",  href: "https://discord.gg/U3FFHFq3" },
   ],
   Legal: [
-    { label: "Privacy Policy",   href: "/privacy" },
-    { label: "Terms of Service", href: "/terms"   },
+    { label: "Privacy Policy",   href: "/privacy"        },
+    { label: "Terms of Service", href: "/terms"          },
+    { label: "Payment Policy",   href: "/payment-policy" },
   ],
 };
 
