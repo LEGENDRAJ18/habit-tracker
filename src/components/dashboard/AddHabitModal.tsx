@@ -147,23 +147,17 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
             )}
 
             {!duplicate && aiValidation.status === "good" && (
-              <div className="mt-2 flex items-start gap-2.5 bg-emerald-950/40 border border-emerald-600/30 rounded-xl px-3.5 py-2.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-xs font-semibold text-emerald-300">Great habit!</p>
-                  <p className="text-[11px] text-emerald-500 mt-0.5">You&apos;ll earn full XP for this.</p>
-                </div>
+              <div className="mt-2 flex items-center gap-2.5 bg-emerald-950/40 border border-emerald-600/30 rounded-xl px-3.5 py-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <p className="text-xs font-semibold text-emerald-300">Great habit! Full XP earned ✅</p>
               </div>
             )}
 
             {!duplicate && aiValidation.status === "warning" && (
               <div className="mt-2 bg-amber-950/40 border border-amber-600/30 rounded-xl px-3.5 py-2.5">
-                <div className="flex items-start gap-2.5">
-                  <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-amber-300">This habit is a bit vague</p>
-                    <p className="text-[11px] text-amber-500 mt-0.5">You&apos;ll earn 50% XP. Edit to earn full points.</p>
-                  </div>
+                <div className="flex items-center gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                  <p className="text-xs font-semibold text-amber-300">Too vague — 50% XP. Be more specific ⚠️</p>
                 </div>
                 {aiValidation.suggestion && (
                   <button
@@ -179,12 +173,9 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
             )}
 
             {!duplicate && aiValidation.status === "blocked" && (
-              <div className="mt-2 flex items-start gap-2.5 bg-red-950/40 border border-red-600/30 rounded-xl px-3.5 py-2.5">
-                <XCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-xs font-semibold text-red-300">This doesn&apos;t look like a valid habit</p>
-                  <p className="text-[11px] text-red-500 mt-0.5">No XP will be earned. Try making it more specific.</p>
-                </div>
+              <div className="mt-2 flex items-center gap-2.5 bg-red-950/40 border border-red-600/30 rounded-xl px-3.5 py-2.5">
+                <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                <p className="text-xs font-semibold text-red-300">Invalid habit — 0 XP earned ❌</p>
               </div>
             )}
           </div>

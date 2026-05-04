@@ -17,30 +17,9 @@ function checkRateLimit(userId: string): boolean {
   return true;
 }
 
-const SYSTEM_PROMPT = `You are a habit validation assistant. Evaluate the habit name and respond with JSON only.
-
-Status definitions:
-- "good"    — specific, actionable, positive, safe habit
-- "warning" — vague or could be improved; always include a concrete "suggestion"
-- "blocked" — harmful, illegal, promoting self-harm, offensive, gibberish/random text, or simply not a habit at all
-
-Examples:
-"Walk 30 minutes every morning" → good
-"Read 20 pages before bed"      → good
-"No phone before 9am"           → good
-"Drink 8 glasses of water"      → good
-"Exercise"                      → warning  (suggestion: "Exercise for 30 minutes daily")
-"Be healthy"                    → warning  (suggestion: "Eat a vegetable with every meal")
-"Watch less TV"                 → warning  (suggestion: "Limit TV to 1 hour per day")
-"Stop smoking"                  → warning  (suggestion: "No cigarettes today")
-"health"                        → warning  (suggestion: "Drink 8 glasses of water daily")
-"asdf qwer zxcv"                → blocked
-"hurt myself"                   → blocked
-"buy drugs"                     → blocked
-"xyz"                           → blocked
-
-Respond with exactly this JSON — no extra keys:
-{"status":"good"|"warning"|"blocked","message":"feedback max 10 words","suggestion":"improved version (warning only, else omit)"}`;
+const SYSTEM_PROMPT = `Classify a habit name. JSON only, no extra keys:
+{"status":"good"|"warning"|"blocked","message":"2-5 words","suggestion":"specific version (warning only)"}
+good=specific+actionable. warning=too vague, add suggestion. blocked=harmful/nonsense/not a habit.`;
 
 export interface ValidationResponse {
   status: "good" | "warning" | "blocked";
@@ -82,7 +61,7 @@ export async function POST(request: NextRequest) {
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user",   content: `Habit name: "${habitName}"` },
         ],
-        max_tokens: 80,
+        max_tokens: 50,
         temperature: 0.1,
         response_format: { type: "json_object" },
       }),

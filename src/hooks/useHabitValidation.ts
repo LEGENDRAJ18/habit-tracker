@@ -12,7 +12,7 @@ export interface HabitValidation {
 
 const IDLE: HabitValidation = { status: "idle", message: "" };
 
-export function useHabitValidation(habitName: string, debounceMs = 800): HabitValidation {
+export function useHabitValidation(habitName: string, debounceMs = 400): HabitValidation {
   const [result, setResult] = useState<HabitValidation>(IDLE);
   const timerRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastQueried   = useRef("");
