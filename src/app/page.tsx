@@ -3,9 +3,9 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
-  ArrowRight, Check, Sparkles, Flame, Users, Brain,
+  ArrowRight, ArrowDown, Check, Sparkles, Flame, Users, Brain,
   Smartphone, Cigarette, Dumbbell, Moon, X as XIcon,
-  Download, Crown, Play,
+  Download, Crown, Play, Shield,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
@@ -161,19 +161,40 @@ function Hero() {
 
 const PROBLEMS = [
   {
-    icon: XIcon,
-    title: "No personalised advice",
-    desc: "Generic apps treat everyone the same. They don't know you struggle with your phone every evening, or that Thursdays are your hardest day.",
+    title: "Generic apps just track",
+    desc: "Most habit apps are just glorified checklists. They track what you did but never tell you WHY you're failing or HOW to fix it.",
   },
   {
-    icon: XIcon,
-    title: "No real accountability",
-    desc: "It's easy to quit when nobody's watching. Most apps let you silently fail. One skipped notification and you're off for a week.",
+    title: "No one to keep you accountable",
+    desc: "It's easy to quit when nobody's watching. Without social pressure and real consequences, habits die within a week.",
   },
   {
-    icon: XIcon,
-    title: "No recovery plan",
-    desc: "Miss one day and most apps just reset your streak to zero. No guidance on why you slipped or how to get back on track.",
+    title: "One bad day ruins everything",
+    desc: "Miss one day and your streak is gone. Most apps punish you for being human instead of helping you recover.",
+  },
+];
+
+const FIXES = [
+  {
+    emoji: "🤖",
+    color: "border-violet-600/30 bg-violet-950/20",
+    glow: "shadow-violet-950/40",
+    title: "AI that actually coaches you",
+    desc: "Not just tracking — real personalized advice on WHY you're struggling and exactly what to do next.",
+  },
+  {
+    emoji: "👥",
+    color: "border-emerald-600/25 bg-emerald-950/10",
+    glow: "shadow-emerald-950/40",
+    title: "Friends who keep you honest",
+    desc: "Compete on leaderboards, share achievements, challenge friends. Social accountability that actually works.",
+  },
+  {
+    emoji: "🛡️",
+    color: "border-blue-600/25 bg-blue-950/10",
+    glow: "shadow-blue-950/40",
+    title: "Streaks that survive real life",
+    desc: "Streak protection means one bad day doesn't erase months of progress. Built for real humans.",
   },
 ];
 
@@ -181,29 +202,66 @@ function ProblemSection() {
   return (
     <section className="py-24 px-4 sm:px-6 bg-[#060609]">
       <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-14">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-            Why do habits fail?
+
+        {/* Label */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 bg-red-950/40 border border-red-800/30 rounded-full px-4 py-1.5 text-sm text-red-400 mb-6 font-medium">
+            👋 The Problem
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 leading-tight">
+            Why do{" "}
+            <span className="bg-gradient-to-r from-red-400 to-rose-400 bg-clip-text text-transparent">
+              92% of people
+            </span>{" "}
+            fail their habits?
           </h2>
-          <p className="text-slate-400 max-w-lg mx-auto">
-            You&apos;re not the problem. The tools are.
+          <p className="text-slate-400 max-w-lg mx-auto text-lg">
+            It&apos;s not willpower. It&apos;s the tools.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {PROBLEMS.map(({ icon: Icon, title, desc }) => (
+        {/* Problem cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+          {PROBLEMS.map(({ title, desc }) => (
             <div
               key={title}
-              className="bg-[#0f0f1a] border border-red-900/20 rounded-2xl p-6"
+              className="bg-[#0f0f1a] border border-red-900/25 rounded-2xl p-6 relative overflow-hidden"
             >
-              <div className="w-9 h-9 rounded-xl bg-red-950/50 border border-red-800/30 flex items-center justify-center mb-4">
-                <Icon className="w-4 h-4 text-red-400" />
-              </div>
-              <h3 className="text-base font-bold text-white mb-2">{title}</h3>
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-800/40 to-transparent" />
+              <div className="text-lg mb-3">❌</div>
+              <h3 className="text-sm font-bold text-white mb-2">{title}</h3>
+              <p className="text-sm text-slate-500 leading-relaxed">{desc}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Divider */}
+        <div className="flex flex-col items-center gap-3 my-10">
+          <div className="h-px w-full max-w-xs bg-gradient-to-r from-transparent via-violet-800/50 to-transparent" />
+          <div className="w-9 h-9 rounded-full bg-violet-900/40 border border-violet-700/40 flex items-center justify-center">
+            <ArrowDown className="w-4 h-4 text-violet-400" />
+          </div>
+          <div className="inline-flex items-center gap-2 bg-emerald-950/40 border border-emerald-700/30 rounded-full px-5 py-2 text-sm font-bold text-emerald-300">
+            ✅ HabitAI fixes all three
+          </div>
+          <div className="h-px w-full max-w-xs bg-gradient-to-r from-transparent via-violet-800/50 to-transparent" />
+        </div>
+
+        {/* Fix cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {FIXES.map(({ emoji, color, glow, title, desc }) => (
+            <div
+              key={title}
+              className={`border rounded-2xl p-6 relative overflow-hidden shadow-lg ${color} ${glow}`}
+            >
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-600/30 to-transparent" />
+              <div className="text-2xl mb-3">{emoji}</div>
+              <h3 className="text-sm font-bold text-white mb-2">{title}</h3>
               <p className="text-sm text-slate-400 leading-relaxed">{desc}</p>
             </div>
           ))}
         </div>
+
       </div>
     </section>
   );
