@@ -298,7 +298,7 @@ const SOLUTIONS = [
 
 function SolutionSection() {
   return (
-    <section id="how-it-works" className="py-24 px-4 sm:px-6">
+    <section id="features" className="py-24 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-14">
           <div className="inline-flex items-center gap-2 bg-violet-950/50 border border-violet-800/30 rounded-full px-4 py-1.5 text-sm text-violet-300 mb-6">
@@ -562,7 +562,7 @@ function FinalCta() {
 
 const FOOTER_LINKS = {
   Product: [
-    { label: "Features",   href: "#how-it-works" },
+    { label: "Features",   href: "#features" },
     { label: "Pricing",    href: "#pricing"       },
     { label: "Changelog",  href: "/changelog"     },
     { label: "Community",  href: "https://discord.gg/U3FFHFq3" },
