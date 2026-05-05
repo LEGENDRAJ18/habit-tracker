@@ -88,16 +88,17 @@ interface Props { onComplete: () => void; }
 
 export default function OnboardingModal({ onComplete }: Props) {
   const [step, setStep]             = useState(1);
-  const [goal, setGoal]             = useState("");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [customGoal, setCustomGoal] = useState("");
   const [saving, setSaving]         = useState(false);
 
-  const selectedGoal = GOALS.find((g) => g.id === goal);
-  const goalLabel = goal === "custom"
-    ? (customGoal.trim() || "Your goal")
-    : (selectedGoal?.label ?? "");
+  const toggle = (id: string) =>
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
 
-  const canFinish = goal !== "" && (goal !== "custom" || customGoal.trim() !== "");
+  const hasCustom  = selectedIds.includes("custom");
+  const canFinish  = selectedIds.length > 0 && (!hasCustom || customGoal.trim() !== "");
 
   const next = () => setStep((s) => s + 1);
   const back = () => setStep((s) => s - 1);
@@ -108,9 +109,14 @@ export default function OnboardingModal({ onComplete }: Props) {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        const goalLabels = selectedIds.map((id) => {
+          if (id === "custom") return customGoal.trim() || "Custom goal";
+          return GOALS.find((g) => g.id === id)?.label ?? id;
+        });
         await supabase.from("profiles").update({
           onboarding_completed: true,
-          goal:                 goalLabel,
+          goals: goalLabels,
+          goal:  goalLabels[0] ?? null,
         }).eq("id", user.id);
       }
     } catch {
@@ -315,25 +321,25 @@ export default function OnboardingModal({ onComplete }: Props) {
                   Let&apos;s build something<br />that lasts
                 </h1>
                 <p className="text-slate-400 text-sm leading-relaxed">
-                  One last thing — what are you building towards?
+                  What are you building towards? Pick as many as you like.
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-2 mb-3">
                 {GOALS.map((g) => (
-                  <OptionCard key={g.id} selected={goal === g.id} onClick={() => setGoal(g.id)}>
+                  <OptionCard key={g.id} selected={selectedIds.includes(g.id)} onClick={() => toggle(g.id)}>
                     <div className="flex items-center gap-2.5">
                       <span className="text-xl leading-none flex-shrink-0">{g.emoji}</span>
-                      <span className={`text-xs font-medium leading-snug ${goal === g.id ? "text-violet-100" : "text-slate-300"}`}>
+                      <span className={`text-xs font-medium leading-snug ${selectedIds.includes(g.id) ? "text-violet-100" : "text-slate-300"}`}>
                         {g.label}
                       </span>
-                      <SelectDot selected={goal === g.id} />
+                      <SelectDot selected={selectedIds.includes(g.id)} />
                     </div>
                   </OptionCard>
                 ))}
               </div>
 
-              {goal === "custom" && (
+              {hasCustom && (
                 <input
                   autoFocus
                   value={customGoal}
@@ -358,7 +364,9 @@ export default function OnboardingModal({ onComplete }: Props) {
                   }
                 </button>
                 {!canFinish && (
-                  <p className="text-[11px] text-slate-600 text-center mt-2">Pick a goal to continue</p>
+                  <p className="text-[11px] text-slate-600 text-center mt-2">
+                    {selectedIds.length === 0 ? "Pick at least one goal to continue" : "Enter your custom goal above"}
+                  </p>
                 )}
               </div>
             </div>

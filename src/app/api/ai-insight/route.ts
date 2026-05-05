@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     const [{ data: habits }, { data: rawLogs }, { data: profile }] = await Promise.all([
       admin.from("habits").select("id, name, habit_strength, created_at").eq("user_id", user.id).order("created_at"),
       admin.from("habit_logs").select("habit_id, completed_at").eq("user_id", user.id).gte("completed_at", daysAgo(30)),
-      admin.from("profiles").select("goal, subscription_tier").eq("id", user.id).single(),
+      admin.from("profiles").select("goal, goals, subscription_tier").eq("id", user.id).single(),
     ]);
 
     // Tier gate — free users cannot use AI insights
@@ -135,7 +135,11 @@ export async function POST(request: NextRequest) {
     });
 
     const totalCompletions = logs.length;
-    const goal = profile?.goal ?? null;
+    const userGoals: string[] =
+      Array.isArray(profile?.goals) && (profile.goals as string[]).length > 0
+        ? (profile.goals as string[])
+        : profile?.goal ? [profile.goal] : [];
+    const goalsText = userGoals.length > 0 ? userGoals.join(", ") : "not set";
 
     // Detect potentially addictive/harmful habit keywords
     const HARMFUL_KEYWORDS = ["smok", "vap", "nicotine", "alcohol", "drink", "gambling", "bet", "drug", "phone addic", "social media addic", "scroll", "reels", "tiktok", "porn", "junk food", "binge"];
@@ -169,7 +173,7 @@ Always respond with valid JSON matching this exact schema:
   "helpResources": []`}
 }`;
 
-      const userPrompt = `User's goal: ${goal ?? "not set"}
+      const userPrompt = `User's goals: ${goalsText}
 Total habit completions (30 days): ${totalCompletions}
 
 Their habits:
@@ -190,7 +194,7 @@ Build a realistic 7-day recovery/improvement plan starting from where they are n
 }`;
 
       const userPrompt = `User missed "${habitName}" yesterday.
-Their goal: ${goal ?? "not set"}
+Their goals: ${goalsText}
 Current streak for this habit: ${habitSummaries.find((h) => h.name === habitName)?.streak ?? 0} days.
 7-day completion rate: ${habitSummaries.find((h) => h.name === habitName)?.rate7d ?? 0}%.`;
 
@@ -224,7 +228,7 @@ Current streak for this habit: ${habitSummaries.find((h) => h.name === habitName
 
       const userPrompt = `Habit: "${habitName}"
 They most often miss it on: ${worstDay}
-Overall goal: ${goal ?? "not set"}
+Overall goals: ${goalsText}
 Their 7-day completion rate was: ${habitSummaries.find((h) => h.name === habitName)?.rate7d ?? 0}%
 Give a recovery plan.`;
 

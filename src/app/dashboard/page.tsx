@@ -291,7 +291,7 @@ function AllDoneCelebration({
 export default function DashboardPage() {
   const { habits, loading, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength } =
     useHabits();
-  const { tier, profileLoading, onboardingCompleted, goal, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt } = useProfile();
+  const { tier, profileLoading, onboardingCompleted, goals, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt } = useProfile();
   const { xp, level, achievements, totalCompletions, justLeveledUp, isDailyAchieved, onHabitCompleted, checkMilestones, dismissLevelUp } = useXP();
 
   // Persisted across tab navigation via sessionStorage so remounts don't re-show the modal.
@@ -773,7 +773,7 @@ export default function DashboardPage() {
         {/* Recommended habits */}
         {!loading && !profileLoading && onboardingCompleted && (
           <HabitRecommendations
-            goal={goal}
+            goals={goals}
             existingHabits={habits}
             canAddMore={isPaid || habits.length < FREE_HABIT_LIMIT}
             onAdd={(name, desc) => addHabit(name, desc, "daily")}

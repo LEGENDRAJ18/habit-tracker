@@ -48,15 +48,26 @@ const DEFAULT_RECS: Rec[] = [
   { emoji: "🏃", name: "Morning walk",               description: "Get moving to start the day right" },
 ];
 
-function getRecs(goal: string | null): Rec[] | null {
-  if (!goal) return null;
-  return GOAL_RECS[goal] ?? DEFAULT_RECS;
+function getRecsForGoals(goals: string[]): Rec[] | null {
+  if (goals.length === 0) return null;
+  const seen = new Set<string>();
+  const combined: Rec[] = [];
+  for (const g of goals) {
+    const recs = GOAL_RECS[g] ?? DEFAULT_RECS;
+    for (const r of recs) {
+      if (!seen.has(r.name)) {
+        seen.add(r.name);
+        combined.push(r);
+      }
+    }
+  }
+  return combined.length > 0 ? combined : DEFAULT_RECS;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 interface Props {
-  goal: string | null;
+  goals: string[];
   existingHabits: Habit[];
   canAddMore: boolean;
   onAdd: (name: string, description: string) => Promise<{ error: string | null }>;
@@ -65,7 +76,7 @@ interface Props {
 }
 
 export default function HabitRecommendations({
-  goal,
+  goals,
   existingHabits,
   canAddMore,
   onAdd,
@@ -74,7 +85,7 @@ export default function HabitRecommendations({
 }: Props) {
   const [adding, setAdding] = useState<Set<string>>(new Set());
 
-  const recs   = getRecs(goal);
+  const recs   = getRecsForGoals(goals);
   const owned  = new Set(existingHabits.map((h) => h.name.toLowerCase()));
   const visible = recs?.filter((r) => !owned.has(r.name.toLowerCase())) ?? [];
 
@@ -90,7 +101,7 @@ export default function HabitRecommendations({
   };
 
   // ── No goal set ──────────────────────────────────────────────────────────────
-  if (!goal) {
+  if (goals.length === 0) {
     return (
       <section className="mt-8">
         <div className="flex items-center gap-2 mb-4">
@@ -127,7 +138,9 @@ export default function HabitRecommendations({
           <h2 className="text-sm font-semibold text-slate-300">Recommended for you</h2>
         </div>
         <span className="hidden sm:inline-flex items-center gap-1 text-xs text-slate-600 bg-[#0c0c18] border border-violet-900/15 px-2.5 py-0.5 rounded-full">
-          Based on&nbsp;<span className="text-violet-400 font-medium">{goal}</span>
+          Based on&nbsp;<span className="text-violet-400 font-medium">
+            {goals.length === 1 ? goals[0] : `${goals.length} goals`}
+          </span>
         </span>
       </div>
 

@@ -8,6 +8,7 @@ export function useProfile() {
   const [tier, setTier]                               = useState<Plan>("free");
   const [onboardingCompleted, setOnboardingCompleted] = useState(true);
   const [goal, setGoal]                               = useState<string | null>(null);
+  const [goals, setGoals]                             = useState<string[]>([]);
   const [profileLoading, setProfileLoading]           = useState(true);
   const [lastFreezeUsed, setLastFreezeUsed]           = useState<string | null>(null);
   const [freezeProtectedDate, setFreezeProtectedDate] = useState<string | null>(null);
@@ -24,7 +25,7 @@ export function useProfile() {
       supabase
         .from("profiles")
         .select(
-          "subscription_tier, onboarding_completed, goal, last_freeze_used, freeze_protected_date, reminder_enabled, reminder_hour, reminder_minute"
+          "subscription_tier, onboarding_completed, goal, goals, last_freeze_used, freeze_protected_date, reminder_enabled, reminder_hour, reminder_minute"
         )
         .eq("id", user.id)
         .single()
@@ -32,6 +33,9 @@ export function useProfile() {
           if (data?.subscription_tier) setTier(data.subscription_tier as Plan);
           setOnboardingCompleted(data?.onboarding_completed ?? false);
           setGoal(data?.goal ?? null);
+          setGoals(Array.isArray(data?.goals) && data.goals.length > 0
+            ? data.goals
+            : data?.goal ? [data.goal] : []);
           setLastFreezeUsed(data?.last_freeze_used ?? null);
           setFreezeProtectedDate(data?.freeze_protected_date ?? null);
           setReminderEnabled(data?.reminder_enabled ?? false);
@@ -92,6 +96,7 @@ export function useProfile() {
     tier,
     onboardingCompleted,
     goal,
+    goals,
     profileLoading,
     freezeAvailable,
     freezeProtectedDate,

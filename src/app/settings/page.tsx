@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   ChevronLeft, User, Mail, Lock, Trash2, AlertCircle,
   CheckCircle2, Loader2, Eye, EyeOff, X, Bell, Download,
-  Crown, Zap, Palette, Check, RotateCcw,
+  Crown, Zap, Palette, Check, RotateCcw, Target,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import BottomNav from "@/components/ui/BottomNav";
@@ -402,12 +402,143 @@ function AppearanceSection() {
   );
 }
 
+// ─── Goals ────────────────────────────────────────────────────────────────────
+
+const GOAL_OPTIONS = [
+  { id: "fitness",    emoji: "🏋️", label: "Get fit & healthy"    },
+  { id: "learn",      emoji: "📚", label: "Learn & grow"          },
+  { id: "mental",     emoji: "🧠", label: "Build mental wellness" },
+  { id: "productive", emoji: "💰", label: "Be more productive"    },
+  { id: "sleep",      emoji: "😴", label: "Improve sleep"         },
+  { id: "custom",     emoji: "🎯", label: "Custom goal"           },
+] as const;
+
+function GoalsSection({ initialGoals }: { initialGoals: string[] }) {
+  const supabase = createClient();
+  const [selected, setSelected] = useState<string[]>([]);
+  const [customGoal, setCustomGoal] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<{ ok?: string; err?: string } | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (loaded) return;
+    const hasCustom = initialGoals.some(
+      (g) => !GOAL_OPTIONS.some((o) => o.label === g)
+    );
+    const knownIds = initialGoals
+      .filter((g) => GOAL_OPTIONS.some((o) => o.label === g))
+      .map((g) => GOAL_OPTIONS.find((o) => o.label === g)!.id as string);
+    if (hasCustom) {
+      knownIds.push("custom");
+      const customLabel = initialGoals.find(
+        (g) => !GOAL_OPTIONS.some((o) => o.label === g)
+      );
+      setCustomGoal(customLabel ?? "");
+    }
+    setSelected(knownIds);
+    setLoaded(true);
+  }, [initialGoals, loaded]);
+
+  const toggle = (id: string) =>
+    setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+
+  const hasCustom = selected.includes("custom");
+  const canSave = selected.length > 0 && (!hasCustom || customGoal.trim() !== "");
+
+  const handleSave = async () => {
+    if (!canSave) return;
+    setSaving(true);
+    setStatus(null);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const goalLabels = selected.map((id) => {
+        if (id === "custom") return customGoal.trim() || "Custom goal";
+        return GOAL_OPTIONS.find((g) => g.id === id)?.label ?? id;
+      });
+      const { error } = await supabase
+        .from("profiles")
+        .update({ goals: goalLabels, goal: goalLabels[0] ?? null })
+        .eq("id", user.id);
+      setStatus(error ? { err: error.message } : { ok: "Goals saved!" });
+    } catch {
+      setStatus({ err: "Failed to save goals." });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-4">
+        <Target className="w-4 h-4 text-violet-400" />
+        <h2 className="text-sm font-semibold text-white">Goals</h2>
+      </div>
+      <div className="bg-[#0f0f1a] border border-violet-900/20 rounded-2xl p-6 space-y-4">
+        <p className="text-xs text-slate-500">
+          Select what you&apos;re working towards. Used to personalise habit suggestions and AI coaching.
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {GOAL_OPTIONS.map((g) => {
+            const isSelected = selected.includes(g.id);
+            return (
+              <button
+                key={g.id}
+                type="button"
+                onClick={() => toggle(g.id)}
+                className={`w-full text-left rounded-xl border px-3 py-3 transition-all duration-200 ${
+                  isSelected
+                    ? "border-violet-500/60 bg-violet-600/18 ring-1 ring-violet-500/25"
+                    : "border-violet-900/20 bg-[#0c0c18] hover:border-violet-700/35 hover:bg-violet-950/30"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xl leading-none flex-shrink-0">{g.emoji}</span>
+                  <span className={`text-xs font-medium leading-snug flex-1 ${isSelected ? "text-violet-100" : "text-slate-300"}`}>
+                    {g.label}
+                  </span>
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                    isSelected ? "border-violet-500 bg-violet-500" : "border-slate-700"
+                  }`}>
+                    {isSelected && <Check className="w-2.5 h-2.5 text-white stroke-[3]" />}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        {hasCustom && (
+          <input
+            value={customGoal}
+            onChange={(e) => setCustomGoal(e.target.value)}
+            placeholder="Describe your custom goal…"
+            maxLength={80}
+            className="w-full bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none focus:ring-2 focus:ring-violet-600/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 transition-all"
+          />
+        )}
+        {status?.ok  && <Success msg={status.ok} />}
+        {status?.err && <Error   msg={status.err} />}
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving || !canSave}
+          className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-xl transition-all"
+        >
+          {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+          Save goals
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
   const router = useRouter();
   const supabase = useRef(createClient()).current;
-  const { reminderEnabled, reminderHour, reminderMinute, saveReminderPrefs, profileLoading: reminderLoading, tier } = useProfile();
+  const { reminderEnabled, reminderHour, reminderMinute, saveReminderPrefs, profileLoading: reminderLoading, tier, goals } = useProfile();
 
   const [email,       setEmail]       = useState("");
   const [name,        setName]        = useState("");
@@ -627,6 +758,9 @@ export default function SettingsPage() {
             </form>
           </div>
         </div>
+
+        {/* ── Goals ────────────────────────────────────────────────────────── */}
+        {!reminderLoading && <GoalsSection initialGoals={goals} />}
 
         {/* ── Change email ────────────────────────────────────────────────── */}
         <div>
