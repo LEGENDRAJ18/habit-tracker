@@ -7,7 +7,8 @@ export const metadata: Metadata = {
   description: "Read the HabitAI Privacy Policy.",
 };
 
-const UPDATED = "1 April 2025";
+const UPDATED   = "May 2026";
+const EFFECTIVE = "18 May 2026";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -43,7 +44,7 @@ export default function PrivacyPage() {
         <div className="mb-12">
           <p className="text-xs text-violet-400 uppercase tracking-widest font-semibold mb-3">Legal</p>
           <h1 className="text-4xl font-bold text-white mb-3">Privacy Policy</h1>
-          <p className="text-sm text-slate-500">Last updated: {UPDATED}</p>
+          <p className="text-sm text-slate-500">Last updated: {UPDATED} · Effective: {EFFECTIVE}</p>
         </div>
 
         <p className="text-slate-400 text-sm leading-relaxed mb-10">
@@ -203,11 +204,38 @@ export default function PrivacyPage() {
         <Section title="11. Contact Us">
           <p>
             For privacy inquiries, data requests, or to report a concern, contact us at:{" "}
-            <a href="mailto:privacy@habitai.app" className="text-violet-400 hover:text-violet-300 transition-colors">
-              privacy@habitai.app
+            <a href="mailto:surjeetsj@gmail.com" className="text-violet-400 hover:text-violet-300 transition-colors">
+              surjeetsj@gmail.com
             </a>
+            . We aim to respond within 24 hours.
           </p>
         </Section>
+
+        {/* Legal operator block */}
+        <div className="mt-4 pt-8 border-t border-violet-900/20">
+          <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl px-5 py-5 space-y-1.5 text-sm text-slate-400 leading-relaxed">
+            <p>
+              <strong className="text-slate-300">Legal operator:</strong> Surjeet Jubbal
+            </p>
+            <p>
+              HabitAI is created by <strong className="text-slate-300">Mannraj Jubbal</strong>, a 15-year-old
+              developer from Lower Hutt, Wellington, New Zealand, and operated by Surjeet Jubbal.
+            </p>
+            <p>
+              <strong className="text-slate-300">Website:</strong>{" "}
+              <a href="https://habitaiapp.com" className="text-violet-400 hover:text-violet-300 transition-colors">
+                habitaiapp.com
+              </a>
+            </p>
+            <p>
+              For any questions contact{" "}
+              <a href="mailto:surjeetsj@gmail.com" className="text-violet-400 hover:text-violet-300 transition-colors">
+                surjeetsj@gmail.com
+              </a>
+              . We aim to respond within 24 hours.
+            </p>
+          </div>
+        </div>
       </main>
 
       {/* Footer */}

@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/react";
 import ServiceWorkerRegistration from "@/components/pwa/ServiceWorkerRegistration";
 import InstallBanner from "@/components/pwa/InstallBanner";
 import ToastContainer from "@/components/ui/Toast";
+import CookieBanner from "@/components/ui/CookieBanner";
 import { AppearanceProvider } from "@/contexts/AppearanceContext";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -83,6 +84,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ServiceWorkerRegistration />
         <InstallBanner />
         <ToastContainer />
+        <CookieBanner />
       </body>
     </html>
   );

@@ -7,7 +7,8 @@ export const metadata: Metadata = {
   description: "HabitAI pricing, billing, refund, and cancellation policy.",
 };
 
-const UPDATED = "5 May 2025";
+const UPDATED   = "May 2026";
+const EFFECTIVE = "18 May 2026";
 
 function Section({
   icon,
@@ -67,7 +68,7 @@ export default function PaymentPolicyPage() {
         <div className="mb-12">
           <p className="text-xs text-violet-400 uppercase tracking-widest font-semibold mb-3">Legal</p>
           <h1 className="text-4xl font-bold text-white mb-3">Payment Policy</h1>
-          <p className="text-sm text-slate-500">Last updated: {UPDATED}</p>
+          <p className="text-sm text-slate-500">Last updated: {UPDATED} · Effective: {EFFECTIVE}</p>
           <p className="text-sm text-slate-400 leading-relaxed mt-4 max-w-xl">
             This policy covers pricing, billing, refunds, and cancellations for HabitAI. If you have any
             questions, email us at{" "}
@@ -209,14 +210,38 @@ export default function PaymentPolicyPage() {
           <div className="bg-[#0c0c18] border border-violet-900/20 rounded-xl px-4 py-4">
             <p className="text-slate-300 font-medium text-sm mb-1">Email support</p>
             <a
-              href="mailto:support@habitai.app"
+              href="mailto:surjeetsj@gmail.com"
               className="text-violet-400 hover:text-violet-300 transition-colors text-sm"
             >
-              support@habitai.app
+              surjeetsj@gmail.com
             </a>
             <p className="text-slate-600 text-xs mt-1">We respond within 24 hours on business days.</p>
           </div>
         </Section>
+
+        {/* Legal operator block */}
+        <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl px-5 py-5 space-y-1.5 text-sm text-slate-400 leading-relaxed">
+          <p>
+            <strong className="text-slate-300">Legal operator:</strong> Surjeet Jubbal
+          </p>
+          <p>
+            HabitAI is created by <strong className="text-slate-300">Mannraj Jubbal</strong>, a 15-year-old
+            developer from Lower Hutt, Wellington, New Zealand, and operated by Surjeet Jubbal.
+          </p>
+          <p>
+            <strong className="text-slate-300">Website:</strong>{" "}
+            <a href="https://habitaiapp.com" className="text-violet-400 hover:text-violet-300 transition-colors">
+              habitaiapp.com
+            </a>
+          </p>
+          <p>
+            For any questions contact{" "}
+            <a href="mailto:surjeetsj@gmail.com" className="text-violet-400 hover:text-violet-300 transition-colors">
+              surjeetsj@gmail.com
+            </a>
+            . We aim to respond within 24 hours.
+          </p>
+        </div>
 
         {/* Bottom links */}
         <div className="pt-8 border-t border-violet-900/20 flex flex-wrap gap-x-5 gap-y-2">
