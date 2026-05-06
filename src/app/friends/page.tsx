@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Users, Flame, Zap, Send, Check, X, Loader2, UserPlus, Trophy, UserSearch } from "lucide-react";
-import PageNav from "@/components/layout/PageNav";
-import BottomNav from "@/components/ui/BottomNav";
 
 interface FriendStat {
   id: string;
@@ -121,12 +119,10 @@ export default function FriendsPage() {
 
   return (
     <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
-      <PageNav
-        emoji="👥"
-        title="Friends"
-        subtitle="Compete and stay accountable with your friends"
-        maxWidth="max-w-2xl"
-      />
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-8 pb-3">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">👥 Friends</h1>
+        <p className="text-sm text-slate-500 mt-1.5">Compete and stay accountable with your friends</p>
+      </div>
 
       <main className="max-w-2xl mx-auto px-4 sm:px-6 pb-8 space-y-6">
 
@@ -318,7 +314,6 @@ export default function FriendsPage() {
           </div>
         )}
       </main>
-      <BottomNav />
     </div>
   );
 }

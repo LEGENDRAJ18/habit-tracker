@@ -6,14 +6,12 @@ import {
   Flame, Zap, CheckCircle2, TrendingUp,
   Calendar, BarChart2, Loader2, Lock, BarChart as BarChartIcon,
 } from "lucide-react";
-import PageNav from "@/components/layout/PageNav";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell,
 } from "recharts";
 import { createClient } from "@/lib/supabase/client";
 import type { Habit, HabitLog, Plan } from "@/types";
-import BottomNav from "@/components/ui/BottomNav";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -381,12 +379,10 @@ export default function AnalyticsPage() {
   if (noHabits) {
     return (
       <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
-        <PageNav
-          emoji="📊"
-          title="Analytics"
-          subtitle="Track your progress and build better habits over time"
-          maxWidth="max-w-7xl"
-        />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8 pb-3">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">📊 Analytics</h1>
+          <p className="text-sm text-slate-500 mt-1.5">Track your progress and build better habits over time</p>
+        </div>
         <main className="max-w-7xl mx-auto px-4 sm:px-6 pb-8">
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="w-16 h-16 rounded-2xl bg-violet-900/20 border border-violet-800/25 flex items-center justify-center mx-auto mb-5">
@@ -404,28 +400,27 @@ export default function AnalyticsPage() {
             </Link>
           </div>
         </main>
-        <BottomNav />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
-      <PageNav
-        emoji="📊"
-        title="Analytics"
-        subtitle="Track your progress and build better habits over time"
-        maxWidth="max-w-7xl"
-        action={!isPaid ? (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8 pb-3 flex items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">📊 Analytics</h1>
+          <p className="text-sm text-slate-500 mt-1.5">Track your progress and build better habits over time</p>
+        </div>
+        {!isPaid && (
           <Link
             href="/dashboard?checkout=plus"
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/20 border border-violet-500/30 text-violet-300 text-xs font-semibold rounded-xl hover:bg-violet-600/30 transition-all"
+            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/20 border border-violet-500/30 text-violet-300 text-xs font-semibold rounded-xl hover:bg-violet-600/30 transition-all"
           >
             <Lock className="w-3 h-3" />
             Unlock full analytics
           </Link>
-        ) : undefined}
-      />
+        )}
+      </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 pb-8 space-y-6 page-fade">
         <>
@@ -519,7 +514,6 @@ export default function AnalyticsPage() {
             )}
         </>
       </main>
-      <BottomNav />
     </div>
   );
 }

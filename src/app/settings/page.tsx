@@ -4,12 +4,11 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  ChevronLeft, User, Mail, Lock, Trash2, AlertCircle, CheckCircle2,
+  User, Mail, Lock, Trash2, AlertCircle, CheckCircle2,
   Loader2, Eye, EyeOff, X, Bell, Download, Crown, Zap, Palette,
   Check, RotateCcw, Target, SlidersHorizontal, CreditCard, Sparkles,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import BottomNav from "@/components/ui/BottomNav";
 import { useProfile } from "@/hooks/useProfile";
 import { TOUR_STORAGE_KEY, TOUR_SESSION_KEY } from "@/components/ui/OnboardingTour";
 import ReminderSettings from "@/components/dashboard/ReminderSettings";
@@ -745,21 +744,6 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-8">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-[#09090f]/90 backdrop-blur-xl border-b border-violet-900/20">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-2">
-          <Link href="/dashboard" className="flex items-center gap-1 text-slate-500 hover:text-white text-xs transition-colors py-1.5 px-2 -ml-2 rounded-lg hover:bg-violet-950/40">
-            <ChevronLeft className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline font-medium">Dashboard</span>
-          </Link>
-          <span className="text-slate-700 text-sm">/</span>
-          <div className="flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5" style={{ color: "var(--a-400)" }} />
-            <span className="text-sm font-semibold text-white">Settings</span>
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-6">
         {/* Tab bar */}
         <div className="flex overflow-x-auto gap-1 bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-1.5 mb-6 scrollbar-none">
@@ -802,8 +786,6 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
-
-      <BottomNav />
 
       {showDelete && <DeleteModal onConfirm={handleDelete} onCancel={() => setShowDelete(false)} loading={deleting} />}
     </div>

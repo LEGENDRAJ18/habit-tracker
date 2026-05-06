@@ -3,8 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Lock, Flame, Zap, Trophy, CalendarDays } from "lucide-react";
-import PageNav from "@/components/layout/PageNav";
-import BottomNav from "@/components/ui/BottomNav";
 import { useXP, ACHIEVEMENT_META, type AchievementId } from "@/hooks/useXP";
 import { levelName, levelColorKey, xpProgressPct, xpIntoLevel, xpSpanOfLevel, type LevelColorKey } from "@/lib/xp";
 import { createClient } from "@/lib/supabase/client";
@@ -80,12 +78,10 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
-      <PageNav
-        emoji="👤"
-        title="Profile"
-        subtitle="Your journey so far — levels, achievements, and stats"
-        maxWidth="max-w-4xl"
-      />
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-8 pb-3">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">👤 Profile</h1>
+        <p className="text-sm text-slate-500 mt-1.5">Your journey so far — levels, achievements, and stats</p>
+      </div>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 pb-8">
         {xpLoading ? (
@@ -215,7 +211,6 @@ export default function ProfilePage() {
           </>
         )}
       </main>
-      <BottomNav />
     </div>
   );
 }

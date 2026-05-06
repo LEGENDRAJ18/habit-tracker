@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ChevronLeft, ChevronRight, Calendar as CalendarIcon,
@@ -10,10 +9,6 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Habit, HabitLog } from "@/types";
-import { useProfile } from "@/hooks/useProfile";
-import { useXP } from "@/hooks/useXP";
-import LeftSidebar from "@/components/dashboard/LeftSidebar";
-import BottomNav from "@/components/ui/BottomNav";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -494,9 +489,6 @@ function InsightsCard({
 const WEEK_DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
 export default function CalendarPage() {
-  const router = useRouter();
-  const { tier } = useProfile();
-  const { xp, level } = useXP();
 
   const [habits,      setHabits]      = useState<Habit[]>([]);
   const [logs,        setLogs]        = useState<(Pick<HabitLog, "habit_id" | "completed_at"> & { id: string })[]>([]);
@@ -639,8 +631,6 @@ export default function CalendarPage() {
     };
   }, [selectedDay, dayCompletionMap, habits, today]);
 
-  const bestStreak = useMemo(() => computeBestStreak(logs), [logs]);
-
   if (loading) {
     return (
       <div className="min-h-screen bg-[#09090f] flex items-center justify-center">
@@ -652,16 +642,6 @@ export default function CalendarPage() {
   if (habits.length === 0) {
     return (
       <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
-        <div className="border-b border-violet-900/20 bg-[#09090f]/90 backdrop-blur-xl sticky top-0 z-40">
-          <div className="max-w-[1340px] mx-auto px-4 sm:px-6 h-14 flex items-center gap-2">
-            <Link href="/dashboard" className="flex items-center gap-1 text-slate-500 hover:text-white text-xs transition-colors py-1.5 px-2 -ml-2 rounded-lg hover:bg-violet-950/40">
-              <ChevronLeft className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline font-medium">Dashboard</span>
-            </Link>
-            <span className="text-slate-700 text-sm">/</span>
-            <span className="text-sm font-semibold text-white">📅 Calendar</span>
-          </div>
-        </div>
         <main className="max-w-[1340px] mx-auto px-4 sm:px-6 py-8">
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="w-16 h-16 rounded-2xl bg-violet-900/20 border border-violet-800/25 flex items-center justify-center mx-auto mb-5">
@@ -680,39 +660,14 @@ export default function CalendarPage() {
             </Link>
           </div>
         </main>
-        <BottomNav />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
-      {/* Sticky header */}
-      <div className="border-b border-violet-900/20 bg-[#09090f]/90 backdrop-blur-xl sticky top-0 z-40">
-        <div className="max-w-[1340px] mx-auto px-4 sm:px-6 h-14 flex items-center gap-2">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-1 text-slate-500 hover:text-white text-xs transition-colors py-1.5 px-2 -ml-2 rounded-lg hover:bg-violet-950/40"
-          >
-            <ChevronLeft className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline font-medium">Dashboard</span>
-          </Link>
-          <span className="text-slate-700 text-sm">/</span>
-          <span className="text-sm font-semibold text-white">📅 Calendar</span>
-        </div>
-      </div>
-
       <main className="max-w-[1340px] mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-8 page-fade">
-        <div className="lg:grid lg:grid-cols-[240px_1fr] xl:grid-cols-[240px_1fr_300px] lg:gap-6 lg:items-start">
-
-          {/* ── Left sidebar ──────────────────────────────────────────────── */}
-          <LeftSidebar
-            xp={xp}
-            level={level}
-            bestStreak={bestStreak}
-            tier={tier}
-            onUpgradeClick={() => router.push("/billing")}
-          />
+        <div className="xl:grid xl:grid-cols-[1fr_300px] xl:gap-6 xl:items-start">
 
           {/* ── Center column ─────────────────────────────────────────────── */}
           <div className="min-w-0 space-y-6">
@@ -863,8 +818,6 @@ export default function CalendarPage() {
 
         </div>
       </main>
-
-      <BottomNav />
     </div>
   );
 }

@@ -6,10 +6,8 @@ import type { Plan } from "@/types";
 import { useHabits } from "@/hooks/useHabits";
 import { useProfile } from "@/hooks/useProfile";
 import { FREE_HABIT_LIMIT } from "@/types";
-import DashboardNav from "@/components/dashboard/DashboardNav";
 import HabitCard from "@/components/dashboard/HabitCard";
 import AddHabitModal from "@/components/dashboard/AddHabitModal";
-import UpgradeModal from "@/components/dashboard/UpgradeModal";
 import OnboardingModal from "@/components/dashboard/OnboardingModal";
 import StreakBrokenModal from "@/components/dashboard/StreakBrokenModal";
 import HabitRecommendations from "@/components/dashboard/HabitRecommendations";
@@ -22,13 +20,13 @@ import { playSound } from "@/lib/sounds";
 import { levelName } from "@/lib/xp";
 import AIInsightModal from "@/components/dashboard/AIInsightModal";
 import AICheckinCard from "@/components/dashboard/AICheckinCard";
-import LeftSidebar from "@/components/dashboard/LeftSidebar";
 import PromoBanner from "@/components/ui/PromoBanner";
 import SmartNotification from "@/components/ui/SmartNotification";
 import { toast } from "@/components/ui/Toast";
 import HelpModal from "@/components/ui/HelpModal";
 import OnboardingTour from "@/components/ui/OnboardingTour";
 import HabitTemplatesModal from "@/components/dashboard/HabitTemplatesModal";
+import { useUpgrade } from "@/contexts/UpgradeContext";
 
 // ─── Greeting & quote ─────────────────────────────────────────────────────────
 
@@ -309,6 +307,7 @@ export default function DashboardPage() {
     useHabits();
   const { tier, profileLoading, onboardingCompleted, goals, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt } = useProfile();
   const { xp, level, achievements, totalCompletions, justLeveledUp, isDailyAchieved, onHabitCompleted, checkMilestones, dismissLevelUp } = useXP();
+  const { openUpgradeModal } = useUpgrade();
 
   // Persisted across tab navigation via sessionStorage so remounts don't re-show the modal.
   // Also guarded by: onboardingCompleted (Supabase), signedUpAt < 1h, and habits.length === 0.
@@ -335,8 +334,6 @@ export default function DashboardPage() {
   const [editingHabitId, setEditingHabitId] = useState<string | null>(null);
   const [showAdd, setShowAdd]           = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const [showUpgrade, setShowUpgrade] = useState(false);
-  const [upgradeReason, setUpgradeReason] = useState<import("@/components/dashboard/UpgradeModal").UpgradeReason>("habits");
   const [upgradeSuccess, setUpgradeSuccess] = useState(false);
   const [showCelebration, setShowCelebration]   = useState(false);
   const [showStreakBroken, setShowStreakBroken] = useState(false);
@@ -460,12 +457,11 @@ export default function DashboardPage() {
 
   const handleAddClick = useCallback(() => {
     if (!isPaid && habits.length >= FREE_HABIT_LIMIT) {
-      setUpgradeReason("habits");
-      setShowUpgrade(true);
+      openUpgradeModal("habits");
     } else {
       setShowAdd(true);
     }
-  }, [isPaid, habits.length]);
+  }, [isPaid, habits.length, openUpgradeModal]);
 
   // Keyboard shortcuts: N = add habit, A = mark first incomplete done
   useEffect(() => {
@@ -496,19 +492,13 @@ export default function DashboardPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#09090f]">
-      <DashboardNav
-        habitCount={habits.length}
-        tier={tier}
-        onUpgradeClick={() => setShowUpgrade(true)}
-      />
-
+    <div className="bg-[#09090f]">
       {!profileLoading && <PromoBanner tier={tier} />}
 
       <SmartNotification
         tier={tier}
         habitCount={habits.length}
-        onUpgradeClick={() => setShowUpgrade(true)}
+        onUpgradeClick={() => openUpgradeModal("habits")}
         onAIInsightClick={() => setShowAIInsight(true)}
       />
 
@@ -523,22 +513,13 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Three-column layout: left sidebar (lg+), center, right sidebar (xl+) */}
-        <div className="lg:grid lg:grid-cols-[240px_1fr] xl:grid-cols-[240px_1fr_280px] lg:gap-6 lg:items-start">
-
-        {/* ── Left sidebar (lg+) ────────────────────────────────────────── */}
-        <LeftSidebar
-          xp={xp}
-          level={level}
-          bestStreak={bestStreak}
-          tier={tier}
-          onUpgradeClick={() => setShowUpgrade(true)}
-        />
+        {/* Two-column layout: center content + right sidebar (xl+) */}
+        <div className="xl:grid xl:grid-cols-[1fr_280px] xl:gap-6 xl:items-start">
 
         {/* ── Center column ─────────────────────────────────────────────── */}
         <div className="min-w-0">
-          {/* Mobile-only horizontal StatsBar */}
-          <div className="lg:hidden">
+          {/* StatsBar — hidden on xl where right sidebar shows milestones */}
+          <div className="xl:hidden">
             <StatsBar xp={xp} level={level} bestStreak={bestStreak} totalCompletions={totalCompletions} />
           </div>
 
@@ -797,7 +778,7 @@ export default function DashboardPage() {
             canAddMore={isPaid || habits.length < FREE_HABIT_LIMIT}
             onAdd={(name, desc) => addHabit(name, desc, "daily")}
             onSetGoal={() => setShowReOnboard(true)}
-            onUpgrade={() => setShowUpgrade(true)}
+            onUpgrade={() => openUpgradeModal("habits")}
           />
         )}
 
@@ -838,7 +819,7 @@ export default function DashboardPage() {
                 </button>
               ) : (
                 <button
-                  onClick={() => setShowUpgrade(true)}
+                  onClick={() => openUpgradeModal("ai")}
                   className="w-full py-3 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 relative overflow-hidden"
                   style={{
                     background: "linear-gradient(135deg, #6d28d9, #8b5cf6, #a855f7, #8b5cf6, #6d28d9)",
@@ -929,10 +910,6 @@ export default function DashboardPage() {
         />
       )}
 
-      {showUpgrade && (
-        <UpgradeModal onClose={() => setShowUpgrade(false)} reason={upgradeReason} />
-      )}
-
       {(showOnboarding || showReOnboard) && (
         <OnboardingModal onComplete={() => {
           localStorage.setItem("habitai_onboarding_done", "1");
@@ -954,7 +931,7 @@ export default function DashboardPage() {
 
       {showStreakBroken && (
         <StreakBrokenModal
-          onUpgrade={() => { setShowStreakBroken(false); setShowUpgrade(true); }}
+          onUpgrade={() => { setShowStreakBroken(false); openUpgradeModal("habits"); }}
           onDismiss={() => setShowStreakBroken(false)}
           brokenHabitName={habits.find((h) => hasBrokenStreak(h.id))?.name}
           isPaid={isPaid}
@@ -965,7 +942,7 @@ export default function DashboardPage() {
         <AIInsightModal
           tier={tier}
           onClose={() => setShowAIInsight(false)}
-          onUpgrade={() => { setShowAIInsight(false); setUpgradeReason("ai"); setShowUpgrade(true); }}
+          onUpgrade={() => { setShowAIInsight(false); openUpgradeModal("ai"); }}
         />
       )}
 
@@ -986,7 +963,7 @@ export default function DashboardPage() {
           existingHabits={habits}
           canAddMore={isPaid || habits.length < FREE_HABIT_LIMIT}
           onAdd={addHabit}
-          onHitLimit={() => { setShowTemplates(false); setUpgradeReason("habits"); setShowUpgrade(true); }}
+          onHitLimit={() => { setShowTemplates(false); openUpgradeModal("habits"); }}
         />
       )}
 
