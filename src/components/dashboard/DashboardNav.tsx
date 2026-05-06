@@ -164,36 +164,34 @@ export default function DashboardNav() {
 
           {/* Left */}
           <div className="flex items-center gap-1 z-10">
-            <div className="hidden lg:flex items-center gap-2">
-              <button
-                onClick={() => router.back()}
-                aria-label="Go back"
-                title="Go back"
-                className="w-7 h-7 flex items-center justify-center rounded-full text-slate-600 hover:text-slate-300 hover:bg-violet-950/40 transition-all"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => router.forward()}
-                aria-label="Go forward"
-                title="Go forward"
-                className="w-7 h-7 flex items-center justify-center rounded-full text-slate-600 hover:text-slate-300 hover:bg-violet-950/40 transition-all"
-              >
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-              {pageMeta && (
-                <div
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border"
-                  style={{
-                    backgroundColor: "rgba(var(--a-r), var(--a-g), var(--a-b), 0.08)",
-                    borderColor:     "rgba(var(--a-r), var(--a-g), var(--a-b), 0.2)",
-                  }}
+            <div className="hidden lg:flex items-center gap-3">
+              <div className="flex items-center gap-0.5">
+                <button
+                  onClick={() => router.back()}
+                  aria-label="Go back"
+                  title="Go back"
+                  className="w-7 h-7 flex items-center justify-center rounded-full text-slate-600 hover:text-slate-300 hover:bg-violet-950/40 transition-all"
                 >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => router.forward()}
+                  aria-label="Go forward"
+                  title="Go forward"
+                  className="w-7 h-7 flex items-center justify-center rounded-full text-slate-600 hover:text-slate-300 hover:bg-violet-950/40 transition-all"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              {pageMeta && (
+                <div className="flex items-center gap-2">
                   <pageMeta.Icon
-                    className="w-3.5 h-3.5"
+                    className="w-5 h-5 flex-shrink-0"
                     style={{ color: "var(--a-400)" }}
                   />
-                  <span className="text-xs font-semibold text-white">{pageMeta.label}</span>
+                  <span className="text-xl font-bold text-white tracking-tight leading-none">
+                    {pageMeta.label}
+                  </span>
                 </div>
               )}
             </div>
@@ -238,16 +236,6 @@ export default function DashboardNav() {
               >
                 <Download className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Install</span>
-              </button>
-            )}
-
-            {isFree && (
-              <button
-                onClick={() => openUpgradeModal()}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-600/30 text-violet-300 text-xs font-medium rounded-lg transition-all"
-              >
-                <Zap className="w-3 h-3" />
-                Upgrade
               </button>
             )}
 
