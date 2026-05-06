@@ -188,3 +188,25 @@ body {
   background: rgba(20,6,6,0.96);
   border-color: rgba(239,68,68,0.35);
 }
+
+/* Upgrade button gradient shimmer */
+@keyframes upgradeShimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+
+/* Hide scrollbar visually but keep scrollability */
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* Accessibility: reduce motion */
+.reduce-motion *, .reduce-motion *::before, .reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+/* Accessibility: high contrast */
+.high-contrast {
+  filter: contrast(1.3) brightness(1.08);
+}

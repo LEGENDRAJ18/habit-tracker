@@ -16,6 +16,8 @@ export interface AppearancePrefs {
   showHabitXP:            boolean;
   showAchievementPopups:  boolean;
   showLevelUpAnimation:   boolean;
+  reduceMotion:           boolean;
+  highContrast:           boolean;
 }
 
 const DEFAULTS: AppearancePrefs = {
@@ -27,6 +29,8 @@ const DEFAULTS: AppearancePrefs = {
   showHabitXP:           true,
   showAchievementPopups: true,
   showLevelUpAnimation:  true,
+  reduceMotion:          false,
+  highContrast:          false,
 };
 
 export const ACCENT_PALETTE: Record<AccentColor, {
@@ -71,6 +75,14 @@ function applyFontSizeVar(size: FontSize) {
   );
 }
 
+function applyReduceMotion(value: boolean) {
+  document.documentElement.classList.toggle("reduce-motion", value);
+}
+
+function applyHighContrast(value: boolean) {
+  document.documentElement.classList.toggle("high-contrast", value);
+}
+
 type AppearanceCtx = AppearancePrefs & {
   setAccent:               (c: AccentColor)     => void;
   setFontSize:             (s: FontSize)        => void;
@@ -80,6 +92,8 @@ type AppearanceCtx = AppearancePrefs & {
   setShowHabitXP:          (v: boolean)         => void;
   setShowAchievementPopups:(v: boolean)         => void;
   setShowLevelUpAnimation: (v: boolean)         => void;
+  setReduceMotion:         (v: boolean)         => void;
+  setHighContrast:         (v: boolean)         => void;
 };
 
 const Ctx = createContext<AppearanceCtx>({
@@ -92,6 +106,8 @@ const Ctx = createContext<AppearanceCtx>({
   setShowHabitXP:          () => {},
   setShowAchievementPopups:() => {},
   setShowLevelUpAnimation: () => {},
+  setReduceMotion:         () => {},
+  setHighContrast:         () => {},
 });
 
 export function AppearanceProvider({ children }: { children: React.ReactNode }) {
@@ -107,6 +123,8 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
     setPrefs(merged);
     applyAccentCSSVars(merged.accent);
     applyFontSizeVar(merged.fontSize);
+    applyReduceMotion(merged.reduceMotion);
+    applyHighContrast(merged.highContrast);
 
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
@@ -152,6 +170,8 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
   const setShowHabitXP          = useCallback((v: boolean) => commit({ showHabitXP: v }), [commit]);
   const setShowAchievementPopups= useCallback((v: boolean) => commit({ showAchievementPopups: v }), [commit]);
   const setShowLevelUpAnimation = useCallback((v: boolean) => commit({ showLevelUpAnimation: v }), [commit]);
+  const setReduceMotion         = useCallback((v: boolean) => { applyReduceMotion(v); commit({ reduceMotion: v }); }, [commit]);
+  const setHighContrast         = useCallback((v: boolean) => { applyHighContrast(v); commit({ highContrast: v }); }, [commit]);
 
   return (
     <Ctx.Provider value={{
@@ -159,6 +179,7 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
       setAccent, setFontSize, setDashboardLayout,
       setShowTimeEmojis, setShowHabitStreak, setShowHabitXP,
       setShowAchievementPopups, setShowLevelUpAnimation,
+      setReduceMotion, setHighContrast,
     }}>
       {children}
     </Ctx.Provider>
