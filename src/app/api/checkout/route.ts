@@ -32,6 +32,14 @@ export async function POST(request: NextRequest) {
       subscription_data: {
         metadata: { userId: user.id },
       },
+      consent_collection: {
+        terms_of_service: 'required',
+      },
+      custom_text: {
+        terms_of_service_acceptance: {
+          message: `I agree to the [Payment Policy](${origin}/payment-policy) and [Terms of Service](${origin}/terms). Billed monthly. Cancel anytime.`,
+        },
+      },
     });
 
     return NextResponse.json({ url: session.url });

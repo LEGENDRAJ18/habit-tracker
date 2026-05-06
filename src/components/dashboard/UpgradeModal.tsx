@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { X, Sparkles, Check, Minus, Zap, Loader2, Brain, Crown, Lock } from "lucide-react";
+import { X, Sparkles, Check, Minus, Zap, Loader2, Brain, Crown, Lock, ClipboardList } from "lucide-react";
 import { FREE_HABIT_LIMIT } from "@/types";
 
 export type UpgradeReason = "habits" | "ai" | "reminders" | "export" | "pro_feature";
@@ -80,9 +80,132 @@ function ProBadge() {
   );
 }
 
+const PLAN_PRICE: Record<"plus" | "pro", string> = {
+  plus: "$7 NZD",
+  pro:  "$12 NZD",
+};
+
+interface ConsentModalProps {
+  plan: "plus" | "pro";
+  loading: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+function ConsentModal({ plan, loading, onConfirm, onCancel }: ConsentModalProps) {
+  const [agreed, setAgreed] = useState(false);
+  const price = PLAN_PRICE[plan];
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      onClick={(e) => e.target === e.currentTarget && onCancel()}
+    >
+      <div className="w-full max-w-sm bg-[#0f0f1a] border border-violet-700/40 rounded-2xl shadow-2xl shadow-violet-950/60 overflow-hidden">
+        {/* Header */}
+        <div className="relative bg-gradient-to-br from-violet-900/50 to-purple-900/20 px-5 pt-5 pb-4 border-b border-violet-800/30">
+          <button
+            onClick={onCancel}
+            className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-violet-600/25 border border-violet-600/40 flex items-center justify-center flex-shrink-0">
+              <ClipboardList className="w-4 h-4 text-violet-400" />
+            </div>
+            <div>
+              <p className="text-xs text-violet-400 font-semibold uppercase tracking-wider">Review &amp; confirm</p>
+              <h2 className="text-base font-bold text-white leading-tight">Before you continue 📋</h2>
+            </div>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="px-5 py-5 space-y-4">
+          {/* Summary bullets */}
+          <ul className="space-y-2.5">
+            {[
+              `${price}/month, billed monthly`,
+              "Cancel anytime — no cancellation fees",
+              "7-day money back guarantee on first payment",
+            ].map((item) => (
+              <li key={item} className="flex items-start gap-2.5 text-sm text-slate-300">
+                <Check className="w-4 h-4 text-violet-400 flex-shrink-0 mt-0.5" />
+                {item}
+              </li>
+            ))}
+          </ul>
+
+          <div className="h-px bg-violet-900/20" />
+
+          {/* Consent checkbox */}
+          <label className="flex items-start gap-3 cursor-pointer group">
+            <div className="relative mt-0.5 flex-shrink-0">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
+                className="sr-only"
+              />
+              <div
+                className={`w-4 h-4 rounded border transition-all ${
+                  agreed
+                    ? "bg-violet-600 border-violet-500"
+                    : "bg-transparent border-violet-700/60 group-hover:border-violet-600/80"
+                } flex items-center justify-center`}
+              >
+                {agreed && <Check className="w-2.5 h-2.5 text-white" />}
+              </div>
+            </div>
+            <span className="text-xs text-slate-400 leading-relaxed">
+              I agree to the{" "}
+              <Link
+                href="/payment-policy"
+                target="_blank"
+                className="text-violet-400 hover:text-violet-300 underline underline-offset-2 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Payment Policy
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/terms"
+                target="_blank"
+                className="text-violet-400 hover:text-violet-300 underline underline-offset-2 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Terms of Service
+              </Link>
+            </span>
+          </label>
+
+          {/* Actions */}
+          <div className="flex flex-col gap-2 pt-1">
+            <button
+              onClick={onConfirm}
+              disabled={!agreed || loading}
+              className="w-full py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              Continue to payment →
+            </button>
+            <button
+              onClick={onCancel}
+              className="w-full py-2 text-slate-500 hover:text-slate-300 text-sm transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function UpgradeModal({ onClose, reason = "habits", fromPlus = false }: Props) {
   const [loading, setLoading] = useState<"plus" | "pro" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pendingPlan, setPendingPlan] = useState<"plus" | "pro" | null>(null);
   const copy = REASON_COPY[reason];
 
   const handleCheckout = async (plan: "plus" | "pro") => {
@@ -100,7 +223,20 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
     }
   };
 
+  const requestCheckout = (plan: "plus" | "pro") => {
+    setPendingPlan(plan);
+  };
+
   return (
+    <>
+    {pendingPlan && (
+      <ConsentModal
+        plan={pendingPlan}
+        loading={loading === pendingPlan}
+        onConfirm={() => handleCheckout(pendingPlan)}
+        onCancel={() => setPendingPlan(null)}
+      />
+    )}
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
@@ -187,7 +323,7 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
                 </ul>
                 <div className="mt-auto">
                   <button
-                    onClick={() => handleCheckout("plus")}
+                    onClick={() => requestCheckout("plus")}
                     disabled={loading !== null}
                     className="w-full py-2 border border-violet-500/60 hover:border-violet-400 text-violet-300 hover:text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
@@ -223,7 +359,7 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
               </ul>
               <div className="mt-auto">
                 <button
-                  onClick={() => handleCheckout("pro")}
+                  onClick={() => requestCheckout("pro")}
                   disabled={loading !== null}
                   className="w-full py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-orange-900/20 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
@@ -281,5 +417,6 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
         </div>
       </div>
     </div>
+    </>
   );
 }
