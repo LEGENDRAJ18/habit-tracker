@@ -39,6 +39,22 @@ function getGreeting(): string {
   return "Good evening";
 }
 
+const GOAL_SHORT: Record<string, string> = {
+  "Get fit & healthy":     "fitness",
+  "Learn & grow":          "learning",
+  "Build mental wellness": "mental wellness",
+  "Be more productive":    "productivity",
+  "Improve sleep":         "sleep",
+};
+
+function formatGoalsLine(goals: string[]): string | null {
+  if (goals.length === 0) return null;
+  const short = goals.map((g) => GOAL_SHORT[g] ?? g.toLowerCase());
+  if (short.length === 1) return `Ready to work on your ${short[0]} today?`;
+  if (short.length === 2) return `Ready to work on your ${short[0]} and ${short[1]} today?`;
+  return `Ready to work on your ${short[0]}, ${short[1]}, and ${short.length - 2} more today?`;
+}
+
 const QUOTES = [
   "Small daily improvements lead to remarkable results.",
   "You don't rise to your goals — you fall to your systems.",
@@ -531,6 +547,9 @@ export default function DashboardPage() {
           {/* Greeting */}
           <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">{today}</p>
           <h1 className="text-2xl font-bold text-white mb-1">{getGreeting()} 👋</h1>
+          {formatGoalsLine(goals) && (
+            <p className="text-sm text-violet-300/80 font-medium mb-1">{formatGoalsLine(goals)}</p>
+          )}
           <p className="text-sm text-slate-500 italic mb-5">&ldquo;{getDailyQuote()}&rdquo;</p>
 
           {/* Quick stats — only when habits exist */}
@@ -881,6 +900,7 @@ export default function DashboardPage() {
           onClose={() => setShowAdd(false)}
           existingHabits={habits}
           onAdd={addHabit}
+          goals={goals}
         />
       )}
 

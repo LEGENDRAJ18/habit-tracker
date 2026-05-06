@@ -12,6 +12,7 @@ const HOW_LONG_OPTIONS = ["5 min", "10 min", "20 min", "30 min", "45 min", "1 ho
 interface Props {
   onClose: () => void;
   existingHabits: Habit[];
+  goals?: string[];
   onAdd: (
     name: string,
     description: string,
@@ -29,7 +30,7 @@ function isDuplicate(name: string, existingHabits: Habit[]): boolean {
   return existingHabits.some((h) => h.name.trim().toLowerCase() === normalized);
 }
 
-export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props) {
+export default function AddHabitModal({ onClose, existingHabits, goals, onAdd }: Props) {
   const [name, setName]               = useState("");
   const [description, setDescription] = useState("");
   const [frequency, setFrequency]     = useState<"daily" | "weekly">("daily");
@@ -41,7 +42,7 @@ export default function AddHabitModal({ onClose, existingHabits, onAdd }: Props)
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState<string | null>(null);
 
-  const aiValidation = useHabitValidation(name);
+  const aiValidation = useHabitValidation(name, goals);
   const duplicate    = name.trim().length > 2 && isDuplicate(name, existingHabits);
   const stackParent  = existingHabits.find((h) => h.id === stackAfterId);
 

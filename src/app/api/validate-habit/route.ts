@@ -33,8 +33,9 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const body = await request.json() as { habitName?: string };
+    const body = await request.json() as { habitName?: string; goals?: string[] };
     const habitName = body.habitName?.trim() ?? "";
+    const goals = Array.isArray(body.goals) && body.goals.length > 0 ? body.goals : null;
     if (habitName.length < 3) {
       return NextResponse.json<ValidationResponse>({ status: "good", message: "" });
     }
@@ -59,7 +60,9 @@ export async function POST(request: NextRequest) {
         model: "gpt-4o-mini",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user",   content: `Habit name: "${habitName}"` },
+          { role: "user",   content: goals
+              ? `Habit name: "${habitName}". User's goals: ${goals.join(", ")}.`
+              : `Habit name: "${habitName}"` },
         ],
         max_tokens: 50,
         temperature: 0.1,

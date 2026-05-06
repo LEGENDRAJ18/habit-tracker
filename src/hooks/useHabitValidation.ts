@@ -12,7 +12,7 @@ export interface HabitValidation {
 
 const IDLE: HabitValidation = { status: "idle", message: "" };
 
-export function useHabitValidation(habitName: string, debounceMs = 400): HabitValidation {
+export function useHabitValidation(habitName: string, goals?: string[], debounceMs = 400): HabitValidation {
   const [result, setResult] = useState<HabitValidation>(IDLE);
   const timerRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastQueried   = useRef("");
@@ -44,7 +44,7 @@ export function useHabitValidation(habitName: string, debounceMs = 400): HabitVa
         const res = await fetch("/api/validate-habit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ habitName: trimmed }),
+          body: JSON.stringify({ habitName: trimmed, goals }),
           signal: controller.signal,
         });
 
@@ -63,7 +63,8 @@ export function useHabitValidation(habitName: string, debounceMs = 400): HabitVa
       if (timerRef.current) clearTimeout(timerRef.current);
       abortRef.current?.abort();
     };
-  }, [habitName, debounceMs]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [habitName, goals?.join(","), debounceMs]);
 
   return result;
 }

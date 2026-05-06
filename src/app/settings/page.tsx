@@ -473,12 +473,13 @@ function GoalsSection({ initialGoals }: { initialGoals: string[] }) {
     <div>
       <div className="flex items-center gap-2 mb-4">
         <Target className="w-4 h-4 text-violet-400" />
-        <h2 className="text-sm font-semibold text-white">Goals</h2>
+        <h2 className="text-sm font-semibold text-white">My Goals</h2>
       </div>
       <div className="bg-[#0f0f1a] border border-violet-900/20 rounded-2xl p-6 space-y-4">
-        <p className="text-xs text-slate-500">
-          Select what you&apos;re working towards. Used to personalise habit suggestions and AI coaching.
-        </p>
+        <div>
+          <p className="text-sm text-slate-300 font-medium mb-1">What are you working towards?</p>
+          <p className="text-xs text-slate-500">Your habits and AI coaching will be tailored to these goals.</p>
+        </div>
         <div className="grid grid-cols-2 gap-2">
           {GOAL_OPTIONS.map((g) => {
             const isSelected = selected.includes(g.id);
@@ -759,7 +760,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* ── Goals ────────────────────────────────────────────────────────── */}
+        {/* ── My Goals ─────────────────────────────────────────────────────── */}
         {!reminderLoading && <GoalsSection initialGoals={goals} />}
 
         {/* ── Change email ────────────────────────────────────────────────── */}
