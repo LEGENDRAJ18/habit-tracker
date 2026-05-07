@@ -82,6 +82,44 @@ function SelectDot({ selected }: { selected: boolean }) {
   );
 }
 
+// ─── Goal observation (shown in real-time as goals are selected) ─────────────
+
+const GOAL_PAIR_OBS: Record<string, string> = {
+  "fitness+mental":     "💡 These two reinforce each other directly — exercise reduces cortisol as effectively as some medications. You've picked the highest-synergy combination.",
+  "fitness+sleep":      "💡 Powerful combination — fitness and sleep form a feedback loop. Users who improve both together see 40% better results than those working on just one.",
+  "fitness+learn":      "💡 Physical exercise measurably improves memory retention by 20–30%. Your fitness habit will literally make your learning habit more effective.",
+  "learn+productive":   "💡 Natural pairing — structured learning and deep work share the same neural state. Top performers almost universally combine these two goals.",
+  "mental+sleep":       "💡 Smart focus — sleep quality is the #1 driver of mental wellness. Improving both simultaneously targets the root cause, not just the symptoms.",
+  "productive+sleep":   "💡 Sleep deprivation cuts cognitive performance by up to 40%. Fixing sleep is the single highest-leverage productivity move you can make.",
+  "mental+productive":  "💡 This combination targets the anxiety-distraction loop that kills focus. Rare to see someone identify both root causes at once.",
+  "fitness+productive": "💡 Morning exercise floods your brain with dopamine and norepinephrine for 4–6 hours — one of the most evidence-backed productivity strategies.",
+  "learn+mental":       "💡 Learning new skills is one of the most effective antidepressants. Progress from both goals creates compounding momentum.",
+  "learn+sleep":        "💡 Sleep consolidates everything you learn during the day. You're instinctively optimising for how memory actually works.",
+};
+
+const GOAL_SINGLE_OBS: Record<string, string> = {
+  fitness:    "💪 Fitness habits have the highest 90-day retention of any goal category. Physical progress you can see keeps motivation high.",
+  learn:      "📚 People who habit-track their learning read 3× more and retain 40% more of what they study compared to those who don't.",
+  mental:     "🧘 Mental wellness habits often become the anchor habit — the one that makes every other habit easier to maintain.",
+  productive: "⚡ Productivity habits compound fast. Most users see measurable output improvements within the first 2 weeks.",
+  sleep:      "😴 Sleep is the #1 leverage point — improving sleep quality lifts every other habit's completion rate by 20–35%.",
+  custom:     "🎯 Goals with personal meaning have the strongest long-term adherence. The AI will tailor everything to yours.",
+};
+
+function getGoalObservation(ids: string[]): string | null {
+  if (ids.length === 0) return null;
+  if (ids.length === 1) return GOAL_SINGLE_OBS[ids[0]] ?? null;
+  const nonCustom = ids.filter((id) => id !== "custom").sort();
+  if (nonCustom.length >= 2) {
+    const pair = GOAL_PAIR_OBS[nonCustom.slice(0, 2).join("+")];
+    if (pair) return pair;
+  }
+  if (ids.filter((id) => id !== "custom").length >= 3) {
+    return "🎯 Ambitious set of goals — the AI will help you sequence these so you don't overwhelm yourself in week 1. One anchor habit is the key.";
+  }
+  return null;
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 interface Props { onComplete: () => void; }
@@ -338,6 +376,20 @@ export default function OnboardingModal({ onComplete }: Props) {
                   </OptionCard>
                 ))}
               </div>
+
+              {/* Real-time AI observation based on selected goals */}
+              {(() => {
+                const obs = getGoalObservation(selectedIds);
+                return obs ? (
+                  <div
+                    key={obs}
+                    className="mt-3 p-3.5 rounded-xl bg-violet-950/50 border border-violet-600/25 text-left"
+                    style={{ animation: "stepIn 0.25s ease-out both" }}
+                  >
+                    <p className="text-xs text-slate-300 leading-relaxed">{obs}</p>
+                  </div>
+                ) : null;
+              })()}
 
               {hasCustom && (
                 <input

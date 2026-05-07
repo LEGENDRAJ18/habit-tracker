@@ -27,6 +27,8 @@ import HelpModal from "@/components/ui/HelpModal";
 import OnboardingTour from "@/components/ui/OnboardingTour";
 import HabitTemplatesModal from "@/components/dashboard/HabitTemplatesModal";
 import WeeklyPlanCard from "@/components/dashboard/WeeklyPlanCard";
+import FirstHabitWow from "@/components/dashboard/FirstHabitWow";
+import FirstWeekCheckin from "@/components/dashboard/FirstWeekCheckin";
 import { useUpgrade } from "@/contexts/UpgradeContext";
 
 // ─── Greeting & quote ─────────────────────────────────────────────────────────
@@ -303,6 +305,44 @@ function AllDoneCelebration({
 }
 
 
+// ─── Personalised empty state ─────────────────────────────────────────────────
+
+const EMPTY_RECS: Record<string, { emoji: string; name: string; desc: string }[]> = {
+  "Get fit & healthy": [
+    { emoji: "🏃", name: "Morning Run",              desc: "Start the day with a 20-min run" },
+    { emoji: "💧", name: "Drink 8 glasses of water", desc: "Stay hydrated throughout the day" },
+    { emoji: "🧘", name: "10 min stretching",        desc: "Loosen up and prevent injuries" },
+  ],
+  "Learn & grow": [
+    { emoji: "📖", name: "Read 20 pages",             desc: "Daily reading compounds into mastery" },
+    { emoji: "🎯", name: "Practice a skill 30 min",   desc: "Deliberate practice beats talent" },
+    { emoji: "📔", name: "Write in a journal",         desc: "Reflect and capture your thoughts" },
+  ],
+  "Build mental wellness": [
+    { emoji: "🧘", name: "10 min meditation",         desc: "Clear your mind and reduce stress" },
+    { emoji: "🙏", name: "Gratitude journal",          desc: "Write 3 things you're grateful for" },
+    { emoji: "🌬️", name: "Deep breathing exercises",  desc: "4-7-8 breathing for calm focus" },
+  ],
+  "Be more productive": [
+    { emoji: "📝", name: "Plan tomorrow tonight",     desc: "Set up for a winning next day" },
+    { emoji: "📵", name: "No phone first 30 min",     desc: "Start the day distraction-free" },
+    { emoji: "🍅", name: "Pomodoro work session",     desc: "25 min focused, 5 min break" },
+  ],
+  "Improve sleep": [
+    { emoji: "📺", name: "No screens 1hr before bed", desc: "Wind down without blue light" },
+    { emoji: "🌙", name: "Sleep by 10pm",              desc: "Consistent bedtime builds routine" },
+    { emoji: "☕", name: "No caffeine after 2pm",      desc: "Protect your sleep quality" },
+  ],
+};
+
+function getEmptyStateRecs(goals: string[]) {
+  for (const goal of goals) {
+    const recs = EMPTY_RECS[goal];
+    if (recs) return { goal, recs };
+  }
+  return null;
+}
+
 export default function DashboardPage() {
   const { habits, loading, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength, refetch } =
     useHabits();
@@ -343,11 +383,43 @@ export default function DashboardPage() {
   const [showAIInsight, setShowAIInsight] = useState(false);
   const [checkinHabit, setCheckinHabit]   = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const prevCompletedRef   = useRef<number | null>(null);
-  const seenBreakModalRef  = useRef(false);
-  const appliedFreezeRef   = useRef(false);
+  const prevCompletedRef     = useRef<number | null>(null);
+  const seenBreakModalRef    = useRef(false);
+  const appliedFreezeRef     = useRef(false);
+  const prevHabitsLenRef     = useRef<number>(-1);
+
+  const [firstHabitWowName,     setFirstHabitWowName]     = useState<string | null>(null);
+  const [showFirstWeekCheckin,  setShowFirstWeekCheckin]  = useState(false);
 
   const isPaid = tier === "plus" || tier === "pro";
+
+  // First habit wow moment — fires when habits transitions 0→1 (or on page load if within 15 min of signup)
+  useEffect(() => {
+    if (loading || profileLoading) return;
+    const prev = prevHabitsLenRef.current;
+    const curr = habits.length;
+    if (curr === prev) return;
+    prevHabitsLenRef.current = curr;
+
+    if (curr !== 1) return;
+    if (localStorage.getItem("habitai_first_wow")) return;
+    if (!signedUpAt) return;
+    const ageMs = Date.now() - new Date(signedUpAt).getTime();
+    if (ageMs > 15 * 60 * 1000) return; // only within first 15 min
+
+    setFirstHabitWowName(habits[0]?.name ?? null);
+  }, [habits, loading, profileLoading, signedUpAt]);
+
+  // First week check-in — fires on day 3–7 if user has completions
+  useEffect(() => {
+    if (loading || profileLoading || !signedUpAt) return;
+    if (totalCompletions < 1) return;
+    if (localStorage.getItem("habitai_3day_checkin")) return;
+    const ageMs = Date.now() - new Date(signedUpAt).getTime();
+    const MS_3D = 3 * 24 * 60 * 60 * 1000;
+    const MS_8D = 8 * 24 * 60 * 60 * 1000;
+    if (ageMs >= MS_3D && ageMs < MS_8D) setShowFirstWeekCheckin(true);
+  }, [loading, profileLoading, signedUpAt, totalCompletions]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -599,6 +671,31 @@ export default function DashboardPage() {
           />
         )}
 
+        {/* First habit wow moment */}
+        {firstHabitWowName && (
+          <FirstHabitWow
+            habitName={firstHabitWowName}
+            goals={goals}
+            onDismiss={() => {
+              setFirstHabitWowName(null);
+              localStorage.setItem("habitai_first_wow", "1");
+            }}
+          />
+        )}
+
+        {/* First week check-in (day 3–7) */}
+        {showFirstWeekCheckin && !firstHabitWowName && (
+          <FirstWeekCheckin
+            goals={goals}
+            habitCount={habits.length}
+            completionCount={totalCompletions}
+            onDismiss={() => {
+              setShowFirstWeekCheckin(false);
+              localStorage.setItem("habitai_3day_checkin", "1");
+            }}
+          />
+        )}
+
         {/* Error state */}
         {error && (
           <div className="flex items-center gap-3 bg-red-950/40 border border-red-800/40 rounded-xl p-4 mb-6">
@@ -613,28 +710,73 @@ export default function DashboardPage() {
             {[1, 2, 3].map((i) => <SkeletonCard key={i} />)}
           </div>
         ) : habits.length === 0 ? (
-          /* Empty state — inspiring */
-          <div className="text-center py-16 page-fade">
-            <div className="relative mx-auto w-24 h-24 mb-6">
-              <div className="absolute inset-0 rounded-3xl bg-violet-600/10 border border-violet-600/20 rotate-6" />
-              <div className="absolute inset-0 rounded-3xl bg-violet-600/15 border border-violet-600/25 -rotate-3" />
-              <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-violet-600/30 to-purple-600/20 border border-violet-500/30 flex items-center justify-center">
-                <span className="text-4xl">🌱</span>
+          /* Empty state — personalised when goals are set, generic otherwise */
+          (() => {
+            const emptyRec = onboardingCompleted ? getEmptyStateRecs(goals) : null;
+            return emptyRec ? (
+              <div className="py-8 page-fade">
+                <p className="text-xs text-violet-400/70 font-medium uppercase tracking-wider mb-2">
+                  Based on your goal to {emptyRec.goal.toLowerCase()}
+                </p>
+                <h2 className="text-xl font-bold text-white mb-1">
+                  Here are 3 habits that will make the biggest difference
+                </h2>
+                <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+                  Chosen for your goals — one click to add any of them.
+                </p>
+
+                <div className="space-y-2.5 mb-6">
+                  {emptyRec.recs.map((rec) => (
+                    <button
+                      key={rec.name}
+                      onClick={async () => { await addHabit(rec.name, rec.desc, "daily"); }}
+                      className="w-full flex items-center gap-3 p-4 rounded-xl bg-[#0f0f1a] border border-violet-900/20 hover:border-violet-600/40 hover:bg-violet-950/20 group transition-all text-left"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-violet-950/50 border border-violet-900/20 flex items-center justify-center text-xl flex-shrink-0 group-hover:border-violet-600/30 transition-colors">
+                        {rec.emoji}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-white">{rec.name}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{rec.desc}</p>
+                      </div>
+                      <div className="w-7 h-7 rounded-lg bg-violet-600/0 group-hover:bg-violet-600/20 flex items-center justify-center transition-all flex-shrink-0">
+                        <Plus className="w-3.5 h-3.5 text-violet-400 opacity-0 group-hover:opacity-100 transition-all" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={handleAddClick}
+                  className="text-sm text-slate-600 hover:text-slate-400 transition-colors underline underline-offset-2"
+                >
+                  Or add a custom habit →
+                </button>
               </div>
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Start your journey</h2>
-            <p className="text-slate-400 text-sm mb-2 max-w-xs mx-auto leading-relaxed">
-              Every great habit starts with a single decision. Add your first habit and begin the compound effect.
-            </p>
-            <p className="text-xs text-violet-400/60 mb-8">Join 10,000+ people building better habits</p>
-            <button
-              onClick={handleAddClick}
-              className="inline-flex items-center gap-2 px-7 py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-2xl transition-all shadow-lg shadow-violet-900/40 text-base min-h-[44px]"
-            >
-              <Plus className="w-5 h-5" />
-              Add your first habit
-            </button>
-          </div>
+            ) : (
+              <div className="text-center py-16 page-fade">
+                <div className="relative mx-auto w-24 h-24 mb-6">
+                  <div className="absolute inset-0 rounded-3xl bg-violet-600/10 border border-violet-600/20 rotate-6" />
+                  <div className="absolute inset-0 rounded-3xl bg-violet-600/15 border border-violet-600/25 -rotate-3" />
+                  <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-violet-600/30 to-purple-600/20 border border-violet-500/30 flex items-center justify-center">
+                    <span className="text-4xl">🌱</span>
+                  </div>
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">Start your journey</h2>
+                <p className="text-slate-400 text-sm mb-2 max-w-xs mx-auto leading-relaxed">
+                  Every great habit starts with a single decision. Add your first habit and begin the compound effect.
+                </p>
+                <p className="text-xs text-violet-400/60 mb-8">Join 10,000+ people building better habits</p>
+                <button
+                  onClick={handleAddClick}
+                  className="inline-flex items-center gap-2 px-7 py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-2xl transition-all shadow-lg shadow-violet-900/40 text-base min-h-[44px]"
+                >
+                  <Plus className="w-5 h-5" />
+                  Add your first habit
+                </button>
+              </div>
+            );
+          })()
         ) : (
           /* Habit list */
           <div className="space-y-3">
