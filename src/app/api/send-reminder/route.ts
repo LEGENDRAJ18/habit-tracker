@@ -372,7 +372,7 @@ function isAuthorized(req: NextRequest): boolean {
   return legacy === secret;
 }
 
-async function runReminders(): Promise<{ sent: number; skipped: number; hour: number; timestamp: string; weeklySent?: number }> {
+async function runReminders(): Promise<{ sent: number; skipped: number; hour: number; timestamp: string; weeklySent?: number; trialRemindersSent?: number }> {
   const supabase = createAdminClient();
   const now = new Date();
   const nowHour = now.getUTCHours();
@@ -448,8 +448,144 @@ async function runReminders(): Promise<{ sent: number; skipped: number; hour: nu
 
   // Weekly AI report — only fires on Sundays, doesn't block daily reminders
   const weekly = await runWeeklyReport(supabase).catch(() => ({ sent: 0, skipped: 0 }));
+  // Trial reminders — fires whenever a trial ends in ~48 h
+  const trial = await runTrialReminders(supabase).catch(() => ({ sent: 0 }));
 
-  return { sent, skipped, hour: nowHour, timestamp: now.toISOString(), weeklySent: weekly.sent };
+  return { sent, skipped, hour: nowHour, timestamp: now.toISOString(), weeklySent: weekly.sent, trialRemindersSent: trial.sent };
+}
+
+function buildTrialReminderHtml(firstName: string, trialEnd: string, unsubscribeUrl: string): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Your free trial ends soon</title></head>
+<body style="margin:0;padding:0;background:#09090f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<table cellpadding="0" cellspacing="0" style="width:100%;background:#09090f;">
+<tr><td align="center" style="padding:40px 16px;">
+<table cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;background:#0f0f1a;border:1px solid rgba(109,40,217,0.25);border-radius:20px;overflow:hidden;">
+
+  <!-- Header -->
+  <tr><td style="background:linear-gradient(135deg,rgba(124,58,237,0.35),rgba(109,40,217,0.2));padding:28px 36px 24px;border-bottom:1px solid rgba(109,40,217,0.2);">
+    <table cellpadding="0" cellspacing="0"><tr>
+      <td style="vertical-align:middle;">
+        <div style="width:36px;height:36px;background:linear-gradient(135deg,#7c3aed,#9333ea);border-radius:10px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;">
+          <span style="font-size:18px;line-height:1;">✨</span>
+        </div>
+      </td>
+      <td style="padding-left:12px;vertical-align:middle;">
+        <span style="font-size:18px;font-weight:700;color:#ffffff;">habit<span style="color:#a78bfa;">AI</span></span>
+        <span style="margin-left:8px;font-size:11px;font-weight:600;color:#7c3aed;background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.3);border-radius:20px;padding:2px 8px;">Trial Ending Soon</span>
+      </td>
+    </tr></table>
+  </td></tr>
+
+  <!-- Body -->
+  <tr><td style="padding:32px 36px 28px;">
+    <h1 style="margin:0 0 10px;font-size:22px;font-weight:700;color:#ffffff;">Your free trial ends in 2 days, ${firstName} ⏰</h1>
+    <p style="margin:0 0 20px;font-size:14px;color:#8b8fa8;line-height:1.65;">
+      Your 7-day free trial of <strong style="color:#c4b5fd;">HabitAI Plus</strong> ends on
+      <strong style="color:#ffffff;">${trialEnd}</strong>.
+      After that, your plan continues at $7 NZD/month — no action needed.
+    </p>
+
+    <div style="background:rgba(109,40,217,0.12);border:1px solid rgba(109,40,217,0.25);border-radius:14px;padding:18px 20px;margin-bottom:24px;">
+      <p style="margin:0 0 10px;font-size:11px;font-weight:700;color:#7c3aed;letter-spacing:0.08em;text-transform:uppercase;">What you keep with Plus</p>
+      <table cellpadding="0" cellspacing="0" style="width:100%;">
+        ${["Unlimited habits", "Full analytics", "5 AI coaching insights per day", "Streak freeze protection", "Daily email reminders"]
+          .map((f) => `<tr><td style="padding:3px 0;font-size:13px;color:#c4b5fd;">✓ &nbsp;${f}</td></tr>`)
+          .join("")}
+      </table>
+    </div>
+
+    <p style="margin:0 0 24px;font-size:13px;color:#6d7280;line-height:1.6;">
+      Want to cancel before being charged? You can manage your subscription anytime from your billing settings.
+    </p>
+
+    <table cellpadding="0" cellspacing="0" style="width:100%;"><tr><td align="center">
+      <a href="${APP_URL}/dashboard"
+         style="display:inline-block;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;padding:14px 40px;border-radius:12px;box-shadow:0 4px 24px rgba(124,58,237,0.4);">
+        Open Dashboard
+      </a>
+    </td></tr></table>
+  </td></tr>
+
+  <!-- Footer -->
+  <tr><td style="padding:20px 36px;border-top:1px solid rgba(109,40,217,0.12);">
+    <p style="margin:0;font-size:11px;color:#3d3d5c;text-align:center;line-height:1.6;">
+      Trial reminder from HabitAI<br/>
+      <a href="${unsubscribeUrl}" style="color:#6d28d9;text-decoration:none;">Unsubscribe</a>
+      &nbsp;&middot;&nbsp;
+      <a href="${APP_URL}/dashboard" style="color:#6d28d9;text-decoration:none;">Open HabitAI</a>
+    </p>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
+async function runTrialReminders(supabase: ReturnType<typeof createAdminClient>): Promise<{ sent: number }> {
+  const now = new Date();
+  // Window: trials ending in 48 h ± 1 h (cron runs hourly, so we match the right hour)
+  const windowStart = new Date(now.getTime() + 47 * 3600000).toISOString();
+  const windowEnd   = new Date(now.getTime() + 49 * 3600000).toISOString();
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("subscription_status", "trialing")
+    .eq("trial_reminder_sent", false)
+    .gte("trial_end_date", windowStart)
+    .lte("trial_end_date", windowEnd);
+
+  if (!profiles || profiles.length === 0) return { sent: 0 };
+
+  let sent = 0;
+  for (const profile of profiles) {
+    try {
+      const { data: userData } = await supabase.auth.admin.getUserById(profile.id);
+      const email = userData?.user?.email;
+      if (!email) continue;
+
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("trial_end_date")
+        .eq("id", profile.id)
+        .single();
+
+      if (!profileData?.trial_end_date) continue;
+
+      const rawName = userData.user?.user_metadata?.full_name ?? email.split("@")[0] ?? "there";
+      const firstName = rawName.split(/[\s_\-+@]/)[0];
+      const display = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+
+      const trialEnd = new Date(profileData.trial_end_date).toLocaleDateString("en-NZ", {
+        weekday: "long", day: "numeric", month: "long", year: "numeric",
+      });
+
+      const unsubscribeUrl = `${APP_URL}/api/unsubscribe?uid=${profile.id}`;
+
+      await resend.emails.send({
+        from: "HabitAI <reminders@habitai.app>",
+        to: email,
+        subject: `⏰ Your HabitAI free trial ends in 2 days, ${display}`,
+        html: buildTrialReminderHtml(display, trialEnd, unsubscribeUrl),
+      });
+
+      // Mark sent so we never send twice
+      await supabase
+        .from("profiles")
+        .update({ trial_reminder_sent: true })
+        .eq("id", profile.id);
+
+      sent++;
+    } catch {
+      // continue to next user
+    }
+  }
+
+  return { sent };
 }
 
 // GET — called by Vercel Cron (Authorization: Bearer <CRON_SECRET>)

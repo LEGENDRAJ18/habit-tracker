@@ -18,6 +18,8 @@ export function useProfile() {
   const [signedUpAt, setSignedUpAt]                         = useState<string | null>(null);
   const [cancelAtPeriodEnd, setCancelAtPeriodEnd]           = useState(false);
   const [currentPeriodEnd, setCurrentPeriodEnd]             = useState<string | null>(null);
+  const [subscriptionStatus, setSubscriptionStatus]         = useState<string | null>(null);
+  const [trialEndDate, setTrialEndDate]                     = useState<string | null>(null);
   const supabase = useRef(createClient()).current;
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export function useProfile() {
       supabase
         .from("profiles")
         .select(
-          "subscription_tier, onboarding_completed, goal, goals, last_freeze_used, freeze_protected_date, reminder_enabled, reminder_hour, reminder_minute, subscription_cancel_at_period_end, subscription_current_period_end"
+          "subscription_tier, onboarding_completed, goal, goals, last_freeze_used, freeze_protected_date, reminder_enabled, reminder_hour, reminder_minute, subscription_cancel_at_period_end, subscription_current_period_end, subscription_status, trial_end_date"
         )
         .eq("id", user.id)
         .single()
@@ -45,6 +47,8 @@ export function useProfile() {
           setReminderMinute(data?.reminder_minute ?? 0);
           setCancelAtPeriodEnd(data?.subscription_cancel_at_period_end ?? false);
           setCurrentPeriodEnd(data?.subscription_current_period_end ?? null);
+          setSubscriptionStatus(data?.subscription_status ?? null);
+          setTrialEndDate(data?.trial_end_date ?? null);
           setProfileLoading(false);
         });
     });
@@ -112,5 +116,7 @@ export function useProfile() {
     signedUpAt,
     cancelAtPeriodEnd,
     currentPeriodEnd,
+    subscriptionStatus,
+    trialEndDate,
   };
 }

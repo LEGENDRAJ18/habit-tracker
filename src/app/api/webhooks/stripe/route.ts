@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
       const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
       const priceId = subscription.items.data[0]?.price.id;
       const tier = getTierFromPriceId(priceId);
+      const isTrialing = subscription.status === 'trialing';
 
       await supabase.from('profiles').upsert({
         id: userId,
@@ -49,6 +50,10 @@ export async function POST(request: NextRequest) {
         subscription_status: subscription.status,
         subscription_cancel_at_period_end: false,
         subscription_current_period_end: null,
+        trial_end_date: isTrialing && subscription.trial_end
+          ? new Date(subscription.trial_end * 1000).toISOString()
+          : null,
+        trial_reminder_sent: false,
       });
       break;
     }
@@ -62,6 +67,7 @@ export async function POST(request: NextRequest) {
       const tier = getTierFromPriceId(priceId);
       const { status, cancel_at_period_end } = subscription;
       const current_period_end = subscription.items.data[0]?.current_period_end ?? null;
+      const isTrialing = status === 'trialing';
 
       // Downgrade immediately for past_due or canceled status
       if (status === 'past_due' || status === 'canceled') {
@@ -70,6 +76,8 @@ export async function POST(request: NextRequest) {
           subscription_status: status,
           subscription_cancel_at_period_end: false,
           subscription_current_period_end: null,
+          trial_end_date: null,
+          trial_reminder_sent: false,
         }).eq('id', userId);
         break;
       }
@@ -84,17 +92,36 @@ export async function POST(request: NextRequest) {
           subscription_current_period_end: current_period_end
             ? new Date(current_period_end * 1000).toISOString()
             : null,
+          trial_end_date: null,
+          trial_reminder_sent: false,
         }).eq('id', userId);
         break;
       }
 
-      // Active, no cancellation scheduled (e.g. resubscribed or plan changed)
+      // Trial is active — keep tier, store trial end date
+      if (isTrialing) {
+        await supabase.from('profiles').update({
+          subscription_tier: tier,
+          subscription_status: status,
+          stripe_subscription_id: subscription.id,
+          subscription_cancel_at_period_end: false,
+          subscription_current_period_end: null,
+          trial_end_date: subscription.trial_end
+            ? new Date(subscription.trial_end * 1000).toISOString()
+            : null,
+        }).eq('id', userId);
+        break;
+      }
+
+      // Active with no special state (e.g. trial converted, resubscribed, plan changed)
       await supabase.from('profiles').update({
         subscription_tier: status === 'active' ? tier : 'free',
         subscription_status: status,
         stripe_subscription_id: subscription.id,
         subscription_cancel_at_period_end: false,
         subscription_current_period_end: null,
+        trial_end_date: null,
+        trial_reminder_sent: false,
       }).eq('id', userId);
       break;
     }
@@ -104,13 +131,14 @@ export async function POST(request: NextRequest) {
       const userId = subscription.metadata?.userId;
       if (!userId) break;
 
-      // Period ended — downgrade to free and clear all cancel fields
       await supabase.from('profiles').update({
         subscription_tier: 'free',
         subscription_status: 'cancelled',
         stripe_subscription_id: null,
         subscription_cancel_at_period_end: false,
         subscription_current_period_end: null,
+        trial_end_date: null,
+        trial_reminder_sent: false,
       }).eq('id', userId);
       break;
     }

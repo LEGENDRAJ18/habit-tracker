@@ -80,9 +80,18 @@ function ProBadge() {
   );
 }
 
-const PLAN_PRICE: Record<"plus" | "pro", string> = {
-  plus: "$7 NZD",
-  pro:  "$12 NZD",
+const CONSENT_BULLETS: Record<"plus" | "pro", string[]> = {
+  plus: [
+    "Free for 7 days — no charge today",
+    "Then $7 NZD/month, billed monthly",
+    "Cancel anytime before trial ends — no charge",
+    "7-day money back guarantee after first charge",
+  ],
+  pro: [
+    "$12 NZD/month, billed monthly",
+    "Cancel anytime — no cancellation fees",
+    "7-day money back guarantee on first payment",
+  ],
 };
 
 interface ConsentModalProps {
@@ -94,7 +103,7 @@ interface ConsentModalProps {
 
 function ConsentModal({ plan, loading, onConfirm, onCancel }: ConsentModalProps) {
   const [agreed, setAgreed] = useState(false);
-  const price = PLAN_PRICE[plan];
+  const bullets = CONSENT_BULLETS[plan];
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
@@ -124,11 +133,7 @@ function ConsentModal({ plan, loading, onConfirm, onCancel }: ConsentModalProps)
         <div className="px-5 py-5 space-y-4">
           {/* Summary bullets */}
           <ul className="space-y-2.5">
-            {[
-              `${price}/month, billed monthly`,
-              "Cancel anytime — no cancellation fees",
-              "7-day money back guarantee on first payment",
-            ].map((item) => (
+            {bullets.map((item) => (
               <li key={item} className="flex items-start gap-2.5 text-sm text-slate-300">
                 <Check className="w-4 h-4 text-violet-400 flex-shrink-0 mt-0.5" />
                 {item}
@@ -310,10 +315,11 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
                   <span className="text-[11px] font-bold text-violet-300 uppercase tracking-wide">Plus</span>
                 </div>
                 <p className="text-[10px] text-violet-400/70 mb-2 font-medium">The Optimizer</p>
-                <div className="mb-4">
-                  <span className="text-2xl font-extrabold text-white">$7</span>
-                  <span className="text-slate-400 text-xs ml-1">/ mo</span>
+                <div className="mb-1">
+                  <span className="text-2xl font-extrabold text-white">Free</span>
+                  <span className="text-violet-300 text-xs ml-1 font-semibold">7-day trial</span>
                 </div>
+                <p className="text-[10px] text-slate-500 mb-3">then $7 NZD / mo</p>
                 <ul className="space-y-1 mb-4">
                   {["Unlimited habits", "Full analytics", "5 AI insights/day", "Streak protection", "Email reminders"].map((f) => (
                     <li key={f} className="flex items-center gap-1.5 text-[10px] text-slate-400">
@@ -328,7 +334,7 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
                     className="w-full py-2 border border-violet-500/60 hover:border-violet-400 text-violet-300 hover:text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {loading === "plus" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                    Get Plus
+                    Start free trial
                   </button>
                 </div>
               </div>

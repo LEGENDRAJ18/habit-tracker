@@ -8,6 +8,7 @@ import UpgradeModal from "@/components/dashboard/UpgradeModal";
 import type { UpgradeReason } from "@/components/dashboard/UpgradeModal";
 import { UpgradeProvider } from "@/contexts/UpgradeContext";
 import CancellationBanner from "@/components/ui/CancellationBanner";
+import TrialBanner from "@/components/ui/TrialBanner";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [upgradeReason, setUpgradeReason] = useState<UpgradeReason>("habits");
@@ -21,6 +22,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <UpgradeProvider value={{ openUpgradeModal }}>
       <DashboardNav />
+      <TrialBanner />
       <CancellationBanner />
       <BottomNav />
       <div className="flex">
