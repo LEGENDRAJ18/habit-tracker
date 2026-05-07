@@ -12,10 +12,12 @@ export function useProfile() {
   const [profileLoading, setProfileLoading]           = useState(true);
   const [lastFreezeUsed, setLastFreezeUsed]           = useState<string | null>(null);
   const [freezeProtectedDate, setFreezeProtectedDate] = useState<string | null>(null);
-  const [reminderEnabled, setReminderEnabled]         = useState(false);
-  const [reminderHour, setReminderHour]               = useState(8);
-  const [reminderMinute, setReminderMinute]           = useState(0);
-  const [signedUpAt, setSignedUpAt]                   = useState<string | null>(null);
+  const [reminderEnabled, setReminderEnabled]               = useState(false);
+  const [reminderHour, setReminderHour]                     = useState(8);
+  const [reminderMinute, setReminderMinute]                 = useState(0);
+  const [signedUpAt, setSignedUpAt]                         = useState<string | null>(null);
+  const [cancelAtPeriodEnd, setCancelAtPeriodEnd]           = useState(false);
+  const [currentPeriodEnd, setCurrentPeriodEnd]             = useState<string | null>(null);
   const supabase = useRef(createClient()).current;
 
   useEffect(() => {
@@ -25,7 +27,7 @@ export function useProfile() {
       supabase
         .from("profiles")
         .select(
-          "subscription_tier, onboarding_completed, goal, goals, last_freeze_used, freeze_protected_date, reminder_enabled, reminder_hour, reminder_minute"
+          "subscription_tier, onboarding_completed, goal, goals, last_freeze_used, freeze_protected_date, reminder_enabled, reminder_hour, reminder_minute, subscription_cancel_at_period_end, subscription_current_period_end"
         )
         .eq("id", user.id)
         .single()
@@ -41,6 +43,8 @@ export function useProfile() {
           setReminderEnabled(data?.reminder_enabled ?? false);
           setReminderHour(data?.reminder_hour ?? 8);
           setReminderMinute(data?.reminder_minute ?? 0);
+          setCancelAtPeriodEnd(data?.subscription_cancel_at_period_end ?? false);
+          setCurrentPeriodEnd(data?.subscription_current_period_end ?? null);
           setProfileLoading(false);
         });
     });
@@ -106,5 +110,7 @@ export function useProfile() {
     reminderMinute,
     saveReminderPrefs,
     signedUpAt,
+    cancelAtPeriodEnd,
+    currentPeriodEnd,
   };
 }

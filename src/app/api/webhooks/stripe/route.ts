@@ -47,6 +47,8 @@ export async function POST(request: NextRequest) {
         stripe_customer_id: session.customer as string,
         stripe_subscription_id: session.subscription as string,
         subscription_status: subscription.status,
+        subscription_cancel_at_period_end: false,
+        subscription_current_period_end: null,
       });
       break;
     }
@@ -58,11 +60,41 @@ export async function POST(request: NextRequest) {
 
       const priceId = subscription.items.data[0]?.price.id;
       const tier = getTierFromPriceId(priceId);
+      const { status, cancel_at_period_end } = subscription;
+      const current_period_end = subscription.items.data[0]?.current_period_end ?? null;
 
+      // Downgrade immediately for past_due or canceled status
+      if (status === 'past_due' || status === 'canceled') {
+        await supabase.from('profiles').update({
+          subscription_tier: 'free',
+          subscription_status: status,
+          subscription_cancel_at_period_end: false,
+          subscription_current_period_end: null,
+        }).eq('id', userId);
+        break;
+      }
+
+      // User scheduled a cancellation — keep access until period ends
+      if (cancel_at_period_end) {
+        await supabase.from('profiles').update({
+          subscription_tier: tier,
+          subscription_status: status,
+          stripe_subscription_id: subscription.id,
+          subscription_cancel_at_period_end: true,
+          subscription_current_period_end: current_period_end
+            ? new Date(current_period_end * 1000).toISOString()
+            : null,
+        }).eq('id', userId);
+        break;
+      }
+
+      // Active, no cancellation scheduled (e.g. resubscribed or plan changed)
       await supabase.from('profiles').update({
-        subscription_tier: subscription.status === 'active' ? tier : 'free',
-        subscription_status: subscription.status,
+        subscription_tier: status === 'active' ? tier : 'free',
+        subscription_status: status,
         stripe_subscription_id: subscription.id,
+        subscription_cancel_at_period_end: false,
+        subscription_current_period_end: null,
       }).eq('id', userId);
       break;
     }
@@ -72,10 +104,13 @@ export async function POST(request: NextRequest) {
       const userId = subscription.metadata?.userId;
       if (!userId) break;
 
+      // Period ended — downgrade to free and clear all cancel fields
       await supabase.from('profiles').update({
         subscription_tier: 'free',
         subscription_status: 'cancelled',
         stripe_subscription_id: null,
+        subscription_cancel_at_period_end: false,
+        subscription_current_period_end: null,
       }).eq('id', userId);
       break;
     }
