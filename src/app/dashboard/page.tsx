@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { Plus, Loader2, AlertCircle, CheckCircle2, Shield, Share2, Sparkles, Search, X } from "lucide-react";
+import { Plus, Loader2, AlertCircle, CheckCircle2, Shield, Share2, Sparkles, Search, X, ClipboardList, Crown } from "lucide-react";
 import type { Plan } from "@/types";
 import { useHabits } from "@/hooks/useHabits";
 import { useProfile } from "@/hooks/useProfile";
@@ -710,6 +710,7 @@ export default function DashboardPage() {
                 isProtected={info.freezeApplied}
                 stackAfterName={stackParent?.name}
                 tier={tier}
+                onUpgradePro={() => openUpgradeModal("pro_feature", tier === "plus")}
                 onSmartTimingToggle={async (enabled) => {
                   const res = await fetch(`/api/habits/${habit.id}/smart-timing`, {
                     method: "POST",
@@ -852,8 +853,39 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Weekly Game Plan — Pro only */}
-          {tier === "pro" && <WeeklyPlanCard />}
+          {/* Weekly Game Plan — Pro only, teaser for others */}
+          {tier === "pro" ? (
+            <WeeklyPlanCard />
+          ) : (
+            <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <ClipboardList className="w-4 h-4 text-slate-600" />
+                <p className="text-sm font-semibold text-slate-500">Your Week Plan</p>
+                <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-300 bg-amber-900/25 border border-amber-600/25 px-1.5 py-0.5 rounded-full ml-auto">
+                  <Crown className="w-2.5 h-2.5" />PRO
+                </span>
+              </div>
+              <div className="relative">
+                <div className="space-y-2 pointer-events-none select-none" style={{ filter: "blur(3px)", opacity: 0.3 }}>
+                  {[67, 55, 79].map((w, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <div className="w-4 h-4 rounded-full bg-slate-700 flex-shrink-0 mt-0.5" />
+                      <div className="h-2.5 bg-slate-700 rounded-full" style={{ width: `${w}%` }} />
+                    </div>
+                  ))}
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <button
+                    onClick={() => openUpgradeModal("pro_feature", tier === "plus")}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600/20 border border-amber-500/40 text-amber-300 text-xs font-semibold rounded-xl hover:bg-amber-600/30 transition-all"
+                  >
+                    <Crown className="w-3 h-3" />
+                    Upgrade to unlock →
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Milestones */}
           {!loading && habits.length > 0 && (
@@ -920,6 +952,8 @@ export default function DashboardPage() {
           existingHabits={habits}
           onAdd={addHabit}
           goals={goals}
+          tier={tier}
+          onUpgradePro={() => { setShowAdd(false); openUpgradeModal("pro_feature", tier === "plus"); }}
         />
       )}
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trash2, Check, Flame, Snowflake, ArrowRight, Pencil, X, Loader2, Zap } from "lucide-react";
+import { Trash2, Check, Flame, Snowflake, ArrowRight, Pencil, X, Loader2, Zap, Crown } from "lucide-react";
 import type { Habit, Plan } from "@/types";
 
 interface Props {
@@ -18,6 +18,7 @@ interface Props {
   onCompleted?: () => void;
   onRename?: (newName: string, validityScore: "valid" | "partial" | "invalid") => Promise<void>;
   onSmartTimingToggle?: (enabled: boolean) => Promise<void>;
+  onUpgradePro?: () => void;
 }
 
 const PARTICLE_DIRS = [
@@ -67,7 +68,7 @@ function getTimeEmoji(whenTime: string | null): string | null {
 
 export default function HabitCard({
   habit, completed, streak, strength, isProtected, stackAfterName, isEditing,
-  tier, onToggle, onDelete, onCompleted, onRename, onSmartTimingToggle,
+  tier, onToggle, onDelete, onCompleted, onRename, onSmartTimingToggle, onUpgradePro,
 }: Props) {
   const [toggling, setToggling]     = useState(false);
   const [deleting, setDeleting]     = useState(false);
@@ -290,6 +291,22 @@ export default function HabitCard({
               <span>⏱</span>{habit.how_long}
             </span>
           )}
+        </div>
+      )}
+
+      {/* Smart timing — locked teaser for non-Pro */}
+      {tier && tier !== "pro" && (
+        <div className="flex items-center justify-between px-4 pb-2">
+          <div className="flex items-center gap-1.5">
+            <Zap className="w-3 h-3 text-slate-700" />
+            <span className="text-[10px] text-slate-700">Smart timing</span>
+          </div>
+          <button
+            onClick={onUpgradePro}
+            className="flex items-center gap-0.5 text-[10px] font-semibold text-amber-700/70 hover:text-amber-500/90 transition-colors"
+          >
+            <Crown className="w-2.5 h-2.5" />Pro
+          </button>
         </div>
       )}
 

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { X, Loader2, Plus, ArrowRight, Link2, ChevronDown, CheckCircle2, AlertTriangle, XCircle, Sparkles } from "lucide-react";
-import type { Habit } from "@/types";
+import { X, Loader2, Plus, ArrowRight, Link2, ChevronDown, CheckCircle2, AlertTriangle, XCircle, Sparkles, Crown } from "lucide-react";
+import type { Habit, Plan } from "@/types";
 import { useHabitValidation } from "@/hooks/useHabitValidation";
 
 const WHERE_OPTIONS    = ["Bedroom", "Gym", "Office", "Kitchen", "Living room", "Outdoors", "On commute"];
@@ -29,6 +29,8 @@ interface Props {
   onClose: () => void;
   existingHabits: Habit[];
   goals?: string[];
+  tier?: Plan;
+  onUpgradePro?: () => void;
   onAdd: (
     name: string,
     description: string,
@@ -46,7 +48,7 @@ function isDuplicate(name: string, existingHabits: Habit[]): boolean {
   return existingHabits.some((h) => h.name.trim().toLowerCase() === normalized);
 }
 
-export default function AddHabitModal({ onClose, existingHabits, goals, onAdd }: Props) {
+export default function AddHabitModal({ onClose, existingHabits, goals, tier, onUpgradePro, onAdd }: Props) {
   const [name, setName]               = useState("");
   const [description, setDescription] = useState("");
   const [frequency, setFrequency]     = useState<"daily" | "weekly">("daily");
@@ -217,34 +219,70 @@ export default function AddHabitModal({ onClose, existingHabits, goals, onAdd }:
             )}
           </div>
 
-          {/* Habit suggestions */}
+          {/* Habit suggestions — Pro only */}
           {uniqueSuggestions.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-slate-500">Need inspiration?</span>
-                {uniqueSuggestions.length > CHIPS_PER_PAGE && (
-                  <button
-                    type="button"
-                    onClick={() => setSuggestionOffset((o) => (o + CHIPS_PER_PAGE) % uniqueSuggestions.length)}
-                    className="text-[11px] text-violet-500 hover:text-violet-400 transition-colors"
-                  >
-                    More ideas →
-                  </button>
-                )}
+            tier === "pro" ? (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-slate-500">Need inspiration?</span>
+                  {uniqueSuggestions.length > CHIPS_PER_PAGE && (
+                    <button
+                      type="button"
+                      onClick={() => setSuggestionOffset((o) => (o + CHIPS_PER_PAGE) % uniqueSuggestions.length)}
+                      className="text-[11px] text-violet-500 hover:text-violet-400 transition-colors"
+                    >
+                      More ideas →
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {visibleSuggestions.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => { setName(s); setError(null); }}
+                      className="px-2.5 py-1 rounded-full text-[11px] font-medium border border-violet-800/30 bg-violet-950/30 text-slate-400 hover:text-violet-300 hover:border-violet-600/40 hover:bg-violet-950/50 transition-all"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {visibleSuggestions.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => { setName(s); setError(null); }}
-                    className="px-2.5 py-1 rounded-full text-[11px] font-medium border border-violet-800/30 bg-violet-950/30 text-slate-400 hover:text-violet-300 hover:border-violet-600/40 hover:bg-violet-950/50 transition-all"
+            ) : (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-slate-500">Need inspiration?</span>
+                  <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-300 bg-amber-900/25 border border-amber-600/25 px-1.5 py-0.5 rounded-full">
+                    <Crown className="w-2.5 h-2.5" />PRO
+                  </span>
+                </div>
+                <div className="relative">
+                  <div
+                    className="flex flex-wrap gap-1.5 pointer-events-none select-none"
+                    style={{ filter: "blur(4px)", opacity: 0.35 }}
                   >
-                    {s}
-                  </button>
-                ))}
+                    {["Run 5km", "Meditate 10 min", "Read daily", "Drink 2L water", "Journal entry", "Stretch 10 min"].map((s) => (
+                      <span
+                        key={s}
+                        className="px-2.5 py-1 rounded-full text-[11px] font-medium border border-violet-800/30 bg-violet-950/30 text-slate-400"
+                      >
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={onUpgradePro}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600/20 border border-amber-500/40 text-amber-300 text-xs font-semibold rounded-xl hover:bg-amber-600/30 transition-all"
+                    >
+                      <Crown className="w-3 h-3" />
+                      Upgrade to Pro to unlock
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            )
           )}
 
           {/* Description */}
