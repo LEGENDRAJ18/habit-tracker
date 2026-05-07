@@ -8,6 +8,7 @@ import {
   XP_BONUS_ALL_DONE,
   XP_BONUS_STREAK_7,
   XP_BONUS_STREAK_30,
+  DURATION_BONUS_XP,
 } from "@/lib/xp";
 
 export type AchievementId =
@@ -122,7 +123,10 @@ export function useXP() {
   );
 
   // Called every time a habit is toggled TO completed
-  const onHabitCompleted = useCallback(async (validityScore?: "valid" | "partial" | "invalid") => {
+  const onHabitCompleted = useCallback(async (
+    validityScore?: "valid" | "partial" | "invalid",
+    howLong?: string | null,
+  ) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -134,10 +138,12 @@ export function useXP() {
       .update({ total_completions: newTotal })
       .eq("id", user.id);
 
-    const xpToAward =
+    const baseXP =
       validityScore === "invalid" ? 0
       : validityScore === "partial" ? 5
       : XP_PER_HABIT;
+    const durationBonus = baseXP > 0 && howLong ? (DURATION_BONUS_XP[howLong] ?? 0) : 0;
+    const xpToAward = baseXP + durationBonus;
     if (xpToAward > 0) await awardXP(xpToAward);
   }, [supabase, awardXP]);
 

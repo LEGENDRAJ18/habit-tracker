@@ -1,12 +1,36 @@
 "use client";
 
-import { useState } from "react";
-import { X, Loader2, Plus, ArrowRight, Link2, ChevronDown, CheckCircle2, AlertTriangle, XCircle, Sparkles, Crown } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import {
+  X, Loader2, Plus, ArrowRight, Link2,
+  CheckCircle2, AlertTriangle, XCircle, Sparkles,
+  Crown, ChevronDown,
+} from "lucide-react";
 import type { Habit, Plan } from "@/types";
 import { useHabitValidation } from "@/hooks/useHabitValidation";
+import { DURATION_BONUS_XP } from "@/lib/xp";
 
-const WHERE_OPTIONS    = ["Bedroom", "Gym", "Office", "Kitchen", "Living room", "Outdoors", "On commute"];
-const HOW_LONG_OPTIONS = ["5 min", "10 min", "20 min", "30 min", "45 min", "1 hour", "2+ hours"];
+// ─── constants ────────────────────────────────────────────────────────────────
+
+const WHERE_OPTIONS = [
+  "Bedroom", "Bathroom", "Home office", "Living room", "Kitchen",
+  "Gym", "Outdoors", "Park", "Office", "Library",
+  "Coffee shop", "On commute", "School/University",
+];
+
+const HOW_LONG_OPTIONS = [
+  "5 min", "10 min", "20 min", "30 min", "45 min", "1 hour", "2+ hours",
+];
+
+const TIME_PERIODS = [
+  { label: "Morning",     emoji: "🌅", range: "6–9am",    value: "07:30" },
+  { label: "Mid-morning", emoji: "☀️",  range: "9–11am",  value: "10:00" },
+  { label: "Midday",      emoji: "🌞", range: "11am–1pm", value: "12:00" },
+  { label: "Afternoon",   emoji: "🌤",  range: "1–4pm",   value: "14:30" },
+  { label: "Evening",     emoji: "🌆", range: "4–7pm",    value: "17:30" },
+  { label: "Night",       emoji: "🌙", range: "7–10pm",   value: "20:00" },
+  { label: "Late night",  emoji: "🌃", range: "10pm+",    value: "22:30" },
+];
 
 const GOAL_SUGGESTIONS: Record<string, string[]> = {
   "fitness":         ["Run 5km", "20 pushups every morning", "30-min gym session", "10,000 steps daily", "Stretch for 10 minutes", "Drink 2L of water", "Walk for 30 minutes", "Do a 15-min home workout"],
@@ -24,6 +48,140 @@ const GOAL_KEY_MAP: Record<string, string> = {
   "Improve sleep":         "sleep",
 };
 
+const CHIPS_PER_PAGE = 6;
+
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
+function isDuplicate(name: string, existingHabits: Habit[]): boolean {
+  const normalized = name.trim().toLowerCase();
+  return existingHabits.some((h) => h.name.trim().toLowerCase() === normalized);
+}
+
+// ─── custom select ────────────────────────────────────────────────────────────
+
+interface SelectItem { value: string; label: string }
+
+function CustomSelect({
+  value, onChange, items, placeholder, emptyLabel = "— None —",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  items: SelectItem[];
+  placeholder: string;
+  emptyLabel?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const currentLabel = items.find((i) => i.value === value)?.label ?? "";
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full bg-violet-950/30 border border-violet-900/30 hover:border-violet-800/50 focus:border-violet-600/60 focus:outline-none rounded-xl px-4 py-2.5 text-sm text-left flex items-center justify-between transition-all"
+      >
+        <span className={currentLabel ? "text-white" : "text-slate-600"}>
+          {currentLabel || placeholder}
+        </span>
+        <ChevronDown
+          className={`w-3.5 h-3.5 text-slate-500 flex-shrink-0 transition-transform duration-150 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 right-0 z-[70] mt-1 bg-[#1a1a2e] border border-violet-800/40 rounded-xl overflow-hidden shadow-2xl shadow-black/60 max-h-52 overflow-y-auto">
+          <button
+            type="button"
+            onClick={() => { onChange(""); setOpen(false); }}
+            className="w-full px-4 py-2.5 text-sm text-slate-500 hover:bg-violet-950/60 hover:text-slate-300 text-left transition-colors"
+          >
+            {emptyLabel}
+          </button>
+          {items.map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              onClick={() => { onChange(item.value); setOpen(false); }}
+              className={`w-full px-4 py-2.5 text-sm text-left transition-colors ${
+                item.value === value
+                  ? "bg-violet-600/25 text-violet-200 font-medium"
+                  : "text-slate-300 hover:bg-violet-950/60 hover:text-white"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── time period picker ───────────────────────────────────────────────────────
+
+function TimePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const isPreset = TIME_PERIODS.some((p) => p.value === value);
+  const [showCustom, setShowCustom] = useState(() => value !== "" && !isPreset);
+
+  return (
+    <div className="space-y-2">
+      <div className="grid grid-cols-4 gap-1.5">
+        {TIME_PERIODS.map((p) => (
+          <button
+            key={p.value}
+            type="button"
+            onClick={() => {
+              onChange(value === p.value ? "" : p.value);
+              setShowCustom(false);
+            }}
+            className={`flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl border text-center transition-all ${
+              value === p.value
+                ? "bg-violet-600/25 border-violet-500/60 text-violet-200"
+                : "bg-violet-950/20 border-violet-900/20 text-slate-500 hover:border-violet-700/40 hover:text-slate-300 hover:bg-violet-950/40"
+            }`}
+          >
+            <span className="text-base leading-none">{p.emoji}</span>
+            <span className="text-[10px] font-semibold mt-0.5 leading-tight">{p.label}</span>
+            <span className="text-[9px] opacity-50 leading-tight">{p.range}</span>
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => setShowCustom((v) => !v)}
+          className={`flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl border text-center transition-all ${
+            showCustom
+              ? "bg-violet-600/25 border-violet-500/60 text-violet-200"
+              : "bg-violet-950/20 border-violet-900/20 text-slate-500 hover:border-violet-700/40 hover:text-slate-300 hover:bg-violet-950/40"
+          }`}
+        >
+          <span className="text-base leading-none">⏰</span>
+          <span className="text-[10px] font-semibold mt-0.5 leading-tight">Custom</span>
+          <span className="text-[9px] opacity-50 leading-tight">exact time</span>
+        </button>
+      </div>
+      {showCustom && (
+        <input
+          type="time"
+          value={value && !TIME_PERIODS.some((p) => p.value === value) ? value : ""}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none focus:ring-2 focus:ring-violet-600/20 rounded-xl px-4 py-2.5 text-sm text-white [color-scheme:dark] transition-all"
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── props ────────────────────────────────────────────────────────────────────
 
 interface Props {
   onClose: () => void;
@@ -43,10 +201,7 @@ interface Props {
   ) => Promise<{ error: string | null }>;
 }
 
-function isDuplicate(name: string, existingHabits: Habit[]): boolean {
-  const normalized = name.trim().toLowerCase();
-  return existingHabits.some((h) => h.name.trim().toLowerCase() === normalized);
-}
+// ─── modal ────────────────────────────────────────────────────────────────────
 
 export default function AddHabitModal({ onClose, existingHabits, goals, tier, onUpgradePro, onAdd }: Props) {
   const [name, setName]               = useState("");
@@ -56,398 +211,329 @@ export default function AddHabitModal({ onClose, existingHabits, goals, tier, on
   const [whenTime, setWhenTime]           = useState("");
   const [whereLocation, setWhereLocation] = useState("");
   const [howLong, setHowLong]             = useState("");
-  const [showIntentions, setShowIntentions] = useState(false);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState<string | null>(null);
   const [suggestionOffset, setSuggestionOffset] = useState(0);
 
   const aiValidation = useHabitValidation(name, goals);
   const duplicate    = name.trim().length > 2 && isDuplicate(name, existingHabits);
-  const stackParent  = existingHabits.find((h) => h.id === stackAfterId);
 
   // Build suggestion pool from user's goals
   const allSuggestions: string[] = goals
     ? goals.flatMap((g) => GOAL_SUGGESTIONS[GOAL_KEY_MAP[g] ?? g.toLowerCase()] ?? [])
     : [];
   const uniqueSuggestions = [...new Set(allSuggestions)];
-  const CHIPS_PER_PAGE = 6;
-  const visibleSuggestions = uniqueSuggestions.slice(
-    suggestionOffset % Math.max(uniqueSuggestions.length, 1),
-    suggestionOffset % Math.max(uniqueSuggestions.length, 1) + CHIPS_PER_PAGE,
-  ).concat(
-    // wrap around if near end
-    uniqueSuggestions.slice(
-      0,
-      Math.max(0, suggestionOffset % Math.max(uniqueSuggestions.length, 1) + CHIPS_PER_PAGE - uniqueSuggestions.length),
-    ),
-  ).slice(0, CHIPS_PER_PAGE);
+  const offset = uniqueSuggestions.length > 0
+    ? suggestionOffset % uniqueSuggestions.length
+    : 0;
+  const visibleSuggestions = [
+    ...uniqueSuggestions.slice(offset, offset + CHIPS_PER_PAGE),
+    ...uniqueSuggestions.slice(0, Math.max(0, offset + CHIPS_PER_PAGE - uniqueSuggestions.length)),
+  ].slice(0, CHIPS_PER_PAGE);
 
-  const isBlocked = duplicate;
+  const stackItems: SelectItem[] = existingHabits.map((h) => ({ value: h.id, label: h.name }));
+  const stackParent = existingHabits.find((h) => h.id === stackAfterId);
+
+  const isBlocked   = duplicate;
+  const durationBonus = howLong ? (DURATION_BONUS_XP[howLong] ?? 0) : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || isBlocked) return;
-
     setLoading(true);
     setError(null);
-
     const validityScore: "valid" | "partial" | "invalid" =
       aiValidation.status === "blocked" ? "invalid"
       : aiValidation.status === "warning" ? "partial"
       : "valid";
-
     const { error } = await onAdd(
-      name.trim(),
-      description.trim(),
-      frequency,
-      stackAfterId  || null,
-      whenTime      || null,
-      whereLocation || null,
-      howLong       || null,
+      name.trim(), description.trim(), frequency,
+      stackAfterId || null, whenTime || null, whereLocation || null, howLong || null,
       validityScore,
     );
-
-    if (error) {
-      setError(error);
-      setLoading(false);
-    } else {
-      onClose();
-    }
+    if (error) { setError(error); setLoading(false); }
+    else onClose();
   };
 
-  const inputCls =
-    "w-full bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none focus:ring-2 focus:ring-violet-600/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 transition-all";
+  const inputCls = "w-full bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none focus:ring-2 focus:ring-violet-600/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 transition-all";
+  const labelCls = "block text-xs font-medium text-slate-400 mb-1.5";
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-md bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl shadow-violet-950/50 overflow-hidden max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-violet-900/20 sticky top-0 bg-[#0f0f1a] z-10">
+      <div className="w-full max-w-2xl bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl shadow-violet-950/50 flex flex-col max-h-[94vh]">
+
+        {/* ── Header ─────────────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-violet-900/20 flex-shrink-0">
           <h2 className="text-base font-semibold text-white">Add New Habit</h2>
-          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50">
-            <X className="w-4 h-4" />
+          <button
+            onClick={onClose}
+            className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-violet-950/70 transition-all"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {error && (
-            <p className="text-sm text-red-400 bg-red-950/30 border border-red-800/30 rounded-xl px-3.5 py-2.5">{error}</p>
-          )}
+        {/* ── Body (scrollable) ──────────────────────────────────────────── */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
 
-          {/* Name */}
-          <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">
-              Habit name <span className="text-violet-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => { setName(e.target.value); setError(null); }}
-              placeholder="e.g. Meditate for 10 minutes"
-              required
-              maxLength={100}
-              autoFocus
-              className={`${inputCls} ${
-                duplicate
-                  ? "border-amber-600/50 focus:border-amber-500/60"
-                  : aiValidation.status === "blocked"
-                  ? "border-red-600/50 focus:border-red-500/60"
-                  : aiValidation.status === "warning"
-                  ? "border-amber-600/50 focus:border-amber-500/60"
-                  : aiValidation.status === "good"
-                  ? "border-emerald-600/40 focus:border-emerald-500/50"
-                  : ""
-              }`}
-            />
-
-            {/* Char counter */}
-            <div className="flex justify-end mt-1">
-              <span className={`text-[10px] ${name.length > 90 ? "text-amber-400" : "text-slate-700"}`}>
-                {name.length}/100
-              </span>
-            </div>
-
-            {/* Feedback cards */}
-            {duplicate && (
-              <div className="mt-2 flex items-start gap-2.5 bg-amber-950/40 border border-amber-600/30 rounded-xl px-3.5 py-2.5">
-                <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-300 leading-snug">You already have a habit with this name.</p>
-              </div>
+            {error && (
+              <p className="text-sm text-red-400 bg-red-950/30 border border-red-800/30 rounded-xl px-3.5 py-2.5">{error}</p>
             )}
 
-            {!duplicate && aiValidation.status === "validating" && (
-              <div className="mt-2 flex items-center gap-2 px-3.5 py-2">
-                <Sparkles className="w-3.5 h-3.5 animate-pulse text-violet-500 flex-shrink-0" />
-                <span className="text-[11px] text-slate-500">Checking your habit…</span>
+            {/* 1. Habit name ─────────────────────────────────────────────── */}
+            <div>
+              <label className={labelCls}>
+                Habit name <span className="text-violet-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => { setName(e.target.value); setError(null); }}
+                placeholder="e.g. Meditate for 10 minutes"
+                required
+                maxLength={100}
+                autoFocus
+                className={`${inputCls} ${
+                  duplicate
+                    ? "border-amber-600/50 focus:border-amber-500/60"
+                    : aiValidation.status === "blocked"
+                    ? "border-red-600/50 focus:border-red-500/60"
+                    : aiValidation.status === "warning"
+                    ? "border-amber-600/50 focus:border-amber-500/60"
+                    : aiValidation.status === "good"
+                    ? "border-emerald-600/40 focus:border-emerald-500/50"
+                    : ""
+                }`}
+              />
+              <div className="flex justify-end mt-1">
+                <span className={`text-[10px] ${name.length > 90 ? "text-amber-400" : "text-slate-700"}`}>
+                  {name.length}/100
+                </span>
               </div>
-            )}
 
-            {!duplicate && aiValidation.status === "good" && (
-              <div className="mt-2 flex items-center gap-2.5 bg-emerald-950/40 border border-emerald-600/30 rounded-xl px-3.5 py-2.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <p className="text-xs font-semibold text-emerald-300">Great habit! You&apos;ll earn full XP for this one 🎯</p>
-              </div>
-            )}
-
-            {!duplicate && aiValidation.status === "warning" && (
-              <div className="mt-2 bg-amber-950/40 border border-amber-600/30 rounded-xl px-3.5 py-2.5">
-                <div className="flex items-center gap-2.5">
-                  <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                  <p className="text-xs font-semibold text-amber-300">Too vague — you&apos;ll earn 50% XP. Try being more specific</p>
+              {duplicate && (
+                <div className="mt-2 flex items-start gap-2.5 bg-amber-950/40 border border-amber-600/30 rounded-xl px-3.5 py-2.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-300 leading-snug">You already have a habit with this name.</p>
                 </div>
-                {aiValidation.suggestion && (
-                  <button
-                    type="button"
-                    onClick={() => setName(aiValidation.suggestion!)}
-                    className="mt-2 ml-6 text-[11px] text-violet-400 hover:text-violet-300 flex items-center gap-1 transition-colors"
-                  >
-                    <ArrowRight className="w-3 h-3" />
-                    Try: &ldquo;{aiValidation.suggestion}&rdquo;
-                  </button>
-                )}
-              </div>
-            )}
-
-            {!duplicate && aiValidation.status === "blocked" && (
-              <div className="mt-2 flex items-center gap-2.5 bg-red-950/40 border border-red-600/30 rounded-xl px-3.5 py-2.5">
-                <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-                <p className="text-xs font-semibold text-red-300">This doesn&apos;t look like a valid habit — no XP will be earned</p>
-              </div>
-            )}
-          </div>
-
-          {/* Habit suggestions — Pro only */}
-          {uniqueSuggestions.length > 0 && (
-            tier === "pro" ? (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-slate-500">Need inspiration?</span>
-                  {uniqueSuggestions.length > CHIPS_PER_PAGE && (
-                    <button
-                      type="button"
-                      onClick={() => setSuggestionOffset((o) => (o + CHIPS_PER_PAGE) % uniqueSuggestions.length)}
-                      className="text-[11px] text-violet-500 hover:text-violet-400 transition-colors"
+              )}
+              {!duplicate && aiValidation.status === "validating" && (
+                <div className="mt-2 flex items-center gap-2 px-3.5 py-2">
+                  <Sparkles className="w-3.5 h-3.5 animate-pulse text-violet-500 flex-shrink-0" />
+                  <span className="text-[11px] text-slate-500">Checking your habit…</span>
+                </div>
+              )}
+              {!duplicate && aiValidation.status === "good" && (
+                <div className="mt-2 flex items-center gap-2.5 bg-emerald-950/40 border border-emerald-600/30 rounded-xl px-3.5 py-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <p className="text-xs font-semibold text-emerald-300">
+                    Great habit! You&apos;ll earn full XP for this one
+                    {durationBonus > 0 && <span className="text-emerald-400"> + {durationBonus} duration bonus 🎯</span>}
+                  </p>
+                </div>
+              )}
+              {!duplicate && aiValidation.status === "warning" && (
+                <div className="mt-2 bg-amber-950/40 border border-amber-600/30 rounded-xl px-3.5 py-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                    <p className="text-xs font-semibold text-amber-300">Too vague — you&apos;ll earn 50% XP. Try being more specific</p>
+                  </div>
+                  {aiValidation.suggestion && (
+                    <button type="button" onClick={() => setName(aiValidation.suggestion!)}
+                      className="mt-2 ml-6 text-[11px] text-violet-400 hover:text-violet-300 flex items-center gap-1 transition-colors"
                     >
-                      More ideas →
+                      <ArrowRight className="w-3 h-3" />
+                      Try: &ldquo;{aiValidation.suggestion}&rdquo;
                     </button>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {visibleSuggestions.map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => { setName(s); setError(null); }}
-                      className="px-2.5 py-1 rounded-full text-[11px] font-medium border border-violet-800/30 bg-violet-950/30 text-slate-400 hover:text-violet-300 hover:border-violet-600/40 hover:bg-violet-950/50 transition-all"
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-slate-500">Need inspiration?</span>
-                  <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-300 bg-amber-900/25 border border-amber-600/25 px-1.5 py-0.5 rounded-full">
-                    <Crown className="w-2.5 h-2.5" />PRO
-                  </span>
-                </div>
-                <div className="relative">
-                  <div
-                    className="flex flex-wrap gap-1.5 pointer-events-none select-none"
-                    style={{ filter: "blur(4px)", opacity: 0.35 }}
-                  >
-                    {["Run 5km", "Meditate 10 min", "Read daily", "Drink 2L water", "Journal entry", "Stretch 10 min"].map((s) => (
-                      <span
-                        key={s}
-                        className="px-2.5 py-1 rounded-full text-[11px] font-medium border border-violet-800/30 bg-violet-950/30 text-slate-400"
-                      >
-                        {s}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <button
-                      type="button"
-                      onClick={onUpgradePro}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600/20 border border-amber-500/40 text-amber-300 text-xs font-semibold rounded-xl hover:bg-amber-600/30 transition-all"
-                    >
-                      <Crown className="w-3 h-3" />
-                      Upgrade to Pro to unlock
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )
-          )}
-
-          {/* Description */}
-          <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">
-              Description <span className="text-slate-600 font-normal">(optional)</span>
-            </label>
-            <input
-              type="text" value={description} onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g. 10 minutes of mindfulness" maxLength={200}
-              className={inputCls}
-            />
-          </div>
-
-          {/* Frequency */}
-          <div>
-            <label className="block text-xs font-medium text-slate-400 mb-2">Frequency</label>
-            <div className="grid grid-cols-2 gap-2">
-              {(["daily", "weekly"] as const).map((freq) => (
-                <button key={freq} type="button" onClick={() => setFrequency(freq)}
-                  className={`py-2.5 rounded-xl text-sm font-medium border transition-all capitalize ${
-                    frequency === freq
-                      ? "bg-violet-600/20 border-violet-600/50 text-violet-300"
-                      : "bg-violet-950/20 border-violet-900/20 text-slate-500 hover:text-slate-300"
-                  }`}
-                >
-                  {freq}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Habit stacking */}
-          {existingHabits.length > 0 && (
-            <div>
-              <label className="flex items-center gap-1.5 text-xs font-medium text-slate-400 mb-1.5">
-                <Link2 className="w-3.5 h-3.5 text-violet-500" />
-                Stack with existing habit{" "}
-                <span className="text-slate-600 font-normal">(optional)</span>
-              </label>
-              <select
-                value={stackAfterId}
-                onChange={(e) => setStackAfterId(e.target.value)}
-                className={`${inputCls} appearance-none`}
-                style={{ colorScheme: "dark" }}
-              >
-                <option value="">— None —</option>
-                {existingHabits.map((h) => (
-                  <option key={h.id} value={h.id}>{h.name}</option>
-                ))}
-              </select>
-
-              {stackParent && name.trim() && (
-                <div className="flex items-center gap-2 mt-2.5 px-3 py-2 bg-violet-950/30 border border-violet-800/25 rounded-lg">
-                  <span className="text-xs text-slate-400 truncate max-w-[120px]">{stackParent.name}</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-violet-500 flex-shrink-0" />
-                  <span className="text-xs text-violet-300 font-medium truncate">{name.trim()}</span>
+              )}
+              {!duplicate && aiValidation.status === "blocked" && (
+                <div className="mt-2 flex items-center gap-2.5 bg-red-950/40 border border-red-600/30 rounded-xl px-3.5 py-2.5">
+                  <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                  <p className="text-xs font-semibold text-red-300">This doesn&apos;t look like a valid habit — no XP will be earned</p>
                 </div>
               )}
-              {stackParent && !name.trim() && (
-                <p className="text-[10px] text-slate-600 mt-1.5 ml-1">
-                  This habit will trigger after:{" "}
-                  <span className="text-slate-500">{stackParent.name}</span>
-                </p>
-              )}
             </div>
-          )}
 
-          {/* Implementation Intentions */}
-          <div className="border border-violet-900/25 rounded-xl overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setShowIntentions((v) => !v)}
-              className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-violet-950/30 transition-colors"
-            >
-              <div>
-                <span className="text-xs font-medium text-slate-300">Implementation Intentions</span>
-                <span className="ml-2 text-[10px] text-slate-600">(optional)</span>
-              </div>
-              <ChevronDown
-                className={`w-3.5 h-3.5 text-slate-600 transition-transform duration-200 ${showIntentions ? "rotate-180" : ""}`}
-              />
-            </button>
+            {/* 2 + 3. Two-column grid: Intentions (left) + Secondary (right) */}
+            <div className="grid sm:grid-cols-2 gap-x-6 gap-y-5">
 
-            {showIntentions && (
-              <div className="px-4 pb-4 pt-1 space-y-3 border-t border-violet-900/20">
-                <p className="text-[11px] text-slate-600 leading-relaxed">
-                  Specifying when, where, and how long makes habits 2× more likely to stick.
-                </p>
+              {/* ── LEFT: Implementation Intentions ────────────────────── */}
+              <div className="space-y-4">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">When &amp; Where</p>
 
                 {/* When */}
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-500 mb-1.5">
-                    ⏰ When will you do this?
-                  </label>
-                  <input
-                    type="time"
-                    value={whenTime}
-                    onChange={(e) => setWhenTime(e.target.value)}
-                    className={`${inputCls} [color-scheme:dark]`}
-                  />
+                  <label className={labelCls}>⏰ When will you do this?</label>
+                  <TimePicker value={whenTime} onChange={setWhenTime} />
                 </div>
 
                 {/* Where */}
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-500 mb-1.5">
-                    📍 Where?
-                  </label>
-                  <select
+                  <label className={labelCls}>📍 Where?</label>
+                  <CustomSelect
                     value={whereLocation}
-                    onChange={(e) => setWhereLocation(e.target.value)}
-                    className={`${inputCls} appearance-none`}
-                    style={{ colorScheme: "dark" }}
-                  >
-                    <option value="">e.g. Bedroom, Gym, Office…</option>
-                    {WHERE_OPTIONS.map((o) => (
-                      <option key={o} value={o}>{o}</option>
-                    ))}
-                  </select>
+                    onChange={setWhereLocation}
+                    items={WHERE_OPTIONS.map((o) => ({ value: o, label: o }))}
+                    placeholder="Select a location…"
+                  />
                 </div>
 
-                {/* How long */}
+                {/* Duration */}
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-500 mb-1.5">
+                  <label className={labelCls}>
                     ⏱ How long?
+                    {durationBonus > 0 && (
+                      <span className="ml-2 text-emerald-400 font-semibold">+{durationBonus} bonus XP</span>
+                    )}
                   </label>
-                  <select
+                  <CustomSelect
                     value={howLong}
-                    onChange={(e) => setHowLong(e.target.value)}
-                    className={`${inputCls} appearance-none`}
-                    style={{ colorScheme: "dark" }}
-                  >
-                    <option value="">Select duration…</option>
-                    {HOW_LONG_OPTIONS.map((o) => (
-                      <option key={o} value={o}>{o}</option>
+                    onChange={setHowLong}
+                    items={HOW_LONG_OPTIONS.map((o) => ({ value: o, label: o }))}
+                    placeholder="Select duration…"
+                    emptyLabel="— No duration set —"
+                  />
+                  {!howLong && (
+                    <p className="text-[10px] text-slate-700 mt-1.5">Set a duration to earn bonus XP per completion</p>
+                  )}
+                </div>
+              </div>
+
+              {/* ── RIGHT: Frequency + Stacking + Description ──────────── */}
+              <div className="space-y-4">
+
+                {/* 3. Frequency */}
+                <div>
+                  <label className={labelCls}>Frequency</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["daily", "weekly"] as const).map((freq) => (
+                      <button key={freq} type="button" onClick={() => setFrequency(freq)}
+                        className={`py-2.5 rounded-xl text-sm font-medium border transition-all capitalize ${
+                          frequency === freq
+                            ? "bg-violet-600/20 border-violet-600/50 text-violet-300"
+                            : "bg-violet-950/20 border-violet-900/20 text-slate-500 hover:text-slate-300"
+                        }`}
+                      >
+                        {freq}
+                      </button>
                     ))}
-                  </select>
+                  </div>
                 </div>
 
-                {/* Preview pill */}
-                {(whenTime || whereLocation || howLong) && (
-                  <div className="flex flex-wrap items-center gap-2 pt-1">
-                    {whereLocation && (
-                      <span className="text-[11px] text-slate-400 bg-slate-800/50 border border-slate-700/40 px-2 py-0.5 rounded-full">
-                        📍 {whereLocation}
-                      </span>
-                    )}
-                    {whenTime && (
-                      <span className="text-[11px] text-slate-400 bg-slate-800/50 border border-slate-700/40 px-2 py-0.5 rounded-full">
-                        ⏰ {whenTime}
-                      </span>
-                    )}
-                    {howLong && (
-                      <span className="text-[11px] text-slate-400 bg-slate-800/50 border border-slate-700/40 px-2 py-0.5 rounded-full">
-                        ⏱ {howLong}
-                      </span>
+                {/* Habit stacking */}
+                {existingHabits.length > 0 && (
+                  <div>
+                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-400 mb-1.5">
+                      <Link2 className="w-3.5 h-3.5 text-violet-500" />
+                      Stack after habit{" "}
+                      <span className="text-slate-600 font-normal">(optional)</span>
+                    </label>
+                    <CustomSelect
+                      value={stackAfterId}
+                      onChange={setStackAfterId}
+                      items={stackItems}
+                      placeholder="— No stacking —"
+                    />
+                    {stackParent && name.trim() && (
+                      <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-violet-950/30 border border-violet-800/25 rounded-lg">
+                        <span className="text-xs text-slate-400 truncate max-w-[100px]">{stackParent.name}</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-violet-500 flex-shrink-0" />
+                        <span className="text-xs text-violet-300 font-medium truncate">{name.trim()}</span>
+                      </div>
                     )}
                   </div>
                 )}
+
+                {/* 4. Description */}
+                <div>
+                  <label className={labelCls}>
+                    Description <span className="text-slate-600 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    type="text" value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="e.g. 10 minutes of mindfulness"
+                    maxLength={200}
+                    className={inputCls}
+                  />
+                </div>
               </div>
+            </div>
+
+            {/* Habit suggestions — Pro only ──────────────────────────────── */}
+            {uniqueSuggestions.length > 0 && (
+              <div className="pt-1">
+                {tier === "pro" ? (
+                  <>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium text-slate-500">Need inspiration?</span>
+                      {uniqueSuggestions.length > CHIPS_PER_PAGE && (
+                        <button type="button"
+                          onClick={() => setSuggestionOffset((o) => (o + CHIPS_PER_PAGE) % uniqueSuggestions.length)}
+                          className="text-[11px] text-violet-500 hover:text-violet-400 transition-colors"
+                        >
+                          More ideas →
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {visibleSuggestions.map((s) => (
+                        <button key={s} type="button"
+                          onClick={() => { setName(s); setError(null); }}
+                          className="px-2.5 py-1 rounded-full text-[11px] font-medium border border-violet-800/30 bg-violet-950/30 text-slate-400 hover:text-violet-300 hover:border-violet-600/40 hover:bg-violet-950/50 transition-all"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium text-slate-500">Need inspiration?</span>
+                      <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-300 bg-amber-900/25 border border-amber-600/25 px-1.5 py-0.5 rounded-full">
+                        <Crown className="w-2.5 h-2.5" />PRO
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <div className="flex flex-wrap gap-1.5 pointer-events-none select-none"
+                        style={{ filter: "blur(4px)", opacity: 0.35 }}
+                      >
+                        {["Run 5km", "Meditate 10 min", "Read daily", "Drink 2L water", "Journal entry", "Stretch 10 min"].map((s) => (
+                          <span key={s} className="px-2.5 py-1 rounded-full text-[11px] font-medium border border-violet-800/30 bg-violet-950/30 text-slate-400">
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <button type="button" onClick={onUpgradePro}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600/20 border border-amber-500/40 text-amber-300 text-xs font-semibold rounded-xl hover:bg-amber-600/30 transition-all"
+                        >
+                          <Crown className="w-3 h-3" />Upgrade to Pro to unlock
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {!isBlocked && aiValidation.status === "blocked" && (
+              <p className="text-center text-[11px] text-slate-600 -mt-2">
+                You can still add this but won&apos;t earn XP
+              </p>
             )}
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-2">
+          {/* ── Footer (sticky) ───────────────────────────────────────────── */}
+          <div className="flex gap-3 px-6 py-4 border-t border-violet-900/20 flex-shrink-0">
             <button type="button" onClick={onClose}
               className="flex-1 py-2.5 border border-violet-900/30 text-slate-400 hover:text-white rounded-xl text-sm transition-colors"
             >
@@ -459,11 +545,6 @@ export default function AddHabitModal({ onClose, existingHabits, goals, tier, on
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4" /> Add Habit</>}
             </button>
           </div>
-          {!isBlocked && aiValidation.status === "blocked" && (
-            <p className="text-center text-[11px] text-slate-600 -mt-1">
-              You can still add this but won&apos;t earn XP
-            </p>
-          )}
         </form>
       </div>
     </div>

@@ -745,7 +745,7 @@ export default function DashboardPage() {
                 onCompleted={() => {
                   const validity = habit.validity_score ?? "valid";
                   playSound("complete");
-                  onHabitCompleted(validity);
+                  onHabitCompleted(validity, habit.how_long);
                   if (validity === "invalid") {
                     toast(
                       `"${habit.name}" earns no XP — edit the name to earn points`,
