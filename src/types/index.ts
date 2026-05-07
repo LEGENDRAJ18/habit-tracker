@@ -11,6 +11,8 @@ export interface Habit {
   where_location: string | null;
   how_long: string | null;
   validity_score?: "valid" | "partial" | "invalid";
+  smart_timing?: boolean;
+  preferred_reminder_time?: string | null;
 }
 
 export interface HabitLog {

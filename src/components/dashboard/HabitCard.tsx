@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trash2, Check, Flame, Snowflake, ArrowRight, Pencil, X, Loader2 } from "lucide-react";
-import type { Habit } from "@/types";
+import { Trash2, Check, Flame, Snowflake, ArrowRight, Pencil, X, Loader2, Zap } from "lucide-react";
+import type { Habit, Plan } from "@/types";
 
 interface Props {
   habit: Habit;
@@ -12,10 +12,12 @@ interface Props {
   isProtected?: boolean;
   stackAfterName?: string;
   isEditing?: boolean;
+  tier?: Plan;
   onToggle: () => void;
   onDelete: () => void;
   onCompleted?: () => void;
   onRename?: (newName: string, validityScore: "valid" | "partial" | "invalid") => Promise<void>;
+  onSmartTimingToggle?: (enabled: boolean) => Promise<void>;
 }
 
 const PARTICLE_DIRS = [
@@ -65,7 +67,7 @@ function getTimeEmoji(whenTime: string | null): string | null {
 
 export default function HabitCard({
   habit, completed, streak, strength, isProtected, stackAfterName, isEditing,
-  onToggle, onDelete, onCompleted, onRename,
+  tier, onToggle, onDelete, onCompleted, onRename, onSmartTimingToggle,
 }: Props) {
   const [toggling, setToggling]     = useState(false);
   const [deleting, setDeleting]     = useState(false);
@@ -75,6 +77,7 @@ export default function HabitCard({
   const [editMode, setEditMode]     = useState(false);
   const [editName, setEditName]     = useState(habit.name);
   const [editSaving, setEditSaving] = useState(false);
+  const [smartToggling, setSmartToggling] = useState(false);
 
   useEffect(() => {
     if (isEditing) { setEditName(habit.name); setEditMode(true); }
@@ -287,6 +290,44 @@ export default function HabitCard({
               <span>⏱</span>{habit.how_long}
             </span>
           )}
+        </div>
+      )}
+
+      {/* Smart timing toggle — Pro only */}
+      {tier === "pro" && onSmartTimingToggle && (
+        <div className="flex items-center justify-between px-4 pb-2">
+          <div className="flex items-center gap-1.5">
+            <Zap className={`w-3 h-3 flex-shrink-0 ${habit.smart_timing ? "text-amber-400" : "text-slate-600"}`} />
+            <span className={`text-[10px] font-medium ${habit.smart_timing ? "text-amber-300" : "text-slate-600"}`}>
+              Smart timing
+            </span>
+            {habit.smart_timing && habit.preferred_reminder_time && (
+              <span className="text-[10px] text-slate-600">
+                · {(() => {
+                  const [h] = habit.preferred_reminder_time.split(":").map(Number);
+                  return `${h % 12 || 12}:00 ${h >= 12 ? "PM" : "AM"}`;
+                })()}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={async () => {
+              if (smartToggling) return;
+              setSmartToggling(true);
+              await onSmartTimingToggle(!habit.smart_timing);
+              setSmartToggling(false);
+            }}
+            className={`relative w-8 h-4 rounded-full transition-colors duration-200 flex-shrink-0 ${
+              habit.smart_timing ? "bg-amber-500" : "bg-slate-700"
+            } ${smartToggling ? "opacity-60" : ""}`}
+            title="Toggle smart timing"
+          >
+            <span
+              className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform duration-200 ${
+                habit.smart_timing ? "translate-x-4" : "translate-x-0.5"
+              }`}
+            />
+          </button>
         </div>
       )}
 

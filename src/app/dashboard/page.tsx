@@ -26,6 +26,7 @@ import { toast } from "@/components/ui/Toast";
 import HelpModal from "@/components/ui/HelpModal";
 import OnboardingTour from "@/components/ui/OnboardingTour";
 import HabitTemplatesModal from "@/components/dashboard/HabitTemplatesModal";
+import WeeklyPlanCard from "@/components/dashboard/WeeklyPlanCard";
 import { useUpgrade } from "@/contexts/UpgradeContext";
 
 // ─── Greeting & quote ─────────────────────────────────────────────────────────
@@ -303,7 +304,7 @@ function AllDoneCelebration({
 
 
 export default function DashboardPage() {
-  const { habits, loading, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength } =
+  const { habits, loading, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength, refetch } =
     useHabits();
   const { tier, profileLoading, onboardingCompleted, goals, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt } = useProfile();
   const { xp, level, achievements, totalCompletions, justLeveledUp, isDailyAchieved, onHabitCompleted, checkMilestones, dismissLevelUp } = useXP();
@@ -708,6 +709,15 @@ export default function DashboardPage() {
                 strength={getHabitStrength(habit.id)}
                 isProtected={info.freezeApplied}
                 stackAfterName={stackParent?.name}
+                tier={tier}
+                onSmartTimingToggle={async (enabled) => {
+                  const res = await fetch(`/api/habits/${habit.id}/smart-timing`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ enabled }),
+                  });
+                  if (res.ok) { refetch(); }
+                }}
                 onToggle={() => toggleHabit(habit.id)}
                 onDelete={() => {
                   const removed = removeHabitOptimistic(habit.id);
@@ -841,6 +851,9 @@ export default function DashboardPage() {
               </p>
             </div>
           </div>
+
+          {/* Weekly Game Plan — Pro only */}
+          {tier === "pro" && <WeeklyPlanCard />}
 
           {/* Milestones */}
           {!loading && habits.length > 0 && (

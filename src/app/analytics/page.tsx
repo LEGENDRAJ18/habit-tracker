@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   Flame, Zap, CheckCircle2, TrendingUp,
-  Calendar, BarChart2, Loader2, Lock, BarChart as BarChartIcon,
+  Calendar, BarChart2, Loader2, Lock, BarChart as BarChartIcon, Crown,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -269,6 +269,182 @@ function HabitRow({ habit, dates }: { habit: Habit; dates: Set<string> }) {
   );
 }
 
+// ─── best day of the week chart (Pro) ────────────────────────────────────────
+
+function BestDayChart({ logs }: { logs: Pick<HabitLog, "habit_id" | "completed_at">[] }) {
+  const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const counts = Array(7).fill(0) as number[];
+  for (const log of logs) {
+    const d = new Date(log.completed_at + (log.completed_at.includes("T") ? "" : "T12:00:00"));
+    counts[d.getDay()]++;
+  }
+  const data = DAY_NAMES.map((name, i) => ({ name, count: counts[i] }));
+  const maxVal = Math.max(1, ...data.map((d) => d.count));
+
+  return (
+    <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-5">
+      <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+        <Zap className="w-4 h-4 text-amber-400" />
+        Best day of the week
+      </h3>
+      <ResponsiveContainer width="100%" height={140}>
+        <BarChart data={data} margin={{ top: 4, right: 0, left: -28, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(109,40,217,0.1)" vertical={false} />
+          <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#475569" }} axisLine={false} tickLine={false} />
+          <YAxis tick={{ fontSize: 9, fill: "#475569" }} axisLine={false} tickLine={false} allowDecimals={false} />
+          <Tooltip
+            contentStyle={{ background: "#0f0f1a", border: "1px solid rgba(109,40,217,0.3)", borderRadius: "10px", fontSize: "12px" }}
+            labelStyle={{ color: "#94a3b8" }}
+            itemStyle={{ color: "#fbbf24" }}
+            cursor={{ fill: "rgba(109,40,217,0.08)" }}
+          />
+          <Bar dataKey="count" name="Completions" radius={[4, 4, 0, 0]}>
+            {data.map((entry, i) => (
+              <Cell key={i} fill={entry.count === maxVal ? "#f59e0b" : "rgba(245,158,11,0.35)"} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// ─── monthly trend chart (Pro) ────────────────────────────────────────────────
+
+function MonthlyTrendChart({ logs }: { logs: Pick<HabitLog, "habit_id" | "completed_at">[] }) {
+  const data = Array.from({ length: 3 }, (_, i) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - (2 - i));
+    const year  = d.getFullYear();
+    const month = d.getMonth();
+    const label = d.toLocaleDateString("en-US", { month: "short" });
+    const count = logs.filter((l) => {
+      const ld = new Date(l.completed_at);
+      return ld.getFullYear() === year && ld.getMonth() === month;
+    }).length;
+    return { label, count };
+  });
+
+  return (
+    <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-5">
+      <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+        <TrendingUp className="w-4 h-4 text-emerald-400" />
+        Monthly trend
+      </h3>
+      <ResponsiveContainer width="100%" height={140}>
+        <BarChart data={data} margin={{ top: 4, right: 0, left: -28, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(109,40,217,0.1)" vertical={false} />
+          <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#475569" }} axisLine={false} tickLine={false} />
+          <YAxis tick={{ fontSize: 9, fill: "#475569" }} axisLine={false} tickLine={false} allowDecimals={false} />
+          <Tooltip
+            contentStyle={{ background: "#0f0f1a", border: "1px solid rgba(109,40,217,0.3)", borderRadius: "10px", fontSize: "12px" }}
+            labelStyle={{ color: "#94a3b8" }}
+            itemStyle={{ color: "#34d399" }}
+            cursor={{ fill: "rgba(109,40,217,0.08)" }}
+          />
+          <Bar dataKey="count" name="Completions" radius={[4, 4, 0, 0]}>
+            {data.map((_, i) => (
+              <Cell key={i} fill={i === 2 ? "#10b981" : "rgba(16,185,129,0.4)"} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// ─── at-risk warnings (Pro) ───────────────────────────────────────────────────
+
+function AtRiskWarnings({ habits, habitDateSets }: { habits: Habit[]; habitDateSets: Map<string, Set<string>> }) {
+  const today = toDateStr(new Date());
+  const todayDow = new Date().getDay();
+
+  const atRisk = habits.filter((h) => {
+    const dates = habitDateSets.get(h.id) ?? new Set<string>();
+    const streak = getStreak(dates);
+    if (streak < 3) return false;
+    // Check if today is the day of week with fewest completions
+    const dowCounts = Array(7).fill(0) as number[];
+    for (const d of dates) {
+      const dow = new Date(d + "T12:00:00").getDay();
+      dowCounts[dow]++;
+    }
+    const minDow = dowCounts.indexOf(Math.min(...dowCounts));
+    return minDow === todayDow && !dates.has(today);
+  });
+
+  if (atRisk.length === 0) return null;
+
+  return (
+    <div className="bg-[#0c0c18] border border-amber-900/30 rounded-2xl p-5">
+      <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+        <Flame className="w-4 h-4 text-amber-400" />
+        At-risk today
+      </h3>
+      <p className="text-xs text-slate-500 mb-3 leading-relaxed">
+        These habits have an active streak but {todayDow === 0 || todayDow === 6 ? "weekends" : "today"} is historically your weakest day for them.
+      </p>
+      <div className="space-y-2">
+        {atRisk.map((h) => {
+          const streak = getStreak(habitDateSets.get(h.id) ?? new Set());
+          return (
+            <div key={h.id} className="flex items-center justify-between py-2 px-3 bg-amber-950/20 border border-amber-800/20 rounded-xl">
+              <p className="text-sm text-slate-200 truncate flex-1">{h.name}</p>
+              <span className="flex items-center gap-1 text-xs text-amber-400 flex-shrink-0 ml-2">
+                <Flame className="w-3.5 h-3.5" />{streak}d
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── habit correlation card (Pro) ─────────────────────────────────────────────
+
+function HabitCorrelationCard({ habits, logs }: { habits: Habit[]; logs: Pick<HabitLog, "habit_id" | "completed_at">[] }) {
+  const pairs: { a: string; b: string; count: number }[] = [];
+
+  for (let i = 0; i < habits.length; i++) {
+    for (let j = i + 1; j < habits.length; j++) {
+      const datesA = new Set(logs.filter((l) => l.habit_id === habits[i].id).map((l) => l.completed_at.split("T")[0]));
+      const datesB = new Set(logs.filter((l) => l.habit_id === habits[j].id).map((l) => l.completed_at.split("T")[0]));
+      let coCount = 0;
+      for (const d of datesA) { if (datesB.has(d)) coCount++; }
+      if (coCount >= 3) {
+        pairs.push({ a: habits[i].name, b: habits[j].name, count: coCount });
+      }
+    }
+  }
+
+  pairs.sort((a, b) => b.count - a.count);
+  const top = pairs.slice(0, 3);
+
+  if (top.length === 0) return null;
+
+  return (
+    <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-5">
+      <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+        <CheckCircle2 className="w-4 h-4 text-violet-400" />
+        Habit pairs
+      </h3>
+      <p className="text-xs text-slate-500 mb-3 leading-relaxed">Habits you complete together most often</p>
+      <div className="space-y-2">
+        {top.map((pair, i) => (
+          <div key={i} className="flex items-center gap-3 py-2 px-3 bg-violet-950/25 border border-violet-900/20 rounded-xl">
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] text-slate-300 truncate">{pair.a}</p>
+              <p className="text-[10px] text-slate-600">+ {pair.b}</p>
+            </div>
+            <span className="text-xs font-semibold text-violet-400 flex-shrink-0">{pair.count}×</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── blur gate for free users ─────────────────────────────────────────────────
 
 function BlurGate({ children }: { children: React.ReactNode }) {
@@ -295,6 +471,39 @@ function BlurGate({ children }: { children: React.ReactNode }) {
             }}
           >
             Upgrade to Plus — $7/mo
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── blur gate for Pro-only features ─────────────────────────────────────────
+
+function ProBlurGate({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative">
+      <div className="pointer-events-none select-none" style={{ filter: "blur(6px)", opacity: 0.45 }}>
+        {children}
+      </div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#09090f]/60 backdrop-blur-sm rounded-2xl">
+        <div className="flex flex-col items-center gap-3 p-6 text-center max-w-xs">
+          <div className="w-10 h-10 rounded-xl bg-amber-600/20 border border-amber-500/30 flex items-center justify-center">
+            <Lock className="w-5 h-5 text-amber-400" />
+          </div>
+          <p className="text-sm font-semibold text-white">Pro Analytics</p>
+          <p className="text-xs text-slate-400">Deep insights, trend analysis, and habit correlation — Pro only.</p>
+          <Link
+            href="/dashboard"
+            className="mt-1 inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-xl transition-all"
+            onClick={() => {
+              const url = new URL(window.location.href);
+              url.pathname = "/dashboard";
+              url.searchParams.set("checkout", "pro");
+              window.location.href = url.toString();
+            }}
+          >
+            Upgrade to Pro — $12/mo
           </Link>
         </div>
       </div>
@@ -367,6 +576,7 @@ export default function AnalyticsPage() {
   }, [habits, habitDateSets]);
 
   const isPaid = tier === "plus" || tier === "pro";
+  const isPro  = tier === "pro";
 
   if (loading) {
     return (
@@ -512,6 +722,40 @@ export default function AnalyticsPage() {
                 </div>
               </BlurGate>
             )}
+
+            {/* Pro-only deep analytics */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <h2 className="text-sm font-semibold text-white">Deep Analytics</h2>
+                <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-300 bg-amber-900/25 border border-amber-600/25 px-1.5 py-0.5 rounded-full">
+                  <Crown className="w-2.5 h-2.5" />
+                  PRO
+                </span>
+              </div>
+              {isPro ? (
+                <>
+                  <div className="grid lg:grid-cols-2 gap-4 mb-4">
+                    <BestDayChart logs={logs} />
+                    <MonthlyTrendChart logs={logs} />
+                  </div>
+                  <div className="grid lg:grid-cols-2 gap-4">
+                    <AtRiskWarnings habits={habits} habitDateSets={habitDateSets} />
+                    <HabitCorrelationCard habits={habits} logs={logs} />
+                  </div>
+                </>
+              ) : (
+                <ProBlurGate>
+                  <div className="grid lg:grid-cols-2 gap-4 mb-4">
+                    <BestDayChart logs={logs} />
+                    <MonthlyTrendChart logs={logs} />
+                  </div>
+                  <div className="grid lg:grid-cols-2 gap-4">
+                    <div className="bg-[#0c0c18] border border-amber-900/30 rounded-2xl p-5 h-32" />
+                    <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-5 h-32" />
+                  </div>
+                </ProBlurGate>
+              )}
+            </div>
         </>
       </main>
     </div>

@@ -8,6 +8,22 @@ import { useHabitValidation } from "@/hooks/useHabitValidation";
 const WHERE_OPTIONS    = ["Bedroom", "Gym", "Office", "Kitchen", "Living room", "Outdoors", "On commute"];
 const HOW_LONG_OPTIONS = ["5 min", "10 min", "20 min", "30 min", "45 min", "1 hour", "2+ hours"];
 
+const GOAL_SUGGESTIONS: Record<string, string[]> = {
+  "fitness":         ["Run 5km", "20 pushups every morning", "30-min gym session", "10,000 steps daily", "Stretch for 10 minutes", "Drink 2L of water", "Walk for 30 minutes", "Do a 15-min home workout"],
+  "learning":        ["Read for 20 minutes", "Practice coding for 30 minutes", "Watch 1 educational video", "Study flashcards for 15 minutes", "Write in a journal", "Listen to a podcast", "Take an online course lesson", "Review notes from yesterday"],
+  "mental wellness": ["Meditate for 10 minutes", "Write 3 things I'm grateful for", "Take a 10-minute walk outside", "Practice deep breathing", "No phone for 1 hour", "Call a friend", "Do a body scan meditation", "Write a journal entry"],
+  "productivity":    ["Plan tomorrow the night before", "Clear inbox to zero", "Do 1 focused deep-work block", "Review weekly goals", "No social media before noon", "Write a daily to-do list", "Time-block my calendar", "Do a weekly review"],
+  "sleep":           ["No screens 30 min before bed", "Go to bed by 10:30 PM", "Wake up at 6 AM", "Read before sleeping", "Take magnesium supplement", "No caffeine after 2 PM", "Prepare tomorrow's clothes tonight", "Do a 5-min wind-down stretch"],
+};
+
+const GOAL_KEY_MAP: Record<string, string> = {
+  "Get fit & healthy":     "fitness",
+  "Learn & grow":          "learning",
+  "Build mental wellness": "mental wellness",
+  "Be more productive":    "productivity",
+  "Improve sleep":         "sleep",
+};
+
 
 interface Props {
   onClose: () => void;
@@ -41,10 +57,28 @@ export default function AddHabitModal({ onClose, existingHabits, goals, onAdd }:
   const [showIntentions, setShowIntentions] = useState(false);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState<string | null>(null);
+  const [suggestionOffset, setSuggestionOffset] = useState(0);
 
   const aiValidation = useHabitValidation(name, goals);
   const duplicate    = name.trim().length > 2 && isDuplicate(name, existingHabits);
   const stackParent  = existingHabits.find((h) => h.id === stackAfterId);
+
+  // Build suggestion pool from user's goals
+  const allSuggestions: string[] = goals
+    ? goals.flatMap((g) => GOAL_SUGGESTIONS[GOAL_KEY_MAP[g] ?? g.toLowerCase()] ?? [])
+    : [];
+  const uniqueSuggestions = [...new Set(allSuggestions)];
+  const CHIPS_PER_PAGE = 6;
+  const visibleSuggestions = uniqueSuggestions.slice(
+    suggestionOffset % Math.max(uniqueSuggestions.length, 1),
+    suggestionOffset % Math.max(uniqueSuggestions.length, 1) + CHIPS_PER_PAGE,
+  ).concat(
+    // wrap around if near end
+    uniqueSuggestions.slice(
+      0,
+      Math.max(0, suggestionOffset % Math.max(uniqueSuggestions.length, 1) + CHIPS_PER_PAGE - uniqueSuggestions.length),
+    ),
+  ).slice(0, CHIPS_PER_PAGE);
 
   const isBlocked = duplicate;
 
@@ -182,6 +216,36 @@ export default function AddHabitModal({ onClose, existingHabits, goals, onAdd }:
               </div>
             )}
           </div>
+
+          {/* Habit suggestions */}
+          {uniqueSuggestions.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-slate-500">Need inspiration?</span>
+                {uniqueSuggestions.length > CHIPS_PER_PAGE && (
+                  <button
+                    type="button"
+                    onClick={() => setSuggestionOffset((o) => (o + CHIPS_PER_PAGE) % uniqueSuggestions.length)}
+                    className="text-[11px] text-violet-500 hover:text-violet-400 transition-colors"
+                  >
+                    More ideas →
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {visibleSuggestions.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => { setName(s); setError(null); }}
+                    className="px-2.5 py-1 rounded-full text-[11px] font-medium border border-violet-800/30 bg-violet-950/30 text-slate-400 hover:text-violet-300 hover:border-violet-600/40 hover:bg-violet-950/50 transition-all"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Description */}
           <div>

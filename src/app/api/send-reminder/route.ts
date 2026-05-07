@@ -372,7 +372,7 @@ function isAuthorized(req: NextRequest): boolean {
   return legacy === secret;
 }
 
-async function runReminders(): Promise<{ sent: number; skipped: number; hour: number; timestamp: string; weeklySent?: number; trialRemindersSent?: number }> {
+async function runReminders(): Promise<{ sent: number; skipped: number; hour: number; timestamp: string; weeklySent?: number; trialRemindersSent?: number; weeklyPlansGenerated?: number; smartTimingSent?: number }> {
   const supabase = createAdminClient();
   const now = new Date();
   const nowHour = now.getUTCHours();
@@ -450,8 +450,12 @@ async function runReminders(): Promise<{ sent: number; skipped: number; hour: nu
   const weekly = await runWeeklyReport(supabase).catch(() => ({ sent: 0, skipped: 0 }));
   // Trial reminders — fires whenever a trial ends in ~48 h
   const trial = await runTrialReminders(supabase).catch(() => ({ sent: 0 }));
+  // Weekly game plan auto-generation — only fires on Mondays
+  const weeklyPlan = await runWeeklyPlanGeneration(supabase).catch(() => ({ generated: 0 }));
+  // Smart timing reminders — fires for Pro users whose preferred hour matches
+  const smartTiming = await runSmartTimingReminders(supabase).catch(() => ({ sent: 0 }));
 
-  return { sent, skipped, hour: nowHour, timestamp: now.toISOString(), weeklySent: weekly.sent, trialRemindersSent: trial.sent };
+  return { sent, skipped, hour: nowHour, timestamp: now.toISOString(), weeklySent: weekly.sent, trialRemindersSent: trial.sent, weeklyPlansGenerated: weeklyPlan.generated, smartTimingSent: smartTiming.sent };
 }
 
 function buildTrialReminderHtml(firstName: string, trialEnd: string, unsubscribeUrl: string): string {
@@ -582,6 +586,187 @@ async function runTrialReminders(supabase: ReturnType<typeof createAdminClient>)
       sent++;
     } catch {
       // continue to next user
+    }
+  }
+
+  return { sent };
+}
+
+// ─── Weekly Game Plan auto-generation (Mondays) ───────────────────────────────
+
+async function callOpenAIWeeklyPlan(prompt: string): Promise<string[] | null> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: "You are a concise habit coach. Respond ONLY with a valid JSON object: {\"actions\":[\"action1\",\"action2\"]}" },
+          { role: "user", content: prompt },
+        ],
+        max_tokens: 300,
+        temperature: 0.7,
+        response_format: { type: "json_object" },
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const parsed = JSON.parse(data.choices[0].message.content);
+    const arr = Array.isArray(parsed) ? parsed : parsed.actions ?? Object.values(parsed)[0];
+    if (!Array.isArray(arr)) return null;
+    return (arr as unknown[]).filter((x) => typeof x === "string").slice(0, 5) as string[];
+  } catch {
+    return null;
+  }
+}
+
+async function runWeeklyPlanGeneration(supabase: ReturnType<typeof createAdminClient>): Promise<{ generated: number }> {
+  const now = new Date();
+  // Only run on Mondays (UTC day 1)
+  if (now.getUTCDay() !== 1) return { generated: 0 };
+
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000).toISOString().split("T")[0];
+
+  // Monday of this week
+  const d = new Date(now);
+  const weekStart = d.toISOString().split("T")[0];
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, goals")
+    .eq("subscription_tier", "pro");
+
+  if (!profiles || profiles.length === 0) return { generated: 0 };
+
+  let generated = 0;
+
+  for (const profile of profiles) {
+    try {
+      // Skip if plan already exists for this week
+      const { data: existing } = await supabase
+        .from("weekly_plans")
+        .select("id")
+        .eq("user_id", profile.id)
+        .eq("week_start", weekStart)
+        .single();
+      if (existing) continue;
+
+      const [{ data: habits }, { data: logs }] = await Promise.all([
+        supabase.from("habits").select("id, name").eq("user_id", profile.id),
+        supabase.from("habit_logs")
+          .select("habit_id, completed_at")
+          .eq("user_id", profile.id)
+          .gte("completed_at", sevenDaysAgo),
+      ]);
+
+      if (!habits || habits.length === 0) continue;
+
+      const logsArr = logs ?? [];
+      const habitData = habits.map((h) => {
+        const count = logsArr.filter((l) => l.habit_id === h.id).length;
+        return `- "${h.name}": completed ${count}/7 days`;
+      });
+
+      const goals: string[] = Array.isArray(profile.goals) ? profile.goals : [];
+      const prompt = `Generate a weekly game plan (4–5 specific actions, 1 sentence each) for a user with these habits:\n${habitData.join("\n")}\nGoals: ${goals.join(", ") || "general wellbeing"}`;
+
+      const actions = await callOpenAIWeeklyPlan(prompt);
+      if (!actions) continue;
+
+      await supabase.from("weekly_plans").upsert(
+        { user_id: profile.id, week_start: weekStart, actions, created_at: now.toISOString() },
+        { onConflict: "user_id,week_start" },
+      );
+
+      generated++;
+    } catch {
+      // continue
+    }
+  }
+
+  return { generated };
+}
+
+// ─── Smart timing reminders (Pro, per-habit preferred time) ───────────────────
+
+async function runSmartTimingReminders(supabase: ReturnType<typeof createAdminClient>): Promise<{ sent: number }> {
+  const now = new Date();
+  const nowHour = now.getUTCHours();
+  const today = now.toISOString().split("T")[0];
+
+  // Find Pro users' habits with preferred_reminder_time matching this hour
+  const { data: habits } = await supabase
+    .from("habits")
+    .select("id, name, user_id, preferred_reminder_time")
+    .eq("smart_timing", true)
+    .not("preferred_reminder_time", "is", null);
+
+  if (!habits || habits.length === 0) return { sent: 0 };
+
+  // Filter to habits whose preferred hour matches current UTC hour
+  const matchingHabits = habits.filter((h) => {
+    if (!h.preferred_reminder_time) return false;
+    const hour = parseInt(h.preferred_reminder_time.split(":")[0], 10);
+    return hour === nowHour;
+  });
+
+  if (matchingHabits.length === 0) return { sent: 0 };
+
+  // Group by user
+  const byUser = new Map<string, typeof matchingHabits>();
+  for (const h of matchingHabits) {
+    const arr = byUser.get(h.user_id) ?? [];
+    arr.push(h);
+    byUser.set(h.user_id, arr);
+  }
+
+  let sent = 0;
+
+  for (const [userId, userHabits] of byUser) {
+    try {
+      // Check subscription tier
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("subscription_tier")
+        .eq("id", userId)
+        .single();
+      if (profile?.subscription_tier !== "pro") continue;
+
+      // Check which habits are not yet completed today
+      const { data: logs } = await supabase
+        .from("habit_logs")
+        .select("habit_id")
+        .eq("user_id", userId)
+        .gte("completed_at", `${today}T00:00:00.000Z`)
+        .lt("completed_at", `${today}T23:59:59.999Z`);
+
+      const completedIds = new Set((logs ?? []).map((l) => l.habit_id));
+      const remaining = userHabits.filter((h) => !completedIds.has(h.id));
+      if (remaining.length === 0) continue;
+
+      const { data: userData } = await supabase.auth.admin.getUserById(userId);
+      const email = userData?.user?.email;
+      if (!email) continue;
+
+      const rawName = userData.user?.user_metadata?.full_name ?? email.split("@")[0] ?? "there";
+      const firstName = rawName.split(/[\s_\-+@]/)[0];
+      const display = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+
+      const unsubscribeUrl = `${APP_URL}/api/unsubscribe?uid=${userId}`;
+
+      await resend.emails.send({
+        from: "HabitAI <reminders@habitai.app>",
+        to: email,
+        subject: `⚡ Smart reminder: time for your habits, ${display}`,
+        html: buildEmailHtml(remaining.map((h) => h.name), 0, unsubscribeUrl),
+      });
+
+      sent++;
+    } catch {
+      // continue
     }
   }
 
