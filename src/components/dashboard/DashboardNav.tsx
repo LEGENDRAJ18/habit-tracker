@@ -80,21 +80,21 @@ function NavXP() {
       <div className={`w-6 h-6 rounded-lg ${s.bg} ring-1 ${s.ring} flex items-center justify-center flex-shrink-0`}>
         <span className={`text-[11px] font-extrabold ${s.text} leading-none`}>{level}</span>
       </div>
-      <div className="flex flex-col gap-0.5 min-w-[110px]">
+      <div className="flex flex-col gap-0.5 min-w-[100px]">
         <div className="h-1.5 bg-violet-950/60 rounded-full overflow-hidden">
           <div
             className={`h-full bg-gradient-to-r ${s.bar} rounded-full transition-all duration-700`}
             style={{ width: `${pct}%` }}
           />
         </div>
-        <span className={`text-[9px] font-medium tabular-nums ${s.text} leading-none`}>
+        <span className={`text-[9px] font-medium tabular-nums ${s.text} leading-none whitespace-nowrap`}>
           {into.toLocaleString()} XP
+          {nextReward && (
+            <span className="text-slate-600 font-normal">
+              {" · "}Next reward: Lv {nextReward.level} {nextReward.icon}
+            </span>
+          )}
         </span>
-        {nextReward && (
-          <span className="text-[8px] text-slate-600 leading-none whitespace-nowrap">
-            Level {nextReward.level} — {nextReward.name} {nextReward.icon}
-          </span>
-        )}
       </div>
     </div>
   );
