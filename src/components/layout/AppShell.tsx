@@ -12,10 +12,12 @@ import TrialBanner from "@/components/ui/TrialBanner";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [upgradeReason, setUpgradeReason] = useState<UpgradeReason>("habits");
+  const [upgradeFromPlus, setUpgradeFromPlus] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
 
-  function openUpgradeModal(reason: UpgradeReason = "habits") {
+  function openUpgradeModal(reason: UpgradeReason = "habits", fromPlus = false) {
     setUpgradeReason(reason);
+    setUpgradeFromPlus(fromPlus);
     setShowUpgrade(true);
   }
 
@@ -32,7 +34,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       {showUpgrade && (
-        <UpgradeModal onClose={() => setShowUpgrade(false)} reason={upgradeReason} />
+        <UpgradeModal
+          onClose={() => setShowUpgrade(false)}
+          reason={upgradeReason}
+          fromPlus={upgradeFromPlus}
+        />
       )}
     </UpgradeProvider>
   );

@@ -3,8 +3,10 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, BarChart2, Calendar, Users, User, Sparkles, Flame } from "lucide-react";
+import { LayoutDashboard, BarChart2, Calendar, Users, User, Sparkles, Flame, Zap, Crown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useProfile } from "@/hooks/useProfile";
+import { useUpgrade } from "@/contexts/UpgradeContext";
 
 const NAV_LINKS = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -32,6 +34,8 @@ export default function LeftSidebar() {
   const pathname = usePathname();
   const [streak, setStreak] = useState(0);
   const supabase = useRef(createClient()).current;
+  const { tier } = useProfile();
+  const { openUpgradeModal } = useUpgrade();
 
   useEffect(() => {
     let userId = "";
@@ -129,6 +133,38 @@ export default function LeftSidebar() {
       </nav>
 
       <div className="flex-1" />
+
+      {/* Plus → Pro upgrade card */}
+      {tier === "plus" && (
+        <div className="mb-3 p-px rounded-xl bg-gradient-to-br from-amber-500/50 via-violet-500/30 to-amber-600/50">
+          <div className="bg-[#0c0c18] rounded-[11px] p-3.5">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Zap className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+              <p className="text-xs font-bold text-white leading-none">
+                Go Pro for maximum results
+              </p>
+            </div>
+            <p className="text-[10px] text-slate-500 mb-3 leading-relaxed">
+              Unlock everything — $12 NZD/mo
+            </p>
+            <button
+              onClick={() => openUpgradeModal("pro_feature", true)}
+              className="w-full py-1.5 rounded-lg text-[11px] font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 transition-all shadow-md shadow-orange-900/20 flex items-center justify-center gap-1"
+            >
+              <Crown className="w-3 h-3" />
+              Upgrade to Pro →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Pro badge */}
+      {tier === "pro" && (
+        <div className="mb-3 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-amber-900/25 to-orange-900/15 border border-amber-600/25">
+          <Crown className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+          <span className="text-xs font-bold text-amber-300">You&apos;re on Pro 🏆</span>
+        </div>
+      )}
 
       {/* Daily Streak widget */}
       <div className="bg-[#0c0c18] border border-violet-900/20 rounded-xl p-3.5">

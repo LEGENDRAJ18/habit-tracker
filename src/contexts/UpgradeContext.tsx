@@ -4,7 +4,7 @@ import { createContext, useContext } from "react";
 import type { UpgradeReason } from "@/components/dashboard/UpgradeModal";
 
 interface UpgradeCtxValue {
-  openUpgradeModal: (reason?: UpgradeReason) => void;
+  openUpgradeModal: (reason?: UpgradeReason, fromPlus?: boolean) => void;
 }
 
 const UpgradeCtx = createContext<UpgradeCtxValue>({
