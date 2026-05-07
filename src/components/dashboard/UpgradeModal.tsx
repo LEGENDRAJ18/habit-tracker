@@ -37,8 +37,9 @@ const ROWS: ComparisonRow[] = [
   { label: "AI coaching insights",   free: "no",      plus: "5 / day",    pro: "Unlimited", proOnly: true },
   { label: "Streak protection",      free: "no",      plus: "yes",        pro: "yes"        },
   { label: "Email reminders",        free: "no",      plus: "yes",        pro: "yes"        },
-  { label: "Weekly AI email report", free: "no",      plus: "no",         pro: "yes",       proOnly: true },
-  { label: "CSV data export",        free: "no",      plus: "no",         pro: "yes",       proOnly: true },
+  { label: "AI Weekly Game Plan",     free: "no",      plus: "no",         pro: "yes",       proOnly: true },
+  { label: "Deep Analytics & Trends",free: "no",      plus: "no",         pro: "yes",       proOnly: true },
+  { label: "Smart Notifications",    free: "no",      plus: "no",         pro: "yes",       proOnly: true },
 ];
 
 const REASON_COPY: Record<UpgradeReason, { title: string; sub: string }> = {
@@ -46,7 +47,7 @@ const REASON_COPY: Record<UpgradeReason, { title: string; sub: string }> = {
   ai:          { title: "AI coaching is a Plus & Pro feature",            sub: "Upgrade to unlock personalized AI insights and 7-day plans." },
   reminders:   { title: "Email reminders are a Plus feature",             sub: "Upgrade to Plus to set daily reminder emails for your habits." },
   export:      { title: "Data export is a Pro feature",                   sub: "Upgrade to Pro to download your full habit history as CSV." },
-  pro_feature: { title: "This is a Pro-exclusive feature",                sub: "Upgrade to Pro to unlock unlimited AI, weekly reports, and data export." },
+  pro_feature: { title: "This is a Pro-exclusive feature",                sub: "Unlock AI game plans, deep analytics, and smart notifications tailored to your goals." },
 };
 
 function CellValue({ value, highlight, proOnly }: { value: Cell; highlight?: boolean; proOnly?: boolean }) {
@@ -351,13 +352,13 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
                 <Brain className="w-3.5 h-3.5 text-amber-400" />
                 <span className="text-[11px] font-bold text-amber-300 uppercase tracking-wide">Pro</span>
               </div>
-              <p className="text-[10px] text-amber-400/70 mb-2 font-medium">The Behavioral Scientist</p>
+              <p className="text-[10px] text-amber-400/70 mb-2 font-medium">The Full Experience</p>
               <div className="mb-4">
                 <span className="text-2xl font-extrabold text-white">$12</span>
                 <span className="text-slate-400 text-xs ml-1">/ mo</span>
               </div>
               <ul className="space-y-1 mb-4">
-                {["Everything in Plus", "Unlimited AI insights", "Weekly AI email report", "CSV data export"].map((f) => (
+                {["Everything in Plus", "🤖 AI Weekly Game Plan (every Monday)", "📊 Deep Analytics & Trends", "🔔 Smart Habit Notifications", "Unlimited AI insights"].map((f) => (
                   <li key={f} className="flex items-center gap-1.5 text-[10px] text-amber-200/80">
                     <Check className="w-3 h-3 text-amber-400 flex-shrink-0" />{f}
                   </li>
