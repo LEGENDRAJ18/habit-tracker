@@ -282,7 +282,7 @@ export default function DashboardNav() {
                   </div>
 
                   <div className="border-t border-violet-900/20 py-1.5">
-                    <MenuItem icon={<HelpCircle className="w-3.5 h-3.5" />} label="Help & Support" href="https://github.com/LEGENDRAJ18/habit-tracker/issues" external onClick={() => setMenuOpen(false)} />
+                    <MenuItem icon={<HelpCircle className="w-3.5 h-3.5" />} label="Help & Support" href="/help" onClick={() => setMenuOpen(false)} />
                     <MenuItem icon={<Keyboard  className="w-3.5 h-3.5" />} label="Keyboard Shortcuts" muted onClick={() => setMenuOpen(false)} />
                   </div>
 
