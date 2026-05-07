@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Lock, Flame, Zap, Trophy, CalendarDays } from "lucide-react";
+import { Lock, Flame, Zap, Trophy, CalendarDays, Gift, CheckCircle2 } from "lucide-react";
 import { useXP, ACHIEVEMENT_META, type AchievementId } from "@/hooks/useXP";
 import { levelName, levelColorKey, xpProgressPct, xpIntoLevel, xpSpanOfLevel, type LevelColorKey } from "@/lib/xp";
+import { LEVEL_REWARDS } from "@/lib/rewards";
 import { createClient } from "@/lib/supabase/client";
 
 const ALL_ACHIEVEMENTS: AchievementId[] = [
@@ -180,6 +181,74 @@ export default function ProfilePage() {
                         <span className="inline-flex items-center gap-1 text-[10px] mt-1.5 text-violet-400 font-semibold">
                           <span className="w-1.5 h-1.5 rounded-full bg-violet-400 inline-block" />
                           Earned
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Level Rewards */}
+            <div className="flex items-center gap-2 mb-4">
+              <Gift className="w-4 h-4 text-violet-400" />
+              <p className="text-sm font-semibold text-white">Level Rewards</p>
+              <span className="text-xs text-slate-500 ml-1">
+                {LEVEL_REWARDS.filter((r) => level >= r.level).length} / {LEVEL_REWARDS.length} unlocked
+              </span>
+            </div>
+
+            <div className="space-y-2 mb-8">
+              {LEVEL_REWARDS.map((reward) => {
+                const unlocked = level >= reward.level;
+                const levelsAway = reward.level - level;
+                return (
+                  <div
+                    key={reward.id}
+                    className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${
+                      unlocked
+                        ? "bg-gradient-to-br from-violet-950/40 to-[#0f0f1a] border-violet-600/35"
+                        : "bg-[#0f0f1a] border-violet-900/15"
+                    }`}
+                    style={unlocked ? { boxShadow: "0 0 16px rgba(139,92,246,0.08)" } : undefined}
+                  >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 ${
+                      unlocked
+                        ? "bg-violet-800/30 border border-violet-600/30"
+                        : "bg-slate-800/40"
+                    }`}>
+                      {unlocked ? (
+                        <span>{reward.icon}</span>
+                      ) : (
+                        <Lock className="w-4 h-4 text-slate-600" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className={`text-sm font-semibold ${unlocked ? "text-white" : "text-slate-600"}`}>
+                          {reward.name}
+                        </p>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                          unlocked
+                            ? "bg-violet-600/20 text-violet-400 border border-violet-600/25"
+                            : "bg-slate-800/50 text-slate-600"
+                        }`}>
+                          Lv {reward.level}
+                        </span>
+                      </div>
+                      <p className={`text-xs mt-0.5 ${unlocked ? "text-slate-400" : "text-slate-700"}`}>
+                        {reward.desc}
+                      </p>
+                    </div>
+                    <div className="flex-shrink-0 text-right">
+                      {unlocked ? (
+                        <span className="text-[10px] text-violet-400 font-semibold flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Unlocked
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-slate-600 leading-tight block">
+                          {levelsAway} level{levelsAway !== 1 ? "s" : ""} away
                         </span>
                       )}
                     </div>

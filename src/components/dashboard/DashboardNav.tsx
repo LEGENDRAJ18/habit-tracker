@@ -18,6 +18,7 @@ import {
   levelColorKey, xpProgressPct, xpIntoLevel,
   type LevelColorKey,
 } from "@/lib/xp";
+import { getNextReward } from "@/lib/rewards";
 import type { Plan } from "@/types";
 
 const LEVEL_COLORS: Record<LevelColorKey, { bar: string; text: string; ring: string; bg: string }> = {
@@ -68,17 +69,18 @@ function PlanBadge({ tier }: { tier: Plan }) {
 
 function NavXP() {
   const { xp, level } = useXP();
-  const colorKey = levelColorKey(level);
-  const s = LEVEL_COLORS[colorKey];
-  const pct = xpProgressPct(xp);
-  const into = xpIntoLevel(xp);
+  const colorKey  = levelColorKey(level);
+  const s         = LEVEL_COLORS[colorKey];
+  const pct       = xpProgressPct(xp);
+  const into      = xpIntoLevel(xp);
+  const nextReward = getNextReward(level);
 
   return (
     <div className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-violet-950/30 border border-violet-900/25 flex-shrink-0">
       <div className={`w-6 h-6 rounded-lg ${s.bg} ring-1 ${s.ring} flex items-center justify-center flex-shrink-0`}>
         <span className={`text-[11px] font-extrabold ${s.text} leading-none`}>{level}</span>
       </div>
-      <div className="flex flex-col gap-0.5 w-16">
+      <div className="flex flex-col gap-0.5 min-w-[110px]">
         <div className="h-1.5 bg-violet-950/60 rounded-full overflow-hidden">
           <div
             className={`h-full bg-gradient-to-r ${s.bar} rounded-full transition-all duration-700`}
@@ -88,6 +90,11 @@ function NavXP() {
         <span className={`text-[9px] font-medium tabular-nums ${s.text} leading-none`}>
           {into.toLocaleString()} XP
         </span>
+        {nextReward && (
+          <span className="text-[8px] text-slate-600 leading-none whitespace-nowrap">
+            Level {nextReward.level} — {nextReward.name} {nextReward.icon}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -108,12 +115,13 @@ export default function DashboardNav() {
   const isFree = tier === "free";
 
   const PAGE_META: Record<string, { label: string; Icon: React.ElementType }> = {
-    "/dashboard": { label: "Dashboard", Icon: LayoutDashboard },
-    "/analytics": { label: "Analytics", Icon: BarChart2 },
-    "/calendar":  { label: "Calendar",  Icon: Calendar  },
-    "/friends":   { label: "Friends",   Icon: Users     },
-    "/profile":   { label: "Profile",   Icon: User      },
-    "/settings":  { label: "Settings",  Icon: Settings  },
+    "/dashboard": { label: "Dashboard",     Icon: LayoutDashboard },
+    "/analytics": { label: "Analytics",     Icon: BarChart2 },
+    "/calendar":  { label: "Calendar",      Icon: Calendar  },
+    "/friends":   { label: "Friends",       Icon: Users     },
+    "/profile":   { label: "Profile",       Icon: User      },
+    "/settings":  { label: "Settings",      Icon: Settings  },
+    "/help":      { label: "Help & Support", Icon: HelpCircle },
   };
   const pageMeta = PAGE_META[pathname];
 

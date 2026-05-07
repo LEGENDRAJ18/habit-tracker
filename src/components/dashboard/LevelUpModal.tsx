@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Zap, Share2 } from "lucide-react";
 import { levelName, levelColorKey, xpForLevel, type LevelColorKey } from "@/lib/xp";
+import { getJustUnlockedReward, getNextReward } from "@/lib/rewards";
 
 interface Props {
   newLevel: number;
@@ -37,20 +38,22 @@ export default function LevelUpModal({ newLevel, onDismiss, onShare }: Props) {
     return () => { clearTimeout(t); clearTimeout(auto); };
   }, [onDismiss]);
 
-  const colorKey   = levelColorKey(newLevel);
-  const style      = STYLES[colorKey];
-  const name       = levelName(newLevel);
-  const isGold     = colorKey === "gold";
-  const nextXP     = xpForLevel(newLevel + 1);
-  const currentXP  = xpForLevel(newLevel);
-  const xpToNext   = (nextXP - currentXP).toLocaleString();
+  const colorKey      = levelColorKey(newLevel);
+  const style         = STYLES[colorKey];
+  const name          = levelName(newLevel);
+  const isGold        = colorKey === "gold";
+  const nextXP        = xpForLevel(newLevel + 1);
+  const currentXP     = xpForLevel(newLevel);
+  const xpToNext      = (nextXP - currentXP).toLocaleString();
+  const justUnlocked  = getJustUnlockedReward(newLevel);
+  const nextReward    = getNextReward(newLevel);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onDismiss}>
       <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" />
 
       <div
-        className={`relative bg-[#0f0f1a] border border-violet-700/30 rounded-3xl px-10 py-9 text-center shadow-2xl max-w-xs mx-4 transition-all duration-500 ${
+        className={`relative bg-[#0f0f1a] border border-violet-700/30 rounded-3xl px-8 py-8 text-center shadow-2xl max-w-sm mx-4 transition-all duration-500 ${
           visible ? "opacity-100 scale-100" : "opacity-0 scale-90"
         }`}
         style={{ boxShadow: `0 0 60px ${style.glow}, 0 25px 60px rgba(0,0,0,0.6)` }}
@@ -95,17 +98,43 @@ export default function LevelUpModal({ newLevel, onDismiss, onShare }: Props) {
           Level Up!
         </p>
         <h2 className="text-2xl font-extrabold text-white mb-1">Level {newLevel}</h2>
-        <p className={`text-base font-semibold ${style.text}`}>{name}</p>
+        <p className={`text-base font-semibold ${style.text} mb-3`}>{name}</p>
+
+        {/* Reward unlocked at this level */}
+        {justUnlocked && (
+          <div className="mb-3 p-3 rounded-xl bg-violet-900/30 border border-violet-500/30 text-left">
+            <p className="text-[9px] font-bold text-violet-400 uppercase tracking-widest mb-1.5">
+              🎁 Reward Unlocked!
+            </p>
+            <div className="flex items-center gap-2.5">
+              <span className="text-2xl leading-none">{justUnlocked.icon}</span>
+              <div>
+                <p className="text-sm font-bold text-white leading-tight">{justUnlocked.name}</p>
+                <p className="text-[10px] text-slate-400 leading-relaxed mt-0.5">{justUnlocked.desc}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* XP to next level */}
         {newLevel < 100 && (
-          <p className="text-[11px] text-slate-600 mt-1.5 mb-5">
+          <p className="text-[11px] text-slate-600 mb-2">
             Next level · <span className="text-slate-500 font-medium">{xpToNext} XP</span> to go
           </p>
         )}
         {newLevel === 100 && (
-          <p className="text-[11px] text-amber-600 mt-1.5 mb-5 font-medium">
+          <p className="text-[11px] text-amber-600 mb-2 font-medium">
             Maximum rank achieved 👑
           </p>
         )}
+
+        {/* Next reward teaser */}
+        {nextReward && (
+          <p className="text-[10px] text-slate-600 mb-4">
+            Next reward: {nextReward.icon} Level {nextReward.level} — {nextReward.name}
+          </p>
+        )}
+        {!nextReward && <div className="mb-4" />}
 
         <div className="flex flex-col gap-2 w-full">
           {onShare && (
