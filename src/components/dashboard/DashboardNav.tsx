@@ -280,7 +280,7 @@ export default function DashboardNav() {
                   </div>
 
                   <div className="py-1.5">
-                    <MenuItem icon={<Settings className="w-3.5 h-3.5" />} label="Account Settings" href="/settings" onClick={() => setMenuOpen(false)} />
+                    <MenuItem icon={<Settings className="w-3.5 h-3.5" />} label="Settings" href="/settings" onClick={() => setMenuOpen(false)} />
                     <MenuItem
                       icon={<CreditCard className="w-3.5 h-3.5" />}
                       label="Billing & Subscription"

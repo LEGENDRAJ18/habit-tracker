@@ -214,7 +214,7 @@ const SECTIONS: Section[] = [
         q: "How do I delete my account?",
         a: (
           <>
-            Go to <strong className="text-white">Account Settings</strong> (nav menu → Account Settings) and scroll to the bottom. Click <strong className="text-white">Delete Account</strong>. This permanently deletes all your habits, logs, and profile data. Make sure to cancel any active subscription first via Billing &amp; Subscription.
+            Go to <strong className="text-white">Settings</strong> (nav menu → Settings) and scroll to the bottom. Click <strong className="text-white">Delete Account</strong>. This permanently deletes all your habits, logs, and profile data. Make sure to cancel any active subscription first via Billing &amp; Subscription.
           </>
         ),
       },

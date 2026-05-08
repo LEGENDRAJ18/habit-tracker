@@ -27,6 +27,44 @@ export interface ValidationResponse {
   suggestion?: string;
 }
 
+const GENERIC_WORDS = new Set([
+  "exercise", "workout", "gym", "run", "running", "jog", "jogging",
+  "meditate", "meditation", "sleep", "rest", "relax", "relaxation",
+  "study", "learn", "learning", "read", "reading",
+  "eat", "eating", "drink", "drinking", "diet",
+  "work", "code", "coding", "program", "programming",
+  "journal", "journaling", "yoga", "walk", "walking",
+  "write", "writing", "practice", "train", "training",
+  "stretch", "stretching", "swim", "swimming", "clean", "cleaning",
+]);
+
+const BLOCKED_RE = /^\d+$|^(.)\1{3,}$|^[^a-zA-Z]{2,}$/;
+
+function ruleBasedValidation(name: string): ValidationResponse {
+  const lower = name.trim().toLowerCase();
+  const words = lower.split(/\s+/).filter(Boolean);
+
+  if (words.length === 0 || BLOCKED_RE.test(lower) || lower.length < 3) {
+    return { status: "blocked", message: "Not a valid habit" };
+  }
+
+  if (words.length === 1 && GENERIC_WORDS.has(words[0])) {
+    const w = words[0];
+    const cap = w.charAt(0).toUpperCase() + w.slice(1);
+    return {
+      status: "warning",
+      message: "Too vague — add specifics",
+      suggestion: `${cap} for 20 minutes every morning`,
+    };
+  }
+
+  if (words.length === 1) {
+    return { status: "warning", message: "Add more detail" };
+  }
+
+  return { status: "good", message: "Specific and actionable" };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -40,14 +78,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json<ValidationResponse>({ status: "good", message: "" });
     }
 
-    // Silently pass through when rate-limited — never block UX on cost controls
-    if (!checkRateLimit(user.id)) {
-      return NextResponse.json<ValidationResponse>({ status: "good", message: "" });
-    }
-
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json<ValidationResponse>({ status: "good", message: "" });
+      return NextResponse.json<ValidationResponse>(ruleBasedValidation(habitName));
+    }
+
+    // Silently fall back to rule-based when rate-limited — never block UX on cost controls
+    if (!checkRateLimit(user.id)) {
+      return NextResponse.json<ValidationResponse>(ruleBasedValidation(habitName));
     }
 
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -71,7 +109,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!res.ok) {
-      return NextResponse.json<ValidationResponse>({ status: "good", message: "" });
+      return NextResponse.json<ValidationResponse>(ruleBasedValidation(habitName));
     }
 
     const data = await res.json();
@@ -79,12 +117,11 @@ export async function POST(request: NextRequest) {
 
     // Sanitise — never return an unknown status
     if (!["good", "warning", "blocked"].includes(parsed.status)) {
-      return NextResponse.json<ValidationResponse>({ status: "good", message: "" });
+      return NextResponse.json<ValidationResponse>(ruleBasedValidation(habitName));
     }
 
     return NextResponse.json<ValidationResponse>(parsed);
   } catch {
-    // Never block submission because of a validation error
-    return NextResponse.json<ValidationResponse>({ status: "good", message: "" });
+    return NextResponse.json<ValidationResponse>({ status: "good", message: "Specific and actionable" });
   }
 }

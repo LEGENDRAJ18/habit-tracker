@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { Plus, Loader2, AlertCircle, CheckCircle2, Shield, Share2, Sparkles, Search, X, ClipboardList, Crown } from "lucide-react";
+import { Plus, Loader2, AlertCircle, CheckCircle2, Shield, Share2, Sparkles, Search, X, ClipboardList, Crown, Flame } from "lucide-react";
 import type { Plan } from "@/types";
 import { useHabits } from "@/hooks/useHabits";
 import { useProfile } from "@/hooks/useProfile";
@@ -596,11 +596,23 @@ export default function DashboardPage() {
             <StatsBar xp={xp} level={level} bestStreak={bestStreak} totalCompletions={totalCompletions} />
           </div>
 
-        {/* Header */}
-        <div className="mb-8">
+        {/* Header — sticky so greeting stays visible while habits scroll */}
+        <div className="mb-4 sticky top-14 z-10 bg-[#09090f] pt-6 pb-4">
           {/* Greeting */}
           <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">{today}</p>
-          <h1 className="text-2xl font-bold text-white mb-1">{getGreeting()} 👋</h1>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-2xl font-bold text-white">{getGreeting()} 👋</h1>
+            {!loading && (
+              <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
+                bestStreak > 0
+                  ? "text-orange-300 bg-orange-950/40 border border-orange-700/30"
+                  : "text-slate-500 bg-slate-900/40 border border-slate-700/30"
+              }`}>
+                <Flame className={`w-3 h-3 flex-shrink-0 ${bestStreak > 0 ? "text-orange-400" : "text-slate-600"}`} />
+                {bestStreak} day{bestStreak !== 1 ? "s" : ""} streak
+              </span>
+            )}
+          </div>
           {formatGoalsLine(goals) && (
             <p className="text-sm text-violet-300/80 font-medium mb-1">{formatGoalsLine(goals)}</p>
           )}
@@ -938,7 +950,7 @@ export default function DashboardPage() {
         </div>{/* end left column */}
 
         {/* ── Right sidebar (xl only) ────────────────────────────────────── */}
-        <div className="hidden xl:flex xl:flex-col gap-4 sticky top-20">
+        <div className="hidden xl:flex xl:flex-col gap-4 sticky top-20 max-h-[calc(100vh-5.5rem)] overflow-y-auto scrollbar-none pb-4">
 
           {/* AI Insight — prominent card */}
           <div data-tour="ai-insight" className={`relative overflow-hidden rounded-2xl bg-[#0c0c18] ${isPaid ? "border border-violet-600/30" : "border border-violet-500/50"}`}>

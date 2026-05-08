@@ -1,10 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, BarChart2, Calendar, Users, User, Sparkles, Flame, Zap, Crown } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { LayoutDashboard, BarChart2, Calendar, Users, User, Sparkles, Zap, Crown } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useUpgrade } from "@/contexts/UpgradeContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
@@ -17,72 +15,15 @@ const NAV_LINKS = [
   { href: "/profile",   icon: User,            label: "Profile"   },
 ];
 
-function computeStreak(dates: Set<string>): number {
-  const today     = new Date().toISOString().split("T")[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-  if (!dates.has(today) && !dates.has(yesterday)) return 0;
-  let streak = 0;
-  const start = new Date(dates.has(today) ? today + "T12:00:00" : yesterday + "T12:00:00");
-  for (let i = 0; i < 365; i++) {
-    const d = new Date(start.getTime() - i * 86400000).toISOString().split("T")[0];
-    if (dates.has(d)) streak++;
-    else break;
-  }
-  return streak;
-}
-
 export default function LeftSidebar() {
   const pathname = usePathname();
-  const [streak, setStreak] = useState(0);
-  const supabase = useRef(createClient()).current;
   const { tier } = useProfile();
   const { openUpgradeModal } = useUpgrade();
   const { formatPrice, currency, loading: currencyLoading } = useCurrency();
   const proPrice = currencyLoading ? "$12" : formatPrice(12);
 
-  useEffect(() => {
-    let userId = "";
-
-    const fetchStreak = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      userId = user.id;
-      const since = new Date(Date.now() - 60 * 86400000).toISOString().split("T")[0];
-      const { data } = await supabase
-        .from("habit_logs")
-        .select("completed_at")
-        .eq("user_id", user.id)
-        .gte("completed_at", since);
-      if (!data) return;
-      const days = new Set(data.map((l) => l.completed_at.split("T")[0]));
-      setStreak(computeStreak(days));
-    };
-
-    fetchStreak();
-
-    const channel = supabase
-      .channel("sidebar-streak")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "habit_logs" },
-        () => { fetchStreak(); },
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [supabase]);
-
-  const streakMsg =
-    streak === 0
-      ? "Complete a habit to start your streak!"
-      : streak >= 30
-      ? "Legendary consistency 🏆"
-      : streak >= 7
-      ? `${streak} days strong — keep it up! 🚀`
-      : `${7 - streak} more day${7 - streak !== 1 ? "s" : ""} to a week streak!`;
-
   return (
-    <aside className="hidden lg:flex flex-col w-[240px] flex-shrink-0 h-[calc(100vh-3.5rem)] sticky top-14 overflow-y-auto scrollbar-none pt-5 pb-4">
+    <aside className="hidden lg:flex flex-col w-[240px] flex-shrink-0 h-[calc(100vh-3.5rem)] sticky top-14 overflow-hidden pt-5 pb-4">
 
       {/* Logo */}
       <Link href="/dashboard" className="flex flex-col items-center gap-4 mb-8 group">
@@ -170,23 +111,6 @@ export default function LeftSidebar() {
         </div>
       )}
 
-      {/* Daily Streak widget */}
-      <div className="bg-[#0c0c18] border border-violet-900/20 rounded-xl p-3.5">
-        <div className="flex items-center gap-2.5 mb-1.5">
-          <Flame
-            className={`w-5 h-5 flex-shrink-0 ${streak > 0 ? "text-orange-400" : "text-slate-600"}`}
-            style={streak >= 7 ? { filter: "drop-shadow(0 0 6px rgba(251,146,60,0.7))" } : undefined}
-          />
-          <div>
-            <p className={`text-sm font-bold leading-none ${streak > 0 ? "text-orange-300" : "text-slate-500"}`}>
-              {streak} day{streak !== 1 ? "s" : ""} streak
-            </p>
-          </div>
-        </div>
-        <p className="text-[10px] text-slate-600 leading-relaxed">
-          {streakMsg}
-        </p>
-      </div>
     </aside>
   );
 }
