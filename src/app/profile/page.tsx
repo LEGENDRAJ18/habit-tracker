@@ -27,13 +27,14 @@ const BADGE_RING: Record<LevelColorKey, string> = {
 };
 
 const TIERS = [
-  { range: "1 – 50",      name: "Beginner",     color: "text-slate-400",   bg: "bg-slate-700/30" },
-  { range: "51 – 200",    name: "Explorer",     color: "text-emerald-400", bg: "bg-emerald-900/30" },
-  { range: "201 – 500",   name: "Achiever",     color: "text-blue-400",    bg: "bg-blue-900/30" },
-  { range: "501 – 1000",  name: "Champion",     color: "text-violet-400",  bg: "bg-violet-900/30" },
-  { range: "1001 – 2500", name: "Legend",       color: "text-amber-400",   bg: "bg-amber-900/20" },
-  { range: "2501 – 5000", name: "Master",       color: "text-red-400",     bg: "bg-red-900/20" },
-  { range: "5001 – 10000",name: "Grandmaster",  color: "text-yellow-300",  bg: "bg-yellow-900/20" },
+  { range: "1 – 10",   name: "Beginner",      color: "text-slate-400",   bg: "bg-slate-700/30"   },
+  { range: "11 – 50",  name: "Apprentice",    color: "text-emerald-400", bg: "bg-emerald-900/30" },
+  { range: "51 – 100", name: "Habit Builder", color: "text-blue-400",    bg: "bg-blue-900/30"    },
+  { range: "101 – 200",name: "Dedicated",     color: "text-violet-400",  bg: "bg-violet-900/30"  },
+  { range: "201 – 300",name: "Elite",         color: "text-amber-400",   bg: "bg-amber-900/20"   },
+  { range: "301 – 400",name: "Legend",        color: "text-red-400",     bg: "bg-red-900/20"     },
+  { range: "401 – 499",name: "Grandmaster",   color: "text-red-400",     bg: "bg-red-900/20"     },
+  { range: "500",      name: "GOAT 🐐",       color: "text-yellow-300",  bg: "bg-yellow-900/20"  },
 ] as const;
 
 export default function ProfilePage() {
@@ -260,7 +261,7 @@ export default function ProfilePage() {
             {/* Level tier reference */}
             <div className="bg-[#0f0f1a] border border-violet-900/20 rounded-2xl p-5">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
-                Level Tiers (1 – 10,000)
+                Level Tiers (1 – 500)
               </p>
               <div className="space-y-2">
                 {TIERS.map((t) => (

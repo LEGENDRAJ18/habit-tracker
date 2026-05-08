@@ -1,23 +1,28 @@
-// Cumulative XP required to reach level n.
-// Base formula: Math.floor(50 * (n-1)^1.8) — level 1 starts at 0 XP.
-// Tier multipliers make the game progressively harder:
-//   Levels  1–10: 1×  (base formula)
-//   Levels 11–20: 1.5× multiplier
-//   Levels 21–50: 2×  multiplier
-//   Levels 51+:   3×  multiplier
+// Cumulative XP required to reach level n. Max level: 500.
+//
+// Levels 1–10:   base = Math.floor(50 * (n-1)^1.8)          multiplier ×1
+// Levels 11–50:  base = Math.floor(50 * n^2.2)              multiplier ×1.5
+// Levels 51–100: base = Math.floor(50 * n^2.2)              multiplier ×2
+// Levels 101–200:base = Math.floor(50 * n^2.2)              multiplier ×2.5
+// Levels 201–300:base = Math.floor(50 * n^2.2)              multiplier ×3
+// Levels 301–500:base = Math.floor(50 * n^2.2)              multiplier ×3.5
 export function xpForLevel(n: number): number {
   if (n <= 1) return 0;
-  const base = Math.floor(50 * Math.pow(n - 1, 1.8));
-  if (n > 50) return Math.floor(base * 3);
-  if (n > 20) return Math.floor(base * 2);
-  if (n > 10) return Math.floor(base * 1.5);
-  return base;
+  const lvl = Math.min(n, 500);
+  if (lvl <= 10) {
+    return Math.floor(50 * Math.pow(lvl - 1, 1.8));
+  }
+  const base = Math.floor(50 * Math.pow(lvl, 2.2));
+  if (lvl > 300) return Math.floor(base * 3.5);
+  if (lvl > 200) return Math.floor(base * 3);
+  if (lvl > 100) return Math.floor(base * 2.5);
+  if (lvl > 50)  return Math.floor(base * 2);
+  return Math.floor(base * 1.5);
 }
 
 export function levelFromXP(xp: number): number {
   if (xp <= 0) return 1;
-  // Binary search over [1, 10000]
-  let lo = 1, hi = 10000;
+  let lo = 1, hi = 500;
   while (lo < hi) {
     const mid = (lo + hi + 1) >> 1;
     if (xpForLevel(mid) <= xp) lo = mid;
@@ -27,26 +32,25 @@ export function levelFromXP(xp: number): number {
 }
 
 export function levelName(level: number): string {
-  if (level === 100) return "Legendary 🏆";
-  if (level >= 76)   return "Master";
-  if (level >= 51)   return "Elite";
-  if (level >= 36)   return "Committed";
-  if (level >= 21)   return "Dedicated";
-  if (level >= 11)   return "Habit Builder";
-  if (level >= 6)    return "Apprentice";
+  if (level >= 500) return "GOAT";
+  if (level >= 401) return "Grandmaster";
+  if (level >= 251) return "Legend";
+  if (level >= 151) return "Elite";
+  if (level >= 76)  return "Dedicated";
+  if (level >= 31)  return "Habit Builder";
+  if (level >= 11)  return "Apprentice";
   return "Beginner";
 }
 
 export type LevelColorKey = "slate" | "emerald" | "blue" | "violet" | "amber" | "red" | "gold";
 
 export function levelColorKey(level: number): LevelColorKey {
-  if (level === 100) return "gold";
-  if (level >= 76)   return "red";
-  if (level >= 51)   return "red";
-  if (level >= 36)   return "amber";
-  if (level >= 21)   return "violet";
-  if (level >= 11)   return "blue";
-  if (level >= 6)    return "emerald";
+  if (level >= 500) return "gold";
+  if (level >= 401) return "red";
+  if (level >= 251) return "amber";
+  if (level >= 151) return "violet";
+  if (level >= 76)  return "blue";
+  if (level >= 11)  return "emerald";
   return "slate";
 }
 
@@ -71,7 +75,6 @@ export const XP_BONUS_ALL_DONE  = 25;
 export const XP_BONUS_STREAK_7  = 50;
 export const XP_BONUS_STREAK_30 = 200;
 
-// Bonus XP awarded when a habit has a duration set
 export const DURATION_BONUS_XP: Record<string, number> = {
   "5 min":    1,
   "10 min":   2,
