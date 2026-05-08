@@ -31,7 +31,7 @@ const FAQ = [
   },
   {
     q: "How do I upgrade my plan?",
-    a: 'Click "Upgrade Plan" in the left sidebar or visit the Billing page in Settings. Plus is $7/month and unlocks unlimited habits, AI coaching, and streak protection.',
+    a: 'Click "Upgrade Plan" in the left sidebar or visit the Billing page in Settings. Plus is $6.99/month and unlocks unlimited habits, AI coaching, and streak protection.',
     icon: CreditCard,
   },
 ];

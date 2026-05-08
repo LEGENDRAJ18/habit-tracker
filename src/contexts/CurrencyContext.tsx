@@ -24,34 +24,38 @@ const PREF_KEY  = "habitai_currency";
 const RATES_KEY = "habitai_rates";
 const RATES_TTL = 3_600_000; // 1 hour
 
-// Returns the full formatted price string: e.g. "~$11.50 NZD" or "$7 USD"
+// Psychological pricing: decimal currencies → X.99; zero-decimal → X9 or round-to-10
+function psychoPrice(converted: number, decimals: number): string {
+  if (decimals === 2) {
+    // e.g. 11.47 → 11.99, 7.00 → 6.99, 12.00 → 11.99
+    const price = Math.ceil(converted) - 0.01;
+    return price.toFixed(2);
+  }
+  // Zero-decimal currencies (INR, JPY, etc.)
+  if (converted < 1000) {
+    // Nearest X9 ending: 582 → 579, 245 → 249
+    const price = Math.floor(converted / 10) * 10 - 1;
+    return Math.max(price, 9).toLocaleString();
+  }
+  // Large amounts: round to nearest 10 for a clean look
+  return (Math.round(converted / 10) * 10).toLocaleString();
+}
+
+// Returns the full formatted price string: e.g. "$11.99 NZD" or "$6.99"
 export function buildFullPrice(usd: number, code: CurrencyCode, rates: Record<string, number>): string {
   const meta = CURRENCY_META[code];
   const rate = (rates[code] as number | undefined) ?? FALLBACK_RATES[code];
-  const converted = usd * rate;
-  const isUSD = code === "USD";
-  const prefix = isUSD ? "" : "~";
-  const amount = meta.decimals === 0
-    ? Math.round(converted).toLocaleString()
-    : isUSD && Number.isInteger(usd)
-    ? String(Math.round(converted))
-    : converted.toFixed(meta.decimals);
-  return `${prefix}${meta.symbol}${amount} ${code}`;
+  const amount = psychoPrice(usd * rate, meta.decimals);
+  const suffix = code !== "USD" ? ` ${code}` : "";
+  return `${meta.symbol}${amount}${suffix}`;
 }
 
-// Returns split parts for big-number display: main = "~$11.50", suffix = "NZD"
+// Returns split parts for big-number display: main = "$11.99", suffix = "NZD"
 export function buildPriceParts(usd: number, code: CurrencyCode, rates: Record<string, number>): { main: string; suffix: string } {
   const meta = CURRENCY_META[code];
   const rate = (rates[code] as number | undefined) ?? FALLBACK_RATES[code];
-  const converted = usd * rate;
-  const isUSD = code === "USD";
-  const prefix = isUSD ? "" : "~";
-  const amount = meta.decimals === 0
-    ? Math.round(converted).toLocaleString()
-    : isUSD && Number.isInteger(usd)
-    ? String(Math.round(converted))
-    : converted.toFixed(meta.decimals);
-  return { main: `${prefix}${meta.symbol}${amount}`, suffix: code };
+  const amount = psychoPrice(usd * rate, meta.decimals);
+  return { main: `${meta.symbol}${amount}`, suffix: code };
 }
 
 interface CurrencyCtx {
@@ -66,8 +70,8 @@ interface CurrencyCtx {
 const CurrencyContext = createContext<CurrencyCtx>({
   currency: "USD",
   setCurrency: () => {},
-  formatPrice: (usd) => `$${usd} USD`,
-  priceParts: (usd) => ({ main: `$${usd}`, suffix: "USD" }),
+  formatPrice: (usd) => buildFullPrice(usd, "USD", FALLBACK_RATES),
+  priceParts:  (usd) => buildPriceParts(usd, "USD", FALLBACK_RATES),
   rates: FALLBACK_RATES,
   loading: true,
 });

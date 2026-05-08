@@ -1002,7 +1002,7 @@ export default function DashboardPage() {
                   ? <span className="text-slate-600">Unlimited insights · Pro</span>
                   : isPaid
                   ? <span className="text-slate-600">5 insights / day · Plus</span>
-                  : <span className="text-violet-400/70">✨ Starting at $7/mo · 7-day money-back</span>}
+                  : <span className="text-violet-400/70">✨ Starting at $6.99/mo · 7-day money-back</span>}
               </p>
             </div>
           </div>

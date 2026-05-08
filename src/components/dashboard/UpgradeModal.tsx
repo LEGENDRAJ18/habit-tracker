@@ -223,8 +223,8 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
   const [pendingPlan, setPendingPlan] = useState<"plus" | "pro" | null>(null);
   const copy = REASON_COPY[reason];
   const { formatPrice, currency, loading: currencyLoading } = useCurrency();
-  const plusPrice = currencyLoading ? "$7" : formatPrice(7);
-  const proPrice  = currencyLoading ? "$12" : formatPrice(12);
+  const plusPrice = currencyLoading ? "$6.99" : formatPrice(7);
+  const proPrice  = currencyLoading ? "$11.99" : formatPrice(12);
 
   const handleCheckout = async (plan: "plus" | "pro") => {
     setLoading(plan);

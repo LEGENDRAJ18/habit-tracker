@@ -537,8 +537,8 @@ function PlanTab({
 }) {
   const isPaid = tier === "plus" || tier === "pro";
   const { formatPrice, currency, loading: currencyLoading } = useCurrency();
-  const plusPrice = currencyLoading ? "$7" : formatPrice(7);
-  const proPrice  = currencyLoading ? "$12" : formatPrice(12);
+  const plusPrice = currencyLoading ? "$6.99" : formatPrice(7);
+  const proPrice  = currencyLoading ? "$11.99" : formatPrice(12);
 
   const planInfo = {
     free:  { label: "Free",  badge: "bg-slate-800 text-slate-300 border-slate-700",  desc: "Up to 3 habits, basic streak tracking" },
