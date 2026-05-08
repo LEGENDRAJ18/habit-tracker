@@ -10,6 +10,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import BottomNav from "@/components/ui/BottomNav";
 import type { Plan } from "@/types";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const PLAN_META: Record<Plan, { label: string; desc: string; icon: React.ReactNode; color: string; border: string }> = {
   free: {
@@ -35,10 +36,12 @@ const PLAN_META: Record<Plan, { label: string; desc: string; icon: React.ReactNo
   },
 };
 
-const PLAN_PRICES: Record<Plan, string> = { free: "$0/mo", plus: "$7/mo", pro: "$12/mo" };
-
 function PlanCard({ tier, current }: { tier: Plan; current: boolean }) {
   const meta = PLAN_META[tier];
+  const { formatPrice, currency, loading: currencyLoading } = useCurrency();
+  const planPrice = tier === "free" ? "$0/mo"
+    : tier === "plus" ? (currencyLoading ? "$7/mo" : `${formatPrice(7)}/mo`)
+    : (currencyLoading ? "$12/mo" : `${formatPrice(12)}/mo`);
   return (
     <div className={`relative bg-[#0f0f1a] border ${meta.border} rounded-2xl p-5 flex items-start gap-4 ${current ? "ring-2 ring-violet-600/30" : ""}`}>
       {current && (
@@ -52,7 +55,12 @@ function PlanCard({ tier, current }: { tier: Plan; current: boolean }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
           <p className={`font-bold text-base ${meta.color}`}>{meta.label}</p>
-          <span className="text-sm font-semibold text-slate-400">{PLAN_PRICES[tier]}</span>
+          <div className="text-right">
+            <span className="text-sm font-semibold text-slate-400">{planPrice}</span>
+            {tier !== "free" && !currencyLoading && (
+              <p className="text-[9px] text-slate-700 mt-0.5">Prices in {currency} · Charged in USD</p>
+            )}
+          </div>
         </div>
         <p className="text-xs text-slate-500 mt-0.5">{meta.desc}</p>
       </div>
@@ -63,6 +71,7 @@ function PlanCard({ tier, current }: { tier: Plan; current: boolean }) {
 export default function BillingPage() {
   const router = useRouter();
   const supabase = useRef(createClient()).current;
+  const { formatPrice, currency, loading: currencyLoading } = useCurrency();
 
   const [tier,        setTier]        = useState<Plan>("free");
   const [pageLoading, setPageLoading] = useState(true);
@@ -235,7 +244,16 @@ export default function BillingPage() {
                         <div>{meta.icon}</div>
                         <div>
                           <p className={`font-bold ${meta.color}`}>{meta.label}</p>
-                          <p className="text-xs text-slate-500">{PLAN_PRICES[plan]}</p>
+                          <p className="text-xs text-slate-500">
+                            {currencyLoading
+                              ? (plan === "plus" ? "$7/mo" : "$12/mo")
+                              : `${formatPrice(plan === "plus" ? 7 : 12)}/mo`}
+                          </p>
+                          {!currencyLoading && (
+                            <p className="text-[9px] text-slate-700 mt-0.5">
+                              Prices in {currency} · Charged in USD
+                            </p>
+                          )}
                         </div>
                       </div>
                       <button

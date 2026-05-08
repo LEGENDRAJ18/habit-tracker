@@ -7,6 +7,7 @@ import { LayoutDashboard, BarChart2, Calendar, Users, User, Sparkles, Flame, Zap
 import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import { useUpgrade } from "@/contexts/UpgradeContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const NAV_LINKS = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -36,6 +37,8 @@ export default function LeftSidebar() {
   const supabase = useRef(createClient()).current;
   const { tier } = useProfile();
   const { openUpgradeModal } = useUpgrade();
+  const { formatPrice, currency, loading: currencyLoading } = useCurrency();
+  const proPrice = currencyLoading ? "$12" : formatPrice(12);
 
   useEffect(() => {
     let userId = "";
@@ -144,9 +147,10 @@ export default function LeftSidebar() {
                 Go Pro for maximum results
               </p>
             </div>
-            <p className="text-[10px] text-slate-500 mb-3 leading-relaxed">
-              Unlock everything — $12 NZD/mo
+            <p className="text-[10px] text-slate-500 mb-1 leading-relaxed">
+              Unlock everything — {proPrice}/mo
             </p>
+            <p className="text-[9px] text-slate-700 mb-3">Prices in {currency} · Charged in USD</p>
             <button
               onClick={() => openUpgradeModal("pro_feature", true)}
               className="w-full py-1.5 rounded-lg text-[11px] font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 transition-all shadow-md shadow-orange-900/20 flex items-center justify-center gap-1"

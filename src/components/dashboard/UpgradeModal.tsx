@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { X, Sparkles, Check, Minus, Zap, Loader2, Brain, Crown, Lock, ClipboardList } from "lucide-react";
 import { FREE_HABIT_LIMIT } from "@/types";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export type UpgradeReason = "habits" | "ai" | "reminders" | "export" | "pro_feature";
 
@@ -81,30 +82,33 @@ function ProBadge() {
   );
 }
 
-const CONSENT_BULLETS: Record<"plus" | "pro", string[]> = {
-  plus: [
+function consentBullets(plan: "plus" | "pro", plusPrice: string, proPrice: string): string[] {
+  if (plan === "plus") return [
     "Free for 7 days — no charge today",
-    "Then $7 NZD/month, billed monthly",
+    `Then ${plusPrice}/month, billed monthly`,
     "Cancel anytime before trial ends — no charge",
     "7-day money back guarantee after first charge",
-  ],
-  pro: [
-    "$12 NZD/month, billed monthly",
+  ];
+  return [
+    `${proPrice}/month, billed monthly`,
     "Cancel anytime — no cancellation fees",
     "7-day money back guarantee on first payment",
-  ],
-};
+  ];
+}
 
 interface ConsentModalProps {
   plan: "plus" | "pro";
   loading: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  plusPrice: string;
+  proPrice: string;
+  currency: string;
 }
 
-function ConsentModal({ plan, loading, onConfirm, onCancel }: ConsentModalProps) {
+function ConsentModal({ plan, loading, onConfirm, onCancel, plusPrice, proPrice, currency }: ConsentModalProps) {
   const [agreed, setAgreed] = useState(false);
-  const bullets = CONSENT_BULLETS[plan];
+  const bullets = consentBullets(plan, plusPrice, proPrice);
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
@@ -185,6 +189,11 @@ function ConsentModal({ plan, loading, onConfirm, onCancel }: ConsentModalProps)
             </span>
           </label>
 
+          {/* Currency disclaimer */}
+          <p className="text-[10px] text-slate-600 leading-relaxed">
+            Prices shown in {currency} · Charged in USD by Stripe
+          </p>
+
           {/* Actions */}
           <div className="flex flex-col gap-2 pt-1">
             <button
@@ -213,6 +222,9 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
   const [error, setError] = useState<string | null>(null);
   const [pendingPlan, setPendingPlan] = useState<"plus" | "pro" | null>(null);
   const copy = REASON_COPY[reason];
+  const { formatPrice, currency, loading: currencyLoading } = useCurrency();
+  const plusPrice = currencyLoading ? "$7" : formatPrice(7);
+  const proPrice  = currencyLoading ? "$12" : formatPrice(12);
 
   const handleCheckout = async (plan: "plus" | "pro") => {
     setLoading(plan);
@@ -241,6 +253,9 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
         loading={loading === pendingPlan}
         onConfirm={() => handleCheckout(pendingPlan)}
         onCancel={() => setPendingPlan(null)}
+        plusPrice={plusPrice}
+        proPrice={proPrice}
+        currency={currency}
       />
     )}
     <div
@@ -320,7 +335,8 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
                   <span className="text-2xl font-extrabold text-white">Free</span>
                   <span className="text-violet-300 text-xs ml-1 font-semibold">7-day trial</span>
                 </div>
-                <p className="text-[10px] text-slate-500 mb-3">then $7 NZD / mo</p>
+                <p className="text-[10px] text-slate-500 mb-1">then {plusPrice} / mo</p>
+                <p className="text-[9px] text-slate-700 mb-3">Prices shown in {currency} · Charged in USD</p>
                 <ul className="space-y-1 mb-4">
                   {["Unlimited habits", "Full analytics", "5 AI insights/day", "Streak protection", "Email reminders"].map((f) => (
                     <li key={f} className="flex items-center gap-1.5 text-[10px] text-slate-400">
@@ -353,10 +369,11 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
                 <span className="text-[11px] font-bold text-amber-300 uppercase tracking-wide">Pro</span>
               </div>
               <p className="text-[10px] text-amber-400/70 mb-2 font-medium">The Full Experience</p>
-              <div className="mb-4">
-                <span className="text-2xl font-extrabold text-white">$12</span>
+              <div className="mb-1">
+                <span className="text-2xl font-extrabold text-white">{proPrice}</span>
                 <span className="text-slate-400 text-xs ml-1">/ mo</span>
               </div>
+              <p className="text-[9px] text-slate-700 mb-3">Prices shown in {currency} · Charged in USD</p>
               <ul className="space-y-1 mb-4">
                 {["Everything in Plus", "🤖 AI Weekly Game Plan (every Monday)", "📊 Deep Analytics & Trends", "🔔 Smart Habit Notifications", "Unlimited AI insights"].map((f) => (
                   <li key={f} className="flex items-center gap-1.5 text-[10px] text-amber-200/80">
@@ -371,7 +388,7 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
                   className="w-full py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-orange-900/20 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {loading === "pro" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Crown className="w-3 h-3" />}
-                  Get Pro — $12/mo
+                  Get Pro — {proPrice}/mo
                 </button>
               </div>
             </div>

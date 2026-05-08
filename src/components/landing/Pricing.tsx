@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, Sparkles, Zap, Loader2, Brain, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import CurrencySelector from "@/components/ui/CurrencySelector";
 
 function Soon() {
   return (
@@ -43,15 +45,7 @@ const PRO_FEATURES: FeatureItem[] = [
   { label: "Priority support" },
 ];
 
-function PaidPlanButton({
-  plan,
-  priceId,
-  primary,
-}: {
-  plan: string;
-  priceId: string;
-  primary?: boolean;
-}) {
+function PaidPlanButton({ plan, priceId, primary }: { plan: string; priceId: string; primary?: boolean }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -59,21 +53,14 @@ function PaidPlanButton({
     setLoading(true);
     try {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.push(`/auth/signup?plan=${plan.toLowerCase()}`);
-        return;
-      }
-
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { router.push(`/auth/signup?plan=${plan.toLowerCase()}`); return; }
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ priceId }),
       });
-      const data = await res.json();
+      const data = await res.json() as { url?: string };
       if (data.url) window.location.href = data.url;
     } catch {
       setLoading(false);
@@ -84,7 +71,7 @@ function PaidPlanButton({
     <button
       onClick={handleClick}
       disabled={loading}
-      className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 mb-6 disabled:opacity-60 disabled:cursor-not-allowed ${
+      className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 mb-4 disabled:opacity-60 disabled:cursor-not-allowed ${
         primary
           ? "bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-900/40"
           : "border border-violet-700/40 text-slate-300 hover:text-white hover:border-violet-500"
@@ -100,15 +87,24 @@ function FeatureRow({ item, bright }: { item: FeatureItem; bright?: boolean }) {
   return (
     <div className={`flex items-start gap-2.5 text-sm ${bright ? "text-slate-200" : "text-slate-300"}`}>
       <Check className="w-4 h-4 text-violet-400 flex-shrink-0 mt-0.5" />
-      <span>
-        {item.label}
-        {item.soon && <Soon />}
-      </span>
+      <span>{item.label}{item.soon && <Soon />}</span>
     </div>
   );
 }
 
+function PriceDisclaimer({ currency }: { currency: string }) {
+  return (
+    <p className="text-[10px] text-slate-600 mt-1.5 leading-relaxed">
+      Prices shown in {currency} · Charged in USD by Stripe
+    </p>
+  );
+}
+
 export default function Pricing() {
+  const { priceParts, currency, loading } = useCurrency();
+  const plus = priceParts(7);
+  const pro  = priceParts(12);
+
   return (
     <section id="pricing" className="py-24 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto">
@@ -123,9 +119,13 @@ export default function Pricing() {
               Scale when ready.
             </span>
           </h2>
-          <p className="text-lg text-slate-400 max-w-xl mx-auto">
+          <p className="text-lg text-slate-400 max-w-xl mx-auto mb-4">
             No hidden fees. No surprise charges. Upgrade or cancel at any time.
           </p>
+          <div className="flex items-center justify-center gap-1.5 text-xs text-slate-600">
+            <span>Display currency:</span>
+            <CurrencySelector />
+          </div>
         </div>
 
         {/* Cards */}
@@ -152,15 +152,12 @@ export default function Pricing() {
             </Link>
 
             <div className="space-y-2.5">
-              {FREE_FEATURES.map((f) => (
-                <FeatureRow key={f.label} item={f} />
-              ))}
+              {FREE_FEATURES.map((f) => <FeatureRow key={f.label} item={f} />)}
             </div>
           </div>
 
           {/* ── PLUS ── */}
           <div className="relative bg-[#0f0f1a] border border-violet-600/40 rounded-2xl p-7 flex flex-col shadow-xl shadow-violet-950/40">
-            {/* Badge */}
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
               <span className="inline-flex items-center gap-1.5 bg-violet-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg shadow-violet-900/40">
                 <Sparkles className="w-3 h-3" />
@@ -173,24 +170,22 @@ export default function Pricing() {
               <span className="text-xs font-semibold uppercase tracking-wider text-violet-300">Plus</span>
             </div>
             <p className="text-sm font-semibold text-violet-200 mb-2">The Optimizer</p>
-            <div className="mb-1">
-              <span className="text-4xl font-extrabold text-white">$7</span>
-              <span className="text-slate-400 ml-2 text-sm">/ month</span>
+            <div className="mb-0.5 flex items-baseline gap-1.5 flex-wrap">
+              <span className="text-4xl font-extrabold text-white">{loading ? "$7" : plus.main}</span>
+              <span className="text-slate-400 text-sm">{loading ? "" : plus.suffix} / mo</span>
             </div>
-            <p className="text-xs text-slate-500 mb-6">For the committed tracker who wants zero limits.</p>
+            <PriceDisclaimer currency={currency} />
+            <p className="text-xs text-slate-500 mt-3 mb-4">For the committed tracker who wants zero limits.</p>
 
             <PaidPlanButton plan="Plus" priceId={process.env.NEXT_PUBLIC_STRIPE_PLUS_PRICE_ID!} />
 
             <div className="space-y-2.5">
-              {PLUS_FEATURES.map((f) => (
-                <FeatureRow key={f.label} item={f} />
-              ))}
+              {PLUS_FEATURES.map((f) => <FeatureRow key={f.label} item={f} />)}
             </div>
           </div>
 
           {/* ── PRO ── */}
           <div className="relative bg-gradient-to-b from-violet-950/70 to-[#0f0f1a] border border-violet-500/50 rounded-2xl p-7 flex flex-col shadow-xl shadow-violet-950/60">
-            {/* Badge */}
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
               <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg shadow-orange-900/40">
                 <Brain className="w-3 h-3" />
@@ -203,18 +198,17 @@ export default function Pricing() {
               <span className="text-xs font-semibold uppercase tracking-wider text-violet-300">Pro</span>
             </div>
             <p className="text-sm font-semibold text-violet-200 mb-2">The Behavioral Scientist</p>
-            <div className="mb-1">
-              <span className="text-4xl font-extrabold text-white">$12</span>
-              <span className="text-slate-400 ml-2 text-sm">/ month</span>
+            <div className="mb-0.5 flex items-baseline gap-1.5 flex-wrap">
+              <span className="text-4xl font-extrabold text-white">{loading ? "$12" : pro.main}</span>
+              <span className="text-slate-400 text-sm">{loading ? "" : pro.suffix} / mo</span>
             </div>
-            <p className="text-xs text-slate-500 mb-6">AI-powered coaching for life-changing habits.</p>
+            <PriceDisclaimer currency={currency} />
+            <p className="text-xs text-slate-500 mt-3 mb-4">AI-powered coaching for life-changing habits.</p>
 
             <PaidPlanButton plan="Pro" priceId={process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID!} primary />
 
             <div className="space-y-2.5">
-              {PRO_FEATURES.map((f) => (
-                <FeatureRow key={f.label} item={f} bright />
-              ))}
+              {PRO_FEATURES.map((f) => <FeatureRow key={f.label} item={f} bright />)}
             </div>
           </div>
         </div>

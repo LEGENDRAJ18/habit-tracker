@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
+import CurrencySelector from "@/components/ui/CurrencySelector";
 
 const links: Record<string, { label: string; href: string }[]> = {
   Product: [
@@ -67,9 +68,16 @@ export default function Footer() {
           <p className="text-xs text-slate-600">
             © {new Date().getFullYear()} habitAI. All rights reserved.
           </p>
-          <p className="text-xs text-slate-600">
-            Built with ❤️ for habit builders everywhere
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-xs text-slate-600">
+              Built with ❤️ for habit builders everywhere
+            </p>
+            <span className="text-slate-700">·</span>
+            <div className="flex items-center gap-1 text-[11px] text-slate-600">
+              <span>Currency:</span>
+              <CurrencySelector />
+            </div>
+          </div>
         </div>
       </div>
     </footer>

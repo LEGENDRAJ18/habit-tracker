@@ -8,6 +8,7 @@ import InstallBanner from "@/components/pwa/InstallBanner";
 import ToastContainer from "@/components/ui/Toast";
 import CookieBanner from "@/components/ui/CookieBanner";
 import { AppearanceProvider } from "@/contexts/AppearanceContext";
+import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import ConditionalAppShell from "@/components/layout/ConditionalAppShell";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -79,9 +80,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} scroll-smooth`}>
       <body>
         <AppearanceProvider>
-          <ConditionalAppShell>
-            {children}
-          </ConditionalAppShell>
+          <CurrencyProvider>
+            <ConditionalAppShell>
+              {children}
+            </ConditionalAppShell>
+          </CurrencyProvider>
         </AppearanceProvider>
         <Analytics />
         <ServiceWorkerRegistration />

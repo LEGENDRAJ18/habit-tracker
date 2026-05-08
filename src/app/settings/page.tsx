@@ -16,6 +16,7 @@ import {
   useAppearance, ACCENT_PALETTE,
   type AccentColor, type FontSize, type DashboardLayout,
 } from "@/contexts/AppearanceContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
@@ -535,6 +536,9 @@ function PlanTab({
   saveReminderPrefs: (enabled: boolean, hour: number, minute?: number) => Promise<void>;
 }) {
   const isPaid = tier === "plus" || tier === "pro";
+  const { formatPrice, currency, loading: currencyLoading } = useCurrency();
+  const plusPrice = currencyLoading ? "$7" : formatPrice(7);
+  const proPrice  = currencyLoading ? "$12" : formatPrice(12);
 
   const planInfo = {
     free:  { label: "Free",  badge: "bg-slate-800 text-slate-300 border-slate-700",  desc: "Up to 3 habits, basic streak tracking" },
@@ -579,7 +583,7 @@ function PlanTab({
                   <span className="text-sm font-bold text-white">Plus</span>
                 </div>
                 <span className="text-[11px] text-slate-400 leading-snug">AI coaching, unlimited habits, reminders</span>
-                <span className="text-sm font-bold text-violet-300 mt-1">$7 NZD/mo</span>
+                <span className="text-sm font-bold text-violet-300 mt-1">{plusPrice}/mo</span>
               </Link>
               <Link href="/billing?plan=pro"
                 className="flex flex-col gap-1 p-3.5 rounded-xl border border-amber-600/40 bg-amber-950/20 hover:bg-amber-950/30 hover:border-amber-500/60 transition-all group">
@@ -588,10 +592,11 @@ function PlanTab({
                   <span className="text-sm font-bold text-white">Pro</span>
                 </div>
                 <span className="text-[11px] text-slate-400 leading-snug">Unlimited AI, data export, priority support</span>
-                <span className="text-sm font-bold text-amber-300 mt-1">$12 NZD/mo</span>
+                <span className="text-sm font-bold text-amber-300 mt-1">{proPrice}/mo</span>
               </Link>
             </div>
             <p className="text-[11px] text-slate-600 text-center">7-day money-back guarantee · No lock-in</p>
+            <p className="text-[10px] text-slate-700 text-center">Prices shown in {currency} · Charged in USD by Stripe</p>
           </div>
         )}
       </div>
