@@ -329,19 +329,21 @@ export default function AddHabitModal({ onClose, existingHabits, goals, tier, on
                 </div>
               )}
               {!duplicate && aiValidation.status === "good" && (
-                <div className="mt-2 flex items-center gap-2.5 bg-emerald-950/40 border border-emerald-600/30 rounded-xl px-3.5 py-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <p className="text-xs font-semibold text-emerald-300">
-                    Great habit! You&apos;ll earn full XP for this one
-                    {durationBonus > 0 && <span className="text-emerald-400"> + {durationBonus} duration bonus 🎯</span>}
-                  </p>
+                <div className="mt-2 flex items-start gap-2.5 bg-emerald-950/40 border border-emerald-600/30 rounded-xl px-3.5 py-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-semibold text-emerald-300 leading-snug">{aiValidation.message}</p>
+                    {durationBonus > 0 && (
+                      <p className="text-[11px] text-emerald-500 mt-0.5">+{durationBonus} XP duration bonus 🎯</p>
+                    )}
+                  </div>
                 </div>
               )}
               {!duplicate && aiValidation.status === "warning" && (
                 <div className="mt-2 bg-amber-950/40 border border-amber-600/30 rounded-xl px-3.5 py-2.5">
-                  <div className="flex items-center gap-2.5">
-                    <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                    <p className="text-xs font-semibold text-amber-300">Too vague — you&apos;ll earn 50% XP. Try being more specific</p>
+                  <div className="flex items-start gap-2.5">
+                    <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs font-semibold text-amber-300 leading-snug">{aiValidation.message}</p>
                   </div>
                   {aiValidation.suggestion && (
                     <button type="button" onClick={() => setName(aiValidation.suggestion!)}
@@ -354,9 +356,19 @@ export default function AddHabitModal({ onClose, existingHabits, goals, tier, on
                 </div>
               )}
               {!duplicate && aiValidation.status === "blocked" && (
-                <div className="mt-2 flex items-center gap-2.5 bg-red-950/40 border border-red-600/30 rounded-xl px-3.5 py-2.5">
-                  <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-                  <p className="text-xs font-semibold text-red-300">This doesn&apos;t look like a valid habit — no XP will be earned</p>
+                <div className="mt-2 bg-red-950/40 border border-red-600/30 rounded-xl px-3.5 py-2.5">
+                  <div className="flex items-start gap-2.5">
+                    <XCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs font-semibold text-red-300 leading-snug">{aiValidation.message}</p>
+                  </div>
+                  {aiValidation.suggestion && (
+                    <button type="button" onClick={() => setName(aiValidation.suggestion!)}
+                      className="mt-2 ml-6 text-[11px] text-violet-400 hover:text-violet-300 flex items-center gap-1 transition-colors"
+                    >
+                      <ArrowRight className="w-3 h-3" />
+                      Try: &ldquo;{aiValidation.suggestion}&rdquo;
+                    </button>
+                  )}
                 </div>
               )}
             </div>

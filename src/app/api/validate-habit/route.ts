@@ -17,9 +17,21 @@ function checkRateLimit(userId: string): boolean {
   return true;
 }
 
-const SYSTEM_PROMPT = `Classify a habit name. JSON only, no extra keys:
-{"status":"good"|"warning"|"blocked","message":"2-5 words","suggestion":"specific version (warning only)"}
-good=specific+actionable. warning=too vague, add suggestion. blocked=harmful/nonsense/not a habit.`;
+const SYSTEM_PROMPT = `You are a habit coach reviewing a habit name. Reply with JSON only, no extra keys:
+{"status":"good"|"warning"|"blocked","message":"1-2 sentences personalised to the exact habit — mention it by name, explain WHY it is valid/vague/invalid. Max 30 words. Conversational tone.","suggestion":"specific better habit name — only for warning or blocked"}
+
+Rules:
+good = specific, measurable, actionable (e.g. "Run 5km daily", "Read 20 pages before bed")
+warning = too vague, leisure/entertainment, or missing frequency/duration — earns 50% XP
+blocked = not a habit: harmful, nonsense, pure emotion, single noun, random phrase
+
+Examples (follow this exact style):
+"run" → {"status":"warning","message":"'Run' is too vague to earn full XP. How far, how often?","suggestion":"Run 3km every morning"}
+"watch harry potter" → {"status":"blocked","message":"Watching Harry Potter is entertainment, not a habit. Try a learning or active habit instead.","suggestion":"Watch one documentary per week"}
+"meditate 10 minutes daily" → {"status":"good","message":"Meditating 10 minutes daily is clear and measurable. You'll earn full XP 🎯"}
+"be happy" → {"status":"blocked","message":"'Be happy' is a feeling, not a habit you can track. Try an action that improves your mood.","suggestion":"Write 3 things I'm grateful for each morning"}
+"exercise" → {"status":"warning","message":"'Exercise' is too broad to earn full XP. Specify what you'll do and for how long.","suggestion":"Do 30 minutes of exercise every morning"}
+"read" → {"status":"warning","message":"'Read' needs more detail to earn full XP. Add what or how much.","suggestion":"Read 20 pages every night before bed"}`;
 
 export interface ValidationResponse {
   status: "good" | "warning" | "blocked";
@@ -43,26 +55,35 @@ const BLOCKED_RE = /^\d+$|^(.)\1{3,}$|^[^a-zA-Z]{2,}$/;
 function ruleBasedValidation(name: string): ValidationResponse {
   const lower = name.trim().toLowerCase();
   const words = lower.split(/\s+/).filter(Boolean);
+  const cap   = name.trim().charAt(0).toUpperCase() + name.trim().slice(1);
 
   if (words.length === 0 || BLOCKED_RE.test(lower) || lower.length < 3) {
-    return { status: "blocked", message: "Not a valid habit" };
+    return {
+      status:     "blocked",
+      message:    "That doesn't look like a trackable habit. Try something like 'Do 20 pushups every morning'.",
+      suggestion: "Do 20 pushups every morning",
+    };
   }
 
   if (words.length === 1 && GENERIC_WORDS.has(words[0])) {
-    const w = words[0];
-    const cap = w.charAt(0).toUpperCase() + w.slice(1);
     return {
-      status: "warning",
-      message: "Too vague — add specifics",
+      status:     "warning",
+      message:    `'${cap}' is too vague to earn full XP. Add a duration or frequency to make it specific.`,
       suggestion: `${cap} for 20 minutes every morning`,
     };
   }
 
   if (words.length === 1) {
-    return { status: "warning", message: "Add more detail" };
+    return {
+      status:  "warning",
+      message: `'${cap}' needs more detail. What exactly will you do, and how often?`,
+    };
   }
 
-  return { status: "good", message: "Specific and actionable" };
+  return {
+    status:  "good",
+    message: `'${cap}' is a clear, actionable habit. You'll earn full XP 🎯`,
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -102,7 +123,7 @@ export async function POST(request: NextRequest) {
               ? `Habit name: "${habitName}". User's goals: ${goals.join(", ")}.`
               : `Habit name: "${habitName}"` },
         ],
-        max_tokens: 50,
+        max_tokens: 120,
         temperature: 0.1,
         response_format: { type: "json_object" },
       }),
