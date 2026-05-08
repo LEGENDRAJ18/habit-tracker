@@ -102,8 +102,8 @@ function PriceDisclaimer({ currency }: { currency: string }) {
 
 export default function Pricing() {
   const { priceParts, currency, loading } = useCurrency();
-  const plus = priceParts(7);
-  const pro  = priceParts(12);
+  const plus = priceParts(5.99);
+  const pro  = priceParts(9.99);
 
   return (
     <section id="pricing" className="py-24 px-4 sm:px-6">
@@ -171,7 +171,7 @@ export default function Pricing() {
             </div>
             <p className="text-sm font-semibold text-violet-200 mb-2">The Optimizer</p>
             <div className="mb-0.5 flex items-baseline gap-1.5 flex-wrap">
-              <span className="text-4xl font-extrabold text-white">{loading ? "$6.99" : plus.main}</span>
+              <span className="text-4xl font-extrabold text-white">{loading ? "$5.99" : plus.main}</span>
               <span className="text-slate-400 text-sm">{loading ? "" : plus.suffix} / mo</span>
             </div>
             <PriceDisclaimer currency={currency} />
@@ -199,7 +199,7 @@ export default function Pricing() {
             </div>
             <p className="text-sm font-semibold text-violet-200 mb-2">The Behavioral Scientist</p>
             <div className="mb-0.5 flex items-baseline gap-1.5 flex-wrap">
-              <span className="text-4xl font-extrabold text-white">{loading ? "$11.99" : pro.main}</span>
+              <span className="text-4xl font-extrabold text-white">{loading ? "$9.99" : pro.main}</span>
               <span className="text-slate-400 text-sm">{loading ? "" : pro.suffix} / mo</span>
             </div>
             <PriceDisclaimer currency={currency} />

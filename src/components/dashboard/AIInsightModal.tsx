@@ -95,7 +95,7 @@ export default function AIInsightModal({ onClose, onUpgrade, tier }: Props) {
                 onClick={onUpgrade}
                 className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-all text-sm"
               >
-                Upgrade to Plus — $6.99/mo →
+                Upgrade to Plus — $5.99/mo →
               </button>
               <button onClick={onClose} className="mt-2.5 w-full py-2 text-slate-500 hover:text-slate-300 text-sm transition-colors">
                 Maybe later

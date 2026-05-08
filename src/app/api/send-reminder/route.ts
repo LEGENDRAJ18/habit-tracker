@@ -488,7 +488,7 @@ function buildTrialReminderHtml(firstName: string, trialEnd: string, unsubscribe
     <p style="margin:0 0 20px;font-size:14px;color:#8b8fa8;line-height:1.65;">
       Your 7-day free trial of <strong style="color:#c4b5fd;">HabitAI Plus</strong> ends on
       <strong style="color:#ffffff;">${trialEnd}</strong>.
-      After that, your plan continues at $7 NZD/month — no action needed.
+      After that, your plan continues at $5.99 USD/month — no action needed.
     </p>
 
     <div style="background:rgba(109,40,217,0.12);border:1px solid rgba(109,40,217,0.25);border-radius:14px;padding:18px 20px;margin-bottom:24px;">

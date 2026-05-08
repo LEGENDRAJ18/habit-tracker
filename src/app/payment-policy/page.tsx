@@ -82,12 +82,13 @@ export default function PaymentPolicyPage() {
         {/* Pricing */}
         <Section icon={<Sparkles className="w-4 h-4 text-violet-400" />} title="Pricing">
           <div className="bg-[#0c0c18] border border-violet-900/20 rounded-xl overflow-hidden mb-3">
-            <Row label="Free plan" value="$0 NZD / month — always free, no credit card required" />
-            <Row label="Plus plan" value="$7 NZD / month, billed monthly" />
-            <Row label="Pro plan"  value="$12 NZD / month, billed monthly" />
+            <Row label="Free plan" value="$0 — always free, no credit card required" />
+            <Row label="Plus plan" value="$5.99 USD / month, billed monthly" />
+            <Row label="Pro plan"  value="$9.99 USD / month, billed monthly" />
           </div>
           <p>
-            All prices are in New Zealand Dollars (NZD) and include GST where applicable.
+            All prices are in US Dollars (USD) and are charged in USD by Stripe. Your bank
+            may apply a foreign transaction fee for non-USD accounts.
           </p>
           <p>
             Prices may change in the future. Existing subscribers will receive at least{" "}

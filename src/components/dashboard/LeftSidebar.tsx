@@ -20,7 +20,7 @@ export default function LeftSidebar() {
   const { tier } = useProfile();
   const { openUpgradeModal } = useUpgrade();
   const { formatPrice, currency, loading: currencyLoading } = useCurrency();
-  const proPrice = currencyLoading ? "$11.99" : formatPrice(12);
+  const proPrice = currencyLoading ? "$9.99" : formatPrice(9.99);
 
   return (
     <aside className="hidden lg:flex flex-col w-[240px] flex-shrink-0 h-[calc(100vh-3.5rem)] sticky top-14 overflow-hidden pt-5 pb-4">

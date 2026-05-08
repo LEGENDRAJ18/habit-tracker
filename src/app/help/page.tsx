@@ -77,7 +77,7 @@ const SECTIONS: Section[] = [
         ),
       },
       {
-        q: "What does Plus ($7 NZD/mo) include?",
+        q: "What does Plus ($5.99/mo) include?",
         a: (
           <ul className="space-y-1 mt-1">
             {[
@@ -97,7 +97,7 @@ const SECTIONS: Section[] = [
         ),
       },
       {
-        q: "What does Pro ($12 NZD/mo) include?",
+        q: "What does Pro ($9.99/mo) include?",
         a: (
           <ul className="space-y-1 mt-1">
             {[
@@ -120,7 +120,7 @@ const SECTIONS: Section[] = [
         q: "Is there a free trial?",
         a: (
           <>
-            Yes — the <strong className="text-white">Plus plan</strong> comes with a <strong className="text-white">7-day free trial</strong>. No charge during the trial. You can cancel any time before it ends and won&apos;t be billed. After the trial, it&apos;s $7 NZD/month.
+            Yes — the <strong className="text-white">Plus plan</strong> comes with a <strong className="text-white">7-day free trial</strong>. No charge during the trial. You can cancel any time before it ends and won&apos;t be billed. After the trial, it&apos;s $5.99 USD/month.
           </>
         ),
       },
@@ -406,7 +406,7 @@ export default function HelpPage() {
                 <Sparkles className="w-3 h-3 text-violet-400" />
                 <p className="text-xs font-bold text-violet-400 uppercase tracking-wider">Plus</p>
               </div>
-              <p className="text-lg font-bold text-white mb-0.5">$7 <span className="text-xs font-normal text-slate-600">NZD / mo</span></p>
+              <p className="text-lg font-bold text-white mb-0.5">$5.99 <span className="text-xs font-normal text-slate-600">USD / mo</span></p>
               <p className="text-[10px] text-violet-400 font-semibold mb-1">7-day free trial</p>
               <p className="text-xs text-slate-600 leading-relaxed">Unlimited habits, AI coaching, reminders</p>
             </div>
@@ -415,7 +415,7 @@ export default function HelpPage() {
                 <Crown className="w-3 h-3 text-amber-400" />
                 <p className="text-xs font-bold text-amber-400 uppercase tracking-wider">Pro</p>
               </div>
-              <p className="text-lg font-bold text-white mb-0.5">$12 <span className="text-xs font-normal text-slate-600">NZD / mo</span></p>
+              <p className="text-lg font-bold text-white mb-0.5">$9.99 <span className="text-xs font-normal text-slate-600">USD / mo</span></p>
               <p className="text-xs text-slate-600 leading-relaxed">AI game plans, deep analytics, smart alerts</p>
             </div>
           </div>

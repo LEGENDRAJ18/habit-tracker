@@ -470,7 +470,7 @@ function BlurGate({ children }: { children: React.ReactNode }) {
               window.location.href = url.toString();
             }}
           >
-            Upgrade to Plus — $6.99/mo
+            Upgrade to Plus — $5.99/mo
           </Link>
         </div>
       </div>
@@ -503,7 +503,7 @@ function ProBlurGate({ children }: { children: React.ReactNode }) {
               window.location.href = url.toString();
             }}
           >
-            Upgrade to Pro — $11.99/mo
+            Upgrade to Pro — $9.99/mo
           </Link>
         </div>
       </div>
