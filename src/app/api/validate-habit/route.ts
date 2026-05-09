@@ -153,9 +153,10 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const body = await request.json() as { habitName?: string; goals?: string[] };
+    const body = await request.json() as { habitName?: string; goals?: string[]; calendarContext?: boolean };
     const habitName = body.habitName?.trim() ?? "";
     const goals = Array.isArray(body.goals) && body.goals.length > 0 ? body.goals : null;
+    const calendarContext = body.calendarContext === true;
     if (habitName.length < 3) {
       return NextResponse.json<ValidationResponse>({ status: "good", message: "" });
     }
@@ -185,9 +186,14 @@ export async function POST(request: NextRequest) {
         model: "gpt-4o-mini",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user",   content: goals
-              ? `Habit name: "${habitName}". User's goals: ${goals.join(", ")}.`
-              : `Habit name: "${habitName}"` },
+          { role: "user",   content: (() => {
+              const base = goals
+                ? `Habit name: "${habitName}". User's goals: ${goals.join(", ")}.`
+                : `Habit name: "${habitName}"`;
+              return calendarContext
+                ? `${base} Context: This habit is being scheduled for specific days on a calendar — validate whether it makes sense as a schedulable, time-based habit.`
+                : base;
+            })() },
         ],
         max_tokens: 150,
         temperature: 0.1,

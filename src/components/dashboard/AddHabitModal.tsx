@@ -22,12 +22,11 @@ const HOW_LONG_OPTIONS = [
   "5 min", "10 min", "20 min", "30 min", "45 min", "1 hour", "2+ hours",
 ];
 
-// Reduced to 4 core time slots + custom so the picker fits in one row
 const TIME_PERIODS = [
-  { label: "Morning",   emoji: "🌅", value: "07:30" },
-  { label: "Afternoon", emoji: "🌤",  value: "14:00" },
-  { label: "Evening",   emoji: "🌆", value: "18:00" },
-  { label: "Night",     emoji: "🌙", value: "21:00" },
+  { label: "Morning",   emoji: "🌅", value: "07:30", sub: "6–9am"   },
+  { label: "Afternoon", emoji: "🌤",  value: "14:00", sub: "1–4pm"  },
+  { label: "Evening",   emoji: "🌆", value: "18:00", sub: "4–7pm"   },
+  { label: "Night",     emoji: "🌙", value: "21:00", sub: "7–10pm"  },
 ];
 
 const GOAL_SUGGESTIONS: Record<string, string[]> = {
@@ -133,7 +132,8 @@ function TimePicker({ value, onChange }: { value: string; onChange: (v: string) 
             }`}
           >
             <span className="text-sm leading-none">{p.emoji}</span>
-            <span className="text-[9px] font-semibold mt-0.5 leading-tight">{p.label}</span>
+            <span className="text-[9px] font-semibold mt-0.5 leading-none">{p.label}</span>
+            <span className="text-[8px] text-slate-600 leading-none mt-0.5">{p.sub}</span>
           </button>
         ))}
         <button type="button" onClick={() => setShowCustom((v) => !v)}
@@ -144,7 +144,8 @@ function TimePicker({ value, onChange }: { value: string; onChange: (v: string) 
           }`}
         >
           <span className="text-sm leading-none">⏰</span>
-          <span className="text-[9px] font-semibold mt-0.5 leading-tight">Custom</span>
+          <span className="text-[9px] font-semibold mt-0.5 leading-none">Custom</span>
+          <span className="text-[8px] text-slate-600 leading-none mt-0.5">exact time</span>
         </button>
       </div>
       {showCustom && (
@@ -226,7 +227,8 @@ export default function AddHabitModal({
     return () => { document.body.style.overflow = prev; };
   }, []);
 
-  const aiValidation = useHabitValidation(name, goals);
+  const isSchedulingMode = !!(withScheduling && onSchedule);
+  const aiValidation = useHabitValidation(name, goals, 400, isSchedulingMode);
   const duplicate    = name.trim().length > 2 && isDuplicate(name, existingHabits);
 
   // Suggestion chips
@@ -240,9 +242,8 @@ export default function AddHabitModal({
     ...uniqueSuggestions.slice(0, Math.max(0, offset + CHIPS_PER_PAGE - uniqueSuggestions.length)),
   ].slice(0, CHIPS_PER_PAGE);
 
-  const isBlocked    = duplicate;
+  const isBlocked     = duplicate;
   const durationBonus = howLong ? (DURATION_BONUS_XP[howLong] ?? 0) : 0;
-  const isSchedulingMode = !!(withScheduling && onSchedule);
 
   const getValidity = (): "valid" | "partial" | "invalid" =>
     aiValidation.status === "blocked" ? "invalid"
@@ -458,22 +459,41 @@ export default function AddHabitModal({
                   </div>
                 </div>
 
-                {/* RIGHT: Frequency / Description */}
+                {/* RIGHT: calendar mode = Next button + description + Smart Notifications teaser
+                            dashboard mode = Frequency + description + suggestion chips */}
                 <div className="space-y-3">
-                  <div>
-                    <label className={labelCls}>Frequency</label>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {(["daily", "weekly"] as const).map((freq) => (
-                        <button key={freq} type="button" onClick={() => setFrequency(freq)}
-                          className={`py-2 rounded-xl text-xs font-medium border transition-all capitalize ${
-                            frequency === freq
-                              ? "bg-violet-600/20 border-violet-600/50 text-violet-300"
-                              : "bg-violet-950/20 border-violet-900/20 text-slate-500 hover:text-slate-300"
-                          }`}
-                        >{freq}</button>
-                      ))}
+                  {isSchedulingMode ? (
+                    /* ── Calendar: big Next button replaces Frequency ── */
+                    <button
+                      type="button"
+                      disabled={!name.trim() || isBlocked}
+                      onClick={goToStep2}
+                      className="w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl text-sm transition-all flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98]"
+                      style={{
+                        background: "linear-gradient(135deg, #6d28d9 0%, #8b5cf6 50%, #7c3aed 100%)",
+                        boxShadow: "0 0 18px rgba(139,92,246,0.35), 0 3px 10px rgba(109,40,217,0.25)",
+                      }}
+                    >
+                      Next: Choose Days
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    /* ── Dashboard: Frequency toggle ── */
+                    <div>
+                      <label className={labelCls}>Frequency</label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {(["daily", "weekly"] as const).map((freq) => (
+                          <button key={freq} type="button" onClick={() => setFrequency(freq)}
+                            className={`py-2 rounded-xl text-xs font-medium border transition-all capitalize ${
+                              frequency === freq
+                                ? "bg-violet-600/20 border-violet-600/50 text-violet-300"
+                                : "bg-violet-950/20 border-violet-900/20 text-slate-500 hover:text-slate-300"
+                            }`}
+                          >{freq}</button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div>
                     <label className={labelCls}>
@@ -486,46 +506,89 @@ export default function AddHabitModal({
                     />
                   </div>
 
-                  {/* Pro suggestion chips */}
-                  {uniqueSuggestions.length > 0 && (
-                    <div>
-                      {tier === "pro" ? (
-                        <>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-[10px] text-slate-500">Need inspiration?</span>
-                            {uniqueSuggestions.length > CHIPS_PER_PAGE && (
-                              <button type="button"
-                                onClick={() => setSuggestionOffset((o) => (o + CHIPS_PER_PAGE) % uniqueSuggestions.length)}
-                                className="text-[10px] text-violet-500 hover:text-violet-400"
-                              >More →</button>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap gap-1">
-                            {visibleSuggestions.map((s) => (
-                              <button key={s} type="button"
-                                onClick={() => { setName(s); setError(null); }}
-                                className="px-2 py-0.5 rounded-full text-[10px] font-medium border border-violet-800/30 bg-violet-950/30 text-slate-400 hover:text-violet-300 hover:border-violet-600/40 transition-all"
-                              >{s}</button>
-                            ))}
-                          </div>
-                        </>
-                      ) : (
-                        <div className="relative">
-                          <div className="flex flex-wrap gap-1 pointer-events-none select-none" style={{ filter: "blur(3px)", opacity: 0.3 }}>
-                            {["Run 5km", "Meditate 10 min", "Read daily", "Drink 2L water"].map((s) => (
-                              <span key={s} className="px-2 py-0.5 rounded-full text-[10px] border border-violet-800/30 bg-violet-950/30 text-slate-400">{s}</span>
-                            ))}
-                          </div>
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <button type="button" onClick={onUpgradePro}
-                              className="flex items-center gap-1 px-2.5 py-1 bg-amber-600/20 border border-amber-500/40 text-amber-300 text-[10px] font-semibold rounded-xl hover:bg-amber-600/30 transition-all"
-                            >
-                              <Crown className="w-2.5 h-2.5" />Upgrade to unlock
-                            </button>
-                          </div>
+                  {isSchedulingMode ? (
+                    /* ── Calendar: Smart Notifications Pro teaser ── */
+                    tier !== "pro" ? (
+                      <div className="rounded-xl border border-violet-900/20 bg-violet-950/20 p-3 space-y-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs">⚡</span>
+                          <p className="text-[11px] font-bold text-white leading-none">Smart Notifications</p>
+                          <span className="ml-auto flex items-center gap-0.5 text-[9px] font-bold text-amber-300 bg-amber-900/25 border border-amber-600/25 px-1.5 py-0.5 rounded-full">
+                            <Crown className="w-2 h-2" />PRO
+                          </span>
                         </div>
-                      )}
-                    </div>
+                        <p className="text-[10px] text-slate-500 leading-snug">
+                          AI learns your best time and reminds you automatically.
+                        </p>
+                        <button type="button" onClick={onUpgradePro}
+                          className="w-full flex items-center justify-center gap-1 py-1.5 bg-amber-600/20 border border-amber-500/40 text-amber-300 text-[10px] font-semibold rounded-lg hover:bg-amber-600/30 transition-all"
+                        >
+                          <Crown className="w-2.5 h-2.5" />Upgrade to unlock
+                        </button>
+                      </div>
+                    ) : uniqueSuggestions.length > 0 ? (
+                      <>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[10px] text-slate-500">Need inspiration?</span>
+                          {uniqueSuggestions.length > CHIPS_PER_PAGE && (
+                            <button type="button"
+                              onClick={() => setSuggestionOffset((o) => (o + CHIPS_PER_PAGE) % uniqueSuggestions.length)}
+                              className="text-[10px] text-violet-500 hover:text-violet-400"
+                            >More →</button>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {visibleSuggestions.map((s) => (
+                            <button key={s} type="button"
+                              onClick={() => { setName(s); setError(null); }}
+                              className="px-2 py-0.5 rounded-full text-[10px] font-medium border border-violet-800/30 bg-violet-950/30 text-slate-400 hover:text-violet-300 hover:border-violet-600/40 transition-all"
+                            >{s}</button>
+                          ))}
+                        </div>
+                      </>
+                    ) : null
+                  ) : (
+                    /* ── Dashboard: suggestion chips (existing behaviour) ── */
+                    uniqueSuggestions.length > 0 && (
+                      <div>
+                        {tier === "pro" ? (
+                          <>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-[10px] text-slate-500">Need inspiration?</span>
+                              {uniqueSuggestions.length > CHIPS_PER_PAGE && (
+                                <button type="button"
+                                  onClick={() => setSuggestionOffset((o) => (o + CHIPS_PER_PAGE) % uniqueSuggestions.length)}
+                                  className="text-[10px] text-violet-500 hover:text-violet-400"
+                                >More →</button>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {visibleSuggestions.map((s) => (
+                                <button key={s} type="button"
+                                  onClick={() => { setName(s); setError(null); }}
+                                  className="px-2 py-0.5 rounded-full text-[10px] font-medium border border-violet-800/30 bg-violet-950/30 text-slate-400 hover:text-violet-300 hover:border-violet-600/40 transition-all"
+                                >{s}</button>
+                              ))}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="relative">
+                            <div className="flex flex-wrap gap-1 pointer-events-none select-none" style={{ filter: "blur(3px)", opacity: 0.3 }}>
+                              {["Run 5km", "Meditate 10 min", "Read daily", "Drink 2L water"].map((s) => (
+                                <span key={s} className="px-2 py-0.5 rounded-full text-[10px] border border-violet-800/30 bg-violet-950/30 text-slate-400">{s}</span>
+                              ))}
+                            </div>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <button type="button" onClick={onUpgradePro}
+                                className="flex items-center gap-1 px-2.5 py-1 bg-amber-600/20 border border-amber-500/40 text-amber-300 text-[10px] font-semibold rounded-xl hover:bg-amber-600/30 transition-all"
+                              >
+                                <Crown className="w-2.5 h-2.5" />Upgrade to unlock
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
                   )}
                 </div>
               </div>
@@ -537,18 +600,8 @@ export default function AddHabitModal({
                 className="px-4 py-2.5 border border-violet-900/30 text-slate-400 hover:text-white rounded-xl text-sm transition-colors"
               >Cancel</button>
 
-              {isSchedulingMode ? (
-                /* type=button — bypasses form validation completely */
-                <button
-                  type="button"
-                  disabled={!name.trim() || isBlocked}
-                  onClick={goToStep2}
-                  className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl text-sm transition-all flex items-center justify-center gap-2"
-                >
-                  Next: Choose Days
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              ) : (
+              {/* Calendar mode: Next is already in the right column — no button here */}
+              {!isSchedulingMode && (
                 <button type="submit" disabled={loading || !name.trim() || isBlocked}
                   className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl text-sm transition-all flex items-center justify-center gap-2"
                 >
