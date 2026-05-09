@@ -17,21 +17,70 @@ function checkRateLimit(userId: string): boolean {
   return true;
 }
 
-const SYSTEM_PROMPT = `You are a habit coach reviewing a habit name. Reply with JSON only, no extra keys:
-{"status":"good"|"warning"|"blocked","message":"1-2 sentences personalised to the exact habit — mention it by name, explain WHY it is valid/vague/invalid. Max 30 words. Conversational tone.","suggestion":"specific better habit name — only for warning or blocked"}
+// ─── Content moderation ───────────────────────────────────────────────────────
 
-Rules:
-good = specific, measurable, actionable (e.g. "Run 5km daily", "Read 20 pages before bed")
-warning = too vague, leisure/entertainment, or missing frequency/duration — earns 50% XP
-blocked = not a habit: harmful, nonsense, pure emotion, single noun, random phrase
+// Regex patterns for categories that are always inappropriate.
+// Use word-boundary anchors (\b) to avoid false-positives on substrings.
+const INAPPROPRIATE_PATTERNS: RegExp[] = [
+  // Sexual content
+  /\b(sex|sexual|sexuality|porn|porno|pornography|masturbat\w*|orgasm|orgasmic|erotic|erotica|nude|nudity|naked|boob|boobs|breast|penis|vagina|vulva|dick|cock|pussy|ass\b|arse|anal|blowjob|blow\s*job|handjob|hand\s*job|cum\b|cumming|sperm|horny|slutt?y?|slut|whore|whor|hoe\b|hooker|prostitut\w*|onlyfans|striptease|strip\s*club|fetish|bdsm|kinky|kink\b|nudes|sexting|masturbation)\b/i,
+  // Violence & harm
+  /\b(kill|killing|murder|stab|stabbing|shoot|shooting|harm\s*others|attack|assault|rape|raping|abuse|abusing|suicide|suicidal|self.?harm|self.?hurt|cut\s*myself|cutting\s*myself|overdose|hang\s*myself)\b/i,
+  // Hard illegal drugs (exclude "weed the garden" by requiring drug context words nearby — handled by next pattern)
+  /\b(cocaine|heroin|meth\b|methamphetamine|crack\s*cocaine|fentanyl|crystal\s*meth|acid\b|lsd\b|ecstasy\b|mdma|molly\b|shrooms\b|ketamine)\b/i,
+];
 
-Examples (follow this exact style):
-"run" → {"status":"warning","message":"'Run' is too vague to earn full XP. How far, how often?","suggestion":"Run 3km every morning"}
-"watch harry potter" → {"status":"blocked","message":"Watching Harry Potter is entertainment, not a habit. Try a learning or active habit instead.","suggestion":"Watch one documentary per week"}
-"meditate 10 minutes daily" → {"status":"good","message":"Meditating 10 minutes daily is clear and measurable. You'll earn full XP 🎯"}
-"be happy" → {"status":"blocked","message":"'Be happy' is a feeling, not a habit you can track. Try an action that improves your mood.","suggestion":"Write 3 things I'm grateful for each morning"}
-"exercise" → {"status":"warning","message":"'Exercise' is too broad to earn full XP. Specify what you'll do and for how long.","suggestion":"Do 30 minutes of exercise every morning"}
-"read" → {"status":"warning","message":"'Read' needs more detail to earn full XP. Add what or how much.","suggestion":"Read 20 pages every night before bed"}`;
+const INAPPROPRIATE_RESPONSE = {
+  status:  "blocked" as const,
+  message: "This isn't an appropriate habit. Please enter a real, positive habit you want to build.",
+  suggestion: "Meditate for 10 minutes every morning",
+};
+
+function containsInappropriateContent(name: string): boolean {
+  return INAPPROPRIATE_PATTERNS.some((re) => re.test(name));
+}
+
+// ─── AI system prompt ─────────────────────────────────────────────────────────
+
+const SYSTEM_PROMPT = `You are a content-moderated habit coach reviewing a habit name for a general-audience app used by people aged 7–60. Reply with ONLY valid JSON, no extra keys:
+{"status":"good"|"warning"|"blocked","message":"...","suggestion":"..."}
+
+══ CONTENT MODERATION — TOP PRIORITY ══
+If the input contains ANY of the following — regardless of phrasing, euphemisms, or clever wording — return EXACTLY this JSON and nothing else:
+{"status":"blocked","message":"This isn't an appropriate habit. Please enter a real, positive habit you want to build.","suggestion":"Meditate for 10 minutes every morning"}
+
+Triggers for immediate block:
+• Sexual content: sexual acts, body parts in a sexual context, pornography, explicit material
+• Violence: harming or killing people or animals, fighting, assault
+• Self-harm or suicide references
+• Illegal drug use (cocaine, heroin, meth, etc.)
+• Any content inappropriate for a 7-year-old
+
+══ HABIT QUALITY RULES ══
+good   = specific, measurable, actionable (e.g. "Run 5km daily", "Read 20 pages before bed")
+warning = too vague, leisure/entertainment, or missing frequency/duration — earns only 50% XP
+blocked = not a trackable habit: pure emotion, nonsense, single noun, random phrase, inappropriate
+
+══ MESSAGE REQUIREMENTS — MANDATORY ══
+Every message MUST:
+1. Mention the habit by name
+2. Explain specifically WHY it is good / vague / blocked
+   - good   → explain the concrete benefit AND what makes it specific (duration, frequency, action)
+   - warning → name EXACTLY what information is missing (frequency? duration? activity type?) and why that matters
+   - blocked → explain why it cannot be tracked and suggest a real alternative
+3. Stay under 30 words. Conversational tone. No filler phrases like "looks great!".
+
+NEVER approve a habit with a generic message. Every response must reference the specific habit.
+
+══ EXAMPLES ══
+"run" → {"status":"warning","message":"'Run' has no distance or schedule, so there's nothing to track consistently. Add a goal like distance or time.","suggestion":"Run 3km every morning"}
+"watch harry potter" → {"status":"blocked","message":"Watching Harry Potter is entertainment, not a habit you can build. Try something active or skill-based instead.","suggestion":"Watch one educational documentary per week"}
+"meditate 10 minutes daily" → {"status":"good","message":"Meditating 10 minutes daily gives you a clear duration and cadence — perfect for building a consistent mindfulness practice. 🎯"}
+"be happy" → {"status":"blocked","message":"'Be happy' is a feeling, not a daily action you can check off. Habits need to be concrete behaviours.","suggestion":"Write 3 things I'm grateful for each morning"}
+"exercise" → {"status":"warning","message":"'Exercise' doesn't say what type, how long, or how often — all three gaps mean nothing to track.","suggestion":"Do 30 minutes of cardio every morning"}
+"read" → {"status":"warning","message":"'Read' is missing how much and when, which makes it impossible to build into a consistent routine.","suggestion":"Read 20 pages every night before bed"}
+"drink water" → {"status":"warning","message":"'Drink water' needs a target amount and time to be trackable. How much, and when?","suggestion":"Drink 2 glasses of water every morning"}
+"journal" → {"status":"warning","message":"'Journal' doesn't say how long or when, so there's no clear habit to measure.","suggestion":"Write a 5-minute journal entry before bed"}`;
 
 export interface ValidationResponse {
   status: "good" | "warning" | "blocked";
@@ -68,7 +117,7 @@ function ruleBasedValidation(name: string): ValidationResponse {
   if (words.length === 1 && GENERIC_WORDS.has(words[0])) {
     return {
       status:     "warning",
-      message:    `'${cap}' is too vague to earn full XP. Add a duration or frequency to make it specific.`,
+      message:    `'${cap}' is too vague — there's no frequency, duration, or specifics to track. Add how long or how often.`,
       suggestion: `${cap} for 20 minutes every morning`,
     };
   }
@@ -76,13 +125,25 @@ function ruleBasedValidation(name: string): ValidationResponse {
   if (words.length === 1) {
     return {
       status:  "warning",
-      message: `'${cap}' needs more detail. What exactly will you do, and how often?`,
+      message: `'${cap}' needs more detail — what exactly will you do, how often, and for how long?`,
+    };
+  }
+
+  // Multi-word habit — check if it has some specificity
+  const hasNumber = /\d/.test(lower);
+  const hasFrequency = /\b(daily|every|each|per|weekly|morning|evening|night|before|after)\b/.test(lower);
+
+  if (hasNumber || hasFrequency) {
+    return {
+      status:  "good",
+      message: `'${cap}' is specific and measurable — you have a clear target to hit and track. Great habit! 🎯`,
     };
   }
 
   return {
-    status:  "good",
-    message: `'${cap}' is a clear, actionable habit. You'll earn full XP 🎯`,
+    status:  "warning",
+    message: `'${cap}' could be stronger with a frequency or amount — adding "every morning" or a number makes it fully trackable.`,
+    suggestion: `${cap} for 20 minutes every morning`,
   };
 }
 
@@ -97,6 +158,11 @@ export async function POST(request: NextRequest) {
     const goals = Array.isArray(body.goals) && body.goals.length > 0 ? body.goals : null;
     if (habitName.length < 3) {
       return NextResponse.json<ValidationResponse>({ status: "good", message: "" });
+    }
+
+    // Content moderation pre-screen — never let inappropriate habits reach AI or DB
+    if (containsInappropriateContent(habitName)) {
+      return NextResponse.json<ValidationResponse>(INAPPROPRIATE_RESPONSE);
     }
 
     const apiKey = process.env.OPENAI_API_KEY;
@@ -123,7 +189,7 @@ export async function POST(request: NextRequest) {
               ? `Habit name: "${habitName}". User's goals: ${goals.join(", ")}.`
               : `Habit name: "${habitName}"` },
         ],
-        max_tokens: 120,
+        max_tokens: 150,
         temperature: 0.1,
         response_format: { type: "json_object" },
       }),
@@ -139,6 +205,13 @@ export async function POST(request: NextRequest) {
     // Sanitise — never return an unknown status
     if (!["good", "warning", "blocked"].includes(parsed.status)) {
       return NextResponse.json<ValidationResponse>(ruleBasedValidation(habitName));
+    }
+
+    // Second-pass moderation: if AI returned "good" or "warning" but the habit name
+    // still triggers our keyword filter (shouldn't happen, but belt-and-suspenders),
+    // override with the moderation response.
+    if (containsInappropriateContent(habitName)) {
+      return NextResponse.json<ValidationResponse>(INAPPROPRIATE_RESPONSE);
     }
 
     return NextResponse.json<ValidationResponse>(parsed);

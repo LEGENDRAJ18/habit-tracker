@@ -215,6 +215,13 @@ export default function AddHabitModal({ onClose, existingHabits, goals, tier, on
   const [error, setError]       = useState<string | null>(null);
   const [suggestionOffset, setSuggestionOffset] = useState(0);
 
+  // Lock background scroll while modal is open
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   const aiValidation = useHabitValidation(name, goals);
   const duplicate    = name.trim().length > 2 && isDuplicate(name, existingHabits);
 
@@ -260,10 +267,11 @@ export default function AddHabitModal({ onClose, existingHabits, goals, tier, on
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-sm"
+      style={{ alignItems: "center" }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-2xl bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl shadow-violet-950/50 flex flex-col max-h-[94vh]">
+      <div className="w-full max-w-2xl bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl shadow-violet-950/50 flex flex-col max-h-[90vh] my-auto">
 
         {/* ── Header ─────────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-violet-900/20 flex-shrink-0">
