@@ -142,8 +142,10 @@ export default function HabitCard({
 
   return (
     <div
-      className={`group rounded-xl border transition-all duration-300 ${
-        completed ? "bg-violet-600/8 border-violet-600/20" : "bg-[#0f0f1a] border-violet-900/20 hover:border-violet-800/30"
+      className={`group rounded-xl border transition-all duration-200 ${
+        completed
+          ? "bg-violet-600/8 border-violet-600/20"
+          : "bg-[#0f0f1a] border-violet-900/20 hover:border-violet-800/30 hover:-translate-y-px hover:shadow-[0_4px_20px_rgba(109,40,217,0.10)]"
       } ${deleting ? "opacity-50 pointer-events-none" : ""}`}
       style={justCompleted ? { animation: "cardNudge 0.35s ease-out both" } : undefined}
     >

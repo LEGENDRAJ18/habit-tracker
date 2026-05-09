@@ -1,6 +1,7 @@
 "use client";
 
 import { Flame, Zap } from "lucide-react";
+import { useCountUp } from "@/hooks/useCountUp";
 import {
   levelName,
   levelColorKey,
@@ -39,10 +40,14 @@ const STYLES: Record<LevelColorKey, { ring: string; bg: string; text: string; ba
 export default function StatsBar({ xp, level, bestStreak, totalCompletions, sidebar }: Props) {
   const colorKey = levelColorKey(level);
   const style    = STYLES[colorKey];
-  const pct      = xpProgressPct(xp);
-  const into     = xpIntoLevel(xp);
-  const span     = xpSpanOfLevel(xp);
-  const name     = levelName(level);
+  // Bar uses real xp so CSS transition-all animates the bar width
+  const pct  = xpProgressPct(xp);
+  const span = xpSpanOfLevel(xp);
+  const name = levelName(level);
+  // Animated display values — count-up when XP or streak changes
+  const displayXP     = useCountUp(xp, 550);
+  const displayStreak = useCountUp(bestStreak, 400);
+  const displayInto   = useCountUp(xpIntoLevel(xp), 550);
 
   if (sidebar) {
     return (
@@ -67,7 +72,7 @@ export default function StatsBar({ xp, level, bestStreak, totalCompletions, side
         {/* XP bar */}
         <div className="mb-4">
           <div className="flex justify-between text-[10px] mb-1.5">
-            <span className={style.text}>{into.toLocaleString()} XP</span>
+            <span className={style.text}>{displayInto.toLocaleString()} XP</span>
             <span className="text-slate-600">{span.toLocaleString()} total</span>
           </div>
           <div className="w-full h-2.5 bg-violet-950/60 rounded-full overflow-hidden">
@@ -77,14 +82,14 @@ export default function StatsBar({ xp, level, bestStreak, totalCompletions, side
             />
           </div>
           <p className="text-[10px] text-slate-600 mt-1.5">
-            Level {level + 1} — {(span - into).toLocaleString()} XP to next level
+            Level {level + 1} — {(span - displayInto).toLocaleString()} XP to next level
           </p>
         </div>
 
         {/* Stats grid */}
         <div className="grid grid-cols-3 gap-2">
-          <StatPill icon={<Zap className="w-3 h-3" />} value={xp.toLocaleString()} label="XP" color={style.text} />
-          <StatPill icon={<Flame className="w-3 h-3 text-orange-400" />} value={String(bestStreak)} label="streak" color="text-orange-300" />
+          <StatPill icon={<Zap className="w-3 h-3" />} value={displayXP.toLocaleString()} label="XP" color={style.text} />
+          <StatPill icon={<Flame className="w-3 h-3 text-orange-400" />} value={String(displayStreak)} label="streak" color="text-orange-300" />
           <StatPill icon={null} value={totalCompletions.toLocaleString()} label="done" color="text-slate-400" />
         </div>
       </div>
@@ -102,7 +107,7 @@ export default function StatsBar({ xp, level, bestStreak, totalCompletions, side
         <div className="flex items-baseline justify-between mb-1">
           <span className={`text-xs font-semibold ${style.text}`}>{name}</span>
           <span className="text-[10px] text-slate-600 tabular-nums">
-            {into.toLocaleString()} / {span.toLocaleString()} XP
+            {displayInto.toLocaleString()} / {span.toLocaleString()} XP
           </span>
         </div>
         <div className="w-full h-2 bg-violet-950/60 rounded-full overflow-hidden">
@@ -111,12 +116,12 @@ export default function StatsBar({ xp, level, bestStreak, totalCompletions, side
             style={{ width: `${pct}%` }}
           />
         </div>
-        <p className="text-[10px] text-slate-600 mt-0.5">Level {level + 1} — {(span - into).toLocaleString()} XP to next level</p>
+        <p className="text-[10px] text-slate-600 mt-0.5">Level {level + 1} — {(span - displayInto).toLocaleString()} XP to next level</p>
       </div>
       <div className="flex items-center gap-4 flex-shrink-0">
         <div className="flex items-center gap-1.5 text-xs text-slate-500">
           <Flame className="w-3.5 h-3.5 text-orange-400" />
-          <span className="font-semibold text-slate-300 tabular-nums">{bestStreak}</span>
+          <span className="font-semibold text-slate-300 tabular-nums">{displayStreak}</span>
           <span>best</span>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-slate-500">
@@ -125,7 +130,7 @@ export default function StatsBar({ xp, level, bestStreak, totalCompletions, side
           <span className="hidden sm:inline">done</span>
         </div>
         <div className="flex items-center gap-1 text-xs text-slate-500">
-          <span className={`font-semibold tabular-nums ${style.text}`}>{xp.toLocaleString()}</span>
+          <span className={`font-semibold tabular-nums ${style.text}`}>{displayXP.toLocaleString()}</span>
           <span>XP</span>
         </div>
       </div>

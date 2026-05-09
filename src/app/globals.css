@@ -138,10 +138,16 @@ body {
   100% { background-position:  200% 0; }
 }
 
-/* Toast slides in from top-right */
-@keyframes toastSlideIn {
-  from { opacity: 0; transform: translateX(32px) scale(0.92); }
-  to   { opacity: 1; transform: translateX(0)    scale(1);    }
+/* Toast slides up from bottom-centre */
+@keyframes toastSlideUp {
+  from { opacity: 0; transform: translateY(14px) scale(0.90); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+/* Toast fades out downward on dismiss */
+@keyframes toastFadeOut {
+  from { opacity: 1; transform: translateY(0)    scale(1);    }
+  to   { opacity: 0; transform: translateY(8px)  scale(0.95); }
 }
 
 /* Count-up hint — used by JS, keyframe just marks intent */
@@ -179,15 +185,22 @@ body {
   animation: fadeIn 0.3s ease-out both;
 }
 
-/* Toast wrapper coloring */
-[role="alert"].success-toast {
-  background: rgba(6,20,15,0.96);
-  border-color: rgba(16,185,129,0.35);
+/* ── Interactive polish ──────────────────────────────────────────────── */
+
+/* Tactile press feedback — all buttons get a subtle click-down */
+button:not(:disabled):active,
+[role="button"]:active {
+  transform: scale(0.96);
+  transition: transform 0.08s ease;
 }
-[role="alert"].error-toast {
-  background: rgba(20,6,6,0.96);
-  border-color: rgba(239,68,68,0.35);
+
+/* Number pop when count-up finishes */
+@keyframes numPop {
+  0%   { transform: scale(1);    }
+  50%  { transform: scale(1.18); }
+  100% { transform: scale(1);    }
 }
+.num-pop { animation: numPop 0.3s cubic-bezier(0.34,1.56,0.64,1) both; }
 
 /* Upgrade button gradient shimmer */
 @keyframes upgradeShimmer {
