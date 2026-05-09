@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
-import Link from "next/link";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
-  ChevronLeft, ChevronRight, Calendar as CalendarIcon,
-  X, Check, Clock, Sparkles, TrendingUp, CalendarDays, Flame,
-  Plus, Trash2, Brain,
+  ChevronLeft, ChevronRight, Calendar as CalendarIcon, X, Check, Clock,
+  Sparkles, CalendarDays, Flame, Brain, Plus, Trash2, ArrowLeft,
+  Trophy, Target, Zap,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import type { Habit, HabitLog } from "@/types";
+import type { Habit, HabitLog, Plan } from "@/types";
+import AddHabitModal from "@/components/dashboard/AddHabitModal";
+import Link from "next/link";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -18,9 +19,7 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 function fmtDate(ds: string) {
-  return new Date(ds + "T12:00:00").toLocaleDateString("en-US", {
-    weekday: "long", month: "long", day: "numeric",
-  });
+  return new Date(ds + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 }
 function fmtShort(ds: string) {
   const today = toDateStr(new Date());
@@ -29,45 +28,735 @@ function fmtShort(ds: string) {
   if (ds === tomorrow) return "Tomorrow";
   return new Date(ds + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
-
 function computeBestStreak(logs: { completed_at: string }[]): number {
   if (!logs.length) return 0;
   const days = [...new Set(logs.map(l => l.completed_at.split("T")[0]))].sort();
   let best = 1, cur = 1;
   for (let i = 1; i < days.length; i++) {
     const diff = (new Date(days[i]).getTime() - new Date(days[i - 1]).getTime()) / 86400000;
-    if (diff === 1) { cur++; best = Math.max(best, cur); }
-    else cur = 1;
+    if (diff === 1) { cur++; best = Math.max(best, cur); } else cur = 1;
   }
   return best;
 }
-
 function computeCurrentStreak(logs: { completed_at: string }[]): number {
   if (!logs.length) return 0;
   const days = new Set(logs.map(l => l.completed_at.split("T")[0]));
   const today = toDateStr(new Date());
-  let start = days.has(today) ? new Date() : new Date(Date.now() - 86400000);
+  const start = days.has(today) ? new Date() : new Date(Date.now() - 86400000);
   let streak = 0;
   for (let i = 0; i < 365; i++) {
     const ds = toDateStr(new Date(start.getTime() - i * 86400000));
-    if (days.has(ds)) streak++;
-    else break;
+    if (days.has(ds)) streak++; else break;
   }
   return streak;
+}
+
+// ─── category + color ─────────────────────────────────────────────────────────
+
+type Category = "fitness" | "wellness" | "sleep" | "learning" | "productivity" | "general";
+
+function detectCategory(name: string): Category {
+  const n = name.toLowerCase();
+  if (/(run|walk|gym|exercise|workout|pushup|squat|bike|swim|yoga|stretch|steps|cardio|hiit|lift|weight|sport|training)/i.test(n)) return "fitness";
+  if (/(meditat|breath|gratitude|journal|mindful|calm|stress|anxiet|relax|mental|wellness|therapy)/i.test(n)) return "wellness";
+  if (/(sleep|bed|wake|nap|rest|bedtime|insomnia)/i.test(n)) return "sleep";
+  if (/(read|study|learn|course|book|cod|program|skill|practice|write|educat|language)/i.test(n)) return "learning";
+  if (/(plan|task|work|focus|productiv|review|goal|inbox|meeting|project|organiz|schedule|priorit)/i.test(n)) return "productivity";
+  return "general";
+}
+
+const CAT_STYLE: Record<Category, { bg: string; border: string; text: string; emoji: string }> = {
+  fitness:      { bg: "bg-blue-900/30",   border: "border-blue-700/30",   text: "text-blue-300",    emoji: "💪" },
+  wellness:     { bg: "bg-emerald-900/30", border: "border-emerald-700/30", text: "text-emerald-300", emoji: "🧘" },
+  sleep:        { bg: "bg-indigo-900/30",  border: "border-indigo-700/30",  text: "text-indigo-300",  emoji: "😴" },
+  learning:     { bg: "bg-amber-900/25",   border: "border-amber-700/25",   text: "text-amber-300",   emoji: "📚" },
+  productivity: { bg: "bg-orange-900/25",  border: "border-orange-700/25",  text: "text-orange-300",  emoji: "⚡" },
+  general:      { bg: "bg-violet-950/30",  border: "border-violet-800/25",  text: "text-violet-300",  emoji: "✅" },
+};
+
+function getTimeGroup(whenTime: string | null, completedAt?: string): "morning" | "afternoon" | "evening" | "anytime" {
+  const t = completedAt
+    ? `${String(new Date(completedAt).getHours()).padStart(2, "0")}:00`
+    : whenTime;
+  if (!t) return "anytime";
+  const h = parseInt(t.split(":")[0], 10);
+  if (h >= 5  && h < 12) return "morning";
+  if (h >= 12 && h < 17) return "afternoon";
+  if (h >= 17) return "evening";
+  return "anytime";
 }
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
 interface DayDetail { date: string; completed: Habit[]; missed: Habit[]; }
-interface ScheduledHabit { id: string; habitId: string; habitName: string; date: string; }
 
-const SCHED_KEY = "habitai_scheduled_v2";
+interface ScheduledHabit {
+  id: string;
+  habitId: string | null;
+  habitName: string;
+  date: string;
+  description?: string;
+  frequency?: "daily" | "weekly";
+  whenTime?: string | null;
+  whereLocation?: string | null;
+  howLong?: string | null;
+  validityScore?: "valid" | "partial" | "invalid";
+}
 
-// ─── heatmap ─────────────────────────────────────────────────────────────────
+const SCHED_KEY = "habitai_scheduled_v3";
+const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-function ContributionHeatmap({
-  logs, habits,
-}: { logs: Pick<HabitLog, "habit_id" | "completed_at">[]; habits: Habit[] }) {
+// ─── HeroStats ────────────────────────────────────────────────────────────────
+
+function HeroStats({ currentStreak, thisMonthTotal, bestStreak }: {
+  currentStreak: number; thisMonthTotal: number; bestStreak: number;
+}) {
+  return (
+    <div className="grid grid-cols-3 gap-3 mb-5">
+      <div className="bg-gradient-to-br from-orange-900/40 to-amber-900/20 border border-orange-700/25 rounded-2xl p-4 text-center">
+        <div className="flex items-center justify-center gap-1.5 mb-1">
+          <Flame className="w-4 h-4 text-orange-400" />
+        </div>
+        <p className="text-4xl font-black text-orange-300 leading-none">{currentStreak}</p>
+        <p className="text-[10px] text-orange-500/80 font-semibold mt-2 uppercase tracking-wider">day streak</p>
+      </div>
+      <div className="bg-gradient-to-br from-violet-900/40 to-purple-900/20 border border-violet-700/25 rounded-2xl p-4 text-center">
+        <div className="flex items-center justify-center gap-1.5 mb-1">
+          <Target className="w-4 h-4 text-violet-400" />
+        </div>
+        <p className="text-4xl font-black text-violet-300 leading-none">{thisMonthTotal}</p>
+        <p className="text-[10px] text-violet-500/80 font-semibold mt-2 uppercase tracking-wider">this month</p>
+      </div>
+      <div className="bg-gradient-to-br from-emerald-900/30 to-teal-900/20 border border-emerald-700/25 rounded-2xl p-4 text-center">
+        <div className="flex items-center justify-center gap-1.5 mb-1">
+          <Trophy className="w-4 h-4 text-emerald-400" />
+        </div>
+        <p className="text-4xl font-black text-emerald-300 leading-none">{bestStreak}</p>
+        <p className="text-[10px] text-emerald-500/80 font-semibold mt-2 uppercase tracking-wider">best streak</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── WeekStrip ────────────────────────────────────────────────────────────────
+
+function WeekStrip({ selectedDay, onSelectDay, dayCompletionMap, habits }: {
+  selectedDay: string | null;
+  onSelectDay: (d: string) => void;
+  dayCompletionMap: Map<string, Set<string>>;
+  habits: Habit[];
+}) {
+  const today = toDateStr(new Date());
+  const now   = new Date();
+  const weekStart = new Date(now.getTime() - now.getDay() * 86400000);
+
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d    = toDateStr(new Date(weekStart.getTime() + i * 86400000));
+    const done = dayCompletionMap.get(d);
+    const existing = habits.filter(h => h.created_at.split("T")[0] <= d);
+    const completed = done ? existing.filter(h => done.has(h.id)).length : 0;
+    const total     = existing.length;
+    const isFuture  = d > today;
+    const isToday   = d === today;
+    const pct       = total > 0 ? completed / total : null;
+    let dotColor: string | null = null;
+    if (!isFuture && total > 0) {
+      dotColor = pct === 1 ? "bg-emerald-400" : pct! > 0 ? "bg-amber-400" : "bg-red-400/80";
+    }
+    return { d, dayNum: parseInt(d.split("-")[2], 10), isToday, isFuture, isSelected: d === selectedDay, dotColor };
+  });
+
+  return (
+    <div className="flex justify-between bg-[#0c0c18] border border-violet-900/20 rounded-2xl px-2 py-3 mb-4">
+      {days.map((day, i) => (
+        <button
+          key={day.d}
+          onClick={() => !day.isFuture && onSelectDay(day.d === selectedDay ? "" : day.d)}
+          disabled={day.isFuture}
+          className={`flex flex-col items-center gap-1 px-2 py-1 rounded-xl transition-all ${
+            day.isSelected
+              ? "bg-violet-700/40"
+              : !day.isFuture
+              ? "hover:bg-violet-950/40 cursor-pointer"
+              : "cursor-default"
+          }`}
+        >
+          <span className={`text-[10px] font-bold uppercase tracking-wide ${day.isToday ? "text-violet-400" : "text-slate-600"}`}>
+            {WEEK_DAYS[i].slice(0, 1)}
+          </span>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+            day.isToday ? "bg-violet-600 shadow-lg shadow-violet-900/50" :
+            day.isSelected ? "bg-violet-800/60" : ""
+          }`}>
+            <span className={`text-sm font-bold ${
+              day.isToday ? "text-white" :
+              day.isFuture ? "text-slate-700" :
+              day.isSelected ? "text-violet-200" : "text-slate-300"
+            }`}>{day.dayNum}</span>
+          </div>
+          <div className={`w-1.5 h-1.5 rounded-full transition-all ${day.dotColor ?? "bg-transparent"}`} />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─── DayDetailPanel ───────────────────────────────────────────────────────────
+
+const TIME_GROUP_META = {
+  morning:   { label: "Morning",   emoji: "🌅", range: "5am – 12pm" },
+  afternoon: { label: "Afternoon", emoji: "☀️",  range: "12pm – 5pm" },
+  evening:   { label: "Evening",   emoji: "🌆", range: "5pm – 11pm" },
+  anytime:   { label: "Anytime",   emoji: "📌", range: "no time set" },
+} as const;
+
+function DayDetailPanel({ detail, logs, onClose }: {
+  detail: DayDetail;
+  logs: (Pick<HabitLog, "habit_id" | "completed_at"> & { id: string })[];
+  onClose: () => void;
+}) {
+  const dayLogs = logs.filter(l => l.completed_at.startsWith(detail.date));
+  const allDone  = detail.missed.length === 0 && detail.completed.length > 0;
+  const noneDone = detail.completed.length === 0 && detail.missed.length > 0;
+
+  // Group completed by time of day
+  const groups: Record<string, { habit: Habit; log?: typeof dayLogs[0] }[]> = {
+    morning: [], afternoon: [], evening: [], anytime: [],
+  };
+  for (const h of detail.completed) {
+    const log  = dayLogs.find(l => l.habit_id === h.id);
+    const grp  = getTimeGroup(h.when_time, log?.completed_at);
+    groups[grp].push({ habit: h, log });
+  }
+
+  return (
+    <div className="bg-[#0c0c18] border border-violet-800/30 rounded-2xl overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-3.5 border-b border-violet-900/20">
+        <div className="flex items-center gap-2.5">
+          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${allDone ? "bg-emerald-400" : noneDone ? "bg-red-500" : "bg-amber-400"}`} />
+          <p className="text-sm font-semibold text-white">{fmtDate(detail.date)}</p>
+        </div>
+        <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      {detail.completed.length === 0 && detail.missed.length === 0 ? (
+        <p className="text-sm text-slate-500 text-center py-6 px-5">No habits tracked on this day.</p>
+      ) : (
+        <div className="p-4 space-y-4 max-h-80 overflow-y-auto">
+          {/* Completed — grouped by time */}
+          {(["morning", "afternoon", "evening", "anytime"] as const).map(grp => {
+            const items = groups[grp];
+            if (!items.length) return null;
+            const meta = TIME_GROUP_META[grp];
+            return (
+              <div key={grp}>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <span className="text-sm leading-none">{meta.emoji}</span>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{meta.label}</span>
+                  <span className="text-[9px] text-slate-700">· {meta.range}</span>
+                </div>
+                <div className="space-y-1.5">
+                  {items.map(({ habit, log }) => {
+                    const cat = detectCategory(habit.name);
+                    const cs  = CAT_STYLE[cat];
+                    return (
+                      <div key={habit.id} className={`flex items-center gap-3 py-2.5 px-3 ${cs.bg} border ${cs.border} rounded-xl`}>
+                        <span className="text-sm leading-none flex-shrink-0">{cs.emoji}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-semibold truncate ${cs.text}`}>{habit.name}</p>
+                          {log && (
+                            <p className="text-[10px] text-slate-600 mt-0.5 flex items-center gap-1">
+                              <Clock className="w-2.5 h-2.5" />
+                              {formatTime(log.completed_at)}
+                            </p>
+                          )}
+                        </div>
+                        <Check className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Missed */}
+          {detail.missed.length > 0 && (
+            <div>
+              <div className="flex items-center gap-1.5 mb-2">
+                <span className="text-sm leading-none">❌</span>
+                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Missed</span>
+              </div>
+              <div className="space-y-1.5">
+                {detail.missed.map(h => (
+                  <div key={h.id} className="flex items-center gap-3 py-2.5 px-3 bg-red-950/15 border border-red-900/20 rounded-xl">
+                    <div className="w-3.5 h-3.5 rounded-full border border-red-500/40 flex-shrink-0" />
+                    <p className="text-sm text-slate-500 truncate">{h.name}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {detail.completed.length > 0 && (
+        <div className="px-5 py-2.5 border-t border-violet-900/15 flex items-center justify-between">
+          <span className="text-xs text-slate-600">
+            {detail.completed.length} / {detail.completed.length + detail.missed.length} completed
+          </span>
+          <span className="text-xs font-bold text-emerald-400">
+            {Math.round((detail.completed.length / (detail.completed.length + detail.missed.length)) * 100)}%
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── DatePickerStep ───────────────────────────────────────────────────────────
+
+function DatePickerStep({ habitName, onConfirm, onClose }: {
+  habitName: string;
+  onConfirm: (dates: string[]) => void;
+  onClose: () => void;
+}) {
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const today = toDateStr(new Date());
+  const todayDow = new Date().getDay();
+
+  const next21 = useMemo(() => Array.from({ length: 21 }, (_, i) => {
+    const d = new Date(Date.now() + i * 86400000);
+    return { dateStr: toDateStr(d), dayNum: d.getDate(), month: d.toLocaleDateString("en-US", { month: "short" }) };
+  }), []);
+
+  const quickOptions = useMemo(() => [
+    { label: "Today",        emoji: "📅", dates: [today] },
+    { label: "Tomorrow",     emoji: "⏭️", dates: [toDateStr(new Date(Date.now() + 86400000))] },
+    { label: "Next 7 days",  emoji: "📆", dates: Array.from({ length: 7 }, (_, i) => toDateStr(new Date(Date.now() + i * 86400000))) },
+    {
+      label: "Weekdays",     emoji: "🗓️",
+      dates: Array.from({ length: 14 }, (_, i) => {
+        const d = new Date(Date.now() + i * 86400000);
+        return d.getDay() !== 0 && d.getDay() !== 6 ? toDateStr(d) : null;
+      }).filter(Boolean) as string[],
+    },
+    {
+      label: "Weekends",     emoji: "🌅",
+      dates: Array.from({ length: 14 }, (_, i) => {
+        const d = new Date(Date.now() + i * 86400000);
+        return (d.getDay() === 0 || d.getDay() === 6) ? toDateStr(d) : null;
+      }).filter(Boolean) as string[],
+    },
+  ], [today]);
+
+  const toggle = (d: string) => {
+    setSelected(prev => {
+      const s = new Set(prev);
+      if (s.has(d)) s.delete(d); else s.add(d);
+      return s;
+    });
+  };
+
+  // Month change points for the mini calendar header
+  const monthLabels = useMemo(() => {
+    const labels: { col: number; month: string }[] = [];
+    let prev = "";
+    next21.forEach(({ dateStr, month }, i) => {
+      const col = (todayDow + i) % 7;
+      if (month !== prev) { labels.push({ col, month }); prev = month; }
+    });
+    return labels;
+  }, [next21, todayDow]);
+  void monthLabels;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div className="w-full max-w-sm bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-violet-900/20 flex-shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-violet-600/20 border border-violet-600/30 flex items-center justify-center flex-shrink-0">
+            <CalendarDays className="w-4 h-4 text-violet-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-white">When do you want to start?</p>
+            <p className="text-[11px] text-violet-400/80 truncate">&ldquo;{habitName}&rdquo;</p>
+          </div>
+          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-5">
+          {/* Quick options */}
+          <div>
+            <p className="text-[10px] text-slate-600 uppercase tracking-wider font-semibold mb-2.5">Quick pick</p>
+            <div className="grid grid-cols-2 gap-2">
+              {quickOptions.map(o => (
+                <button
+                  key={o.label}
+                  onClick={() => setSelected(new Set(o.dates))}
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all ${
+                    o.dates.every(d => selected.has(d)) && o.dates.length === selected.size
+                      ? "bg-violet-600/25 border-violet-500/50 text-violet-200"
+                      : "bg-violet-950/30 hover:bg-violet-950/50 border-violet-900/25 hover:border-violet-700/40 text-slate-300"
+                  }`}
+                >
+                  <span className="text-base leading-none">{o.emoji}</span>
+                  <span className="text-xs font-medium">{o.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Mini calendar - next 21 days */}
+          <div>
+            <p className="text-[10px] text-slate-600 uppercase tracking-wider font-semibold mb-2.5">Pick specific days</p>
+            <div className="grid grid-cols-7 gap-1">
+              {["S","M","T","W","T","F","S"].map((d, i) => (
+                <div key={i} className="text-center text-[9px] text-slate-600 font-semibold uppercase py-1">{d}</div>
+              ))}
+              {/* Blank offset cells */}
+              {Array.from({ length: todayDow }, (_, i) => <div key={`blank-${i}`} />)}
+              {/* Day cells */}
+              {next21.map(({ dateStr, dayNum }) => (
+                <button
+                  key={dateStr}
+                  onClick={() => toggle(dateStr)}
+                  className={`aspect-square rounded-lg flex items-center justify-center text-xs font-medium transition-all ${
+                    selected.has(dateStr)
+                      ? "bg-violet-600 text-white shadow-lg shadow-violet-900/40"
+                      : dateStr === today
+                      ? "bg-violet-950/50 border border-violet-700/40 text-violet-300 hover:bg-violet-600/30"
+                      : "text-slate-400 hover:bg-violet-950/50 hover:text-white"
+                  }`}
+                >
+                  {dayNum}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {selected.size > 0 && (
+            <p className="text-xs text-center text-violet-300 font-medium">
+              {selected.size} day{selected.size !== 1 ? "s" : ""} selected ✓
+            </p>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-3 px-5 py-4 border-t border-violet-900/20 flex-shrink-0">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-violet-900/30 text-slate-400 hover:text-white text-sm rounded-xl transition-colors">
+            Cancel
+          </button>
+          <button
+            onClick={() => onConfirm(Array.from(selected).sort())}
+            disabled={selected.size === 0}
+            className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-all"
+          >
+            Schedule {selected.size > 0 ? selected.size : ""} day{selected.size !== 1 ? "s" : ""} →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── PlanAheadSection ─────────────────────────────────────────────────────────
+
+interface PendingHabit {
+  name: string; description: string;
+  frequency: "daily" | "weekly";
+  stackAfterId: string | null;
+  whenTime: string | null; whereLocation: string | null;
+  howLong: string | null;
+  validityScore: "valid" | "partial" | "invalid";
+}
+
+function PlanAheadSection({ habits, goals, tier, scheduled, onAdd, onRemove, onComplete }: {
+  habits: Habit[]; goals: string[]; tier: Plan;
+  scheduled: ScheduledHabit[];
+  onAdd: (s: ScheduledHabit) => void;
+  onRemove: (id: string) => void;
+  onComplete: (s: ScheduledHabit) => void;
+}) {
+  const [planStep, setPlanStep]       = useState<null | "habit" | "dates">(null);
+  const [pending, setPending]         = useState<PendingHabit | null>(null);
+  const afterSuccessRef               = useRef<(() => void) | null>(null);
+
+  const upcoming = useMemo(() => {
+    const next7 = Array.from({ length: 7 }, (_, i) => toDateStr(new Date(Date.now() + i * 86400000)));
+    return scheduled.filter(s => next7.includes(s.date)).sort((a, b) => a.date.localeCompare(b.date));
+  }, [scheduled]);
+
+  const handleHabitCapture = useCallback(async (
+    name: string, description: string, frequency: "daily" | "weekly",
+    stackAfterId?: string | null, whenTime?: string | null, whereLocation?: string | null,
+    howLong?: string | null, validityScore?: "valid" | "partial" | "invalid",
+  ): Promise<{ error: string | null }> => {
+    afterSuccessRef.current = () => {
+      setPending({
+        name, description: description || "",
+        frequency: frequency || "daily",
+        stackAfterId: stackAfterId ?? null,
+        whenTime: whenTime ?? null,
+        whereLocation: whereLocation ?? null,
+        howLong: howLong ?? null,
+        validityScore: validityScore ?? "valid",
+      });
+      setPlanStep("dates");
+    };
+    return { error: null };
+  }, []);
+
+  const handleDateConfirm = useCallback((dates: string[]) => {
+    if (!pending) return;
+    dates.forEach(date => onAdd({
+      id:           crypto.randomUUID(),
+      habitId:      null,
+      habitName:    pending.name,
+      date,
+      description:  pending.description,
+      frequency:    pending.frequency,
+      whenTime:     pending.whenTime,
+      whereLocation: pending.whereLocation,
+      howLong:      pending.howLong,
+      validityScore: pending.validityScore,
+    }));
+    setPlanStep(null);
+    setPending(null);
+  }, [pending, onAdd]);
+
+  return (
+    <>
+      {planStep === "habit" && (
+        <AddHabitModal
+          onClose={() => {
+            if (afterSuccessRef.current) {
+              afterSuccessRef.current();
+              afterSuccessRef.current = null;
+            } else {
+              setPlanStep(null);
+            }
+          }}
+          existingHabits={habits}
+          goals={goals}
+          tier={tier}
+          onAdd={handleHabitCapture}
+          onUpgradePro={() => {}}
+        />
+      )}
+      {planStep === "dates" && pending && (
+        <DatePickerStep
+          habitName={pending.name}
+          onConfirm={handleDateConfirm}
+          onClose={() => { setPlanStep(null); setPending(null); }}
+        />
+      )}
+
+      <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <CalendarDays className="w-4 h-4 text-violet-400" />
+          <p className="text-sm font-semibold text-white">Plan Ahead 📅</p>
+        </div>
+
+        <button
+          onClick={() => setPlanStep("habit")}
+          className="w-full flex items-center justify-center gap-2 py-2.5 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-600/30 text-violet-300 text-sm font-semibold rounded-xl transition-all mb-4"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Plan a new habit
+        </button>
+
+        {upcoming.length > 0 ? (
+          <div className="space-y-1.5">
+            <p className="text-[10px] text-slate-600 uppercase tracking-wider font-semibold mb-2">Next 7 days</p>
+            {upcoming.map(s => {
+              const cat = detectCategory(s.habitName);
+              const cs  = CAT_STYLE[cat];
+              return (
+                <div key={s.id} className={`flex items-center gap-2.5 ${cs.bg} border ${cs.border} rounded-xl px-3 py-2.5`}>
+                  <span className="text-sm leading-none flex-shrink-0">{cs.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold text-violet-400 uppercase tracking-wide">{fmtShort(s.date)}</p>
+                    <p className={`text-xs font-semibold truncate mt-0.5 ${cs.text}`}>{s.habitName}</p>
+                    {s.whenTime && (
+                      <p className="text-[9px] text-slate-600 mt-0.5">{s.whenTime.replace(/^0/, "")} · {s.howLong ?? ""}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      onClick={() => onComplete(s)}
+                      title="Mark as done"
+                      className="w-7 h-7 rounded-lg bg-emerald-600/20 border border-emerald-600/30 text-emerald-400 hover:bg-emerald-600/40 transition-all flex items-center justify-center"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => onRemove(s.id)}
+                      className="text-slate-700 hover:text-red-400 transition-colors p-1"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-700 text-center py-1">No habits planned for the next 7 days.</p>
+        )}
+      </div>
+    </>
+  );
+}
+
+// ─── MonthInsights ────────────────────────────────────────────────────────────
+
+function MonthInsights({ logs, habits, year, month }: {
+  logs: (Pick<HabitLog, "habit_id" | "completed_at"> & { id: string })[];
+  habits: Habit[];
+  year: number; month: number;
+}) {
+  const monthLabel = new Date(year, month, 1).toLocaleDateString("en-US", { month: "long" });
+
+  const stats = useMemo(() => {
+    const prefix    = `${year}-${String(month + 1).padStart(2, "0")}`;
+    const monthLogs = logs.filter(l => l.completed_at.startsWith(prefix));
+    const total     = monthLogs.length;
+    const today     = toDateStr(new Date());
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const lastDay   = `${prefix}-${String(daysInMonth).padStart(2, "0")}`;
+    const endDay    = lastDay > today ? today : lastDay;
+    const startDay  = `${prefix}-01`;
+    const dayCount  = Math.max(1, Math.round((new Date(endDay).getTime() - new Date(startDay).getTime()) / 86400000) + 1);
+    let possible    = 0;
+    for (let i = 0; i < dayCount; i++) {
+      const d = toDateStr(new Date(new Date(startDay + "T12:00:00").getTime() + i * 86400000));
+      possible += habits.filter(h => h.created_at.split("T")[0] <= d).length;
+    }
+    const completionRate = possible > 0 ? Math.round((total / possible) * 100) : 0;
+
+    const dayMap = new Map<string, number>();
+    for (const l of monthLogs) {
+      const d = l.completed_at.split("T")[0];
+      dayMap.set(d, (dayMap.get(d) ?? 0) + 1);
+    }
+    let bestDay = "", bestDayCount = 0;
+    for (const [d, c] of dayMap) {
+      if (c > bestDayCount) { bestDayCount = c; bestDay = d; }
+    }
+    const bestDayLabel = bestDay
+      ? new Date(bestDay + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", day: "numeric" })
+      : "—";
+
+    return { total, completionRate, bestDayLabel };
+  }, [logs, habits, year, month]);
+
+  const insights = useMemo(() => {
+    if (logs.length < 3) return null;
+    const dowCount = Array(7).fill(0);
+    for (const l of logs) dowCount[new Date(l.completed_at).getDay()]++;
+    const DOW = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    const bestDow = DOW[dowCount.indexOf(Math.max(...dowCount))];
+
+    let morning = 0, afternoon = 0, evening = 0;
+    for (const l of logs) {
+      const h = new Date(l.completed_at).getHours();
+      if (h >= 5 && h < 12) morning++;
+      else if (h >= 12 && h < 17) afternoon++;
+      else evening++;
+    }
+    const bestTime = morning >= afternoon && morning >= evening ? "morning"
+      : afternoon >= evening ? "afternoon" : "evening";
+
+    let consistentWeeks = 0;
+    for (let w = 0; w < 12; w++) {
+      const wEnd   = new Date(Date.now() - w * 7 * 86400000);
+      const wStart = new Date(Date.now() - (w + 1) * 7 * 86400000);
+      if (logs.some(l => { const d = new Date(l.completed_at); return d >= wStart && d <= wEnd; })) consistentWeeks++;
+    }
+    return { bestDow, bestTime, consistentWeeks };
+  }, [logs]);
+
+  return (
+    <div className="space-y-3">
+      {/* Month stats with big numbers */}
+      <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-4">
+        <p className="text-[10px] text-slate-600 uppercase tracking-wider font-semibold mb-3">
+          {monthLabel}
+        </p>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="bg-violet-950/40 border border-violet-800/20 rounded-xl p-3">
+            <p className="text-3xl font-black text-violet-300 leading-none">{stats.total}</p>
+            <p className="text-[10px] text-slate-500 mt-1.5">completions</p>
+          </div>
+          <div className={`border rounded-xl p-3 ${
+            stats.completionRate >= 70 ? "bg-emerald-950/30 border-emerald-800/20"
+            : stats.completionRate >= 40 ? "bg-amber-950/25 border-amber-800/20"
+            : "bg-red-950/20 border-red-900/20"
+          }`}>
+            <p className={`text-3xl font-black leading-none ${
+              stats.completionRate >= 70 ? "text-emerald-300"
+              : stats.completionRate >= 40 ? "text-amber-300"
+              : "text-red-400"
+            }`}>{stats.completionRate}%</p>
+            <p className="text-[10px] text-slate-500 mt-1.5">completion rate</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-between py-2 border-t border-violet-900/15">
+          <span className="text-[11px] text-slate-500">Best day</span>
+          <span className="text-[11px] font-bold text-violet-300">{stats.bestDayLabel}</span>
+        </div>
+      </div>
+
+      {/* Insights with big numbers */}
+      <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Brain className="w-3.5 h-3.5 text-violet-400" />
+          <p className="text-sm font-semibold text-white">Patterns</p>
+        </div>
+        {insights ? (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-amber-950/25 border border-amber-800/20 rounded-xl p-3">
+                <p className="text-xl font-black text-amber-300 leading-none">{insights.bestDow.slice(0, 3)}</p>
+                <p className="text-[9px] text-slate-500 mt-1.5 uppercase tracking-wider">best day</p>
+              </div>
+              <div className="bg-blue-950/25 border border-blue-800/20 rounded-xl p-3">
+                <p className="text-xl font-black text-blue-300 leading-none capitalize">{insights.bestTime.slice(0, 4)}</p>
+                <p className="text-[9px] text-slate-500 mt-1.5 uppercase tracking-wider">peak time</p>
+              </div>
+            </div>
+            <div className="bg-emerald-950/25 border border-emerald-800/20 rounded-xl p-3">
+              <div className="flex items-baseline gap-1.5">
+                <p className="text-3xl font-black text-emerald-300 leading-none">{insights.consistentWeeks}</p>
+                <p className="text-sm text-slate-500 font-medium">/ 12 weeks active</p>
+              </div>
+              <div className="mt-2 w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-emerald-500 rounded-full"
+                  style={{ width: `${Math.round((insights.consistentWeeks / 12) * 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs text-slate-600 text-center py-2">Complete more habits to unlock insights.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── ContributionHeatmap ──────────────────────────────────────────────────────
+
+function ContributionHeatmap({ logs, habits }: {
+  logs: Pick<HabitLog, "habit_id" | "completed_at">[];
+  habits: Habit[];
+}) {
   const WEEKS = 16;
   const DAYS  = WEEKS * 7;
   const habitCount = Math.max(1, habits.length);
@@ -80,7 +769,6 @@ function ContributionHeatmap({
   });
 
   const today = toDateStr(new Date());
-  const DAY_LABELS = ["S","M","T","W","T","F","S"];
 
   function cellColor(pct: number, isFuture: boolean) {
     if (isFuture) return "bg-slate-900/40";
@@ -99,7 +787,7 @@ function ContributionHeatmap({
       </h3>
       <div className="flex gap-1 overflow-x-auto pb-1">
         <div className="flex flex-col gap-1 mr-2">
-          {DAY_LABELS.map((d, i) => (
+          {["S","M","T","W","T","F","S"].map((d, i) => (
             <div key={i} className="w-3.5 h-3.5 flex items-center justify-center text-[8px] text-slate-600 leading-none">{d}</div>
           ))}
         </div>
@@ -131,403 +819,50 @@ function ContributionHeatmap({
   );
 }
 
-// ─── inline day detail panel ──────────────────────────────────────────────────
-
-function DayDetailPanel({
-  detail, logs, onClose,
-}: {
-  detail: DayDetail;
-  logs: (Pick<HabitLog, "habit_id" | "completed_at"> & { id: string })[];
-  onClose: () => void;
-}) {
-  const dayLogs = logs.filter(l => l.completed_at.startsWith(detail.date));
-  const allDone = detail.missed.length === 0 && detail.completed.length > 0;
-  const noneDone = detail.completed.length === 0 && detail.missed.length > 0;
-
-  return (
-    <div className="bg-[#0c0c18] border border-violet-800/30 rounded-2xl overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-violet-900/20">
-        <div className="flex items-center gap-2.5">
-          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${allDone ? "bg-emerald-400" : noneDone ? "bg-red-500" : "bg-amber-400"}`} />
-          <p className="text-sm font-semibold text-white">{fmtDate(detail.date)}</p>
-        </div>
-        <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50">
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-
-      {detail.completed.length === 0 && detail.missed.length === 0 ? (
-        <p className="text-sm text-slate-500 text-center py-6 px-5">No habits tracked on this day.</p>
-      ) : (
-        <div className="p-4 space-y-2 max-h-72 overflow-y-auto">
-          {detail.completed.map(h => {
-            const log = dayLogs.find(l => l.habit_id === h.id);
-            return (
-              <div key={h.id} className="flex items-center gap-3 py-2.5 px-3 bg-emerald-950/25 border border-emerald-800/25 rounded-xl">
-                <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-emerald-200 font-medium truncate">{h.name}</p>
-                  {log && (
-                    <p className="text-[10px] text-slate-600 mt-0.5 flex items-center gap-1">
-                      <Clock className="w-2.5 h-2.5" />
-                      {formatTime(log.completed_at)}
-                    </p>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-          {detail.missed.map(h => (
-            <div key={h.id} className="flex items-center gap-3 py-2.5 px-3 bg-red-950/15 border border-red-900/20 rounded-xl">
-              <div className="w-3.5 h-3.5 rounded-full border border-red-500/40 flex-shrink-0" />
-              <p className="text-sm text-slate-500 font-medium truncate">{h.name}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {detail.completed.length > 0 && (
-        <div className="px-5 py-2.5 border-t border-violet-900/15 flex items-center justify-between">
-          <span className="text-xs text-slate-600">
-            {detail.completed.length} / {detail.completed.length + detail.missed.length} completed
-          </span>
-          <span className="text-xs font-semibold text-emerald-400">
-            {Math.round((detail.completed.length / (detail.completed.length + detail.missed.length)) * 100)}%
-          </span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Plan Ahead ───────────────────────────────────────────────────────────────
-
-function PlanAheadSection({
-  habits, scheduled, onAdd, onRemove,
-}: {
-  habits: Habit[];
-  scheduled: ScheduledHabit[];
-  onAdd: (s: ScheduledHabit) => void;
-  onRemove: (id: string) => void;
-}) {
-  const [selectedHabit, setSelectedHabit] = useState("");
-  const [selectedDate,  setSelectedDate]  = useState("");
-  const today = toDateStr(new Date());
-
-  // Next 7 days upcoming
-  const upcoming = useMemo(() => {
-    const next7 = Array.from({ length: 7 }, (_, i) =>
-      toDateStr(new Date(Date.now() + (i + 0) * 86400000))
-    );
-    return scheduled
-      .filter(s => next7.includes(s.date))
-      .sort((a, b) => a.date.localeCompare(b.date));
-  }, [scheduled]);
-
-  const handleSchedule = () => {
-    if (!selectedHabit || !selectedDate || selectedDate <= today) return;
-    const habit = habits.find(h => h.id === selectedHabit);
-    if (!habit) return;
-    onAdd({
-      id:        crypto.randomUUID(),
-      habitId:   habit.id,
-      habitName: habit.name,
-      date:      selectedDate,
-    });
-    setSelectedHabit("");
-    setSelectedDate("");
-  };
-
-  return (
-    <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-4">
-      <div className="flex items-center gap-2 mb-4">
-        <CalendarDays className="w-4 h-4 text-violet-400" />
-        <p className="text-sm font-semibold text-white">Plan Ahead 📅</p>
-      </div>
-
-      {habits.length === 0 ? (
-        <p className="text-xs text-slate-600 text-center py-3">Add habits first to plan ahead.</p>
-      ) : (
-        <div className="space-y-2.5 mb-4">
-          <select
-            value={selectedHabit}
-            onChange={e => setSelectedHabit(e.target.value)}
-            className="w-full bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none rounded-xl px-3 py-2 text-sm text-white appearance-none cursor-pointer"
-          >
-            <option value="" className="bg-[#0f0f1a] text-slate-400">Select a habit…</option>
-            {habits.map(h => (
-              <option key={h.id} value={h.id} className="bg-[#0f0f1a] text-white">{h.name}</option>
-            ))}
-          </select>
-          <input
-            type="date"
-            value={selectedDate}
-            min={toDateStr(new Date(Date.now() + 86400000))}
-            onChange={e => setSelectedDate(e.target.value)}
-            className="w-full bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none rounded-xl px-3 py-2 text-sm text-white [color-scheme:dark]"
-          />
-          <button
-            onClick={handleSchedule}
-            disabled={!selectedHabit || !selectedDate || selectedDate <= today}
-            className="w-full flex items-center justify-center gap-2 py-2 bg-violet-600/20 hover:bg-violet-600/30 disabled:opacity-40 disabled:cursor-not-allowed border border-violet-600/30 text-violet-300 text-sm font-medium rounded-xl transition-all"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Schedule
-          </button>
-        </div>
-      )}
-
-      {upcoming.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-[10px] text-slate-600 uppercase tracking-wider font-semibold mb-2">Next 7 days</p>
-          {upcoming.map(s => (
-            <div key={s.id} className="flex items-center gap-2 bg-violet-950/20 border border-violet-900/15 rounded-xl px-3 py-2">
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-medium text-slate-200 truncate">{s.habitName}</p>
-                <p className="text-[10px] text-violet-400 mt-0.5">{fmtShort(s.date)}</p>
-              </div>
-              <button
-                onClick={() => onRemove(s.id)}
-                className="text-slate-700 hover:text-red-400 transition-colors p-0.5 flex-shrink-0"
-              >
-                <Trash2 className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {upcoming.length === 0 && habits.length > 0 && (
-        <p className="text-xs text-slate-700 text-center pb-1">No scheduled habits in the next 7 days.</p>
-      )}
-    </div>
-  );
-}
-
-// ─── This Month stats ─────────────────────────────────────────────────────────
-
-function ThisMonthStats({
-  logs, habits, year, month,
-}: {
-  logs: (Pick<HabitLog, "habit_id" | "completed_at"> & { id: string })[];
-  habits: Habit[];
-  year: number;
-  month: number;
-}) {
-  const monthLabel = new Date(year, month, 1).toLocaleDateString("en-US", { month: "long" });
-
-  const stats = useMemo(() => {
-    const prefix = `${year}-${String(month + 1).padStart(2, "0")}`;
-    const monthLogs = logs.filter(l => l.completed_at.startsWith(prefix));
-    const total = monthLogs.length;
-
-    // Days in month up to today
-    const today = toDateStr(new Date());
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const lastDay = `${prefix}-${String(daysInMonth).padStart(2, "0")}`;
-    const endDay = lastDay > today ? today : lastDay;
-    const startDay = `${prefix}-01`;
-
-    // Count effective days (days that existed and had habits)
-    const dayMap = new Map<string, number>();
-    for (const l of monthLogs) {
-      const d = l.completed_at.split("T")[0];
-      dayMap.set(d, (dayMap.get(d) ?? 0) + 1);
-    }
-
-    // Possible completions: habits that existed * days in range
-    let possible = 0;
-    const dayCount = Math.max(1,
-      Math.round((new Date(endDay).getTime() - new Date(startDay).getTime()) / 86400000) + 1
-    );
-    for (let i = 0; i < dayCount; i++) {
-      const d = toDateStr(new Date(new Date(startDay + "T12:00:00").getTime() + i * 86400000));
-      const existingOnDay = habits.filter(h => h.created_at.split("T")[0] <= d).length;
-      possible += existingOnDay;
-    }
-
-    const completionRate = possible > 0 ? Math.round((total / possible) * 100) : 0;
-
-    // Best day this month
-    let bestDay = "";
-    let bestDayCount = 0;
-    for (const [d, c] of dayMap) {
-      if (c > bestDayCount) { bestDayCount = c; bestDay = d; }
-    }
-    const bestDayLabel = bestDay
-      ? new Date(bestDay + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", day: "numeric" })
-      : "—";
-
-    const currentStreak = computeCurrentStreak(logs);
-
-    return { total, completionRate, bestDayLabel, bestDayCount, currentStreak };
-  }, [logs, habits, year, month]);
-
-  return (
-    <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-4">
-      <div className="flex items-center gap-2 mb-4">
-        <TrendingUp className="w-4 h-4 text-violet-400" />
-        <p className="text-sm font-semibold text-white">{monthLabel}</p>
-      </div>
-
-      <div className="space-y-3">
-        {[
-          {
-            label: "Completion rate",
-            value: `${stats.completionRate}%`,
-            color: stats.completionRate >= 70 ? "text-emerald-400" : stats.completionRate >= 40 ? "text-amber-400" : "text-red-400",
-          },
-          {
-            label: "Best day",
-            value: stats.bestDayLabel,
-            color: "text-violet-300",
-          },
-          {
-            label: "Total completions",
-            value: stats.total.toLocaleString(),
-            color: "text-violet-300",
-          },
-          {
-            label: "Current streak",
-            value: `${stats.currentStreak}d 🔥`,
-            color: stats.currentStreak >= 7 ? "text-orange-300" : "text-slate-300",
-          },
-        ].map(s => (
-          <div key={s.label} className="flex items-center justify-between">
-            <span className="text-xs text-slate-500">{s.label}</span>
-            <span className={`text-xs font-bold ${s.color}`}>{s.value}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Insights card ────────────────────────────────────────────────────────────
-
-function InsightsCard({
-  logs,
-}: { logs: (Pick<HabitLog, "habit_id" | "completed_at"> & { id: string })[] }) {
-  const insights = useMemo(() => {
-    if (logs.length < 3) return null;
-
-    // Best day of week
-    const dowCount = Array(7).fill(0);
-    for (const l of logs) dowCount[new Date(l.completed_at).getDay()]++;
-    const bestDow = dowCount.indexOf(Math.max(...dowCount));
-    const DOW = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-
-    // Time of day
-    let morning = 0, afternoon = 0, evening = 0;
-    for (const l of logs) {
-      const h = new Date(l.completed_at).getHours();
-      if (h >= 5  && h < 12) morning++;
-      else if (h >= 12 && h < 17) afternoon++;
-      else evening++;
-    }
-    const bestTime = morning >= afternoon && morning >= evening ? "morning"
-      : afternoon >= evening ? "afternoon" : "evening";
-
-    // Consistent weeks in last 12 weeks
-    let consistentWeeks = 0;
-    for (let w = 0; w < 12; w++) {
-      const wEnd   = new Date(Date.now() - w * 7 * 86400000);
-      const wStart = new Date(Date.now() - (w + 1) * 7 * 86400000);
-      if (logs.some(l => {
-        const d = new Date(l.completed_at);
-        return d >= wStart && d <= wEnd;
-      })) consistentWeeks++;
-    }
-
-    // Most completed habit
-    const habitCount = new Map<string, number>();
-    for (const l of logs) habitCount.set(l.habit_id, (habitCount.get(l.habit_id) ?? 0) + 1);
-
-    return { bestDow: DOW[bestDow], bestTime, consistentWeeks };
-  }, [logs]);
-
-  if (!insights) {
-    return (
-      <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Brain className="w-4 h-4 text-violet-400" />
-          <p className="text-sm font-semibold text-white">Insights</p>
-        </div>
-        <p className="text-xs text-slate-600 text-center py-2">
-          Complete a few more habits to unlock pattern insights.
-        </p>
-      </div>
-    );
-  }
-
-  const lines = [
-    { emoji: "📅", text: `Your best day is ${insights.bestDow}` },
-    { emoji: "⏰", text: `You complete most habits in the ${insights.bestTime}` },
-    { emoji: "🗓️", text: `Active in ${insights.consistentWeeks} of the last 12 weeks` },
-  ];
-
-  return (
-    <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-4">
-      <div className="flex items-center gap-2 mb-4">
-        <Brain className="w-4 h-4 text-violet-400" />
-        <p className="text-sm font-semibold text-white">Insights</p>
-      </div>
-      <div className="space-y-3">
-        {lines.map((l, i) => (
-          <div key={i} className="flex items-start gap-2.5">
-            <span className="text-base leading-none flex-shrink-0 mt-0.5">{l.emoji}</span>
-            <p className="text-xs text-slate-400 leading-relaxed">{l.text}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ─── page ─────────────────────────────────────────────────────────────────────
 
-const WEEK_DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-
 export default function CalendarPage() {
+  const supabase  = useRef(createClient()).current;
 
   const [habits,      setHabits]      = useState<Habit[]>([]);
   const [logs,        setLogs]        = useState<(Pick<HabitLog, "habit_id" | "completed_at"> & { id: string })[]>([]);
   const [loading,     setLoading]     = useState(true);
   const [displayName, setDisplayName] = useState("");
+  const [goals,       setGoals]       = useState<string[]>([]);
+  const [tier,        setTier]        = useState<Plan>("free");
   const [scheduled,   setScheduled]   = useState<ScheduledHabit[]>([]);
 
-  const today  = toDateStr(new Date());
+  const today = toDateStr(new Date());
   const [year,  setYear]  = useState(() => new Date().getFullYear());
   const [month, setMonth] = useState(() => new Date().getMonth());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
-  // Fetch habits + logs + user name
+  // Fetch habits + logs + profile
   useEffect(() => {
-    const supabase = createClient();
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
-
-      // Display name
-      const raw = (user.user_metadata?.full_name as string | undefined) ?? user.email ?? "";
+      const raw  = (user.user_metadata?.full_name as string | undefined) ?? user.email ?? "";
       const name = raw.split(/[\s_\-+@]/)[0]?.trim();
       if (name) setDisplayName(name);
 
-      const [{ data: h }, { data: l }] = await Promise.all([
+      const [{ data: h }, { data: l }, { data: p }] = await Promise.all([
         supabase.from("habits").select("*").eq("user_id", user.id).order("created_at"),
-        supabase.from("habit_logs")
-          .select("id, habit_id, completed_at")
-          .eq("user_id", user.id)
-          .gte("completed_at", daysAgo(365))
-          .order("completed_at", { ascending: true }),
+        supabase.from("habit_logs").select("id, habit_id, completed_at").eq("user_id", user.id)
+          .gte("completed_at", daysAgo(365)).order("completed_at", { ascending: true }),
+        supabase.from("profiles").select("goals, subscription_tier").eq("id", user.id).single(),
       ]);
       setHabits(h ?? []);
       setLogs(l ?? []);
+      if (p) {
+        setGoals(Array.isArray(p.goals) && p.goals.length > 0 ? p.goals : []);
+        if (p.subscription_tier) setTier(p.subscription_tier as Plan);
+      }
       setLoading(false);
     })();
-  }, []);
+  }, [supabase]);
 
-  // Load scheduled habits from localStorage
+  // Load scheduled from localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem(SCHED_KEY);
@@ -554,7 +889,39 @@ export default function CalendarPage() {
       localStorage.setItem(SCHED_KEY, JSON.stringify(updated));
       return updated;
     });
-  }, [saveScheduled]);
+  }, [saveScheduled]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Complete a scheduled habit early — create in DB + log
+  const handleCompleteScheduled = useCallback(async (s: ScheduledHabit) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    let habitId = s.habitId;
+    if (!habitId) {
+      const { data: newHabit } = await supabase.from("habits").insert({
+        user_id:        user.id,
+        name:           s.habitName,
+        description:    s.description   ?? null,
+        frequency:      s.frequency     ?? "daily",
+        when_time:      s.whenTime      ?? null,
+        where_location: s.whereLocation ?? null,
+        how_long:       s.howLong       ?? null,
+        validity_score: s.validityScore ?? "valid",
+        habit_strength: 10,
+      }).select().single();
+      if (!newHabit) return;
+      habitId = newHabit.id;
+      setHabits(prev => [...prev, newHabit]);
+    }
+
+    const completedAt = new Date().toISOString();
+    const { data: log } = await supabase.from("habit_logs").insert({
+      habit_id: habitId, user_id: user.id, completed_at: completedAt,
+    }).select("id, habit_id, completed_at").single();
+
+    if (log) setLogs(prev => [...prev, log]);
+    removeScheduled(s.id);
+  }, [supabase, removeScheduled]);
 
   // Per-day completion map
   const dayCompletionMap = useMemo(() => {
@@ -567,8 +934,17 @@ export default function CalendarPage() {
     return map;
   }, [logs]);
 
-  // Scheduled dates set for calendar indicators
+  // Scheduled dates set
   const scheduledDates = useMemo(() => new Set(scheduled.map(s => s.date)), [scheduled]);
+
+  // This month totals for HeroStats
+  const thisMonthTotal = useMemo(() => {
+    const prefix = `${today.slice(0, 7)}`;
+    return logs.filter(l => l.completed_at.startsWith(prefix)).length;
+  }, [logs, today]);
+
+  const currentStreak = useMemo(() => computeCurrentStreak(logs), [logs]);
+  const bestStreak    = useMemo(() => computeBestStreak(logs), [logs]);
 
   // Calendar grid
   const calendarDays = useMemo(() => {
@@ -582,25 +958,23 @@ export default function CalendarPage() {
       const isFuture  = d > today;
       const isToday   = d === today;
       const isSelected = d === selectedDay;
-
-      const existingHabits = habits.filter(h => h.created_at.split("T")[0] <= d);
-      const completedIds   = done ?? new Set<string>();
-      const completed      = existingHabits.filter(h => completedIds.has(h.id));
-      const missed         = isFuture ? [] : existingHabits.filter(h => !completedIds.has(h.id));
-      const totalExisting  = existingHabits.length;
-      const pct = totalExisting > 0 ? completed.length / totalExisting : null;
+      const existing  = habits.filter(h => h.created_at.split("T")[0] <= d);
+      const completed = existing.filter(h => (done ?? new Set()).has(h.id));
+      const missed    = isFuture ? [] : existing.filter(h => !(done ?? new Set()).has(h.id));
+      const pct       = existing.length > 0 ? completed.length / existing.length : null;
 
       let dotColor = "bg-slate-700/60";
-      if (!isFuture && totalExisting > 0) {
-        if (pct === 1)      dotColor = "bg-emerald-400";
-        else if (pct! > 0)  dotColor = "bg-amber-400";
-        else                dotColor = "bg-red-500/80";
+      if (!isFuture && existing.length > 0) {
+        if (pct === 1)     dotColor = "bg-emerald-400";
+        else if (pct! > 0) dotColor = "bg-amber-400";
+        else               dotColor = "bg-red-500/80";
       }
 
       return {
         d, i: i + 1, isFuture, isToday, isSelected,
-        completed, missed, pct, dotColor, totalExisting,
-        hasScheduled: isFuture && scheduledDates.has(d),
+        completed, missed, pct, dotColor,
+        totalExisting: existing.length,
+        hasScheduled:  scheduledDates.has(d),
       };
     });
 
@@ -617,17 +991,18 @@ export default function CalendarPage() {
     else setMonth(m => m + 1);
     setSelectedDay(null);
   };
-  const canGoNext = new Date(year, month + 1, 1) <= new Date();
+  // Allow up to 2 months ahead for planning
+  const canGoNext = new Date(year, month + 1, 1) > new Date(Date.now() + 62 * 86400000);
   const monthLabel = new Date(year, month, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
   const selectedDetail = useMemo((): DayDetail | null => {
     if (!selectedDay) return null;
     const done = dayCompletionMap.get(selectedDay) ?? new Set<string>();
-    const existingHabits = habits.filter(h => h.created_at.split("T")[0] <= selectedDay);
+    const existing = habits.filter(h => h.created_at.split("T")[0] <= selectedDay);
     return {
       date:      selectedDay,
-      completed: existingHabits.filter(h => done.has(h.id)),
-      missed:    selectedDay < today ? existingHabits.filter(h => !done.has(h.id)) : [],
+      completed: existing.filter(h => done.has(h.id)),
+      missed:    selectedDay < today ? existing.filter(h => !done.has(h.id)) : [],
     };
   }, [selectedDay, dayCompletionMap, habits, today]);
 
@@ -653,7 +1028,7 @@ export default function CalendarPage() {
             </p>
             <Link
               href="/dashboard"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-all shadow-lg shadow-violet-900/40 hover:-translate-y-0.5 text-sm"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-all shadow-lg shadow-violet-900/40 text-sm"
             >
               <Plus className="w-4 h-4" />
               Add your first habit
@@ -670,18 +1045,27 @@ export default function CalendarPage() {
         <div className="xl:grid xl:grid-cols-[1fr_300px] xl:gap-6 xl:items-start">
 
           {/* ── Center column ─────────────────────────────────────────────── */}
-          <div className="min-w-0 space-y-6">
+          <div className="min-w-0 space-y-5">
 
-            {/* Greeting */}
+            {/* Greeting + hero stats */}
             <div>
-              <div className="flex items-center gap-2 mb-0.5">
+              <div className="flex items-center gap-2 mb-1">
                 <Sparkles className="w-4 h-4 text-violet-400" />
-                <h1 className="text-xl font-bold text-white">
-                  Your habit history{displayName ? `, ${displayName}` : ""}
+                <h1 className="text-lg font-bold text-white">
+                  Habit history{displayName ? `, ${displayName}` : ""}
                 </h1>
               </div>
-              <p className="text-sm text-slate-500">Click any day to see what you completed</p>
+              <p className="text-sm text-slate-500 mb-5">Click any day to see what you completed · plan ahead on the right</p>
+              <HeroStats currentStreak={currentStreak} thisMonthTotal={thisMonthTotal} bestStreak={bestStreak} />
             </div>
+
+            {/* Week strip */}
+            <WeekStrip
+              selectedDay={selectedDay}
+              onSelectDay={(d) => setSelectedDay(d === "" ? null : d)}
+              dayCompletionMap={dayCompletionMap}
+              habits={habits}
+            />
 
             {/* Month navigator */}
             <div className="flex items-center justify-between bg-[#0c0c18] border border-violet-900/20 rounded-2xl px-4 py-3">
@@ -700,60 +1084,40 @@ export default function CalendarPage() {
 
             {/* Calendar grid */}
             <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl overflow-hidden">
-              {/* Day headers */}
               <div className="grid grid-cols-7 border-b border-violet-900/15">
                 {WEEK_DAYS.map(d => (
-                  <div key={d} className="py-2.5 text-center text-[10px] font-semibold text-slate-600 uppercase tracking-wide">
-                    {d}
-                  </div>
+                  <div key={d} className="py-2.5 text-center text-[10px] font-semibold text-slate-600 uppercase tracking-wide">{d}</div>
                 ))}
               </div>
-
-              {/* Day cells */}
               <div className="grid grid-cols-7">
                 {calendarDays.map((day, idx) => {
-                  if (!day) return (
-                    <div key={`blank-${idx}`} className="aspect-square border-r border-b border-violet-900/10 last:border-r-0" />
-                  );
+                  if (!day) return <div key={`blank-${idx}`} className="aspect-square border-r border-b border-violet-900/10 last:border-r-0" />;
                   const clickable = !day.isFuture && day.totalExisting > 0;
                   return (
                     <button
                       key={day.d}
                       onClick={() => clickable && setSelectedDay(day.d === selectedDay ? null : day.d)}
                       disabled={!clickable}
-                      className={`aspect-square border-r border-b border-violet-900/10 last:border-r-0 flex flex-col items-center justify-center gap-1 transition-all relative group ${
-                        day.isSelected
-                          ? "bg-violet-900/40"
-                          : day.isToday
-                          ? "bg-violet-950/50"
-                          : clickable
-                          ? "hover:bg-violet-950/30 cursor-pointer"
-                          : "cursor-default"
+                      className={`aspect-square border-r border-b border-violet-900/10 last:border-r-0 flex flex-col items-center justify-center gap-1 transition-all group relative ${
+                        day.isSelected ? "bg-violet-900/40" :
+                        day.isToday   ? "bg-violet-950/50" :
+                        clickable     ? "hover:bg-violet-950/30 cursor-pointer" : "cursor-default"
                       }`}
                     >
-                      {/* Date number — today gets a filled purple circle */}
                       {day.isToday ? (
                         <span className="w-6 h-6 rounded-full bg-violet-600 flex items-center justify-center text-xs font-bold text-white leading-none shadow-lg shadow-violet-900/50">
                           {day.i}
                         </span>
                       ) : (
                         <span className={`text-xs font-medium leading-none ${
-                          day.isSelected
-                            ? "text-violet-200 font-bold"
-                            : day.isFuture
-                            ? "text-slate-700"
-                            : "text-slate-400 group-hover:text-slate-200"
-                        }`}>
-                          {day.i}
-                        </span>
+                          day.isSelected ? "text-violet-200 font-bold" :
+                          day.isFuture   ? "text-slate-700" :
+                          "text-slate-400 group-hover:text-slate-200"
+                        }`}>{day.i}</span>
                       )}
-
-                      {/* Status dot */}
                       {!day.isFuture && day.totalExisting > 0 && (
                         <div className={`w-1.5 h-1.5 rounded-full ${day.dotColor}`} />
                       )}
-
-                      {/* Scheduled indicator for future days */}
                       {day.hasScheduled && (
                         <div className="w-1.5 h-1.5 rounded-full bg-violet-500/70" />
                       )}
@@ -763,14 +1127,14 @@ export default function CalendarPage() {
               </div>
             </div>
 
-            {/* Color legend */}
+            {/* Legend */}
             <div className="flex items-center gap-4 text-xs text-slate-600 justify-center flex-wrap">
               {[
-                { color: "bg-emerald-400",    label: "All done" },
-                { color: "bg-amber-400",      label: "Partial"  },
-                { color: "bg-red-500/80",     label: "Missed all" },
-                { color: "bg-slate-700/60",   label: "No habits" },
-                { color: "bg-violet-500/70",  label: "Scheduled" },
+                { color: "bg-emerald-400",   label: "All done"   },
+                { color: "bg-amber-400",     label: "Partial"    },
+                { color: "bg-red-500/80",    label: "Missed all" },
+                { color: "bg-slate-700/60",  label: "No habits"  },
+                { color: "bg-violet-500/70", label: "Planned"    },
               ].map(l => (
                 <span key={l.label} className="flex items-center gap-1.5">
                   <span className={`w-2 h-2 rounded-full ${l.color} inline-block`} />
@@ -779,13 +1143,19 @@ export default function CalendarPage() {
               ))}
             </div>
 
+            {/* Category legend */}
+            <div className="flex items-center gap-3 flex-wrap justify-center">
+              {(Object.entries(CAT_STYLE) as [Category, typeof CAT_STYLE[Category]][]).filter(([k]) => k !== "general").map(([key, cs]) => (
+                <span key={key} className="flex items-center gap-1 text-[10px] text-slate-600">
+                  <span>{cs.emoji}</span>
+                  <span className={cs.text + " font-medium capitalize"}>{key}</span>
+                </span>
+              ))}
+            </div>
+
             {/* Selected day detail (inline) */}
             {selectedDetail && (
-              <DayDetailPanel
-                detail={selectedDetail}
-                logs={logs}
-                onClose={() => setSelectedDay(null)}
-              />
+              <DayDetailPanel detail={selectedDetail} logs={logs} onClose={() => setSelectedDay(null)} />
             )}
 
             {/* Heatmap */}
@@ -794,26 +1164,26 @@ export default function CalendarPage() {
             {/* Mobile-only: right sidebar content */}
             <div className="xl:hidden space-y-4">
               <PlanAheadSection
-                habits={habits}
+                habits={habits} goals={goals} tier={tier}
                 scheduled={scheduled}
                 onAdd={addScheduled}
                 onRemove={removeScheduled}
+                onComplete={handleCompleteScheduled}
               />
-              <ThisMonthStats logs={logs} habits={habits} year={year} month={month} />
-              <InsightsCard logs={logs} />
+              <MonthInsights logs={logs} habits={habits} year={year} month={month} />
             </div>
           </div>
 
-          {/* ── Right sidebar (xl+) ───────────────────────────────────────── */}
-          <div className="hidden xl:flex xl:flex-col gap-4 sticky top-20">
+          {/* ── Right sidebar (xl+) ────────────────────────────────────────── */}
+          <div className="hidden xl:flex xl:flex-col gap-4 sticky top-20 overflow-hidden pb-4">
             <PlanAheadSection
-              habits={habits}
+              habits={habits} goals={goals} tier={tier}
               scheduled={scheduled}
               onAdd={addScheduled}
               onRemove={removeScheduled}
+              onComplete={handleCompleteScheduled}
             />
-            <ThisMonthStats logs={logs} habits={habits} year={year} month={month} />
-            <InsightsCard logs={logs} />
+            <MonthInsights logs={logs} habits={habits} year={year} month={month} />
           </div>
 
         </div>
