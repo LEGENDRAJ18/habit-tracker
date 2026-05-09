@@ -3,8 +3,8 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, X, Check, Clock,
-  Sparkles, CalendarDays, Flame, Brain, Plus, Trash2, ArrowLeft,
-  Trophy, Target, Zap,
+  Sparkles, CalendarDays, Flame, Brain, Plus, Trash2,
+  Trophy, Target,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Habit, HabitLog, Plan } from "@/types";
@@ -316,164 +316,7 @@ function DayDetailPanel({ detail, logs, onClose }: {
   );
 }
 
-// ─── DatePickerStep ───────────────────────────────────────────────────────────
-
-function DatePickerStep({ habitName, onConfirm, onClose }: {
-  habitName: string;
-  onConfirm: (dates: string[]) => void;
-  onClose: () => void;
-}) {
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const today = toDateStr(new Date());
-  const todayDow = new Date().getDay();
-
-  const next21 = useMemo(() => Array.from({ length: 21 }, (_, i) => {
-    const d = new Date(Date.now() + i * 86400000);
-    return { dateStr: toDateStr(d), dayNum: d.getDate(), month: d.toLocaleDateString("en-US", { month: "short" }) };
-  }), []);
-
-  const quickOptions = useMemo(() => [
-    { label: "Today",        emoji: "📅", dates: [today] },
-    { label: "Tomorrow",     emoji: "⏭️", dates: [toDateStr(new Date(Date.now() + 86400000))] },
-    { label: "Next 7 days",  emoji: "📆", dates: Array.from({ length: 7 }, (_, i) => toDateStr(new Date(Date.now() + i * 86400000))) },
-    {
-      label: "Weekdays",     emoji: "🗓️",
-      dates: Array.from({ length: 14 }, (_, i) => {
-        const d = new Date(Date.now() + i * 86400000);
-        return d.getDay() !== 0 && d.getDay() !== 6 ? toDateStr(d) : null;
-      }).filter(Boolean) as string[],
-    },
-    {
-      label: "Weekends",     emoji: "🌅",
-      dates: Array.from({ length: 14 }, (_, i) => {
-        const d = new Date(Date.now() + i * 86400000);
-        return (d.getDay() === 0 || d.getDay() === 6) ? toDateStr(d) : null;
-      }).filter(Boolean) as string[],
-    },
-  ], [today]);
-
-  const toggle = (d: string) => {
-    setSelected(prev => {
-      const s = new Set(prev);
-      if (s.has(d)) s.delete(d); else s.add(d);
-      return s;
-    });
-  };
-
-  // Month change points for the mini calendar header
-  const monthLabels = useMemo(() => {
-    const labels: { col: number; month: string }[] = [];
-    let prev = "";
-    next21.forEach(({ dateStr, month }, i) => {
-      const col = (todayDow + i) % 7;
-      if (month !== prev) { labels.push({ col, month }); prev = month; }
-    });
-    return labels;
-  }, [next21, todayDow]);
-  void monthLabels;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="w-full max-w-sm bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-violet-900/20 flex-shrink-0">
-          <div className="w-9 h-9 rounded-xl bg-violet-600/20 border border-violet-600/30 flex items-center justify-center flex-shrink-0">
-            <CalendarDays className="w-4 h-4 text-violet-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-white">When do you want to start?</p>
-            <p className="text-[11px] text-violet-400/80 truncate">&ldquo;{habitName}&rdquo;</p>
-          </div>
-          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-5">
-          {/* Quick options */}
-          <div>
-            <p className="text-[10px] text-slate-600 uppercase tracking-wider font-semibold mb-2.5">Quick pick</p>
-            <div className="grid grid-cols-2 gap-2">
-              {quickOptions.map(o => (
-                <button
-                  key={o.label}
-                  onClick={() => setSelected(new Set(o.dates))}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all ${
-                    o.dates.every(d => selected.has(d)) && o.dates.length === selected.size
-                      ? "bg-violet-600/25 border-violet-500/50 text-violet-200"
-                      : "bg-violet-950/30 hover:bg-violet-950/50 border-violet-900/25 hover:border-violet-700/40 text-slate-300"
-                  }`}
-                >
-                  <span className="text-base leading-none">{o.emoji}</span>
-                  <span className="text-xs font-medium">{o.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Mini calendar - next 21 days */}
-          <div>
-            <p className="text-[10px] text-slate-600 uppercase tracking-wider font-semibold mb-2.5">Pick specific days</p>
-            <div className="grid grid-cols-7 gap-1">
-              {["S","M","T","W","T","F","S"].map((d, i) => (
-                <div key={i} className="text-center text-[9px] text-slate-600 font-semibold uppercase py-1">{d}</div>
-              ))}
-              {/* Blank offset cells */}
-              {Array.from({ length: todayDow }, (_, i) => <div key={`blank-${i}`} />)}
-              {/* Day cells */}
-              {next21.map(({ dateStr, dayNum }) => (
-                <button
-                  key={dateStr}
-                  onClick={() => toggle(dateStr)}
-                  className={`aspect-square rounded-lg flex items-center justify-center text-xs font-medium transition-all ${
-                    selected.has(dateStr)
-                      ? "bg-violet-600 text-white shadow-lg shadow-violet-900/40"
-                      : dateStr === today
-                      ? "bg-violet-950/50 border border-violet-700/40 text-violet-300 hover:bg-violet-600/30"
-                      : "text-slate-400 hover:bg-violet-950/50 hover:text-white"
-                  }`}
-                >
-                  {dayNum}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {selected.size > 0 && (
-            <p className="text-xs text-center text-violet-300 font-medium">
-              {selected.size} day{selected.size !== 1 ? "s" : ""} selected ✓
-            </p>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex gap-3 px-5 py-4 border-t border-violet-900/20 flex-shrink-0">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-violet-900/30 text-slate-400 hover:text-white text-sm rounded-xl transition-colors">
-            Cancel
-          </button>
-          <button
-            onClick={() => onConfirm(Array.from(selected).sort())}
-            disabled={selected.size === 0}
-            className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-all"
-          >
-            Schedule {selected.size > 0 ? selected.size : ""} day{selected.size !== 1 ? "s" : ""} →
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── PlanAheadSection ─────────────────────────────────────────────────────────
-
-interface PendingHabit {
-  name: string; description: string;
-  frequency: "daily" | "weekly";
-  stackAfterId: string | null;
-  whenTime: string | null; whereLocation: string | null;
-  howLong: string | null;
-  validityScore: "valid" | "partial" | "invalid";
-}
 
 function PlanAheadSection({ habits, goals, tier, scheduled, onAdd, onRemove, onComplete }: {
   habits: Habit[]; goals: string[]; tier: Plan;
@@ -482,77 +325,45 @@ function PlanAheadSection({ habits, goals, tier, scheduled, onAdd, onRemove, onC
   onRemove: (id: string) => void;
   onComplete: (s: ScheduledHabit) => void;
 }) {
-  const [planStep, setPlanStep]       = useState<null | "habit" | "dates">(null);
-  const [pending, setPending]         = useState<PendingHabit | null>(null);
-  const afterSuccessRef               = useRef<(() => void) | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   const upcoming = useMemo(() => {
     const next7 = Array.from({ length: 7 }, (_, i) => toDateStr(new Date(Date.now() + i * 86400000)));
     return scheduled.filter(s => next7.includes(s.date)).sort((a, b) => a.date.localeCompare(b.date));
   }, [scheduled]);
 
-  const handleHabitCapture = useCallback(async (
+  const handleSchedule = useCallback((
     name: string, description: string, frequency: "daily" | "weekly",
-    stackAfterId?: string | null, whenTime?: string | null, whereLocation?: string | null,
-    howLong?: string | null, validityScore?: "valid" | "partial" | "invalid",
-  ): Promise<{ error: string | null }> => {
-    afterSuccessRef.current = () => {
-      setPending({
-        name, description: description || "",
-        frequency: frequency || "daily",
-        stackAfterId: stackAfterId ?? null,
-        whenTime: whenTime ?? null,
-        whereLocation: whereLocation ?? null,
-        howLong: howLong ?? null,
-        validityScore: validityScore ?? "valid",
-      });
-      setPlanStep("dates");
-    };
-    return { error: null };
-  }, []);
-
-  const handleDateConfirm = useCallback((dates: string[]) => {
-    if (!pending) return;
+    whenTime: string | null, whereLocation: string | null,
+    howLong: string | null, validityScore: "valid" | "partial" | "invalid",
+    dates: string[],
+  ) => {
     dates.forEach(date => onAdd({
-      id:           crypto.randomUUID(),
-      habitId:      null,
-      habitName:    pending.name,
+      id: crypto.randomUUID(),
+      habitId: null,
+      habitName: name,
       date,
-      description:  pending.description,
-      frequency:    pending.frequency,
-      whenTime:     pending.whenTime,
-      whereLocation: pending.whereLocation,
-      howLong:      pending.howLong,
-      validityScore: pending.validityScore,
+      description,
+      frequency,
+      whenTime,
+      whereLocation,
+      howLong,
+      validityScore,
     }));
-    setPlanStep(null);
-    setPending(null);
-  }, [pending, onAdd]);
+  }, [onAdd]);
 
   return (
     <>
-      {planStep === "habit" && (
+      {showModal && (
         <AddHabitModal
-          onClose={() => {
-            if (afterSuccessRef.current) {
-              afterSuccessRef.current();
-              afterSuccessRef.current = null;
-            } else {
-              setPlanStep(null);
-            }
-          }}
+          onClose={() => setShowModal(false)}
           existingHabits={habits}
           goals={goals}
           tier={tier}
-          onAdd={handleHabitCapture}
+          withScheduling={true}
+          onAdd={async () => ({ error: null })}
+          onSchedule={handleSchedule}
           onUpgradePro={() => {}}
-        />
-      )}
-      {planStep === "dates" && pending && (
-        <DatePickerStep
-          habitName={pending.name}
-          onConfirm={handleDateConfirm}
-          onClose={() => { setPlanStep(null); setPending(null); }}
         />
       )}
 
@@ -563,7 +374,7 @@ function PlanAheadSection({ habits, goals, tier, scheduled, onAdd, onRemove, onC
         </div>
 
         <button
-          onClick={() => setPlanStep("habit")}
+          onClick={() => setShowModal(true)}
           className="w-full flex items-center justify-center gap-2 py-2.5 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-600/30 text-violet-300 text-sm font-semibold rounded-xl transition-all mb-4"
         >
           <Plus className="w-3.5 h-3.5" />
