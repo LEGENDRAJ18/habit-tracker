@@ -47,7 +47,9 @@ const GOAL_KEY_MAP: Record<string, string> = {
 };
 
 const CHIPS_PER_PAGE = 6;
-const CAL_DAYS = ["S", "M", "T", "W", "T", "F", "S"];
+// Display order Mon–Sun → JS .getDay() values (0=Sun, 1=Mon … 6=Sat)
+const DOW_MAP    = [1, 2, 3, 4, 5, 6, 0];
+const DOW_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -199,34 +201,23 @@ export default function AddHabitModal({
   const [error, setError]                 = useState<string | null>(null);
   const [suggestionOffset, setSuggestionOffset] = useState(0);
 
-  // Step 2 — selected dates
-  const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set());
-  const today    = useMemo(() => toDateStr(new Date()), []);
-  const todayDow = new Date().getDay();
+  // Step 2 — schedule preset + custom day-of-week picks
+  const [schedulePreset, setSchedulePreset] = useState<"everyday" | "weekdays" | "weekends" | "custom" | null>(null);
+  const [pickedDows, setPickedDows]         = useState<Set<number>>(new Set());
 
   const next21 = useMemo(() => Array.from({ length: 21 }, (_, i) => {
     const d = new Date(Date.now() + i * 86400000);
     return { dateStr: toDateStr(d), dayNum: d.getDate() };
   }), []);
 
-  const scheduleOptions = useMemo(() => [
-    { label: "Every day",  emoji: "📅", sub: "Daily habit",
-      dates: next21.map((n) => n.dateStr) },
-    { label: "Weekdays",   emoji: "🗓️", sub: "Mon – Fri",
-      dates: next21.map((n) => n.dateStr).filter((d) => {
-        const dow = new Date(d + "T12:00:00").getDay(); return dow !== 0 && dow !== 6;
-      }) },
-    { label: "Weekends",   emoji: "🌅", sub: "Sat & Sun",
-      dates: next21.map((n) => n.dateStr).filter((d) => {
-        const dow = new Date(d + "T12:00:00").getDay(); return dow === 0 || dow === 6;
-      }) },
-    { label: "Tomorrow",   emoji: "⏭️", sub: "Just once",
-      dates: next21[1] ? [next21[1].dateStr] : [] },
-  ], [next21]);
-
-  const toggleDate = (d: string) => setSelectedDates((prev) => {
-    const s = new Set(prev); s.has(d) ? s.delete(d) : s.add(d); return s;
-  });
+  const selectedDates = useMemo(() => {
+    const dow = (s: string) => new Date(s + "T12:00:00").getDay();
+    if (!schedulePreset)          return new Set<string>();
+    if (schedulePreset === "everyday") return new Set(next21.map((n) => n.dateStr));
+    if (schedulePreset === "weekdays") return new Set(next21.filter((n) => { const d = dow(n.dateStr); return d >= 1 && d <= 5; }).map((n) => n.dateStr));
+    if (schedulePreset === "weekends") return new Set(next21.filter((n) => { const d = dow(n.dateStr); return d === 0 || d === 6; }).map((n) => n.dateStr));
+    return new Set(next21.filter((n) => pickedDows.has(dow(n.dateStr))).map((n) => n.dateStr));
+  }, [schedulePreset, pickedDows, next21]);
 
   // Lock background scroll while open
   useEffect(() => {
@@ -262,6 +253,8 @@ export default function AddHabitModal({
   // so there's zero interference from browser form validation.
   const goToStep2 = () => {
     if (!name.trim() || isBlocked) return;
+    setSchedulePreset(null);
+    setPickedDows(new Set());
     setStep("schedule");
   };
 
@@ -315,9 +308,11 @@ export default function AddHabitModal({
         "fixed z-50 bg-[#0f0f1a] border border-violet-800/30 shadow-2xl shadow-violet-950/60 flex flex-col",
         // Mobile: bottom sheet
         "left-0 right-0 bottom-0 rounded-t-2xl max-h-[92vh]",
-        // sm+: centered dialog
-        "sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
-        "sm:rounded-2xl sm:w-[min(640px,calc(100vw-32px))] sm:max-h-[88vh]",
+        // sm+: calendar mode anchors near top so tall content never clips the footer
+        //       dashboard mode stays centered (existing behaviour)
+        isSchedulingMode
+          ? "sm:bottom-auto sm:left-1/2 sm:top-[5vh] sm:-translate-x-1/2 sm:rounded-2xl sm:w-[min(620px,calc(100vw-32px))] sm:max-h-[90vh]"
+          : "sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:w-[min(640px,calc(100vw-32px))] sm:max-h-[88vh]",
       ].join(" ")}>
 
         {/* ── Header ─────────────────────────────────────────────────────── */}
@@ -575,64 +570,68 @@ export default function AddHabitModal({
                 <p className="text-sm font-semibold text-violet-200 truncate">&ldquo;{name}&rdquo;</p>
               </div>
 
-              {/* Quick options — 2×2 grid */}
-              <div>
-                <p className="text-[10px] text-slate-600 uppercase tracking-wider font-semibold mb-2">Quick pick</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {scheduleOptions.map((o) => {
-                    const active = o.dates.length > 0
-                      && o.dates.every((d) => selectedDates.has(d))
-                      && o.dates.length === selectedDates.size;
-                    return (
-                      <button key={o.label} type="button"
-                        onClick={() => setSelectedDates(new Set(o.dates))}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
-                          active
-                            ? "bg-violet-600/25 border-violet-500/50 text-violet-200"
-                            : "bg-violet-950/30 hover:bg-violet-950/50 border-violet-900/25 hover:border-violet-700/40 text-slate-300"
-                        }`}
-                      >
-                        <span className="text-xl leading-none">{o.emoji}</span>
-                        <div>
-                          <p className="text-sm font-semibold leading-tight">{o.label}</p>
-                          <p className="text-[10px] text-slate-500 mt-0.5">{o.sub}</p>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+              {/* 4 schedule preset tiles */}
+              <div className="grid grid-cols-2 gap-2.5">
+                {([
+                  { id: "everyday" as const, emoji: "📅", label: "Every day",  sub: "Daily habit"          },
+                  { id: "weekdays" as const, emoji: "🗓", label: "Weekdays",   sub: "Mon – Fri"            },
+                  { id: "weekends" as const, emoji: "🌅", label: "Weekends",   sub: "Sat & Sun"            },
+                  { id: "custom"   as const, emoji: "✏️", label: "Pick days",  sub: "Choose specific days" },
+                ]).map((o) => (
+                  <button key={o.id} type="button"
+                    onClick={() => setSchedulePreset(o.id)}
+                    className={`flex items-center gap-3 px-4 py-3.5 rounded-xl border text-left transition-all ${
+                      schedulePreset === o.id
+                        ? "bg-violet-600/25 border-violet-500/50 text-violet-200"
+                        : "bg-violet-950/30 hover:bg-violet-950/50 border-violet-900/25 hover:border-violet-700/40 text-slate-300"
+                    }`}
+                  >
+                    <span className="text-xl leading-none">{o.emoji}</span>
+                    <div>
+                      <p className="text-sm font-semibold leading-tight">{o.label}</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">{o.sub}</p>
+                    </div>
+                  </button>
+                ))}
               </div>
 
-              {/* 21-day mini calendar for custom picks */}
-              <div>
-                <p className="text-[10px] text-slate-600 uppercase tracking-wider font-semibold mb-2">Pick specific days</p>
-                <div className="grid grid-cols-7 gap-1">
-                  {CAL_DAYS.map((d, i) => (
-                    <div key={i} className="text-center text-[9px] text-slate-600 font-semibold uppercase pb-1">{d}</div>
-                  ))}
-                  {Array.from({ length: todayDow }, (_, i) => <div key={`b${i}`} />)}
-                  {next21.map(({ dateStr, dayNum }) => (
-                    <button key={dateStr} type="button" onClick={() => toggleDate(dateStr)}
-                      className={`aspect-square rounded-lg flex items-center justify-center text-xs font-medium transition-all ${
-                        selectedDates.has(dateStr)
-                          ? "bg-violet-600 text-white"
-                          : dateStr === today
-                          ? "bg-violet-950/60 border border-violet-700/40 text-violet-300 hover:bg-violet-600/30"
-                          : "text-slate-400 hover:bg-violet-950/50 hover:text-white"
-                      }`}
-                    >{dayNum}</button>
-                  ))}
+              {/* Day-of-week toggles — only shown for "Pick days" */}
+              {schedulePreset === "custom" && (
+                <div className="space-y-2">
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Select days of week</p>
+                  <div className="grid grid-cols-7 gap-1.5">
+                    {DOW_LABELS.map((d, i) => {
+                      const dow = DOW_MAP[i] ?? 0;
+                      const active = pickedDows.has(dow);
+                      return (
+                        <button key={i} type="button"
+                          onClick={() => setPickedDows((prev) => {
+                            const s = new Set(prev);
+                            s.has(dow) ? s.delete(dow) : s.add(dow);
+                            return s;
+                          })}
+                          className={`aspect-square rounded-xl flex items-center justify-center text-xs font-bold transition-all ${
+                            active
+                              ? "bg-violet-600 text-white shadow-sm shadow-violet-900/40"
+                              : "bg-violet-950/40 border border-violet-900/25 text-slate-500 hover:border-violet-700/40 hover:text-slate-300"
+                          }`}
+                        >
+                          {d}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {selectedDates.size > 0 && (
-                <p className="text-xs text-center text-violet-300 font-medium">
+                <p className="text-xs text-center text-violet-300/80 font-medium">
                   {selectedDates.size} day{selectedDates.size !== 1 ? "s" : ""} selected ✓
                 </p>
               )}
             </div>
 
-            {/* Step 2 Footer */}
+            {/* Step 2 Footer — flex-shrink-0 keeps it always visible */}
             <div className="flex gap-2.5 px-5 py-3.5 border-t border-violet-900/20 flex-shrink-0">
               <button type="button" onClick={() => setStep("details")}
                 className="flex items-center gap-1.5 px-4 py-2.5 border border-violet-900/30 text-slate-400 hover:text-white rounded-xl text-sm transition-colors"
@@ -641,10 +640,9 @@ export default function AddHabitModal({
               </button>
               <button type="button" onClick={handleScheduleConfirm}
                 disabled={selectedDates.size === 0}
-                className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+                className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2"
               >
-                <CalendarDays className="w-4 h-4" />
-                Schedule {selectedDates.size > 0 ? `${selectedDates.size} ` : ""}day{selectedDates.size !== 1 ? "s" : ""} →
+                ✓ Schedule Habit
               </button>
             </div>
           </div>
