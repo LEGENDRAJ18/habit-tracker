@@ -20,7 +20,6 @@ import { playSound } from "@/lib/sounds";
 import { levelName } from "@/lib/xp";
 import AIInsightModal from "@/components/dashboard/AIInsightModal";
 import AICheckinCard from "@/components/dashboard/AICheckinCard";
-import PromoBanner from "@/components/ui/PromoBanner";
 import SmartNotification from "@/components/ui/SmartNotification";
 import { toast } from "@/components/ui/Toast";
 import HelpModal from "@/components/ui/HelpModal";
@@ -566,8 +565,6 @@ export default function DashboardPage() {
 
   return (
     <div className="bg-[#09090f]">
-      {!profileLoading && <PromoBanner tier={tier} />}
-
       <SmartNotification
         tier={tier}
         habitCount={habits.length}
@@ -947,6 +944,99 @@ export default function DashboardPage() {
             />
           )}
         </div>
+
+        {/* Mobile-only: AI Coaching + Today's Progress (xl shows these in sidebar) */}
+        {!loading && (
+          <div className="xl:hidden mt-4 space-y-3">
+            {/* AI Coaching */}
+            <div className={`relative overflow-hidden rounded-2xl bg-[#0c0c18] ${isPaid ? "border border-violet-600/30" : "border border-violet-500/40"}`}>
+              <div className="absolute inset-0 bg-gradient-to-br from-violet-950/70 via-[#0f0f1a] to-transparent pointer-events-none" />
+              <div className="relative p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className={`w-4 h-4 ${isPaid ? "text-violet-400" : "text-violet-300"}`} />
+                  <p className="text-sm font-semibold text-white">AI Coaching</p>
+                  {!isPaid && (
+                    <span className="ml-auto text-[10px] font-bold text-violet-300 bg-violet-500/20 border border-violet-500/30 px-2 py-0.5 rounded-full">UNLOCK</span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-400 mb-3 leading-relaxed">
+                  {isPaid
+                    ? "Get personalised insights on your habits, streaks, and patterns."
+                    : "Personalised AI insights and habit coaching — tailored to your goals."}
+                </p>
+                {isPaid ? (
+                  <button
+                    onClick={() => setShowAIInsight(true)}
+                    className="w-full py-2.5 rounded-xl text-sm font-semibold bg-violet-600 hover:bg-violet-500 text-white transition-all min-h-[44px]"
+                    style={{ boxShadow: "0 0 16px rgba(139,92,246,0.35)" }}
+                  >
+                    Analyse My Habits
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => openUpgradeModal("ai")}
+                    className="w-full py-2.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 min-h-[44px]"
+                    style={{
+                      background: "linear-gradient(135deg, #6d28d9, #8b5cf6, #7c3aed)",
+                      boxShadow: "0 0 20px rgba(139,92,246,0.4)",
+                    }}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Upgrade to Unlock
+                  </button>
+                )}
+                {!isPaid && (
+                  <p className="text-[10px] text-center text-violet-400/60 mt-2">✨ Starting at $5.99/mo · 7-day money-back</p>
+                )}
+              </div>
+            </div>
+
+            {/* Today's Progress (mobile) */}
+            {habits.length > 0 && (() => {
+              const pct = Math.round((completedCount / habits.length) * 100);
+              const r = 22; const circ = 2 * Math.PI * r;
+              const offset = circ * (1 - pct / 100);
+              const ringColor = pct === 100 ? "#10b981" : pct >= 50 ? "#8b5cf6" : "#6d28d9";
+              const motivational =
+                pct === 0   ? "Start strong today! 💪" :
+                pct < 50    ? "Keep going, you've got this! 🔥" :
+                pct < 100   ? "Almost there, finish strong! ⚡" :
+                              "Perfect day! Amazing work! 🎉";
+              return (
+                <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-4">
+                  <p className="text-xs font-semibold text-slate-400 mb-3">Today&apos;s Progress</p>
+                  <div className="flex items-center gap-4">
+                    <div className="relative flex-shrink-0">
+                      <svg width="56" height="56" viewBox="0 0 56 56">
+                        <circle cx="28" cy="28" r={r} fill="none" stroke="#1e1b4b" strokeWidth="4.5" />
+                        <circle cx="28" cy="28" r={r} fill="none" stroke={ringColor} strokeWidth="4.5" strokeLinecap="round"
+                          strokeDasharray={`${circ}`} strokeDashoffset={`${offset}`}
+                          transform="rotate(-90 28 28)" style={{ transition: "stroke-dashoffset 0.6s ease" }} />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-xs font-bold text-white">{pct}%</span>
+                      </div>
+                    </div>
+                    <div className="flex-1 space-y-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm leading-none">🔥</span>
+                        <span className="text-xs font-semibold text-white">{bestStreak} day{bestStreak !== 1 ? "s" : ""}</span>
+                        <span className="text-[10px] text-slate-600">streak</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm leading-none">⚡</span>
+                        <span className="text-xs font-semibold text-white">{completedCount * 10} XP</span>
+                        <span className="text-[10px] text-slate-600">today</span>
+                      </div>
+                      <p className="text-[10px] text-slate-600">{completedCount}/{habits.length} habits done</p>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-violet-300/80 mt-3 font-medium">{motivational}</p>
+                </div>
+              );
+            })()}
+          </div>
+        )}
 
         {/* Recommended habits */}
         {!loading && !profileLoading && onboardingCompleted && (

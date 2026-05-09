@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Trash2, Check, Flame, Snowflake, ArrowRight, Pencil, X, Loader2, Zap, Crown } from "lucide-react";
 import type { Habit, Plan } from "@/types";
 
@@ -79,6 +79,9 @@ export default function HabitCard({
   const [editName, setEditName]     = useState(habit.name);
   const [editSaving, setEditSaving] = useState(false);
   const [smartToggling, setSmartToggling] = useState(false);
+  const [swipeX, setSwipeX]         = useState(0);
+  const swipeXRef   = useRef(0);
+  const touchRef    = useRef({ startX: 0, startY: 0, locked: false });
 
   useEffect(() => {
     if (isEditing) { setEditName(habit.name); setEditMode(true); }
@@ -128,6 +131,34 @@ export default function HabitCard({
     onDelete();
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (editMode) return;
+    touchRef.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY, locked: false };
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (editMode) return;
+    const dx = e.touches[0].clientX - touchRef.current.startX;
+    const dy = e.touches[0].clientY - touchRef.current.startY;
+    if (!touchRef.current.locked) {
+      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+      if (Math.abs(dy) > Math.abs(dx)) return;
+      touchRef.current.locked = true;
+    }
+    const clamped = Math.max(-100, Math.min(100, dx));
+    swipeXRef.current = clamped;
+    setSwipeX(clamped);
+  };
+
+  const handleTouchEnd = () => {
+    if (editMode) return;
+    const sx = swipeXRef.current;
+    if (sx < -72) handleDelete();
+    else if (sx > 72 && !completed) handleToggle();
+    swipeXRef.current = 0;
+    setSwipeX(0);
+  };
+
   const hasStreak = streak > 0;
   const bigStreak = streak >= 30;
   const midStreak = streak >= 7;
@@ -141,13 +172,36 @@ export default function HabitCard({
     : midStreak ? "text-xs font-semibold text-orange-400" : "text-xs text-orange-400/50";
 
   return (
+    <div className={`relative overflow-hidden rounded-xl ${deleting ? "opacity-50 pointer-events-none" : ""}`}>
+      {/* Swipe-left (delete) backdrop */}
+      <div
+        className="absolute inset-0 flex items-center justify-end pr-5 bg-red-950/90 pointer-events-none rounded-xl"
+        style={{ opacity: swipeX < -15 ? Math.min(1, (Math.abs(swipeX) - 15) / 55) : 0 }}
+      >
+        <Trash2 className="w-5 h-5 text-red-400" />
+      </div>
+      {/* Swipe-right (complete) backdrop */}
+      {!completed && (
+        <div
+          className="absolute inset-0 flex items-center pl-5 bg-emerald-950/90 pointer-events-none rounded-xl"
+          style={{ opacity: swipeX > 15 ? Math.min(1, (swipeX - 15) / 55) : 0 }}
+        >
+          <Check className="w-5 h-5 text-emerald-400" />
+        </div>
+      )}
     <div
       className={`group rounded-xl border transition-all duration-200 ${
         completed
           ? "bg-violet-600/8 border-violet-600/20"
-          : "bg-[#0f0f1a] border-violet-900/20 hover:border-violet-800/30 hover:-translate-y-px hover:shadow-[0_4px_20px_rgba(109,40,217,0.10)]"
-      } ${deleting ? "opacity-50 pointer-events-none" : ""}`}
-      style={justCompleted ? { animation: "cardNudge 0.35s ease-out both" } : undefined}
+          : "bg-[#0f0f1a] border-violet-900/20 sm:hover:border-violet-800/30 sm:hover:-translate-y-px sm:hover:shadow-[0_4px_20px_rgba(109,40,217,0.10)]"
+      }`}
+      style={{
+        ...(swipeX !== 0 ? { transform: `translateX(${swipeX}px)`, transition: "none" } : { transition: "transform 0.32s cubic-bezier(0.25,0.46,0.45,0.94)" }),
+        ...(justCompleted ? { animation: "cardNudge 0.35s ease-out both" } : {}),
+      }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Stack-after indicator */}
       {stackAfterName && (
@@ -268,7 +322,7 @@ export default function HabitCard({
 
         {/* Delete */}
         <button onClick={handleDelete}
-          className="flex-shrink-0 transition-all p-1 rounded-lg text-slate-700 hover:text-red-400 opacity-0 group-hover:opacity-100"
+          className="flex-shrink-0 transition-all p-1 rounded-lg text-slate-700 hover:text-red-400 opacity-40 sm:opacity-0 sm:group-hover:opacity-100"
           title="Delete habit"
         >
           <Trash2 className="w-3.5 h-3.5" />
@@ -381,6 +435,7 @@ export default function HabitCard({
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 }
