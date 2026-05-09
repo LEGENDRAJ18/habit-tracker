@@ -43,13 +43,13 @@ export function useHabits() {
   const [error, setError]                   = useState<string | null>(null);
   const supabase = useRef(createClient()).current;
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
+  const fetchData = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      setLoading(false);
+      if (!silent) setLoading(false);
       return;
     }
 
@@ -122,7 +122,7 @@ export function useHabits() {
     setHabits(loadedHabits);
     setTodayLogs(logsData || []);
     setHistoricalLogs(loadedHist);
-    setLoading(false);
+    if (!silent) setLoading(false);
   }, [supabase]);
 
   useEffect(() => {
@@ -195,6 +195,10 @@ export function useHabits() {
       // Uncomplete — remove log, reduce strength by 5
       await supabase.from("habit_logs").delete().eq("id", existing.id);
       setTodayLogs((prev) => prev.filter((l) => l.id !== existing.id));
+      setHistoricalLogs((prev) => {
+        const dateStr = existing.completed_at.split("T")[0];
+        return prev.filter((l) => !(l.habit_id === habitId && l.completed_at.split("T")[0] === dateStr));
+      });
 
       const newStrength = Math.max(5, currentStrength - 5);
       await supabase.from("habits").update({ habit_strength: newStrength }).eq("id", habitId);
@@ -208,7 +212,14 @@ export function useHabits() {
         .insert({ habit_id: habitId, user_id: user.id })
         .select()
         .single();
-      if (data) setTodayLogs((prev) => [...prev, data]);
+      if (data) {
+        setTodayLogs((prev) => [...prev, data]);
+        setHistoricalLogs((prev) => {
+          const dateStr = data.completed_at.split("T")[0];
+          if (prev.some((l) => l.habit_id === habitId && l.completed_at.split("T")[0] === dateStr)) return prev;
+          return [{ habit_id: data.habit_id, completed_at: data.completed_at }, ...prev];
+        });
+      }
 
       const newStrength = Math.min(100, currentStrength + 5);
       await supabase.from("habits").update({ habit_strength: newStrength }).eq("id", habitId);
@@ -222,6 +233,7 @@ export function useHabits() {
     await supabase.from("habits").delete().eq("id", habitId);
     setHabits((prev) => prev.filter((h) => h.id !== habitId));
     setTodayLogs((prev) => prev.filter((l) => l.habit_id !== habitId));
+    setHistoricalLogs((prev) => prev.filter((l) => l.habit_id !== habitId));
   };
 
   // Optimistic delete: removes from state immediately, returns the removed habit.
@@ -245,6 +257,7 @@ export function useHabits() {
 
   const commitDeleteHabit = async (habitId: string) => {
     await supabase.from("habits").delete().eq("id", habitId);
+    setHistoricalLogs((prev) => prev.filter((l) => l.habit_id !== habitId));
   };
 
   const isCompletedToday = (habitId: string) =>
@@ -363,6 +376,32 @@ export function useHabits() {
     },
     [habitDateSets],
   );
+
+  // Real-time subscriptions for cross-tab sync
+  useEffect(() => {
+    let habitsChannel: ReturnType<typeof supabase.channel> | null = null;
+    let logsChannel: ReturnType<typeof supabase.channel> | null = null;
+
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      habitsChannel = supabase
+        .channel(`habits-rt-${user.id}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "habits", filter: `user_id=eq.${user.id}` }, () => fetchData(true))
+        .subscribe();
+
+      logsChannel = supabase
+        .channel(`logs-rt-${user.id}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "habit_logs", filter: `user_id=eq.${user.id}` }, () => fetchData(true))
+        .subscribe();
+    })();
+
+    return () => {
+      if (habitsChannel) supabase.removeChannel(habitsChannel);
+      if (logsChannel) supabase.removeChannel(logsChannel);
+    };
+  }, [supabase, fetchData]);
 
   return {
     habits,

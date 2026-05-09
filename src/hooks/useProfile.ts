@@ -23,35 +23,67 @@ export function useProfile() {
   const supabase = useRef(createClient()).current;
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    function applyData(d: {
+      subscription_tier?: string | null;
+      onboarding_completed?: boolean | null;
+      goal?: string | null;
+      goals?: string[] | null;
+      last_freeze_used?: string | null;
+      freeze_protected_date?: string | null;
+      reminder_enabled?: boolean | null;
+      reminder_hour?: number | null;
+      reminder_minute?: number | null;
+      subscription_cancel_at_period_end?: boolean | null;
+      subscription_current_period_end?: string | null;
+      subscription_status?: string | null;
+      trial_end_date?: string | null;
+    }) {
+      if (d.subscription_tier) setTier(d.subscription_tier as Plan);
+      setOnboardingCompleted(d.onboarding_completed ?? false);
+      setGoal(d.goal ?? null);
+      setGoals(Array.isArray(d.goals) && d.goals.length > 0
+        ? d.goals
+        : d.goal ? [d.goal] : []);
+      setLastFreezeUsed(d.last_freeze_used ?? null);
+      setFreezeProtectedDate(d.freeze_protected_date ?? null);
+      setReminderEnabled(d.reminder_enabled ?? false);
+      setReminderHour(d.reminder_hour ?? 8);
+      setReminderMinute(d.reminder_minute ?? 0);
+      setCancelAtPeriodEnd(d.subscription_cancel_at_period_end ?? false);
+      setCurrentPeriodEnd(d.subscription_current_period_end ?? null);
+      setSubscriptionStatus(d.subscription_status ?? null);
+      setTrialEndDate(d.trial_end_date ?? null);
+    }
+
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setProfileLoading(false); return; }
       setSignedUpAt(user.created_at ?? null);
-      supabase
+      const { data } = await supabase
         .from("profiles")
         .select(
           "subscription_tier, onboarding_completed, goal, goals, last_freeze_used, freeze_protected_date, reminder_enabled, reminder_hour, reminder_minute, subscription_cancel_at_period_end, subscription_current_period_end, subscription_status, trial_end_date"
         )
         .eq("id", user.id)
-        .single()
-        .then(({ data }) => {
-          if (data?.subscription_tier) setTier(data.subscription_tier as Plan);
-          setOnboardingCompleted(data?.onboarding_completed ?? false);
-          setGoal(data?.goal ?? null);
-          setGoals(Array.isArray(data?.goals) && data.goals.length > 0
-            ? data.goals
-            : data?.goal ? [data.goal] : []);
-          setLastFreezeUsed(data?.last_freeze_used ?? null);
-          setFreezeProtectedDate(data?.freeze_protected_date ?? null);
-          setReminderEnabled(data?.reminder_enabled ?? false);
-          setReminderHour(data?.reminder_hour ?? 8);
-          setReminderMinute(data?.reminder_minute ?? 0);
-          setCancelAtPeriodEnd(data?.subscription_cancel_at_period_end ?? false);
-          setCurrentPeriodEnd(data?.subscription_current_period_end ?? null);
-          setSubscriptionStatus(data?.subscription_status ?? null);
-          setTrialEndDate(data?.trial_end_date ?? null);
-          setProfileLoading(false);
-        });
-    });
+        .single();
+      if (data) applyData(data);
+      setProfileLoading(false);
+
+      channel = supabase
+        .channel(`profile-rt-${user.id}`)
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
+          (payload) => applyData(payload.new as Parameters<typeof applyData>[0])
+        )
+        .subscribe();
+    })();
+
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
   }, [supabase]);
 
   // Freeze resets every 7 days

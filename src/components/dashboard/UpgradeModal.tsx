@@ -5,6 +5,7 @@ import Link from "next/link";
 import { X, Sparkles, Check, Minus, Zap, Loader2, Brain, Crown, Lock, ClipboardList } from "lucide-react";
 import { FREE_HABIT_LIMIT } from "@/types";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useProfile } from "@/hooks/useProfile";
 
 export type UpgradeReason = "habits" | "ai" | "reminders" | "export" | "pro_feature";
 
@@ -223,6 +224,7 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
   const [pendingPlan, setPendingPlan] = useState<"plus" | "pro" | null>(null);
   const copy = REASON_COPY[reason];
   const { formatPrice, currency, loading: currencyLoading } = useCurrency();
+  const { tier: currentTier } = useProfile();
   const plusPrice = currencyLoading ? "$5.99" : formatPrice(5.99);
   const proPrice  = currencyLoading ? "$9.99"  : formatPrice(9.99);
 
@@ -345,14 +347,24 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
                   ))}
                 </ul>
                 <div className="mt-auto">
-                  <button
-                    onClick={() => requestCheckout("plus")}
-                    disabled={loading !== null}
-                    className="w-full py-2 border border-violet-500/60 hover:border-violet-400 text-violet-300 hover:text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    {loading === "plus" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                    Start free trial
-                  </button>
+                  {currentTier === "plus" ? (
+                    <button disabled className="w-full py-2 border border-violet-700/30 text-violet-600 text-xs font-bold rounded-lg cursor-default opacity-60">
+                      Current plan
+                    </button>
+                  ) : currentTier === "pro" ? (
+                    <button disabled className="w-full py-2 border border-violet-700/30 text-violet-600 text-xs font-bold rounded-lg cursor-default opacity-60">
+                      ✓ Already included
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => requestCheckout("plus")}
+                      disabled={loading !== null}
+                      className="w-full py-2 border border-violet-500/60 hover:border-violet-400 text-violet-300 hover:text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {loading === "plus" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                      Start free trial
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -382,14 +394,20 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
                 ))}
               </ul>
               <div className="mt-auto">
-                <button
-                  onClick={() => requestCheckout("pro")}
-                  disabled={loading !== null}
-                  className="w-full py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-orange-900/20 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {loading === "pro" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Crown className="w-3 h-3" />}
-                  Get Pro — {proPrice}/mo
-                </button>
+                {currentTier === "pro" ? (
+                  <button disabled className="w-full py-2 bg-gradient-to-r from-amber-500/40 to-orange-500/40 text-white/60 text-xs font-bold rounded-lg cursor-default">
+                    Current plan
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => requestCheckout("pro")}
+                    disabled={loading !== null}
+                    className="w-full py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-orange-900/20 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {loading === "pro" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Crown className="w-3 h-3" />}
+                    {currentTier === "plus" ? "Upgrade to Pro" : "Get Pro"} — {proPrice}/mo
+                  </button>
+                )}
               </div>
             </div>
           </div>

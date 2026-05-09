@@ -950,7 +950,7 @@ export default function DashboardPage() {
         </div>{/* end left column */}
 
         {/* ── Right sidebar (xl only) ────────────────────────────────────── */}
-        <div className="hidden xl:flex xl:flex-col gap-4 sticky top-20 max-h-[calc(100vh-5.5rem)] overflow-y-auto scrollbar-none pb-4">
+        <div className="hidden xl:flex xl:flex-col gap-4 sticky top-20 overflow-hidden pb-4">
 
           {/* AI Insight — prominent card */}
           <div data-tour="ai-insight" className={`relative overflow-hidden rounded-2xl bg-[#0c0c18] ${isPaid ? "border border-violet-600/30" : "border border-violet-500/50"}`}>
