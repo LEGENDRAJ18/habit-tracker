@@ -70,7 +70,6 @@ export default function HabitCard({
   habit, completed, streak, strength, isProtected, stackAfterName, isEditing,
   tier, onToggle, onDelete, onCompleted, onRename, onSmartTimingToggle, onUpgradePro,
 }: Props) {
-  const [toggling, setToggling]     = useState(false);
   const [deleting, setDeleting]     = useState(false);
   const [showParticles, setShowParticles] = useState(false);
   const [justCompleted, setJustCompleted] = useState(false);
@@ -114,16 +113,15 @@ export default function HabitCard({
 
   const validity = habit.validity_score;
 
-  const handleToggle = async () => {
+  const handleToggle = () => {
     if (!completed) {
       setShowParticles(true);
       setJustCompleted(true);
       setTimeout(() => { setShowParticles(false); setJustCompleted(false); }, 700);
       onCompleted?.();
     }
-    setToggling(true);
-    await onToggle();
-    setToggling(false);
+    // Optimistic — fire and forget; parent handles revert on error
+    void onToggle();
   };
 
   const handleDelete = () => {
@@ -190,7 +188,7 @@ export default function HabitCard({
         </div>
       )}
     <div
-      className={`group rounded-xl border transition-all duration-200 ${
+      className={`group rounded-xl border transition-all duration-200 touch-pan-y ${
         completed
           ? "bg-violet-600/8 border-violet-600/20"
           : "bg-[#0f0f1a] border-violet-900/20 sm:hover:border-violet-800/30 sm:hover:-translate-y-px sm:hover:shadow-[0_4px_20px_rgba(109,40,217,0.10)]"
@@ -214,10 +212,10 @@ export default function HabitCard({
       <div className="flex items-center gap-4 px-4 py-3.5">
         {/* Checkbox + particles */}
         <div className="relative flex-shrink-0">
-          <button onClick={handleToggle} disabled={toggling}
+          <button onClick={handleToggle}
             className={`w-8 h-8 sm:w-6 sm:h-6 rounded-full flex items-center justify-center border-2 transition-colors duration-200 ${
               completed ? "bg-violet-500 border-violet-500 shadow-lg shadow-violet-500/30" : "border-violet-700/50 hover:border-violet-500"
-            } ${toggling ? "opacity-60" : ""}`}
+            }`}
             style={justCompleted && completed ? { animation: "checkPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both" } : undefined}
           >
             {completed && <Check className="w-4 h-4 sm:w-3 sm:h-3 text-white" strokeWidth={3} />}

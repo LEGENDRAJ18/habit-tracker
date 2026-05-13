@@ -181,7 +181,7 @@ export function useHabits() {
     return { error: null };
   };
 
-  const toggleHabit = async (habitId: string) => {
+  const toggleHabit = async (habitId: string): Promise<void> => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -192,40 +192,84 @@ export function useHabits() {
     const existing        = todayLogs.find((l) => l.habit_id === habitId);
 
     if (existing) {
-      // Uncomplete — remove log, reduce strength by 5
-      await supabase.from("habit_logs").delete().eq("id", existing.id);
+      // ── Optimistic uncomplete — state update BEFORE awaiting DB ──
+      const newStrength = Math.max(5, currentStrength - 5);
       setTodayLogs((prev) => prev.filter((l) => l.id !== existing.id));
       setHistoricalLogs((prev) => {
         const dateStr = existing.completed_at.split("T")[0];
-        return prev.filter((l) => !(l.habit_id === habitId && l.completed_at.split("T")[0] === dateStr));
+        return prev.filter(
+          (l) => !(l.habit_id === habitId && l.completed_at.split("T")[0] === dateStr),
+        );
       });
-
-      const newStrength = Math.max(5, currentStrength - 5);
-      await supabase.from("habits").update({ habit_strength: newStrength }).eq("id", habitId);
       setHabits((prev) =>
         prev.map((h) => (h.id === habitId ? { ...h, habit_strength: newStrength } : h)),
       );
+
+      const { error: delErr } = await supabase.from("habit_logs").delete().eq("id", existing.id);
+      if (delErr) {
+        // Revert on failure
+        setTodayLogs((prev) => [...prev, existing]);
+        setHistoricalLogs((prev) => [
+          { habit_id: existing.habit_id, completed_at: existing.completed_at },
+          ...prev,
+        ]);
+        setHabits((prev) =>
+          prev.map((h) => (h.id === habitId ? { ...h, habit_strength: currentStrength } : h)),
+        );
+        throw delErr;
+      }
+      // Strength update is non-critical — fire in background
+      void supabase.from("habits").update({ habit_strength: newStrength }).eq("id", habitId);
+
     } else {
-      // Complete — add log, increase strength by 5
-      const { data } = await supabase
+      // ── Optimistic complete — state update BEFORE awaiting DB ──
+      const now    = new Date().toISOString();
+      const tempId = `opt-${habitId}-${Date.now()}`;
+      const tempLog: HabitLog = {
+        id:           tempId,
+        habit_id:     habitId,
+        user_id:      user.id,
+        completed_at: now,
+        notes:        null,
+      };
+      const newStrength = Math.min(100, currentStrength + 5);
+
+      setTodayLogs((prev) => [...prev, tempLog]);
+      setHistoricalLogs((prev) => {
+        const dateStr = now.split("T")[0];
+        if (prev.some((l) => l.habit_id === habitId && l.completed_at.split("T")[0] === dateStr))
+          return prev;
+        return [{ habit_id: habitId, completed_at: now }, ...prev];
+      });
+      setHabits((prev) =>
+        prev.map((h) => (h.id === habitId ? { ...h, habit_strength: newStrength } : h)),
+      );
+
+      const { data, error: insertErr } = await supabase
         .from("habit_logs")
         .insert({ habit_id: habitId, user_id: user.id })
         .select()
         .single();
-      if (data) {
-        setTodayLogs((prev) => [...prev, data]);
+
+      if (insertErr || !data) {
+        // Revert on failure
+        setTodayLogs((prev) => prev.filter((l) => l.id !== tempId));
         setHistoricalLogs((prev) => {
-          const dateStr = data.completed_at.split("T")[0];
-          if (prev.some((l) => l.habit_id === habitId && l.completed_at.split("T")[0] === dateStr)) return prev;
-          return [{ habit_id: data.habit_id, completed_at: data.completed_at }, ...prev];
+          const dateStr = now.split("T")[0];
+          return prev.filter(
+            (l) => !(l.habit_id === habitId && l.completed_at.split("T")[0] === dateStr),
+          );
         });
+        setHabits((prev) =>
+          prev.map((h) => (h.id === habitId ? { ...h, habit_strength: currentStrength } : h)),
+        );
+        throw insertErr ?? new Error("habit_log insert returned no data");
       }
 
-      const newStrength = Math.min(100, currentStrength + 5);
-      await supabase.from("habits").update({ habit_strength: newStrength }).eq("id", habitId);
-      setHabits((prev) =>
-        prev.map((h) => (h.id === habitId ? { ...h, habit_strength: newStrength } : h)),
-      );
+      // Swap temp placeholder with the real persisted log
+      setTodayLogs((prev) => prev.map((l) => (l.id === tempId ? data : l)));
+      // Strength update is non-critical — fire in background
+      void supabase.from("habits").update({ habit_strength: newStrength }).eq("id", habitId);
     }
   };
 

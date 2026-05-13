@@ -887,7 +887,13 @@ export default function DashboardPage() {
                   });
                   if (res.ok) { refetch(); }
                 }}
-                onToggle={() => toggleHabit(habit.id)}
+                onToggle={async () => {
+                  try {
+                    await toggleHabit(habit.id);
+                  } catch {
+                    toast("Couldn't update habit — please try again.", "error", undefined, 3000);
+                  }
+                }}
                 onDelete={() => {
                   const removed = removeHabitOptimistic(habit.id);
                   if (!removed) return;

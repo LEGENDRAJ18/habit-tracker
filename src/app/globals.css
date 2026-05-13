@@ -17,6 +17,14 @@
   --a-b: 237;
 }
 
+/* ─── Touch performance ──────────────────────────────────────────────────── */
+/* Eliminate 300ms tap delay on all elements */
+*, *::before, *::after {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
 html {
   scroll-behavior: smooth;
   font-size: 16px;
