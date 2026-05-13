@@ -5,12 +5,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Sparkles, LogOut, Zap, ChevronDown, BarChart2,
-  Download, User, Settings, CreditCard, HelpCircle,
+  User, Settings, CreditCard, HelpCircle,
   Keyboard, Users, Calendar, ChevronLeft, ChevronRight,
   LayoutDashboard,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useProfile } from "@/hooks/useProfile";
 import { useXP } from "@/hooks/useXP";
 import { useUpgrade } from "@/contexts/UpgradeContext";
@@ -103,7 +102,6 @@ function NavXP() {
 export default function DashboardNav() {
   const router   = useRouter();
   const pathname = usePathname();
-  const { canInstall, promptInstall } = usePWAInstall();
   const { tier } = useProfile();
   const { openUpgradeModal } = useUpgrade();
   const [signingOut, setSigningOut] = useState(false);
@@ -225,7 +223,7 @@ export default function DashboardNav() {
             >
               <Sparkles className="w-5 h-5 text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.6)]" />
             </div>
-            <span className="text-[1.35rem] font-black text-white tracking-tight leading-none">
+            <span className="font-black text-white tracking-tight leading-none" style={{ fontSize: "clamp(1rem, 5vw, 1.35rem)" }}>
               habit<span className="text-violet-400">AI</span>
             </span>
           </Link>
@@ -234,18 +232,6 @@ export default function DashboardNav() {
           <div className="flex items-center gap-2 z-10">
             {/* XP progress */}
             <NavXP />
-
-            {canInstall && (
-              <button
-                onClick={promptInstall}
-                aria-label="Install HabitAI app"
-                title="Install HabitAI"
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-400 hover:text-violet-300 border border-slate-800/60 hover:border-violet-700/50 rounded-lg transition-all"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Install</span>
-              </button>
-            )}
 
             {/* User menu */}
             <div className="relative" ref={menuRef}>

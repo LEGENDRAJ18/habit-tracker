@@ -4,12 +4,10 @@ import { createContext, useContext, useEffect, useState, useCallback, useRef } f
 import { createClient } from "@/lib/supabase/client";
 
 export type AccentColor    = "violet" | "blue" | "green" | "pink" | "orange" | "red" | "cyan" | "gold";
-export type FontSize        = "small"  | "medium"      | "large";
 export type DashboardLayout = "compact" | "comfortable" | "spacious";
 
 export interface AppearancePrefs {
   accent:                 AccentColor;
-  fontSize:               FontSize;
   dashboardLayout:        DashboardLayout;
   showTimeEmojis:         boolean;
   showHabitStreak:        boolean;
@@ -22,7 +20,6 @@ export interface AppearancePrefs {
 
 const DEFAULTS: AppearancePrefs = {
   accent:                "violet",
-  fontSize:              "medium",
   dashboardLayout:       "comfortable",
   showTimeEmojis:        true,
   showHabitStreak:       true,
@@ -68,13 +65,6 @@ export function applyAccentCSSVars(accent: AccentColor) {
   d.style.setProperty("--a-b",   String(p.b));
 }
 
-function applyFontSizeVar(size: FontSize) {
-  document.documentElement.style.setProperty(
-    "--base-font",
-    ({ small: "14px", medium: "16px", large: "18px" } as const)[size],
-  );
-}
-
 function applyReduceMotion(value: boolean) {
   document.documentElement.classList.toggle("reduce-motion", value);
 }
@@ -85,7 +75,6 @@ function applyHighContrast(value: boolean) {
 
 type AppearanceCtx = AppearancePrefs & {
   setAccent:               (c: AccentColor)     => void;
-  setFontSize:             (s: FontSize)        => void;
   setDashboardLayout:      (l: DashboardLayout) => void;
   setShowTimeEmojis:       (v: boolean)         => void;
   setShowHabitStreak:      (v: boolean)         => void;
@@ -99,7 +88,6 @@ type AppearanceCtx = AppearancePrefs & {
 const Ctx = createContext<AppearanceCtx>({
   ...DEFAULTS,
   setAccent:               () => {},
-  setFontSize:             () => {},
   setDashboardLayout:      () => {},
   setShowTimeEmojis:       () => {},
   setShowHabitStreak:      () => {},
@@ -122,7 +110,6 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
     const merged: AppearancePrefs = { ...DEFAULTS, ...readLS() };
     setPrefs(merged);
     applyAccentCSSVars(merged.accent);
-    applyFontSizeVar(merged.fontSize);
     applyReduceMotion(merged.reduceMotion);
     applyHighContrast(merged.highContrast);
 
@@ -159,11 +146,6 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
     });
   }, [supabase, commit]);
 
-  const setFontSize = useCallback((fontSize: FontSize) => {
-    applyFontSizeVar(fontSize);
-    commit({ fontSize });
-  }, [commit]);
-
   const setDashboardLayout      = useCallback((dashboardLayout: DashboardLayout) => commit({ dashboardLayout }), [commit]);
   const setShowTimeEmojis       = useCallback((v: boolean) => commit({ showTimeEmojis: v }), [commit]);
   const setShowHabitStreak      = useCallback((v: boolean) => commit({ showHabitStreak: v }), [commit]);
@@ -176,7 +158,7 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
   return (
     <Ctx.Provider value={{
       ...prefs,
-      setAccent, setFontSize, setDashboardLayout,
+      setAccent, setDashboardLayout,
       setShowTimeEmojis, setShowHabitStreak, setShowHabitXP,
       setShowAchievementPopups, setShowLevelUpAnimation,
       setReduceMotion, setHighContrast,

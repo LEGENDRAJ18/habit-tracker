@@ -22,7 +22,6 @@ import AIInsightModal from "@/components/dashboard/AIInsightModal";
 import AICheckinCard from "@/components/dashboard/AICheckinCard";
 import SmartNotification from "@/components/ui/SmartNotification";
 import { toast } from "@/components/ui/Toast";
-import HelpModal from "@/components/ui/HelpModal";
 import OnboardingTour from "@/components/ui/OnboardingTour";
 import HabitTemplatesModal from "@/components/dashboard/HabitTemplatesModal";
 import WeeklyPlanCard from "@/components/dashboard/WeeklyPlanCard";
@@ -1044,9 +1043,10 @@ export default function DashboardPage() {
             goals={goals}
             existingHabits={habits}
             canAddMore={isPaid || habits.length < FREE_HABIT_LIMIT}
+            isPro={tier === "pro"}
             onAdd={(name, desc) => addHabit(name, desc, "daily")}
             onSetGoal={() => setShowReOnboard(true)}
-            onUpgrade={() => openUpgradeModal("habits")}
+            onUpgrade={() => openUpgradeModal("pro_feature", tier === "plus")}
           />
         )}
 
@@ -1308,9 +1308,6 @@ export default function DashboardPage() {
           onClose={() => setShareData(null)}
         />
       )}
-
-      {/* Floating help button + FAQ modal */}
-      <HelpModal />
 
       {/* First-visit onboarding tour (3 steps) */}
       {!loading && !profileLoading && (

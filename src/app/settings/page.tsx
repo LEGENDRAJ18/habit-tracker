@@ -7,14 +7,16 @@ import {
   User, Mail, Lock, Trash2, AlertCircle, CheckCircle2,
   Loader2, Eye, EyeOff, X, Bell, Download, Crown, Zap, Palette,
   Check, RotateCcw, Target, SlidersHorizontal, CreditCard, Sparkles,
+  HelpCircle, ArrowRight,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { TOUR_STORAGE_KEY, TOUR_SESSION_KEY } from "@/components/ui/OnboardingTour";
 import ReminderSettings from "@/components/dashboard/ReminderSettings";
 import {
   useAppearance, ACCENT_PALETTE,
-  type AccentColor, type FontSize, type DashboardLayout,
+  type AccentColor, type DashboardLayout,
 } from "@/contexts/AppearanceContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
@@ -474,15 +476,9 @@ function AppearanceTab() {
 
 function AccessibilityTab() {
   const {
-    fontSize, setFontSize,
     reduceMotion, setReduceMotion,
     highContrast, setHighContrast,
   } = useAppearance();
-
-  const optionBtn = (active: boolean) =>
-    `flex-1 py-2.5 rounded-xl text-xs font-semibold border transition-all ${
-      active ? "border-transparent text-white" : "bg-transparent border-violet-900/20 text-slate-500 hover:text-slate-300 hover:border-violet-900/40"
-    }`;
 
   return (
     <div className="space-y-6">
@@ -491,24 +487,7 @@ function AccessibilityTab() {
         <p className="text-sm text-slate-500">Adjust the app to better suit your needs.</p>
       </div>
       <div className={cardCls}>
-        {/* Font size */}
-        <div>
-          <p className="text-sm font-semibold text-white mb-1">Font Size</p>
-          <p className="text-xs text-slate-500 mb-3">
-            {fontSize === "small" ? "Small — 14px, more content visible" : fontSize === "large" ? "Large — 18px, easier to read" : "Medium — 16px, default"}
-          </p>
-          <div className="flex gap-2.5">
-            {(["small", "medium", "large"] as FontSize[]).map((s) => (
-              <button key={s} onClick={() => setFontSize(s)} className={optionBtn(fontSize === s)}
-                style={fontSize === s ? { backgroundColor: "rgba(var(--a-r),var(--a-g),var(--a-b),0.2)", borderColor: "var(--a-600)", color: "var(--a-300,#c4b5fd)" } : undefined}>
-                {s === "small" ? "Small" : s === "medium" ? "Medium" : "Large"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Reduce motion */}
-        <div className="border-t border-violet-900/20 pt-5 space-y-4">
+        <div className="space-y-4">
           <p className="text-sm font-semibold text-white">Motion &amp; Effects</p>
           <ToggleRow
             label="Reduce motion"
@@ -523,6 +502,87 @@ function AccessibilityTab() {
             onChange={setHighContrast}
           />
         </div>
+      </div>
+    </div>
+  );
+}
+
+function InstallAppSection() {
+  const { canInstall, isIOS, isInstalled, promptInstall } = usePWAInstall();
+  if (isInstalled || (!canInstall && !isIOS)) return null;
+  return (
+    <div>
+      <h2 className="text-base font-semibold text-white mb-4">Install App</h2>
+      <div className={cardCls} style={{ padding: "1rem 1.25rem" }}>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-white">Add to Home Screen</p>
+            {isIOS ? (
+              <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                Tap the <strong className="text-slate-300">Share</strong> button in Safari, then{" "}
+                <strong className="text-slate-300">Add to Home Screen</strong> for a full-screen app experience.
+              </p>
+            ) : (
+              <p className="text-[11px] text-slate-500 mt-0.5">Install HabitAI as an app for faster, offline-ready access</p>
+            )}
+          </div>
+          {!isIOS && (
+            <button
+              onClick={promptInstall}
+              className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-violet-300 border border-violet-700/40 hover:border-violet-500/60 hover:text-violet-200 hover:bg-violet-950/40 rounded-xl transition-all"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Install
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HelpTab() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-base font-semibold text-white mb-1">Help &amp; Support</h2>
+        <p className="text-sm text-slate-500">Find answers, contact support, or browse the FAQ.</p>
+      </div>
+
+      <div className={cardCls} style={{ padding: "1.25rem" }}>
+        <div className="flex items-start gap-4">
+          <div className="w-10 h-10 rounded-xl bg-violet-900/30 border border-violet-700/30 flex items-center justify-center flex-shrink-0">
+            <HelpCircle className="w-5 h-5 text-violet-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-white mb-0.5">Help Center &amp; FAQ</p>
+            <p className="text-xs text-slate-500 leading-relaxed mb-4">
+              Find answers to common questions about habits, streaks, XP, AI coaching, billing, and more.
+            </p>
+            <Link
+              href="/help"
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white rounded-xl transition-all"
+              style={{ backgroundColor: "var(--a-600, #7c3aed)" }}
+            >
+              Open Help Center
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <div className={cardCls} style={{ padding: "1.25rem" }}>
+        <p className="text-sm font-semibold text-white mb-1">Contact Support</p>
+        <p className="text-xs text-slate-500 leading-relaxed mb-4">
+          Need something specific? Email us and we&apos;ll respond within 24 hours.
+        </p>
+        <a
+          href="mailto:support@habitai.app"
+          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-violet-300 border border-violet-700/40 hover:border-violet-500/60 hover:text-violet-200 hover:bg-violet-950/40 rounded-xl transition-all"
+        >
+          support@habitai.app
+          <ArrowRight className="w-3.5 h-3.5" />
+        </a>
       </div>
     </div>
   );
@@ -652,7 +712,7 @@ function PlanTab({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-type Tab = "account" | "appearance" | "accessibility" | "goals" | "plan";
+type Tab = "account" | "appearance" | "accessibility" | "goals" | "plan" | "help";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "account",       label: "Account",       icon: <User            className="w-3.5 h-3.5" /> },
@@ -660,6 +720,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "accessibility", label: "Accessibility",  icon: <SlidersHorizontal className="w-3.5 h-3.5" /> },
   { id: "goals",         label: "My Goals",       icon: <Target          className="w-3.5 h-3.5" /> },
   { id: "plan",          label: "Plan",           icon: <CreditCard      className="w-3.5 h-3.5" /> },
+  { id: "help",          label: "Help",           icon: <HelpCircle      className="w-3.5 h-3.5" /> },
 ];
 
 export default function SettingsPage() {
@@ -767,17 +828,20 @@ export default function SettingsPage() {
         {/* Tab content */}
         <div key={activeTab} style={{ animation: "stepIn 0.2s ease-out both" }}>
           {activeTab === "account" && (
-            <AccountTab
-              name={name} setName={setName} email={email}
-              newEmail={newEmail} setNewEmail={setNewEmail}
-              newPassword={newPassword} setNewPassword={setNewPassword}
-              confirmPw={confirmPw} setConfirmPw={setConfirmPw}
-              showPw={showPw} setShowPw={setShowPw} isOAuth={isOAuth}
-              nameStatus={nameStatus} emailStatus={emailStatus} pwStatus={pwStatus}
-              savingName={savingName} savingEmail={savingEmail} savingPw={savingPw}
-              handleSaveName={handleSaveName} handleSaveEmail={handleSaveEmail} handleSavePw={handleSavePw}
-              onDeleteClick={() => setShowDelete(true)} router={router}
-            />
+            <>
+              <AccountTab
+                name={name} setName={setName} email={email}
+                newEmail={newEmail} setNewEmail={setNewEmail}
+                newPassword={newPassword} setNewPassword={setNewPassword}
+                confirmPw={confirmPw} setConfirmPw={setConfirmPw}
+                showPw={showPw} setShowPw={setShowPw} isOAuth={isOAuth}
+                nameStatus={nameStatus} emailStatus={emailStatus} pwStatus={pwStatus}
+                savingName={savingName} savingEmail={savingEmail} savingPw={savingPw}
+                handleSaveName={handleSaveName} handleSaveEmail={handleSaveEmail} handleSavePw={handleSavePw}
+                onDeleteClick={() => setShowDelete(true)} router={router}
+              />
+              <InstallAppSection />
+            </>
           )}
           {activeTab === "appearance"    && <AppearanceTab />}
           {activeTab === "accessibility" && <AccessibilityTab />}
@@ -789,6 +853,7 @@ export default function SettingsPage() {
               saveReminderPrefs={saveReminderPrefs}
             />
           )}
+          {activeTab === "help" && <HelpTab />}
         </div>
       </div>
 

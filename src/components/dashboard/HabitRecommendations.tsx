@@ -70,6 +70,7 @@ interface Props {
   goals: string[];
   existingHabits: Habit[];
   canAddMore: boolean;
+  isPro: boolean;
   onAdd: (name: string, description: string) => Promise<{ error: string | null }>;
   onSetGoal: () => void;
   onUpgrade: () => void;
@@ -79,6 +80,7 @@ export default function HabitRecommendations({
   goals,
   existingHabits,
   canAddMore,
+  isPro,
   onAdd,
   onSetGoal,
   onUpgrade,
@@ -99,6 +101,48 @@ export default function HabitRecommendations({
       return next;
     });
   };
+
+  // ── Pro gate — show locked state for free/plus users ─────────────────────────
+  if (!isPro) {
+    return (
+      <section className="mt-8">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="w-4 h-4 text-violet-400" />
+          <h2 className="text-sm font-semibold text-slate-300">Recommended for you</h2>
+        </div>
+        <div className="relative rounded-xl overflow-hidden border border-violet-900/20">
+          {/* Blurred preview rows */}
+          <div className="pointer-events-none select-none" style={{ filter: "blur(4px)", opacity: 0.3 }}>
+            {DEFAULT_RECS.slice(0, 3).map((rec) => (
+              <div key={rec.name} className="flex items-center gap-3 px-4 py-3 border-b border-violet-900/12 bg-[#0c0c18] last:border-0">
+                <div className="w-9 h-9 rounded-lg bg-violet-950/50 border border-violet-900/18 flex items-center justify-center flex-shrink-0 text-[18px] leading-none">
+                  {rec.emoji}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-200 truncate">{rec.name}</p>
+                  <p className="text-xs text-slate-600 truncate mt-0.5">{rec.description}</p>
+                </div>
+                <div className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold text-violet-300 border border-violet-700/35">Add</div>
+              </div>
+            ))}
+          </div>
+          {/* Lock overlay */}
+          <div className="absolute inset-0 flex items-center justify-center bg-[#09090f]/75 backdrop-blur-[1px]">
+            <button
+              onClick={onUpgrade}
+              className="flex flex-col items-center gap-2 px-5 py-4 text-center group"
+            >
+              <span className="text-2xl">⚡</span>
+              <p className="text-sm font-semibold text-white">Upgrade to Pro to get personalised habit recommendations</p>
+              <span className="mt-1 text-xs font-bold text-violet-300 bg-violet-600/20 border border-violet-500/40 px-4 py-1.5 rounded-xl group-hover:bg-violet-600/30 transition-all">
+                Upgrade to Pro →
+              </span>
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   // ── No goal set ──────────────────────────────────────────────────────────────
   if (goals.length === 0) {

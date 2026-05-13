@@ -15,12 +15,11 @@
   --a-r: 124;
   --a-g: 58;
   --a-b: 237;
-  --base-font: 16px;
 }
 
 html {
   scroll-behavior: smooth;
-  font-size: var(--base-font, 16px);
+  font-size: 16px;
 }
 
 body {
