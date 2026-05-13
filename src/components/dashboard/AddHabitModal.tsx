@@ -303,21 +303,29 @@ export default function AddHabitModal({
       <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm" onClick={onClose} />
 
       {/* ── Modal panel ──
-          Mobile  : bottom sheet (full-width, from bottom, rounded top)
-          Desktop : centered dialog (transform-centered)  */}
+          Mobile  : full-screen, slides up from bottom
+          Desktop : centered / near-top floating dialog  */}
       <div className={[
-        "fixed z-50 bg-[#0f0f1a] border border-violet-800/30 shadow-2xl shadow-violet-950/60 flex flex-col",
-        // Mobile: bottom sheet
-        "left-0 right-0 bottom-0 rounded-t-2xl max-h-[92vh]",
-        // sm+: calendar mode anchors near top so tall content never clips the footer
-        //       dashboard mode stays centered (existing behaviour)
+        "fixed z-50 bg-[#0f0f1a] flex flex-col mobile-modal-enter",
+        // Mobile: full screen, no rounding, no border (inset-0 = all 4 edges 0)
+        "inset-0",
+        // sm+: floating dialog with border, shadow, rounded corners, constrained size
         isSchedulingMode
-          ? "sm:bottom-auto sm:left-1/2 sm:top-[5vh] sm:-translate-x-1/2 sm:rounded-2xl sm:w-[min(620px,calc(100vw-32px))] sm:max-h-[90vh]"
-          : "sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:w-[min(640px,calc(100vw-32px))] sm:max-h-[88vh]",
+          ? "sm:inset-auto sm:border sm:border-violet-800/30 sm:shadow-2xl sm:shadow-violet-950/60 sm:left-1/2 sm:top-[5vh] sm:bottom-auto sm:-translate-x-1/2 sm:rounded-2xl sm:w-[min(620px,calc(100vw-32px))] sm:max-h-[90vh]"
+          : "sm:inset-auto sm:border sm:border-violet-800/30 sm:shadow-2xl sm:shadow-violet-950/60 sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:w-[min(640px,calc(100vw-32px))] sm:max-h-[88vh]",
       ].join(" ")}>
 
+        {/* Drag handle — tap or drag down to dismiss, mobile only */}
+        <div
+          className="sm:hidden flex justify-center pt-4 pb-1 flex-shrink-0 cursor-pointer"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          <div className="w-12 h-1.5 bg-slate-700/60 rounded-full" />
+        </div>
+
         {/* ── Header ─────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-violet-900/20 flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-3 sm:py-3.5 border-b border-violet-900/20 flex-shrink-0">
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
             {step === "schedule" && (
               <button type="button" onClick={() => setStep("details")}
@@ -340,10 +348,10 @@ export default function AddHabitModal({
           <div className="flex items-center gap-2 flex-shrink-0">
             {stepIndicator}
             <button type="button" onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-violet-950/70 transition-all"
+              className="w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-violet-950/70 transition-all"
               aria-label="Close"
             >
-              <X className="w-4 h-4" />
+              <X className="w-6 h-6 sm:w-4 sm:h-4" />
             </button>
           </div>
         </div>

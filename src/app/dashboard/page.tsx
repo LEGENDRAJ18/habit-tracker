@@ -654,9 +654,10 @@ export default function DashboardPage() {
                 data-tour="add-habit"
                 aria-label={!isPaid && habits.length >= FREE_HABIT_LIMIT ? "Upgrade to add more habits" : "Add a new habit (press N)"}
                 title={!isPaid && habits.length >= FREE_HABIT_LIMIT ? "Upgrade to add more" : "Add habit  ·  Press N"}
-                className="px-3 py-1.5 text-xs font-semibold rounded-xl text-white bg-violet-600 hover:bg-violet-500 transition-all"
+                className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-full text-white bg-violet-600 hover:bg-violet-500 active:scale-95 transition-all shadow-md shadow-violet-900/30 min-h-[40px]"
               >
-                {!isPaid && habits.length >= FREE_HABIT_LIMIT ? "Upgrade" : "+ Add Habit"}
+                <Plus className="w-4 h-4 flex-shrink-0" />
+                {!isPaid && habits.length >= FREE_HABIT_LIMIT ? "Upgrade" : "Add Habit"}
               </button>
               <button
                 onClick={() => setShowTemplates(true)}
@@ -695,7 +696,9 @@ export default function DashboardPage() {
               )}
             </div>
             {habits.length > 0 && (
-              <ProgressRing completed={completedCount} total={habits.length} tier={tier} />
+              <div className="hidden sm:block">
+                <ProgressRing completed={completedCount} total={habits.length} tier={tier} />
+              </div>
             )}
           </div>
 
@@ -830,10 +833,10 @@ export default function DashboardPage() {
           })()
         ) : (
           /* Habit list */
-          <div className="space-y-3">
-            {/* Search bar — shown when there are 3+ habits */}
+          <div className="space-y-4">
+            {/* Search bar — desktop only; mobile uses no filter */}
             {habits.length >= 3 && (
-              <div className="relative">
+              <div className="hidden sm:block relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-600 pointer-events-none" />
                 <input
                   type="text"

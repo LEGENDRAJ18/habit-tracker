@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Trash2, Check, Flame, Snowflake, ArrowRight, Pencil, X, Loader2, Zap, Crown } from "lucide-react";
+import { Trash2, Check, Flame, Snowflake, ArrowRight, Pencil, X, Loader2, Zap } from "lucide-react";
 import type { Habit, Plan } from "@/types";
 
 interface Props {
@@ -215,12 +215,12 @@ export default function HabitCard({
         {/* Checkbox + particles */}
         <div className="relative flex-shrink-0">
           <button onClick={handleToggle} disabled={toggling}
-            className={`w-6 h-6 rounded-full flex items-center justify-center border-2 transition-colors duration-200 ${
+            className={`w-8 h-8 sm:w-6 sm:h-6 rounded-full flex items-center justify-center border-2 transition-colors duration-200 ${
               completed ? "bg-violet-500 border-violet-500 shadow-lg shadow-violet-500/30" : "border-violet-700/50 hover:border-violet-500"
             } ${toggling ? "opacity-60" : ""}`}
             style={justCompleted && completed ? { animation: "checkPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both" } : undefined}
           >
-            {completed && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+            {completed && <Check className="w-4 h-4 sm:w-3 sm:h-3 text-white" strokeWidth={3} />}
           </button>
           {showParticles && PARTICLE_DIRS.map((dir, i) => (
             <div key={i} className="absolute top-1/2 left-1/2 rounded-full pointer-events-none"
@@ -329,9 +329,9 @@ export default function HabitCard({
         </button>
       </div>
 
-      {/* Implementation intentions */}
+      {/* Implementation intentions — desktop only */}
       {(habit.when_time || habit.where_location || habit.how_long) && (
-        <div className="flex items-center gap-2.5 px-4 pb-1.5 flex-wrap">
+        <div className="hidden sm:flex items-center gap-2.5 px-4 pb-1.5 flex-wrap">
           {habit.where_location && (
             <span className="text-[11px] text-slate-600 flex items-center gap-1">
               <span>📍</span>{habit.where_location}
@@ -350,25 +350,9 @@ export default function HabitCard({
         </div>
       )}
 
-      {/* Smart timing — locked teaser for non-Pro */}
-      {tier && tier !== "pro" && (
-        <div className="flex items-center justify-between px-4 pb-2">
-          <div className="flex items-center gap-1.5">
-            <Zap className="w-3 h-3 text-slate-700" />
-            <span className="text-[10px] text-slate-700">Smart timing</span>
-          </div>
-          <button
-            onClick={onUpgradePro}
-            className="flex items-center gap-0.5 text-[10px] font-semibold text-amber-700/70 hover:text-amber-500/90 transition-colors"
-          >
-            <Crown className="w-2.5 h-2.5" />Pro
-          </button>
-        </div>
-      )}
-
-      {/* Smart timing toggle — Pro only */}
+      {/* Smart timing toggle — Pro only, desktop only to keep mobile cards clean */}
       {tier === "pro" && onSmartTimingToggle && (
-        <div className="flex items-center justify-between px-4 pb-2">
+        <div className="hidden sm:flex items-center justify-between px-4 pb-2">
           <div className="flex items-center gap-1.5">
             <Zap className={`w-3 h-3 flex-shrink-0 ${habit.smart_timing ? "text-amber-400" : "text-slate-600"}`} />
             <span className={`text-[10px] font-medium ${habit.smart_timing ? "text-amber-300" : "text-slate-600"}`}>
@@ -404,8 +388,8 @@ export default function HabitCard({
         </div>
       )}
 
-      {/* Habit Strength bar */}
-      <div className="px-4 pb-3"
+      {/* Habit Strength bar — desktop only */}
+      <div className="hidden sm:block px-4 pb-3"
         onMouseEnter={() => setShowStrTooltip(true)}
         onMouseLeave={() => setShowStrTooltip(false)}
       >
