@@ -13,6 +13,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import { useXP } from "@/hooks/useXP";
 import { useUpgrade } from "@/contexts/UpgradeContext";
+import { useAIInsight } from "@/contexts/AIInsightContext";
 import {
   levelColorKey, xpProgressPct, xpIntoLevel,
   type LevelColorKey,
@@ -104,6 +105,7 @@ export default function DashboardNav() {
   const pathname = usePathname();
   const { tier } = useProfile();
   const { openUpgradeModal } = useUpgrade();
+  const { openAIInsight } = useAIInsight();
   const [signingOut, setSigningOut] = useState(false);
   const [menuOpen, setMenuOpen]     = useState(false);
   const [initials, setInitials]     = useState("··");
@@ -232,6 +234,16 @@ export default function DashboardNav() {
           <div className="flex items-center gap-2 z-10">
             {/* XP progress */}
             <NavXP />
+
+            {/* AI Coaching button */}
+            <button
+              onClick={openAIInsight}
+              aria-label="AI Coaching"
+              title="AI Coaching"
+              className="flex items-center justify-center w-8 h-8 text-violet-400 hover:text-white hover:bg-violet-950/40 rounded-lg transition-all"
+            >
+              <Sparkles className="w-4 h-4" />
+            </button>
 
             {/* User menu */}
             <div className="relative" ref={menuRef}>

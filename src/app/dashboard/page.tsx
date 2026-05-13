@@ -11,14 +11,12 @@ import AddHabitModal from "@/components/dashboard/AddHabitModal";
 import OnboardingModal from "@/components/dashboard/OnboardingModal";
 import StreakBrokenModal from "@/components/dashboard/StreakBrokenModal";
 import HabitRecommendations from "@/components/dashboard/HabitRecommendations";
-import StatsBar from "@/components/dashboard/StatsBar";
 import MilestoneCards from "@/components/dashboard/MilestoneCards";
 import LevelUpModal from "@/components/dashboard/LevelUpModal";
 import ShareAchievement from "@/components/dashboard/ShareAchievement";
 import { useXP } from "@/hooks/useXP";
 import { playSound } from "@/lib/sounds";
 import { levelName } from "@/lib/xp";
-import AIInsightModal from "@/components/dashboard/AIInsightModal";
 import AICheckinCard from "@/components/dashboard/AICheckinCard";
 import SmartNotification from "@/components/ui/SmartNotification";
 import { toast } from "@/components/ui/Toast";
@@ -28,6 +26,7 @@ import WeeklyPlanCard from "@/components/dashboard/WeeklyPlanCard";
 import FirstHabitWow from "@/components/dashboard/FirstHabitWow";
 import FirstWeekCheckin from "@/components/dashboard/FirstWeekCheckin";
 import { useUpgrade } from "@/contexts/UpgradeContext";
+import { useAIInsight } from "@/contexts/AIInsightContext";
 
 // ─── Greeting & quote ─────────────────────────────────────────────────────────
 
@@ -347,6 +346,7 @@ export default function DashboardPage() {
   const { tier, profileLoading, onboardingCompleted, goals, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt } = useProfile();
   const { xp, level, achievements, totalCompletions, justLeveledUp, isDailyAchieved, onHabitCompleted, checkMilestones, dismissLevelUp } = useXP();
   const { openUpgradeModal } = useUpgrade();
+  const { openAIInsight } = useAIInsight();
 
   // Persisted across tab navigation via sessionStorage so remounts don't re-show the modal.
   // Also guarded by: onboardingCompleted (Supabase), signedUpAt < 1h, and habits.length === 0.
@@ -378,13 +378,14 @@ export default function DashboardPage() {
   const [showStreakBroken, setShowStreakBroken] = useState(false);
   const [showReOnboard, setShowReOnboard]       = useState(false);
   const [shareData, setShareData] = useState<{ type: "streak" | "level" | "daily"; value: number; tier?: string } | null>(null);
-  const [showAIInsight, setShowAIInsight] = useState(false);
   const [checkinHabit, setCheckinHabit]   = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const prevCompletedRef     = useRef<number | null>(null);
   const seenBreakModalRef    = useRef(false);
   const appliedFreezeRef     = useRef(false);
   const prevHabitsLenRef     = useRef<number>(-1);
+  const prevBestStreakRef    = useRef<number>(0);
+  const prevXPRef            = useRef<number>(0);
 
   const [firstHabitWowName,     setFirstHabitWowName]     = useState<string | null>(null);
   const [showFirstWeekCheckin,  setShowFirstWeekCheckin]  = useState(false);
@@ -445,9 +446,14 @@ export default function DashboardPage() {
   useEffect(() => {
     if (loading || habits.length === 0) return;
     const prev = prevCompletedRef.current;
-    if (prev !== null && prev < habits.length && completedCount === habits.length) {
-      setShowCelebration(true);
-      setTimeout(() => setShowCelebration(false), 5200);
+    if (prev !== null) {
+      if (prev === 0 && completedCount === 1) {
+        toast("💪 First habit of the day done! Keep the momentum!", "success", undefined, 3000);
+      }
+      if (prev < habits.length && completedCount === habits.length) {
+        setShowCelebration(true);
+        setTimeout(() => setShowCelebration(false), 5200);
+      }
     }
     prevCompletedRef.current = completedCount;
   }, [completedCount, habits.length, loading]);
@@ -507,6 +513,25 @@ export default function DashboardPage() {
   useEffect(() => {
     if (justLeveledUp !== null) playSound("levelup");
   }, [justLeveledUp]);
+
+  // Personal best streak toast
+  useEffect(() => {
+    if (loading || bestStreak === 0) return;
+    if (prevBestStreakRef.current > 0 && bestStreak > prevBestStreakRef.current) {
+      toast(`🔥 New personal best! ${bestStreak}-day streak!`, "success", undefined, 3500);
+    }
+    prevBestStreakRef.current = bestStreak;
+  }, [bestStreak, loading]);
+
+  // XP milestones toast
+  const XP_MILESTONES = [50, 100, 250, 500, 1000, 2500, 5000, 10000];
+  useEffect(() => {
+    if (prevXPRef.current === 0) { prevXPRef.current = xp; return; }
+    const milestone = XP_MILESTONES.find(m => prevXPRef.current < m && xp >= m);
+    if (milestone) toast(`⚡ ${milestone.toLocaleString()} XP milestone reached!`, "success", undefined, 3500);
+    prevXPRef.current = xp;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [xp]);
 
   // Daily check-in: detect missed habits from yesterday (once per day)
   useEffect(() => {
@@ -568,7 +593,7 @@ export default function DashboardPage() {
         tier={tier}
         habitCount={habits.length}
         onUpgradeClick={() => openUpgradeModal("habits")}
-        onAIInsightClick={() => setShowAIInsight(true)}
+        onAIInsightClick={() => openAIInsight()}
       />
 
       <main className="max-w-[1340px] mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-8 page-fade">
@@ -587,10 +612,6 @@ export default function DashboardPage() {
 
         {/* ── Center column ─────────────────────────────────────────────── */}
         <div className="min-w-0">
-          {/* StatsBar — hidden on xl where right sidebar shows milestones */}
-          <div className="xl:hidden">
-            <StatsBar xp={xp} level={level} bestStreak={bestStreak} totalCompletions={totalCompletions} />
-          </div>
 
         {/* Header — sticky so greeting stays visible while habits scroll */}
         <div className="mb-4 sticky top-14 z-10 bg-[#09090f] pt-6 pb-4">
@@ -624,13 +645,35 @@ export default function DashboardPage() {
             />
           )}
 
+          {/* Row 1: heading + action buttons */}
+          <div className="flex items-center gap-2 mb-1">
+            <h2 className="text-lg font-semibold text-white">Today&apos;s Habits</h2>
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                onClick={handleAddClick}
+                data-tour="add-habit"
+                aria-label={!isPaid && habits.length >= FREE_HABIT_LIMIT ? "Upgrade to add more habits" : "Add a new habit (press N)"}
+                title={!isPaid && habits.length >= FREE_HABIT_LIMIT ? "Upgrade to add more" : "Add habit  ·  Press N"}
+                className="px-3 py-1.5 text-xs font-semibold rounded-xl text-white bg-violet-600 hover:bg-violet-500 transition-all"
+              >
+                {!isPaid && habits.length >= FREE_HABIT_LIMIT ? "Upgrade" : "+ Add Habit"}
+              </button>
+              <button
+                onClick={() => setShowTemplates(true)}
+                aria-label="Browse habit templates"
+                title="Browse templates"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-violet-800/30 text-slate-500 hover:text-violet-300 hover:border-violet-700/50 hover:bg-violet-950/20 transition-all text-xs font-medium"
+              >
+                <span>✨</span>
+                <span className="hidden sm:inline">Templates</span>
+              </button>
+            </div>
+          </div>
+          {/* Row 2: subtitle + progress ring */}
           <div className="flex items-end justify-between">
             <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h2 className="text-lg font-semibold text-white">Today&apos;s Habits</h2>
-              </div>
               {habits.length > 0 && (
-                <p className="text-sm text-slate-400 mt-1">
+                <p className="text-sm text-slate-400">
                   {completedCount === habits.length
                     ? "All done! Amazing work today 🎉"
                     : `${habits.length - completedCount} remaining`}
@@ -788,47 +831,6 @@ export default function DashboardPage() {
         ) : (
           /* Habit list */
           <div className="space-y-3">
-            {/* Add habit button — always at top */}
-            <div className="flex items-center gap-2">
-              {!isPaid && habits.length >= FREE_HABIT_LIMIT ? (
-                <button
-                  onClick={handleAddClick}
-                  data-tour="add-habit"
-                  aria-label="Upgrade to add more habits"
-                  title="Upgrade to add more"
-                  className="flex-1 flex items-center gap-2 px-4 py-3 rounded-xl border border-violet-700/30 text-violet-400 hover:text-violet-300 hover:bg-violet-950/20 transition-all text-sm font-semibold"
-                >
-                  <Plus className="w-4 h-4" />
-                  Upgrade to add more habits
-                </button>
-              ) : (
-                <button
-                  onClick={handleAddClick}
-                  data-tour="add-habit"
-                  aria-label="Add a new habit (press N)"
-                  title="Add habit  ·  Press N"
-                  className="flex-1 flex items-center gap-2 px-4 py-3 rounded-xl text-white text-sm font-semibold transition-all hover:brightness-110 active:scale-[0.98]"
-                  style={{
-                    background: "linear-gradient(135deg, #6d28d9 0%, #8b5cf6 50%, #7c3aed 100%)",
-                    boxShadow: "0 0 20px rgba(139,92,246,0.4), 0 4px 12px rgba(109,40,217,0.3)",
-                  }}
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Habit
-                  <kbd className="ml-auto text-[10px] text-violet-200/60 bg-violet-800/40 border border-violet-600/30 rounded px-1.5 py-0.5 hidden sm:block">N</kbd>
-                </button>
-              )}
-              <button
-                onClick={() => setShowTemplates(true)}
-                aria-label="Browse habit templates"
-                title="Browse templates"
-                className="flex items-center gap-1.5 px-3 py-3 rounded-xl border border-violet-800/30 text-slate-500 hover:text-violet-300 hover:border-violet-700/50 hover:bg-violet-950/20 transition-all text-xs font-medium flex-shrink-0"
-              >
-                <span className="text-sm">✨</span>
-                <span className="hidden sm:inline">Templates</span>
-              </button>
-            </div>
-
             {/* Search bar — shown when there are 3+ habits */}
             {habits.length >= 3 && (
               <div className="relative">
@@ -909,7 +911,11 @@ export default function DashboardPage() {
                   const validity = habit.validity_score ?? "valid";
                   playSound("complete");
                   onHabitCompleted(validity, habit.how_long);
-                  if (validity === "invalid") {
+                  if (validity === "valid") {
+                    toast(`✅ ${habit.name} — +10 XP`, "success", undefined, 2000);
+                  } else if (validity === "partial") {
+                    toast(`⚠️ ${habit.name} — +5 XP (make it more specific for full XP)`, "warning", undefined, 2500);
+                  } else if (validity === "invalid") {
                     toast(
                       `"${habit.name}" earns no XP — edit the name to earn points`,
                       "error",
@@ -943,99 +949,6 @@ export default function DashboardPage() {
             />
           )}
         </div>
-
-        {/* Mobile-only: AI Coaching + Today's Progress (xl shows these in sidebar) */}
-        {!loading && (
-          <div className="xl:hidden mt-4 space-y-3">
-            {/* AI Coaching */}
-            <div className={`relative overflow-hidden rounded-2xl bg-[#0c0c18] ${isPaid ? "border border-violet-600/30" : "border border-violet-500/40"}`}>
-              <div className="absolute inset-0 bg-gradient-to-br from-violet-950/70 via-[#0f0f1a] to-transparent pointer-events-none" />
-              <div className="relative p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className={`w-4 h-4 ${isPaid ? "text-violet-400" : "text-violet-300"}`} />
-                  <p className="text-sm font-semibold text-white">AI Coaching</p>
-                  {!isPaid && (
-                    <span className="ml-auto text-[10px] font-bold text-violet-300 bg-violet-500/20 border border-violet-500/30 px-2 py-0.5 rounded-full">UNLOCK</span>
-                  )}
-                </div>
-                <p className="text-xs text-slate-400 mb-3 leading-relaxed">
-                  {isPaid
-                    ? "Get personalised insights on your habits, streaks, and patterns."
-                    : "Personalised AI insights and habit coaching — tailored to your goals."}
-                </p>
-                {isPaid ? (
-                  <button
-                    onClick={() => setShowAIInsight(true)}
-                    className="w-full py-2.5 rounded-xl text-sm font-semibold bg-violet-600 hover:bg-violet-500 text-white transition-all min-h-[44px]"
-                    style={{ boxShadow: "0 0 16px rgba(139,92,246,0.35)" }}
-                  >
-                    Analyse My Habits
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => openUpgradeModal("ai")}
-                    className="w-full py-2.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 min-h-[44px]"
-                    style={{
-                      background: "linear-gradient(135deg, #6d28d9, #8b5cf6, #7c3aed)",
-                      boxShadow: "0 0 20px rgba(139,92,246,0.4)",
-                    }}
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    Upgrade to Unlock
-                  </button>
-                )}
-                {!isPaid && (
-                  <p className="text-[10px] text-center text-violet-400/60 mt-2">✨ Starting at $5.99/mo · 7-day money-back</p>
-                )}
-              </div>
-            </div>
-
-            {/* Today's Progress (mobile) */}
-            {habits.length > 0 && (() => {
-              const pct = Math.round((completedCount / habits.length) * 100);
-              const r = 22; const circ = 2 * Math.PI * r;
-              const offset = circ * (1 - pct / 100);
-              const ringColor = pct === 100 ? "#10b981" : pct >= 50 ? "#8b5cf6" : "#6d28d9";
-              const motivational =
-                pct === 0   ? "Start strong today! 💪" :
-                pct < 50    ? "Keep going, you've got this! 🔥" :
-                pct < 100   ? "Almost there, finish strong! ⚡" :
-                              "Perfect day! Amazing work! 🎉";
-              return (
-                <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-4">
-                  <p className="text-xs font-semibold text-slate-400 mb-3">Today&apos;s Progress</p>
-                  <div className="flex items-center gap-4">
-                    <div className="relative flex-shrink-0">
-                      <svg width="56" height="56" viewBox="0 0 56 56">
-                        <circle cx="28" cy="28" r={r} fill="none" stroke="#1e1b4b" strokeWidth="4.5" />
-                        <circle cx="28" cy="28" r={r} fill="none" stroke={ringColor} strokeWidth="4.5" strokeLinecap="round"
-                          strokeDasharray={`${circ}`} strokeDashoffset={`${offset}`}
-                          transform="rotate(-90 28 28)" style={{ transition: "stroke-dashoffset 0.6s ease" }} />
-                      </svg>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-xs font-bold text-white">{pct}%</span>
-                      </div>
-                    </div>
-                    <div className="flex-1 space-y-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm leading-none">🔥</span>
-                        <span className="text-xs font-semibold text-white">{bestStreak} day{bestStreak !== 1 ? "s" : ""}</span>
-                        <span className="text-[10px] text-slate-600">streak</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm leading-none">⚡</span>
-                        <span className="text-xs font-semibold text-white">{completedCount * 10} XP</span>
-                        <span className="text-[10px] text-slate-600">today</span>
-                      </div>
-                      <p className="text-[10px] text-slate-600">{completedCount}/{habits.length} habits done</p>
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-violet-300/80 mt-3 font-medium">{motivational}</p>
-                </div>
-              );
-            })()}
-          </div>
-        )}
 
         {/* Recommended habits */}
         {!loading && !profileLoading && onboardingCompleted && (
@@ -1079,7 +992,7 @@ export default function DashboardPage() {
               </p>
               {isPaid ? (
                 <button
-                  onClick={() => setShowAIInsight(true)}
+                  onClick={() => openAIInsight()}
                   className="w-full py-2.5 rounded-xl text-sm font-semibold bg-violet-600 hover:bg-violet-500 text-white transition-all"
                   style={{ boxShadow: "0 0 20px rgba(139,92,246,0.4)" }}
                 >
@@ -1265,14 +1178,6 @@ export default function DashboardPage() {
           onDismiss={() => setShowStreakBroken(false)}
           brokenHabitName={habits.find((h) => hasBrokenStreak(h.id))?.name}
           isPaid={isPaid}
-        />
-      )}
-
-      {showAIInsight && (
-        <AIInsightModal
-          tier={tier}
-          onClose={() => setShowAIInsight(false)}
-          onUpgrade={() => { setShowAIInsight(false); openUpgradeModal("ai"); }}
         />
       )}
 
