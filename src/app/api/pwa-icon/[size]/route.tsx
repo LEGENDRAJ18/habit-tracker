@@ -3,14 +3,17 @@ import { NextRequest } from "next/server";
 
 export const runtime = "edge";
 
+const VALID_SIZES = [72, 96, 128, 144, 152, 192, 384, 512];
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ size: string }> },
 ) {
   const { size: sizeStr } = await params;
-  const size = sizeStr === "512" ? 512 : 192;
-  const pad  = Math.round(size * 0.18);
-  const star = Math.round(size * 0.42);
+  const parsed = parseInt(sizeStr, 10);
+  const size   = VALID_SIZES.includes(parsed) ? parsed : 192;
+  const pad    = Math.round(size * 0.18);
+  const star   = Math.round(size * 0.42);
 
   return new ImageResponse(
     (
@@ -101,8 +104,8 @@ export async function GET(
           />
         </div>
 
-        {/* "AI" label at bottom — only on 512 size */}
-        {size === 512 && (
+        {/* "AI" label at bottom — only on large sizes */}
+        {size >= 384 && (
           <div
             style={{
               position: "absolute",

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 
-const DISMISS_KEY = "habitai-install-dismissed";
+// Bumped to v2 so users who dismissed the old bottom banner see this new one.
+const DISMISS_KEY = "habitai-install-dismissed-v2";
 
 export default function InstallBanner() {
   const { canInstall, isInstalled, isIOS, promptInstall } = usePWAInstall();
@@ -21,8 +22,8 @@ export default function InstallBanner() {
   useEffect(() => {
     const shouldShow = (canInstall || isIOS) && !isInstalled && !dismissed;
     if (!shouldShow) { setVisible(false); return; }
-    // Slight delay so the page settles before the banner slides in.
-    const t = setTimeout(() => setVisible(true), 2000);
+    // Brief delay so the page settles before the banner slides in.
+    const t = setTimeout(() => setVisible(true), 1500);
     return () => clearTimeout(t);
   }, [canInstall, isIOS, isInstalled, dismissed]);
 
@@ -34,7 +35,8 @@ export default function InstallBanner() {
 
   const handleInstall = async () => {
     if (isIOS) {
-      dismiss(); // iOS can't be prompted — banner just showed the instructions
+      // iOS can't be auto-prompted — the banner shows manual instructions
+      dismiss();
       return;
     }
     await promptInstall();
@@ -44,63 +46,66 @@ export default function InstallBanner() {
   if (!visible) return null;
 
   return (
-    /* Only visible on small screens — desktop installs via nav button */
+    /* Top banner — mobile only; desktop installs via Settings */
     <div
-      className="fixed bottom-0 inset-x-0 z-50 p-3 sm:hidden"
-      style={{ animation: "slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1) both" }}
+      className="fixed top-0 inset-x-0 z-[60] px-3 pt-3 pb-0 sm:hidden"
+      style={{ animation: "slideDown 0.35s cubic-bezier(0.34,1.56,0.64,1) both" }}
     >
       <div className="bg-[#0f0f1a] border border-violet-700/40 rounded-2xl px-4 py-3.5 shadow-2xl shadow-violet-950/60">
-        <div className="flex items-start gap-3">
+        <div className="flex items-center gap-3">
           {/* App icon */}
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center flex-shrink-0 shadow-lg shadow-violet-900/40">
             <span className="text-lg leading-none select-none">✨</span>
           </div>
 
           {/* Text */}
-          <div className="flex-1 min-w-0 pt-0.5">
+          <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-white leading-tight">
-              Install HabitAI
+              Add HabitAI to your home screen
             </p>
             {isIOS ? (
-              <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
-                Tap&nbsp;<span className="inline-block bg-slate-800 text-slate-300 text-[10px] px-1.5 py-0.5 rounded font-medium">Share</span>&nbsp;then
-                {" "}<span className="text-violet-300 font-medium">Add to Home Screen</span> for the best experience.
+              <p className="text-xs text-slate-400 mt-0.5 leading-snug">
+                Tap&nbsp;
+                <span className="inline-block bg-slate-800 text-slate-300 text-[10px] px-1.5 py-0.5 rounded font-medium">
+                  Share
+                </span>
+                &nbsp;then{" "}
+                <span className="text-violet-300 font-medium">Add to Home Screen</span>.
               </p>
             ) : (
               <p className="text-xs text-slate-400 mt-0.5">
-                Add to your home screen for the best experience.
+                For the best experience — works offline too.
               </p>
             )}
           </div>
-
-          {/* Dismiss */}
-          <button
-            onClick={dismiss}
-            aria-label="Dismiss"
-            className="flex-shrink-0 text-slate-600 hover:text-slate-400 transition-colors p-1 -mt-0.5 -mr-1 rounded-lg"
-          >
-            <X className="w-4 h-4" />
-          </button>
         </div>
 
-        {/* Action buttons — only show the install button for Chrome/Android */}
-        {!isIOS && (
-          <div className="flex gap-2 mt-3">
-            <button
-              onClick={dismiss}
-              className="flex-1 py-2 text-xs text-slate-500 hover:text-slate-300 transition-colors rounded-xl"
-            >
-              Not now
-            </button>
+        {/* Action buttons */}
+        <div className="flex gap-2 mt-3">
+          <button
+            onClick={dismiss}
+            className="flex-1 py-2.5 text-xs text-slate-500 hover:text-slate-300 transition-colors rounded-xl border border-slate-800/60 hover:border-slate-700"
+          >
+            Maybe later
+          </button>
+          {!isIOS && (
             <button
               onClick={handleInstall}
-              className="flex-1 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-violet-900/30"
+              className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-violet-900/30"
             >
               <Download className="w-3.5 h-3.5" />
               Install
             </button>
-          </div>
-        )}
+          )}
+          {isIOS && (
+            <button
+              onClick={dismiss}
+              className="flex-1 py-2.5 bg-violet-600/20 border border-violet-600/40 text-violet-300 text-xs font-semibold rounded-xl transition-all"
+            >
+              Got it
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

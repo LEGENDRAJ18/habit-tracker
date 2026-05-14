@@ -133,6 +133,12 @@ body {
   to   { transform: translateY(0);    opacity: 1; }
 }
 
+/* PWA install banner slides down from the top */
+@keyframes slideDown {
+  from { transform: translateY(-110%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+
 /* Page fade-in */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(6px); }
