@@ -15,7 +15,8 @@ import { useXP } from "@/hooks/useXP";
 import { useUpgrade } from "@/contexts/UpgradeContext";
 import { useAIInsight } from "@/contexts/AIInsightContext";
 import {
-  levelColorKey, xpProgressPct, xpIntoLevel,
+  levelColorKey, xpProgressPct,
+  xpIntoLevel,
   type LevelColorKey,
 } from "@/lib/xp";
 import { getNextReward } from "@/lib/rewards";
@@ -67,12 +68,31 @@ function PlanBadge({ tier }: { tier: Plan }) {
   );
 }
 
+/** Compact XP pill shown in the navbar on mobile only */
+function MobileNavXP() {
+  const { xp, level } = useXP();
+  const colorKey = levelColorKey(level);
+  const s        = LEVEL_COLORS[colorKey];
+  const into     = xpIntoLevel(xp);
+
+  return (
+    <div className="sm:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-violet-950/40 border border-violet-800/25 flex-shrink-0">
+      <span className={`text-[11px] font-bold ${s.text} leading-none`}>Lv {level}</span>
+      <span className="text-slate-700 text-[10px] select-none leading-none">·</span>
+      <span className="text-[11px] font-medium text-slate-300 tabular-nums leading-none">
+        {into.toLocaleString()} XP
+      </span>
+    </div>
+  );
+}
+
+/** Full XP widget shown on desktop (sm+) */
 function NavXP() {
   const { xp, level } = useXP();
-  const colorKey  = levelColorKey(level);
-  const s         = LEVEL_COLORS[colorKey];
-  const pct       = xpProgressPct(xp);
-  const into      = xpIntoLevel(xp);
+  const colorKey   = levelColorKey(level);
+  const s          = LEVEL_COLORS[colorKey];
+  const pct        = xpProgressPct(xp);
+  const into       = xpIntoLevel(xp);
   const nextReward = getNextReward(level);
 
   return (
@@ -166,55 +186,85 @@ export default function DashboardNav() {
   );
 
   return (
-    <nav className="sticky top-0 z-40 bg-[#09090f]/90 backdrop-blur-xl border-b border-violet-900/20">
+    <nav className="sticky top-0 z-40 bg-[#09090f]/95 backdrop-blur-xl border-b border-violet-900/25"
+      style={{ boxShadow: "0 1px 0 rgba(109,40,217,0.10), 0 2px 16px rgba(0,0,0,0.35)" }}
+    >
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="relative flex items-center justify-between h-16">
+        {/*
+          Mobile  (< sm): h-14, logo LEFT, spacer, XP pill + avatar + badge
+          Desktop (sm+) : h-16, nav/page-title LEFT, logo CENTER, XP + AI + menu RIGHT
+        */}
+        <div className="flex items-center h-14 sm:h-16 relative">
 
-          {/* Left */}
-          <div className="flex items-center gap-1 z-10">
-            <div className="hidden lg:flex items-center gap-3">
-              <div className="flex items-center gap-0.5">
-                <button
-                  onClick={() => router.back()}
-                  aria-label="Go back"
-                  title="Go back"
-                  className="w-7 h-7 flex items-center justify-center rounded-full text-slate-600 hover:text-slate-300 hover:bg-violet-950/40 transition-all"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => router.forward()}
-                  aria-label="Go forward"
-                  title="Go forward"
-                  className="w-7 h-7 flex items-center justify-center rounded-full text-slate-600 hover:text-slate-300 hover:bg-violet-950/40 transition-all"
-                >
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-              {pageMeta && (
-                <div className="flex items-center gap-2">
-                  <pageMeta.Icon
-                    className="w-5 h-5 flex-shrink-0"
-                    style={{ color: "var(--a-400)" }}
-                  />
-                  <span className="text-xl font-bold text-white tracking-tight leading-none">
-                    {pageMeta.label}
-                  </span>
-                </div>
-              )}
-            </div>
-            <div className="hidden sm:flex lg:hidden items-center gap-0.5">
-              {navLink("/analytics", <BarChart2 className="w-3.5 h-3.5" />, "Analytics")}
-              {navLink("/calendar",  <Calendar  className="w-3.5 h-3.5" />, "Calendar")}
-              {navLink("/friends",   <Users     className="w-3.5 h-3.5" />, "Friends")}
-              {navLink("/profile",   <User      className="w-3.5 h-3.5" />, "Profile")}
-            </div>
-          </div>
+          {/* ── LEFT ─────────────────────────────────────────────── */}
 
-          {/* Center logo */}
+          {/* Mobile logo — left-aligned, flex-shrink-0, never cut off */}
           <Link
             href="/dashboard"
-            className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 group"
+            aria-label="HabitAI Dashboard"
+            className="sm:hidden flex items-center gap-2.5 flex-shrink-0 group"
+          >
+            <div
+              className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 via-violet-600 to-purple-800 flex items-center justify-center flex-shrink-0 transition-all duration-200 group-hover:brightness-110"
+              style={{
+                boxShadow:
+                  "0 0 0 1px rgba(167,139,250,0.35), 0 0 14px 4px rgba(139,92,246,0.28)",
+              }}
+            >
+              <Sparkles className="w-4 h-4 text-white drop-shadow-[0_0_4px_rgba(255,255,255,0.5)]" />
+            </div>
+            <span
+              className="font-black text-white leading-none tracking-tight"
+              style={{ fontSize: "1.2rem" }}
+            >
+              habit<span className="text-violet-400">AI</span>
+            </span>
+          </Link>
+
+          {/* Desktop back/forward + page title (lg+) */}
+          <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
+            <div className="flex items-center gap-0.5">
+              <button
+                onClick={() => router.back()}
+                aria-label="Go back"
+                className="w-7 h-7 flex items-center justify-center rounded-full text-slate-600 hover:text-slate-300 hover:bg-violet-950/40 transition-all"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => router.forward()}
+                aria-label="Go forward"
+                className="w-7 h-7 flex items-center justify-center rounded-full text-slate-600 hover:text-slate-300 hover:bg-violet-950/40 transition-all"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            {pageMeta && (
+              <div className="flex items-center gap-2">
+                <pageMeta.Icon
+                  className="w-5 h-5 flex-shrink-0"
+                  style={{ color: "var(--a-400)" }}
+                />
+                <span className="text-xl font-bold text-white tracking-tight leading-none">
+                  {pageMeta.label}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop nav links (sm–lg) */}
+          <div className="hidden sm:flex lg:hidden items-center gap-0.5 flex-shrink-0">
+            {navLink("/analytics", <BarChart2 className="w-3.5 h-3.5" />, "Analytics")}
+            {navLink("/calendar",  <Calendar  className="w-3.5 h-3.5" />, "Calendar")}
+            {navLink("/friends",   <Users     className="w-3.5 h-3.5" />, "Friends")}
+            {navLink("/profile",   <User      className="w-3.5 h-3.5" />, "Profile")}
+          </div>
+
+          {/* ── CENTER logo (desktop only, absolute) ──────────────── */}
+          <Link
+            href="/dashboard"
+            aria-label="HabitAI Dashboard"
+            className="hidden sm:flex absolute left-1/2 -translate-x-1/2 items-center gap-3 group"
           >
             <div
               className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 via-violet-600 to-purple-800 flex items-center justify-center transition-all duration-300 group-hover:scale-105 group-hover:brightness-110 flex-shrink-0"
@@ -225,43 +275,59 @@ export default function DashboardNav() {
             >
               <Sparkles className="w-5 h-5 text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.6)]" />
             </div>
-            <span className="font-black text-white tracking-tight leading-none" style={{ fontSize: "clamp(1rem, 5vw, 1.35rem)" }}>
+            <span
+              className="font-black text-white tracking-tight leading-none"
+              style={{ fontSize: "clamp(1rem, 5vw, 1.35rem)" }}
+            >
               habit<span className="text-violet-400">AI</span>
             </span>
           </Link>
 
-          {/* Right side */}
-          <div className="flex items-center gap-2 z-10">
-            {/* XP progress */}
+          {/* ── Spacer ────────────────────────────────────────────── */}
+          <div className="flex-1" />
+
+          {/* ── RIGHT ────────────────────────────────────────────── */}
+          <div className="flex items-center gap-2.5">
+
+            {/* Compact XP pill — mobile only */}
+            <MobileNavXP />
+
+            {/* Full XP widget — desktop only */}
             <NavXP />
 
-            {/* AI Coaching button */}
+            {/* AI Coaching — desktop only */}
             <button
               onClick={openAIInsight}
               aria-label="AI Coaching"
               title="AI Coaching"
-              className="flex items-center justify-center w-8 h-8 text-violet-400 hover:text-white hover:bg-violet-950/40 rounded-lg transition-all"
+              className="hidden sm:flex items-center justify-center w-8 h-8 text-violet-400 hover:text-white hover:bg-violet-950/40 rounded-lg transition-all"
             >
               <Sparkles className="w-4 h-4" />
             </button>
 
             {/* User menu */}
-            <div className="relative" ref={menuRef}>
+            <div className="relative flex-shrink-0" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen((v) => !v)}
                 aria-label="Open account menu"
                 aria-expanded={menuOpen}
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-violet-950/50 text-slate-400 hover:text-white transition-all text-xs"
+                className="flex items-center gap-2 px-1.5 py-1.5 rounded-xl hover:bg-violet-950/50 transition-all"
               >
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-violet-900/30">
+                {/* Avatar */}
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-violet-900/30">
                   <span className="text-white text-[11px] font-bold tracking-tight">{initials}</span>
                 </div>
+                {/* Plan badge — always visible next to avatar */}
                 <PlanBadge tier={tier} />
-                <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${menuOpen ? "rotate-180" : ""}`} />
+                {/* Chevron — desktop only (saves space on mobile) */}
+                <ChevronDown
+                  className={`hidden sm:block w-3 h-3 text-slate-500 transition-transform duration-200 ${menuOpen ? "rotate-180" : ""}`}
+                />
               </button>
 
               {menuOpen && (
                 <div className="absolute right-0 mt-2 w-60 bg-[#0f0f1a] border border-violet-900/30 rounded-2xl shadow-2xl shadow-violet-950/60 overflow-hidden z-50">
+                  {/* Account header */}
                   <div className="px-4 py-3.5 border-b border-violet-900/20">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center flex-shrink-0">
@@ -315,6 +381,7 @@ export default function DashboardNav() {
               )}
             </div>
           </div>
+
         </div>
       </div>
     </nav>
