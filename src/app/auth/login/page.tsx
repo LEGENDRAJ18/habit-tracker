@@ -314,19 +314,35 @@ function AuthForm() {
     }
     setLoading(true);
     setError(null);
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
+
+    const res = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        password,
         emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`,
-      },
+      }),
     });
-    if (error) {
-      setError(error.message);
+
+    const data = await res.json() as {
+      session?: { access_token: string; refresh_token: string } | null;
+      user?: Record<string, unknown> | null;
+      error?: string;
+    };
+
+    if (!res.ok) {
+      setError(data.error ?? "Something went wrong. Please try again.");
       setLoading(false);
       return;
     }
+
     if (data.session) {
+      // Email confirmation disabled — we have a live session.
+      await supabase.auth.setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      });
       fetch("/api/welcome-email", {
         method: "POST",
         headers: { Authorization: `Bearer ${data.session.access_token}` },
@@ -334,6 +350,7 @@ function AuthForm() {
       router.push(nextUrl);
       router.refresh();
     } else {
+      // Email confirmation required — show "check your inbox" screen.
       setStep("check-email");
       setLoading(false);
     }
