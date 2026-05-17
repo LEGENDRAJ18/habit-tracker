@@ -883,13 +883,14 @@ export default function DashboardPage() {
               </p>
             )}
 
-            {filteredHabits.map((habit) => {
+            {filteredHabits.map((habit, index) => {
               const info = streakInfoMap.get(habit.id) ?? { streak: 0, freezeApplied: false, newFreezeUsed: false };
               const stackParent = habit.stack_after_id ? habits.find((h) => h.id === habit.stack_after_id) : undefined;
               return (
               <HabitCard
                 key={habit.id}
                 habit={habit}
+                isTourTarget={index === 0}
                 completed={isCompletedToday(habit.id)}
                 streak={info.streak}
                 strength={getHabitStrength(habit.id)}

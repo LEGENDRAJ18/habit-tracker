@@ -76,7 +76,7 @@ function MobileNavXP() {
   const into     = xpIntoLevel(xp);
 
   return (
-    <div className="sm:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-violet-950/40 border border-violet-800/25 flex-shrink-0">
+    <div data-tour="xp-level" className="sm:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-violet-950/40 border border-violet-800/25 flex-shrink-0">
       <span className={`text-[11px] font-bold ${s.text} leading-none`}>Lv {level}</span>
       <span className="text-slate-700 text-[10px] select-none leading-none">·</span>
       <span className="text-[11px] font-medium text-slate-300 tabular-nums leading-none">
@@ -96,7 +96,7 @@ function NavXP() {
   const nextReward = getNextReward(level);
 
   return (
-    <div className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-violet-950/30 border border-violet-900/25 flex-shrink-0">
+    <div data-tour="xp-level" className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-violet-950/30 border border-violet-900/25 flex-shrink-0">
       <div className={`w-6 h-6 rounded-lg ${s.bg} ring-1 ${s.ring} flex items-center justify-center flex-shrink-0`}>
         <span className={`text-[11px] font-extrabold ${s.text} leading-none`}>{level}</span>
       </div>

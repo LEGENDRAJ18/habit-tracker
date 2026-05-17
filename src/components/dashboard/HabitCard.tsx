@@ -19,6 +19,7 @@ interface Props {
   onRename?: (newName: string, validityScore: "valid" | "partial" | "invalid") => Promise<void>;
   onSmartTimingToggle?: (enabled: boolean) => Promise<void>;
   onUpgradePro?: () => void;
+  isTourTarget?: boolean;
 }
 
 const PARTICLE_DIRS = [
@@ -69,6 +70,7 @@ function getTimeEmoji(whenTime: string | null): string | null {
 export default function HabitCard({
   habit, completed, streak, strength, isProtected, stackAfterName, isEditing,
   tier, onToggle, onDelete, onCompleted, onRename, onSmartTimingToggle, onUpgradePro,
+  isTourTarget,
 }: Props) {
   const [deleting, setDeleting]     = useState(false);
   const [showParticles, setShowParticles] = useState(false);
@@ -211,7 +213,7 @@ export default function HabitCard({
 
       <div className="flex items-center gap-4 px-4 py-3.5">
         {/* Checkbox + particles */}
-        <div className="relative flex-shrink-0">
+        <div className="relative flex-shrink-0" {...(isTourTarget ? { "data-tour": "first-habit-checkbox" } : {})}>
           <button onClick={handleToggle}
             className={`w-8 h-8 sm:w-6 sm:h-6 rounded-full flex items-center justify-center border-2 transition-colors duration-200 ${
               completed ? "bg-violet-500 border-violet-500 shadow-lg shadow-violet-500/30" : "border-violet-700/50 hover:border-violet-500"
@@ -312,7 +314,10 @@ export default function HabitCard({
         </span>
 
         {/* Streak */}
-        <div className="flex items-center gap-1 flex-shrink-0">
+        <div
+          className="flex items-center gap-1 flex-shrink-0"
+          {...(isTourTarget ? { "data-tour": "first-habit-streak" } : {})}
+        >
           {isProtected && <Snowflake className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />}
           <Flame className={flameClass} style={flameAnimation} />
           <span className={streakTextClass}>{hasStreak ? streak : "—"}</span>
