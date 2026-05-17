@@ -27,6 +27,9 @@ import FirstHabitWow from "@/components/dashboard/FirstHabitWow";
 import FirstWeekCheckin from "@/components/dashboard/FirstWeekCheckin";
 import { useUpgrade } from "@/contexts/UpgradeContext";
 import { useAIInsight } from "@/contexts/AIInsightContext";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
+import PushPermissionPrompt from "@/components/pwa/PushPermissionPrompt";
+import { createClient } from "@/lib/supabase/client";
 
 // ─── Greeting & quote ─────────────────────────────────────────────────────────
 
@@ -347,6 +350,17 @@ export default function DashboardPage() {
   const { xp, level, achievements, totalCompletions, justLeveledUp, isDailyAchieved, onHabitCompleted, checkMilestones, dismissLevelUp } = useXP();
   const { openUpgradeModal } = useUpgrade();
   const { openAIInsight } = useAIInsight();
+  const { showPrompt: showPushPrompt, allow: allowPush, dismiss: dismissPush } = usePushNotifications();
+
+  // Update last_seen_at so streak-at-risk detection works
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        void supabase.from("profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", user.id);
+      }
+    });
+  }, []);
 
   // Persisted across tab navigation via sessionStorage so remounts don't re-show the modal.
   // Also guarded by: onboardingCompleted (Supabase), signedUpAt < 1h, and habits.length === 0.
@@ -589,6 +603,10 @@ export default function DashboardPage() {
 
   return (
     <div className="bg-[#09090f]">
+      {showPushPrompt && (
+        <PushPermissionPrompt onAllow={allowPush} onDismiss={dismissPush} />
+      )}
+
       <SmartNotification
         tier={tier}
         habitCount={habits.length}

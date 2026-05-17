@@ -19,7 +19,8 @@
     "react-dom": "19.2.4",
     "recharts": "^3.8.1",
     "resend": "^6.12.2",
-    "stripe": "^22.0.2"
+    "stripe": "^22.0.2",
+    "web-push": "^3.6.7"
   },
   "engines": {
     "node": "20.x"
@@ -29,6 +30,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "tailwindcss": "^4",

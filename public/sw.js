@@ -1,4 +1,4 @@
-// HabitAI Service Worker — app shell caching for offline support
+// HabitAI Service Worker — app shell caching + push notifications
 const CACHE = "habitai-v1";
 
 // ─── Install ──────────────────────────────────────────────────────────────────
@@ -85,4 +85,36 @@ self.addEventListener("fetch", (event) => {
         )
     );
   }
+});
+
+// ─── Push notifications ───────────────────────────────────────────────────────
+self.addEventListener("push", (event) => {
+  const data = event.data?.json() ?? {};
+  event.waitUntil(
+    self.registration.showNotification(data.title ?? "HabitAI", {
+      body: data.body ?? "",
+      icon: "/api/pwa-icon/192",
+      badge: "/api/pwa-icon/96",
+      tag: data.tag ?? "habitai",
+      renotify: true,
+      data: { url: data.url ?? "/dashboard" },
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = event.notification.data?.url ?? "/dashboard";
+  event.waitUntil(
+    clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((list) => {
+        for (const client of list) {
+          if (client.url.includes("/dashboard") && "focus" in client) {
+            return client.focus();
+          }
+        }
+        return clients.openWindow(target);
+      })
+  );
 });
