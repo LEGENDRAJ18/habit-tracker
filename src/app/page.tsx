@@ -560,70 +560,129 @@ function FinalCta() {
 
 // ─── FOOTER ───────────────────────────────────────────────────────────────────
 
-const FOOTER_LINKS = {
-  Product: [
-    { label: "Features",   href: "#features" },
-    { label: "Pricing",    href: "#pricing"       },
-    { label: "Changelog",  href: "/changelog"     },
-    { label: "Community",  href: "https://discord.gg/U3FFHFq3" },
-  ],
-  Legal: [
-    { label: "Privacy Policy",   href: "/privacy"        },
-    { label: "Terms of Service", href: "/terms"          },
-    { label: "Payment Policy",   href: "/payment-policy" },
-  ],
-};
+function FooterHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h4 className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest mb-4">
+      {children}
+    </h4>
+  );
+}
+
+function FooterLink({ href, children, external }: { href: string; children: React.ReactNode; external?: boolean }) {
+  return (
+    <li>
+      <Link
+        href={href}
+        target={external ? "_blank" : undefined}
+        rel={external ? "noopener noreferrer" : undefined}
+        className="text-sm text-slate-500 hover:text-violet-400 transition-colors duration-150"
+      >
+        {children}
+      </Link>
+    </li>
+  );
+}
+
+function DiscordIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" aria-hidden>
+      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057.1 18.08.11 18.104.12 18.12a19.904 19.904 0 0 0 5.993 3.03.077.077 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+    </svg>
+  );
+}
 
 function Footer() {
+  const year = new Date().getFullYear();
   return (
-    <footer className="border-t border-violet-900/20 bg-[#09090f] py-14 px-4 sm:px-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-10">
-          {/* Brand */}
-          <div className="col-span-2 md:col-span-2">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center">
-                <Sparkles className="w-3.5 h-3.5 text-white" />
-              </div>
-              <span className="font-bold text-white text-lg">
-                habit<span className="text-violet-400">AI</span>
-              </span>
-            </Link>
-            <p className="text-sm text-slate-500 leading-relaxed max-w-xs">
-              AI-powered habit coaching for people serious about change. Break bad habits, build better ones — with a coach that actually knows your patterns.
-            </p>
-          </div>
+    <footer className="bg-[#09090f] border-t border-violet-900/20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-14 pb-8">
 
-          {Object.entries(FOOTER_LINKS).map(([group, items]) => (
-            <div key={group}>
-              <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
-                {group}
-              </h4>
-              <ul className="space-y-2.5">
-                {items.map(({ label, href }) => (
-                  <li key={label}>
-                    <Link
-                      href={href}
-                      className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
-                    >
-                      {label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+        {/* Logo + tagline */}
+        <div className="mb-12">
+          <Link href="/" className="inline-flex items-center gap-2.5 mb-3">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center shadow-lg shadow-violet-900/30">
+              <Sparkles className="w-4 h-4 text-white" />
             </div>
-          ))}
+            <span className="text-xl font-black text-white tracking-tight">
+              habit<span className="text-violet-400">AI</span>
+            </span>
+          </Link>
+          <p className="text-sm text-slate-600 max-w-sm leading-relaxed">
+            AI-powered habit coaching for people serious about change. Build better habits — one day at a time.
+          </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-violet-900/20">
-          <p className="text-xs text-slate-600">
-            © {new Date().getFullYear()} HabitAI. All rights reserved.
+        {/* 3-column link grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 mb-12">
+
+          {/* PRODUCT */}
+          <div>
+            <FooterHeading>Product</FooterHeading>
+            <ul className="space-y-3">
+              <FooterLink href="#features">Features</FooterLink>
+              <FooterLink href="#pricing">Pricing</FooterLink>
+              <FooterLink href="/help">Help &amp; Support</FooterLink>
+              <FooterLink href="/payment-policy">Payment Policy</FooterLink>
+            </ul>
+          </div>
+
+          {/* LEGAL */}
+          <div>
+            <FooterHeading>Legal</FooterHeading>
+            <ul className="space-y-3">
+              <FooterLink href="/terms">Terms of Service</FooterLink>
+              <FooterLink href="/privacy">Privacy Policy</FooterLink>
+              <FooterLink href="/privacy#cookies">Cookie Policy</FooterLink>
+            </ul>
+          </div>
+
+          {/* COMPANY */}
+          <div>
+            <FooterHeading>Company</FooterHeading>
+            <div className="mb-4">
+              <p className="text-sm text-slate-500 font-medium mb-1.5">About HabitAI</p>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                HabitAI was created by Mannraj Jubbal, a 16-year-old developer from Wellington, New Zealand, on his 16th birthday — May&nbsp;18,&nbsp;2026. Operated by Surjeet Jubbal.
+              </p>
+            </div>
+            <ul className="space-y-3">
+              <li>
+                <a
+                  href="mailto:support@habitai.app"
+                  className="text-sm text-slate-500 hover:text-violet-400 transition-colors duration-150"
+                >
+                  support@habitai.app
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://discord.gg/U3FFHFq3"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-violet-400 transition-colors duration-150"
+                >
+                  <DiscordIcon />
+                  Discord community
+                </a>
+              </li>
+            </ul>
+          </div>
+
+        </div>
+
+        {/* Bottom bar */}
+        <div className="border-t border-violet-900/20 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+          <p>© {year} HabitAI. All rights reserved.</p>
+          <p className="order-last sm:order-none">
+            Made with ❤️ in Wellington, NZ 🇳🇿
           </p>
-          <div className="flex items-center gap-4 text-xs text-slate-600">
-            <Link href="/privacy" className="hover:text-slate-400 transition-colors">Privacy</Link>
-            <Link href="/terms"   className="hover:text-slate-400 transition-colors">Terms</Link>
+          <div className="flex items-center gap-4">
+            <Link href="/terms"   className="hover:text-violet-400 transition-colors">Terms</Link>
+            <Link href="/privacy" className="hover:text-violet-400 transition-colors">Privacy</Link>
+            <a href="mailto:support@habitai.app" className="hover:text-violet-400 transition-colors">Contact</a>
           </div>
         </div>
+
       </div>
     </footer>
   );
