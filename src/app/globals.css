@@ -139,6 +139,13 @@ body {
   to   { transform: translateY(0);     opacity: 1; }
 }
 
+/* Auth background blob drift */
+@keyframes authFloat {
+  0%, 100% { transform: translate(0px, 0px)    scale(1);    }
+  33%       { transform: translate(40px, -30px) scale(1.06); }
+  66%       { transform: translate(-25px, 20px) scale(0.94); }
+}
+
 /* Page fade-in */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(6px); }

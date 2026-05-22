@@ -64,9 +64,9 @@ export async function POST(req: NextRequest) {
   }
 
   // ── 2. Parse & validate body ─────────────────────────────────────────────
-  let email: string, password: string, emailRedirectTo: string | undefined;
+  let email: string, password: string, fullName: string | undefined, emailRedirectTo: string | undefined;
   try {
-    ({ email, password, emailRedirectTo } = await req.json());
+    ({ email, password, fullName, emailRedirectTo } = await req.json());
   } catch {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
     body: JSON.stringify({
       email,
       password,
-      data: {},
+      data: fullName ? { full_name: fullName } : {},
       gotrue_meta_security: {},
       ...(emailRedirectTo ? { redirect_to: emailRedirectTo } : {}),
     }),
