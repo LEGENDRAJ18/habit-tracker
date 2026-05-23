@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import webpush from "@/lib/webpush";
+import { getWebPush } from "@/lib/webpush";
 
 // Verify caller is our cron runner (same pattern as send-reminder).
 function verifyCron(req: NextRequest): boolean {
@@ -27,7 +27,7 @@ async function sendPush(
   payload: { title: string; body: string; tag: string; url: string },
 ) {
   try {
-    await webpush.sendNotification(
+    await getWebPush().sendNotification(
       { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
       JSON.stringify(payload),
     );
