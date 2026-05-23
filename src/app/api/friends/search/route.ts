@@ -4,6 +4,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 // GET /api/friends/search?username=mannraj
 // Returns { user: { id, name, email, username } | null }
+// GET /api/friends/search?username=mann&prefix=true
+// Returns { users: Array<{ id, username, xp }> } — up to 5 results, excludes current user
 export async function GET(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -16,7 +18,30 @@ export async function GET(req: NextRequest) {
   }
 
   const admin = createAdminClient();
+  const isPrefix = searchParams.get("prefix") === "true";
 
+  // ── Prefix search mode (autocomplete) ───────────────────────────────────────
+  if (isPrefix) {
+    let query = admin
+      .from("profiles")
+      .select("id, username, xp")
+      .ilike("username", `${username}%`)
+      .neq("id", user.id)
+      .limit(5);
+
+    const { data: profiles, error } = await query;
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    const users = (profiles ?? []).map((p: { id: string; username: string | null; xp?: number | null }) => ({
+      id: p.id,
+      username: p.username,
+      xp: p.xp ?? null,
+    }));
+
+    return NextResponse.json({ users });
+  }
+
+  // ── Exact match mode ─────────────────────────────────────────────────────────
   // Look up profile by username (case-insensitive)
   const { data: profile, error } = await admin
     .from("profiles")

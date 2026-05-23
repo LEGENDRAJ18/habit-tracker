@@ -53,7 +53,7 @@ export default function BottomNav() {
                 } : undefined}
               >
                 <Icon
-                  className={`w-5 h-5 transition-all ${active ? "stroke-[2.4]" : "stroke-[1.7]"}`}
+                  className={`w-5 h-5 transition-all nav-tab-icon ${active ? "stroke-[2.4] active" : "stroke-[1.7]"}`}
                   style={{ color: active ? "var(--a-400)" : "#475569" }}
                 />
               </div>

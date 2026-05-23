@@ -39,7 +39,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <BottomNav />
         <div className="flex">
           <LeftSidebar />
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 route-enter">
             {children}
           </div>
         </div>

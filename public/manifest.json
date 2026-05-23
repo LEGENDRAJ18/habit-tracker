@@ -1,83 +1,36 @@
 {
   "name": "HabitAI",
   "short_name": "HabitAI",
-  "description": "AI-powered habit tracking — build better habits every day",
-  "theme_color": "#7c3aed",
-  "background_color": "#0a0a0f",
-  "display": "standalone",
-  "orientation": "portrait",
+  "description": "AI-powered habit tracker",
   "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#7C3AED",
+  "orientation": "portrait",
   "scope": "/",
   "categories": ["health", "lifestyle", "productivity"],
   "icons": [
-    {
-      "src": "/api/pwa-icon/72",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/api/pwa-icon/96",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/api/pwa-icon/128",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/api/pwa-icon/144",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/api/pwa-icon/152",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/api/pwa-icon/192",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/api/pwa-icon/384",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/api/pwa-icon/512",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/api/pwa-icon/512",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
+    { "src": "/icons/icon-72.png",  "sizes": "72x72",   "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-96.png",  "sizes": "96x96",   "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-152.png", "sizes": "152x152", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
-  "screenshots": [],
   "shortcuts": [
     {
       "name": "Dashboard",
       "url": "/dashboard",
       "description": "Open your habit dashboard",
-      "icons": [{ "src": "/api/pwa-icon/192", "sizes": "192x192" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Analytics",
       "url": "/analytics",
       "description": "View your habit analytics",
-      "icons": [{ "src": "/api/pwa-icon/192", "sizes": "192x192" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

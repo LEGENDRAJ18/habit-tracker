@@ -305,7 +305,7 @@ export default function AddHabitModal({
   return (
     <>
       {/* Dark overlay — click to close */}
-      <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm modal-overlay-enter" onClick={onClose} />
 
       {/* ── Modal panel ──
           Mobile  : full-screen, slides up from bottom
@@ -330,7 +330,7 @@ export default function AddHabitModal({
         </div>
 
         {/* ── Header ─────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-5 py-3 sm:py-3.5 border-b border-violet-900/20 flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-3 sm:py-3.5 border-b border-violet-900/20 flex-shrink-0 modal-content-enter">
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
             {step === "schedule" && (
               <button type="button" onClick={() => setStep("details")}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Users, Flame, Zap, Send, Check, X, Loader2, UserPlus, Trophy, UserSearch, ChevronDown, Share2, Copy, Mail } from "lucide-react";
 
 interface FriendStat {
@@ -302,12 +302,57 @@ export default function FriendsPage() {
   const [inviteStatus, setInviteStatus]         = useState<"idle" | "success" | "error">("idle");
   const [inviteMsg, setInviteMsg]               = useState("");
 
+  // Autocomplete state
+  const [suggestions, setSuggestions]           = useState<{ id: string; username: string | null; xp: number | null }[]>([]);
+  const [showSuggestions, setShowSuggestions]   = useState(false);
+  const [suggestionsQuery, setSuggestionsQuery] = useState("");
+  const debounceRef                             = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [cheeringId, setCheeringId]             = useState<string | null>(null);
   const [cheeredIds, setCheeredIds]             = useState<Set<string>>(new Set());
   const [respondingId, setRespondingId]         = useState<string | null>(null);
 
   const [selectedFriend, setSelectedFriend]     = useState<string | null>(null);
   const [showShareModal, setShowShareModal]     = useState(false);
+
+  const fetchSuggestions = useCallback(async (q: string) => {
+    if (!q || q.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/friends/search?username=${encodeURIComponent(q)}&prefix=true`);
+      if (!res.ok) { setSuggestions([]); setShowSuggestions(true); return; }
+      const data = await res.json();
+      setSuggestions(data.users ?? []);
+      setShowSuggestions(true);
+    } catch {
+      setSuggestions([]);
+      setShowSuggestions(true);
+    }
+  }, []);
+
+  const handleInviteInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setInviteInput(val);
+    setInviteStatus("idle");
+
+    // Only trigger autocomplete for @username patterns (not emails)
+    if (val.startsWith("@") && val.length >= 3) {
+      const q = val.slice(1); // strip leading @
+      setSuggestionsQuery(q);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        fetchSuggestions(q);
+      }, 300);
+    } else {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setSuggestionsQuery("");
+    }
+  }, [fetchSuggestions]);
 
   const loadFriends = useCallback(async () => {
     const res = await fetch("/api/friends/list");
@@ -419,13 +464,66 @@ export default function FriendsPage() {
               <h2 className="text-sm font-semibold text-white">Invite a friend</h2>
             </div>
             <form onSubmit={handleInvite} className="flex gap-2">
-              <input
-                type="text"
-                value={inviteInput}
-                onChange={(e) => { setInviteInput(e.target.value); setInviteStatus("idle"); }}
-                placeholder="@username or friend@email.com"
-                className="flex-1 bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none focus:ring-2 focus:ring-violet-600/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 transition-all"
-              />
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={inviteInput}
+                  onChange={handleInviteInputChange}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      setShowSuggestions(false);
+                      setSuggestions([]);
+                    }
+                  }}
+                  onBlur={() => {
+                    setTimeout(() => {
+                      setShowSuggestions(false);
+                    }, 150);
+                  }}
+                  onFocus={() => {
+                    if (suggestions.length > 0) setShowSuggestions(true);
+                  }}
+                  placeholder="@username or friend@email.com"
+                  className="w-full bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none focus:ring-2 focus:ring-violet-600/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 transition-all"
+                />
+                {showSuggestions && inviteInput.startsWith("@") && suggestionsQuery.length >= 2 && (
+                  <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-[#0f0f1a] border border-violet-800/30 rounded-xl shadow-2xl shadow-violet-950/60 overflow-hidden">
+                    {suggestions.length === 0 ? (
+                      <div className="px-4 py-3 text-xs text-slate-500 italic">No users found</div>
+                    ) : (
+                      suggestions.map((s) => {
+                        const uname = s.username ?? "";
+                        const palette = avatarPalette(uname);
+                        const level = Math.floor((s.xp ?? 0) / 500) + 1;
+                        return (
+                          <div
+                            key={s.id}
+                            onMouseDown={(e) => {
+                              // Use mousedown so it fires before onBlur
+                              e.preventDefault();
+                              setInviteInput(`@${uname}`);
+                              setShowSuggestions(false);
+                              setSuggestions([]);
+                              // Submit the form programmatically after state update settles
+                              setTimeout(() => {
+                                const form = document.querySelector<HTMLFormElement>("#invite-form form");
+                                if (form) form.requestSubmit();
+                              }, 0);
+                            }}
+                            className="flex items-center gap-3 px-4 py-2.5 hover:bg-violet-950/50 cursor-pointer transition-colors"
+                          >
+                            <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${palette.bg} border ${palette.border} flex items-center justify-center flex-shrink-0`}>
+                              <span className={`text-[11px] font-bold ${palette.text}`}>{getInitials(uname)}</span>
+                            </div>
+                            <span className="text-sm text-slate-200 flex-1 truncate">@{uname}</span>
+                            <span className="text-xs text-violet-400 flex-shrink-0">Lv {level}</span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+              </div>
               <button
                 type="submit"
                 disabled={inviting || !inviteInput.trim()}
