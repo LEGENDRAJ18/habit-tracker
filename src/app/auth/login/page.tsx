@@ -217,6 +217,7 @@ function AuthForm() {
     : params.get("mode") === "signup" ? "signup"
     : "choose";
 
+  const [authChecking, setAuthChecking] = useState(true);
   const [step,         setStep]         = useState<Step>(initialStep);
   const [fullName,     setFullName]     = useState("");
   const [email,        setEmail]        = useState("");
@@ -232,10 +233,17 @@ function AuthForm() {
 
   const nextUrl = plan ? `/dashboard?checkout=${plan}` : "/dashboard";
 
-  // Auto-redirect if already logged in
+  // Check auth state before showing any form — prevents flash of login page
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.replace(nextUrl);
+      if (session) {
+        // Already logged in — middleware should have redirected, but handle the
+        // edge case where the client-side check fires before the server redirect.
+        router.replace(nextUrl);
+        // Keep authChecking = true so we never render the form during redirect
+      } else {
+        setAuthChecking(false);
+      }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -327,6 +335,21 @@ function AuthForm() {
 
   const pwStrengthColor = ["", "bg-red-500", "bg-amber-500", "bg-violet-500", "bg-emerald-500"][pwStrength];
   const pwStrengthLabel = ["", "Too short", "Okay", "Good", "Strong"][pwStrength];
+
+  // ── Auth loading screen (never flash the form while checking) ────────────
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-[#09090f] flex items-center justify-center">
+        <Background />
+        <div className="relative flex flex-col items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center shadow-xl shadow-violet-900/50 animate-pulse">
+            <Sparkles className="w-7 h-7 text-white" />
+          </div>
+          <Loader2 className="w-5 h-5 text-violet-400 animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   // ── Check-email screen ────────────────────────────────────────────────────
   if (step === "check-email") {
