@@ -16,14 +16,17 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://habitai.app";
 
+const OG_TITLE       = "HabitAI - AI Habit Coaching That Actually Works";
+const OG_DESCRIPTION = "Track habits, protect streaks, and get personalised AI coaching. Join thousands building better habits with HabitAI — free forever.";
+const OG_IMAGE       = `${APP_URL}/opengraph-image`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: {
-    default: "HabitAI – Build Habits That Actually Stick",
+    default: OG_TITLE,
     template: "%s | HabitAI",
   },
-  description:
-    "AI-powered habit tracking with streak protection, personalized coaching and weekly insights.",
+  description: OG_DESCRIPTION,
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -32,35 +35,37 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
+      { url: "/favicon.ico",       sizes: "any" },
       { url: "/icons/icon-192.svg", sizes: "192x192", type: "image/svg+xml" },
       { url: "/icons/icon-512.svg", sizes: "512x512", type: "image/svg+xml" },
     ],
-    apple: [{ url: "/icons/icon-192.svg", sizes: "192x192" }],
-    shortcut: "/icons/icon-192.svg",
+    apple: [
+      { url: "/apple-icon.svg",    sizes: "180x180",  type: "image/svg+xml" },
+      { url: "/icons/icon-192.svg", sizes: "192x192", type: "image/svg+xml" },
+    ],
+    shortcut: "/favicon.ico",
   },
   openGraph: {
-    title: "HabitAI – Build Habits That Actually Stick",
-    description:
-      "AI-powered habit tracking with streak protection, personalized coaching and weekly insights.",
-    url: APP_URL,
-    siteName: "HabitAI",
+    title:       OG_TITLE,
+    description: OG_DESCRIPTION,
+    url:         APP_URL,
+    siteName:    "HabitAI",
     images: [
       {
-        url: "/opengraph-image",
-        width: 1200,
+        url:    OG_IMAGE,
+        width:  1200,
         height: 630,
-        alt: "HabitAI",
+        alt:    "HabitAI – AI Habit Coaching That Actually Works",
       },
     ],
-    type: "website",
+    type:   "website",
     locale: "en_US",
   },
   twitter: {
-    card: "summary_large_image",
-    title: "HabitAI – Build Habits That Actually Stick",
-    description:
-      "AI-powered habit tracking with streak protection, personalized coaching and weekly insights.",
-    images: ["/opengraph-image"],
+    card:        "summary_large_image",
+    title:       OG_TITLE,
+    description: OG_DESCRIPTION,
+    images:      [OG_IMAGE],
   },
   other: {
     "mobile-web-app-capable": "yes",

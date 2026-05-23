@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "HabitAI – Build Habits That Actually Stick";
+export const alt = "HabitAI - AI Habit Coaching That Actually Works";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -91,7 +91,7 @@ export default function OgImage() {
             marginBottom: 40,
           }}
         >
-          Build habits that actually stick
+          AI habit coaching that actually works
         </div>
 
         {/* Pills */}
