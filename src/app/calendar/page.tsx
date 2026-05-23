@@ -106,85 +106,6 @@ interface ScheduledHabit {
 const SCHED_KEY = "habitai_scheduled_v3";
 const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-// ─── PlanHabitModal ───────────────────────────────────────────────────────────
-
-function PlanHabitModal({ onClose, onSave }: {
-  onClose: () => void;
-  onSave: (name: string, date: string, time: string | null) => void;
-}) {
-  const todayStr = toDateStr(new Date());
-  const [name, setName] = useState("");
-  const [date, setDate] = useState(todayStr);
-  const [time, setTime] = useState("");
-
-  const handleSave = () => {
-    if (!name.trim()) return;
-    onSave(name.trim(), date, time || null);
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div
-        className="bg-[#0f0f1a] border border-violet-800/30 rounded-2xl p-6 max-w-sm w-full mx-4"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <CalendarDays className="w-4 h-4 text-violet-400" />
-            <h2 className="text-base font-bold text-white">Plan a habit</h2>
-          </div>
-          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="space-y-3">
-          <div>
-            <label className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold block mb-1.5">Habit name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="e.g. Morning run"
-              className="w-full bg-[#0c0c18] border border-violet-800/30 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-violet-600/60 transition-colors"
-              autoFocus
-            />
-          </div>
-          <div>
-            <label className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold block mb-1.5">Date</label>
-            <input
-              type="date"
-              value={date}
-              min={todayStr}
-              onChange={e => setDate(e.target.value)}
-              className="w-full bg-[#0c0c18] border border-violet-800/30 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-violet-600/60 transition-colors"
-            />
-          </div>
-          <div>
-            <label className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold block mb-1.5">Time <span className="text-slate-700 normal-case font-normal">(optional)</span></label>
-            <input
-              type="time"
-              value={time}
-              onChange={e => setTime(e.target.value)}
-              placeholder="Optional time"
-              className="w-full bg-[#0c0c18] border border-violet-800/30 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-violet-600/60 transition-colors"
-            />
-          </div>
-        </div>
-
-        <button
-          onClick={handleSave}
-          disabled={!name.trim()}
-          className="mt-5 w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl py-3 text-sm transition-colors"
-        >
-          Save to plan
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ─── HeroStats ────────────────────────────────────────────────────────────────
 
 function HeroStats({ currentStreak, thisMonthTotal, bestStreak }: {
@@ -815,21 +736,24 @@ export default function CalendarPage() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
-      const raw  = (user.user_metadata?.full_name as string | undefined) ?? user.email ?? "";
-      const name = raw.split(/[\s_\-+@]/)[0]?.trim();
-      if (name) setDisplayName(name);
 
       const [{ data: h }, { data: l }, { data: p }] = await Promise.all([
         supabase.from("habits").select("*").eq("user_id", user.id).order("created_at"),
         supabase.from("habit_logs").select("id, habit_id, completed_at").eq("user_id", user.id)
           .gte("completed_at", daysAgo(365)).order("completed_at", { ascending: true }),
-        supabase.from("profiles").select("goals, subscription_tier").eq("id", user.id).single(),
+        supabase.from("profiles").select("goals, subscription_tier, username").eq("id", user.id).single(),
       ]);
       setHabits(h ?? []);
       setLogs(l ?? []);
       if (p) {
         setGoals(Array.isArray(p.goals) && p.goals.length > 0 ? p.goals : []);
         if (p.subscription_tier) setTier(p.subscription_tier as Plan);
+        if (p.username) setDisplayName(p.username);
+        else {
+          const raw = (user.user_metadata?.full_name as string | undefined) ?? user.email ?? "";
+          const name = raw.split(/[\s_\-+@]/)[0]?.trim();
+          if (name) setDisplayName(name);
+        }
       }
       setLoading(false);
     })();
@@ -856,15 +780,24 @@ export default function CalendarPage() {
     });
   }, []);
 
-  const handlePlanModalSave = useCallback((name: string, date: string, time: string | null) => {
-    addScheduled({
+  const handleCalendarSchedule = useCallback((
+    name: string, description: string, frequency: "daily" | "weekly",
+    whenTime: string | null, whereLocation: string | null,
+    howLong: string | null, validityScore: "valid" | "partial" | "invalid",
+    dates: string[],
+  ) => {
+    dates.forEach(date => addScheduled({
       id: crypto.randomUUID(),
       habitId: null,
       habitName: name,
       date,
-      whenTime: time,
-      frequency: "daily",
-    });
+      description,
+      frequency,
+      whenTime,
+      whereLocation,
+      howLong,
+      validityScore,
+    }));
     setShowPlanModal(false);
   }, [addScheduled]);
 
@@ -1027,7 +960,17 @@ export default function CalendarPage() {
   return (
     <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
       {showPlanModal && (
-        <PlanHabitModal onClose={() => setShowPlanModal(false)} onSave={handlePlanModalSave} />
+        <AddHabitModal
+          onClose={() => setShowPlanModal(false)}
+          existingHabits={habits}
+          goals={goals}
+          tier={tier}
+          withScheduling={true}
+          singleDateMode={true}
+          onAdd={async () => ({ error: null })}
+          onSchedule={handleCalendarSchedule}
+          onUpgradePro={() => {}}
+        />
       )}
       <main className="max-w-[1340px] mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-8 page-fade">
         <div className="xl:grid xl:grid-cols-[1fr_300px] xl:gap-6 xl:items-start">

@@ -168,6 +168,8 @@ interface Props {
   tier?: Plan;
   onUpgradePro?: () => void;
   withScheduling?: boolean;
+  /** When true: skips Step 2, shows a single date-picker in Step 1, submits via onSchedule */
+  singleDateMode?: boolean;
   onAdd: (
     name: string, description: string, frequency: "daily" | "weekly",
     stackAfterId?: string | null, whenTime?: string | null,
@@ -186,7 +188,7 @@ interface Props {
 
 export default function AddHabitModal({
   onClose, existingHabits, goals, tier, onUpgradePro,
-  withScheduling, onAdd, onSchedule,
+  withScheduling, singleDateMode, onAdd, onSchedule,
 }: Props) {
   // "details" = step 1, "schedule" = step 2
   const [step, setStep] = useState<"details" | "schedule">("details");
@@ -201,6 +203,9 @@ export default function AddHabitModal({
   const [loading, setLoading]             = useState(false);
   const [error, setError]                 = useState<string | null>(null);
   const [suggestionOffset, setSuggestionOffset] = useState(0);
+
+  // Single-date mode — one date picker replaces Step 2
+  const [scheduledDate, setScheduledDate] = useState(() => toDateStr(new Date()));
 
   // Step 2 — schedule preset + custom day-of-week picks
   const [schedulePreset, setSchedulePreset] = useState<"everyday" | "weekdays" | "weekends" | "custom" | null>(null);
@@ -471,7 +476,20 @@ export default function AddHabitModal({
                             dashboard mode = Frequency + description + suggestion chips */}
                 <div className="space-y-3">
                   {isSchedulingMode ? (
-                    /* ── Calendar: big Next button replaces Frequency ── */
+                    singleDateMode ? (
+                      /* ── Calendar single-date: date picker ── */
+                      <div>
+                        <label className={labelCls}>📅 Which day?</label>
+                        <input
+                          type="date"
+                          value={scheduledDate}
+                          min={toDateStr(new Date())}
+                          onChange={(e) => setScheduledDate(e.target.value)}
+                          className={`${inputCls} [color-scheme:dark]`}
+                        />
+                      </div>
+                    ) : (
+                    /* ── Calendar multi-date: big Next button replaces Frequency ── */
                     <button
                       type="button"
                       disabled={!name.trim() || isBlocked}
@@ -485,6 +503,7 @@ export default function AddHabitModal({
                       Next: Choose Days
                       <ArrowRight className="w-4 h-4" />
                     </button>
+                  )
                   ) : (
                     /* ── Dashboard: Frequency toggle ── */
                     <div>
@@ -608,12 +627,32 @@ export default function AddHabitModal({
                 className="px-4 py-2.5 border border-violet-900/30 text-slate-400 hover:text-white rounded-xl text-sm transition-colors"
               >Cancel</button>
 
-              {/* Calendar mode: Next is already in the right column — no button here */}
+              {/* Dashboard mode: Add Habit submit */}
               {!isSchedulingMode && (
                 <button type="submit" disabled={loading || !name.trim() || isBlocked}
                   className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl text-sm transition-all flex items-center justify-center gap-2"
                 >
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4" />Add Habit</>}
+                </button>
+              )}
+
+              {/* Calendar single-date mode: Add to Plan */}
+              {isSchedulingMode && singleDateMode && (
+                <button
+                  type="button"
+                  disabled={!name.trim() || isBlocked || !scheduledDate}
+                  onClick={() => {
+                    if (!name.trim() || !scheduledDate) return;
+                    onSchedule?.(
+                      name.trim(), description.trim(), frequency,
+                      whenTime || null, whereLocation || null, howLong || null, getValidity(),
+                      [scheduledDate],
+                    );
+                    onClose();
+                  }}
+                  className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+                >
+                  <CalendarDays className="w-4 h-4" />Add to Plan
                 </button>
               )}
             </div>

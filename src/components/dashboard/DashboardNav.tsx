@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import AvatarDisplay from "@/components/ui/AvatarDisplay";
 import { useProfile } from "@/hooks/useProfile";
 import { useXP } from "@/hooks/useXP";
 import { useUpgrade } from "@/contexts/UpgradeContext";
@@ -130,6 +131,8 @@ export default function DashboardNav() {
   const [menuOpen, setMenuOpen]     = useState(false);
   const [initials, setInitials]     = useState("··");
   const [userEmail, setUserEmail]   = useState("");
+  const [avatarId, setAvatarId]     = useState<string | null>(null);
+  const [username, setUsername]     = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const isFree = tier === "free";
@@ -146,10 +149,18 @@ export default function DashboardNav() {
   const pageMeta = PAGE_META[pathname];
 
   useEffect(() => {
-    createClient().auth.getUser().then(({ data: { user } }) => {
-      if (!user?.email) return;
-      setUserEmail(user.email);
-      setInitials(getInitials(user.email));
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      if (user.email) {
+        setUserEmail(user.email);
+        setInitials(getInitials(user.email));
+      }
+      supabase.from("profiles").select("avatar_id, username").eq("id", user.id).single()
+        .then(({ data }) => {
+          if (data?.avatar_id) setAvatarId(data.avatar_id);
+          if (data?.username) setUsername(data.username);
+        });
     });
   }, []);
 
@@ -314,9 +325,13 @@ export default function DashboardNav() {
                 className="flex items-center gap-2 px-1.5 py-1.5 rounded-xl hover:bg-violet-950/50 transition-all"
               >
                 {/* Avatar */}
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-violet-900/30">
-                  <span className="text-white text-[11px] font-bold tracking-tight">{initials}</span>
-                </div>
+                {avatarId ? (
+                  <AvatarDisplay avatarId={avatarId} size="sm" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-violet-900/30">
+                    <span className="text-white text-[11px] font-bold tracking-tight">{initials}</span>
+                  </div>
+                )}
                 {/* Plan badge — always visible next to avatar */}
                 <PlanBadge tier={tier} />
                 {/* Chevron — desktop only (saves space on mobile) */}
@@ -330,11 +345,17 @@ export default function DashboardNav() {
                   {/* Account header */}
                   <div className="px-4 py-3.5 border-b border-violet-900/20">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center flex-shrink-0">
-                        <span className="text-white text-sm font-bold">{initials}</span>
-                      </div>
+                      {avatarId ? (
+                        <AvatarDisplay avatarId={avatarId} size="sm" />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center flex-shrink-0">
+                          <span className="text-white text-sm font-bold">{initials}</span>
+                        </div>
+                      )}
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold text-white truncate">{userEmail || "Loading…"}</p>
+                        <p className="text-xs font-semibold text-white truncate">
+                          {username ? `@${username}` : (userEmail || "Loading…")}
+                        </p>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <PlanBadge tier={tier} />
                           <span className="text-[10px] text-slate-600">plan</span>

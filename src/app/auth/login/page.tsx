@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Sparkles, Eye, EyeOff, Loader2, AlertCircle,
-  CheckCircle2, ArrowRight, Mail, RefreshCw, Lock, User,
+  CheckCircle2, ArrowRight, Mail, RefreshCw, Lock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -219,7 +219,6 @@ function AuthForm() {
 
   const [authChecking, setAuthChecking] = useState(true);
   const [step,         setStep]         = useState<Step>(initialStep);
-  const [fullName,     setFullName]     = useState("");
   const [email,        setEmail]        = useState("");
   const [password,     setPassword]     = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -229,7 +228,6 @@ function AuthForm() {
 
   const emailRef    = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
-  const nameRef     = useRef<HTMLInputElement>(null);
 
   const nextUrl = plan ? `/dashboard?checkout=${plan}` : "/dashboard";
 
@@ -250,7 +248,7 @@ function AuthForm() {
 
   // Focus first field when step changes
   useEffect(() => {
-    if (step === "signup")  setTimeout(() => nameRef.current?.focus(),  80);
+    if (step === "signup")  setTimeout(() => emailRef.current?.focus(), 80);
     if (step === "login")   setTimeout(() => emailRef.current?.focus(), 80);
   }, [step]);
 
@@ -295,7 +293,6 @@ function AuthForm() {
       body: JSON.stringify({
         email,
         password,
-        fullName: fullName.trim() || undefined,
         emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`,
       }),
     });
@@ -318,7 +315,7 @@ function AuthForm() {
         method: "POST",
         headers: { Authorization: `Bearer ${data.session.access_token}` },
       }).catch(() => {});
-      router.push(nextUrl);
+      router.push(`/onboarding/username?next=${encodeURIComponent(nextUrl)}`);
       router.refresh();
     } else {
       setStep("check-email");
@@ -451,20 +448,6 @@ function AuthForm() {
 
             {/* Form */}
             <form onSubmit={handleSignup} className="space-y-4">
-              {/* Full name */}
-              <div className="relative group">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-violet-400 transition-colors pointer-events-none" />
-                <input
-                  ref={nameRef}
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Full name"
-                  autoComplete="name"
-                  className={INPUT_BASE}
-                />
-              </div>
-
               {/* Email */}
               <div className="relative group">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-violet-400 transition-colors pointer-events-none" />
