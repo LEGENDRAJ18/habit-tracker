@@ -106,6 +106,85 @@ interface ScheduledHabit {
 const SCHED_KEY = "habitai_scheduled_v3";
 const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+// ─── PlanHabitModal ───────────────────────────────────────────────────────────
+
+function PlanHabitModal({ onClose, onSave }: {
+  onClose: () => void;
+  onSave: (name: string, date: string, time: string | null) => void;
+}) {
+  const todayStr = toDateStr(new Date());
+  const [name, setName] = useState("");
+  const [date, setDate] = useState(todayStr);
+  const [time, setTime] = useState("");
+
+  const handleSave = () => {
+    if (!name.trim()) return;
+    onSave(name.trim(), date, time || null);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="bg-[#0f0f1a] border border-violet-800/30 rounded-2xl p-6 max-w-sm w-full mx-4"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="w-4 h-4 text-violet-400" />
+            <h2 className="text-base font-bold text-white">Plan a habit</h2>
+          </div>
+          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold block mb-1.5">Habit name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="e.g. Morning run"
+              className="w-full bg-[#0c0c18] border border-violet-800/30 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-violet-600/60 transition-colors"
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold block mb-1.5">Date</label>
+            <input
+              type="date"
+              value={date}
+              min={todayStr}
+              onChange={e => setDate(e.target.value)}
+              className="w-full bg-[#0c0c18] border border-violet-800/30 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-violet-600/60 transition-colors"
+            />
+          </div>
+          <div>
+            <label className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold block mb-1.5">Time <span className="text-slate-700 normal-case font-normal">(optional)</span></label>
+            <input
+              type="time"
+              value={time}
+              onChange={e => setTime(e.target.value)}
+              placeholder="Optional time"
+              className="w-full bg-[#0c0c18] border border-violet-800/30 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-violet-600/60 transition-colors"
+            />
+          </div>
+        </div>
+
+        <button
+          onClick={handleSave}
+          disabled={!name.trim()}
+          className="mt-5 w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl py-3 text-sm transition-colors"
+        >
+          Save to plan
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── HeroStats ────────────────────────────────────────────────────────────────
 
 function HeroStats({ currentStreak, thisMonthTotal, bestStreak }: {
@@ -133,6 +212,88 @@ function HeroStats({ currentStreak, thisMonthTotal, bestStreak }: {
         </div>
         <p className="text-4xl font-black text-emerald-300 leading-none">{bestStreak}</p>
         <p className="text-[10px] text-emerald-500/80 font-semibold mt-2 uppercase tracking-wider">best streak</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── WeeklyProgress ───────────────────────────────────────────────────────────
+
+function WeeklyProgress({ habits, dayCompletionMap }: {
+  habits: Habit[];
+  dayCompletionMap: Map<string, Set<string>>;
+}) {
+  const today = toDateStr(new Date());
+
+  // Build Sun–Sat week containing today
+  const now = new Date();
+  const weekStart = new Date(now.getTime() - now.getDay() * 86400000);
+
+  const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
+
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = toDateStr(new Date(weekStart.getTime() + i * 86400000));
+    const isFuture = d > today;
+    const isToday  = d === today;
+    const done = dayCompletionMap.get(d);
+    const existing = habits.filter(h => h.created_at.split("T")[0] <= d);
+    const completedCount = done ? existing.filter(h => done.has(h.id)).length : 0;
+    const total = existing.length;
+    const pct = (!isFuture && total > 0) ? Math.round((completedCount / total) * 100) : null;
+    return { d, label: DAY_LABELS[i], isFuture, isToday, pct, completedCount, total };
+  });
+
+  // Overall week %
+  const pastDays = days.filter(d => !d.isFuture && d.total > 0);
+  const totalCompleted = pastDays.reduce((s, d) => s + d.completedCount, 0);
+  const totalPossible  = pastDays.reduce((s, d) => s + d.total, 0);
+  const weekPct = totalPossible > 0 ? Math.round((totalCompleted / totalPossible) * 100) : null;
+
+  function getColorClass(pct: number | null): { text: string; border: string; bg: string; barBg: string } {
+    if (pct === null) return { text: "text-slate-600", border: "border-slate-700/30", bg: "bg-slate-900/30", barBg: "bg-slate-700/30" };
+    if (pct >= 70) return { text: "text-emerald-400", border: "border-emerald-700/40", bg: "bg-emerald-950/40", barBg: "bg-emerald-500" };
+    if (pct >= 40) return { text: "text-amber-400",   border: "border-amber-700/40",   bg: "bg-amber-950/40",   barBg: "bg-amber-500"   };
+    return            { text: "text-red-400",     border: "border-red-700/40",     bg: "bg-red-950/40",     barBg: "bg-red-500"     };
+  }
+
+  const weekColor = getColorClass(weekPct);
+
+  return (
+    <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-4 mb-4">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-semibold text-white flex items-center gap-1.5">
+          <span>📊</span> This Week
+        </span>
+        {weekPct !== null ? (
+          <span className={`text-2xl font-black leading-none ${weekColor.text}`}>{weekPct}%</span>
+        ) : (
+          <span className="text-slate-600 text-sm">—</span>
+        )}
+      </div>
+
+      <div className="grid grid-cols-7 gap-1">
+        {days.map((day, i) => {
+          const color = getColorClass(day.pct);
+          const fillPct = day.pct ?? 0;
+          return (
+            <div key={day.d} className="flex flex-col items-center gap-1">
+              <span className={`text-[10px] font-bold uppercase tracking-wide ${day.isToday ? "text-violet-400" : "text-slate-600"}`}>
+                {day.label}
+              </span>
+              <div className="w-full h-14 bg-slate-800/40 rounded-full relative overflow-hidden">
+                {!day.isFuture && day.pct !== null && (
+                  <div
+                    className={`absolute bottom-0 left-0 right-0 rounded-full transition-all ${color.barBg}`}
+                    style={{ height: `${Math.max(8, fillPct)}%` }}
+                  />
+                )}
+              </div>
+              <span className={`text-[10px] font-bold leading-none ${day.isFuture ? "text-slate-700" : color.text}`}>
+                {day.isFuture ? "--" : day.pct !== null ? `${day.pct}%` : "--"}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -647,6 +808,7 @@ export default function CalendarPage() {
   const [year,  setYear]  = useState(() => new Date().getFullYear());
   const [month, setMonth] = useState(() => new Date().getMonth());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [showPlanModal, setShowPlanModal] = useState(false);
 
   // Fetch habits + logs + profile
   useEffect(() => {
@@ -693,6 +855,18 @@ export default function CalendarPage() {
       return updated;
     });
   }, []);
+
+  const handlePlanModalSave = useCallback((name: string, date: string, time: string | null) => {
+    addScheduled({
+      id: crypto.randomUUID(),
+      habitId: null,
+      habitName: name,
+      date,
+      whenTime: time,
+      frequency: "daily",
+    });
+    setShowPlanModal(false);
+  }, [addScheduled]);
 
   const removeScheduled = useCallback((id: string) => {
     setScheduled(prev => {
@@ -852,11 +1026,23 @@ export default function CalendarPage() {
 
   return (
     <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
+      {showPlanModal && (
+        <PlanHabitModal onClose={() => setShowPlanModal(false)} onSave={handlePlanModalSave} />
+      )}
       <main className="max-w-[1340px] mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-8 page-fade">
         <div className="xl:grid xl:grid-cols-[1fr_300px] xl:gap-6 xl:items-start">
 
           {/* ── Center column ─────────────────────────────────────────────── */}
           <div className="min-w-0 space-y-5">
+
+            {/* Plan a new habit — top CTA */}
+            <button
+              onClick={() => setShowPlanModal(true)}
+              className="bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-2xl px-5 py-3.5 w-full flex items-center justify-center gap-2 text-sm shadow-lg shadow-violet-900/40 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Plan a new habit
+            </button>
 
             {/* Greeting + hero stats */}
             <div>
@@ -869,6 +1055,9 @@ export default function CalendarPage() {
               <p className="text-sm text-slate-500 mb-5">Click any day to see what you completed · plan ahead on the right</p>
               <HeroStats currentStreak={currentStreak} thisMonthTotal={thisMonthTotal} bestStreak={bestStreak} />
             </div>
+
+            {/* Weekly completion rate */}
+            <WeeklyProgress habits={habits} dayCompletionMap={dayCompletionMap} />
 
             {/* Week strip */}
             <WeekStrip

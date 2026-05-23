@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="bg192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#4c1d95"/>
+    </linearGradient>
+    <linearGradient id="glow192" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="192" height="192" rx="42" fill="url(#bg192)"/>
+  <!-- Top sheen -->
+  <rect width="192" height="96" rx="42" fill="url(#glow192)"/>
+  <!-- Main 4-pointed sparkle star, centred at (96,96), outer r=48, inner r=30 -->
+  <path d="M96,48 L117,90 L96,144 L75,90 Z
+           M48,96 L90,75 L144,96 L90,117 Z"
+        fill="white" opacity="0.95"/>
+  <!-- Overlap diamond shape for cleaner look -->
+  <path d="M96,48 L117,90 L144,96 L117,102 L96,144 L75,102 L48,96 L75,90 Z"
+        fill="white" opacity="0.95"/>
+  <!-- Small upper-right star -->
+  <path d="M147,30 L152,48 L170,53 L152,58 L147,76 L142,58 L124,53 L142,48 Z"
+        fill="white" opacity="0.6"
+        transform="scale(0.55) translate(120, 10)"/>
+  <!-- Tiny lower-left dot -->
+  <circle cx="36" cy="148" r="7" fill="white" opacity="0.38"/>
+</svg>

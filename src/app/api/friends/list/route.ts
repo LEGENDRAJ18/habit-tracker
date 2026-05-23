@@ -48,20 +48,26 @@ export async function GET() {
   const since = daysAgo(30);
   const friendStats = await Promise.all(
     friendIds.map(async (fid) => {
-      const [{ data: authUser }, { data: logs }, { data: habits }] = await Promise.all([
+      const [{ data: authUser }, { data: logs }, { data: habits }, { data: profile }] = await Promise.all([
         admin.auth.admin.getUserById(fid),
         admin.from("habit_logs").select("completed_at").eq("user_id", fid).gte("completed_at", since),
         admin.from("habits").select("id").eq("user_id", fid),
+        admin.from("profiles").select("username").eq("id", fid).maybeSingle(),
       ]);
 
       const email = authUser?.user?.email ?? "Unknown";
-      const name = email.split("@")[0];
+      const metaName =
+        authUser?.user?.user_metadata?.full_name ??
+        authUser?.user?.user_metadata?.name ??
+        null;
+      const name = metaName ?? email.split("@")[0];
+      const username = profile?.username ?? null;
       const dates = new Set((logs ?? []).map((l: { completed_at: string }) => l.completed_at.split("T")[0]));
       const streak = getStreak(dates);
       const completions30 = (logs ?? []).length;
       const habitCount = (habits ?? []).length;
 
-      return { id: fid, name, email, streak, completions30, habitCount };
+      return { id: fid, name, email, username, streak, completions30, habitCount };
     }),
   );
 

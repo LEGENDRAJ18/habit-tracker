@@ -7,7 +7,7 @@ import {
   User, Mail, Lock, Trash2, AlertCircle, CheckCircle2,
   Loader2, Eye, EyeOff, X, Bell, Download, Crown, Zap, Palette,
   Check, RotateCcw, Target, SlidersHorizontal, CreditCard, Sparkles,
-  HelpCircle, ArrowRight,
+  HelpCircle, ArrowRight, Smile,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
@@ -19,6 +19,8 @@ import {
   type AccentColor, type DashboardLayout,
 } from "@/contexts/AppearanceContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { AVATARS, type AvatarId } from "@/lib/avatars";
+import AvatarDisplay from "@/components/ui/AvatarDisplay";
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
@@ -253,6 +255,80 @@ function GoalsTab({ initialGoals }: { initialGoals: string[] }) {
   );
 }
 
+// ─── Username section (self-contained) ───────────────────────────────────────
+
+function UsernameSection() {
+  const supabase = createClient();
+  const [username, setUsername]   = useState("");
+  const [original, setOriginal]   = useState("");
+  const [saving,   setSaving]     = useState(false);
+  const [status,   setStatus]     = useState<{ ok?: string; err?: string } | null>(null);
+  const [loaded,   setLoaded]     = useState(false);
+
+  useEffect(() => {
+    if (loaded) return;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase.from("profiles").select("username").eq("id", user.id).single();
+      const u = data?.username ?? "";
+      setUsername(u); setOriginal(u); setLoaded(true);
+    })();
+  }, [loaded, supabase]);
+
+  const valid = /^[a-z0-9_]{3,20}$/.test(username);
+  const unchanged = username === original;
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!valid || unchanged) return;
+    setSaving(true); setStatus(null);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { error } = await supabase.from("profiles").update({ username }).eq("id", user.id);
+    if (error) {
+      setStatus({ err: error.message.includes("unique") ? "That username is already taken." : error.message });
+    } else {
+      setOriginal(username);
+      setStatus({ ok: "Username saved! Friends can now find you by @" + username });
+    }
+    setSaving(false);
+  };
+
+  return (
+    <div>
+      <h2 className="text-base font-semibold text-white mb-4">Username</h2>
+      <div className={cardCls}>
+        <form onSubmit={handleSave} className="space-y-4">
+          <Field label="Your @username" hint="3–20 chars: lowercase letters, numbers, underscores. Friends search for you by this.">
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-medium select-none">@</span>
+              <Input
+                type="text"
+                value={username}
+                onChange={(e) => { setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "")); setStatus(null); }}
+                placeholder="mannraj"
+                maxLength={20}
+                className="pl-7"
+              />
+            </div>
+            {username && !valid && (
+              <p className="text-[11px] text-amber-400 mt-1">Must be 3–20 lowercase letters, numbers, or underscores.</p>
+            )}
+          </Field>
+          {status?.ok  && <Success msg={status.ok} />}
+          {status?.err && <Err msg={status.err} />}
+          <button type="submit" disabled={saving || !valid || unchanged}
+            className="flex items-center gap-2 px-5 py-2.5 text-white font-semibold text-sm rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ backgroundColor: "var(--a-600, #7c3aed)" }}>
+            {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}Save username
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ─── Tab content sections ─────────────────────────────────────────────────────
 
 function AccountTab({
@@ -303,6 +379,9 @@ function AccountTab({
           </form>
         </div>
       </div>
+
+      {/* Username */}
+      <UsernameSection />
 
       {/* Change email */}
       <div>
@@ -710,15 +789,98 @@ function PlanTab({
   );
 }
 
+function AvatarTab() {
+  const supabase = createClient();
+  const [selected, setSelected] = useState<AvatarId>("ghost");
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<{ ok?: string; err?: string } | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (loaded) return;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase.from("profiles").select("avatar_id").eq("id", user.id).single();
+      if (data?.avatar_id) setSelected(data.avatar_id as AvatarId);
+      setLoaded(true);
+    })();
+  }, [loaded, supabase]);
+
+  const handleSave = async () => {
+    setSaving(true); setStatus(null);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { error } = await supabase.from("profiles").update({ avatar_id: selected }).eq("id", user.id);
+    setStatus(error ? { err: "Failed to save." } : { ok: "Avatar saved!" });
+    setSaving(false);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-base font-semibold text-white mb-1">Profile Picture</h2>
+        <p className="text-sm text-slate-500">Choose an animated avatar that represents you.</p>
+      </div>
+      <div className={cardCls}>
+        {/* Current preview */}
+        <div className="flex items-center gap-4 pb-5 border-b border-violet-900/20">
+          <AvatarDisplay avatarId={selected} size="lg" />
+          <div>
+            <p className="text-sm font-bold text-white">{AVATARS.find(a => a.id === selected)?.name}</p>
+            <p className="text-xs text-slate-500">Your current avatar</p>
+          </div>
+        </div>
+        {/* Grid of options */}
+        <div className="grid grid-cols-3 gap-3 pt-5">
+          {AVATARS.map((av) => (
+            <button
+              key={av.id}
+              onClick={() => setSelected(av.id)}
+              className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
+                selected === av.id
+                  ? "border-violet-500/60 bg-violet-600/15 ring-1 ring-violet-500/25"
+                  : "border-violet-900/20 bg-[#0c0c18] hover:border-violet-700/40 hover:bg-violet-950/30"
+              }`}
+            >
+              <AvatarDisplay avatarId={av.id} size="md" />
+              <span className={`text-[11px] font-medium ${selected === av.id ? "text-violet-200" : "text-slate-500"}`}>
+                {av.name}
+              </span>
+              {selected === av.id && (
+                <div className="w-4 h-4 rounded-full bg-violet-500 flex items-center justify-center">
+                  <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+        {status?.ok  && <Success msg={status.ok} />}
+        {status?.err && <Err msg={status.err} />}
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center gap-2 px-5 py-2.5 text-white font-semibold text-sm rounded-xl transition-all disabled:opacity-50"
+          style={{ backgroundColor: "var(--a-600, #7c3aed)" }}
+        >
+          {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+          Save avatar
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-type Tab = "account" | "appearance" | "accessibility" | "goals" | "plan" | "help";
+type Tab = "account" | "appearance" | "accessibility" | "goals" | "avatar" | "plan" | "help";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "account",       label: "Account",       icon: <User            className="w-3.5 h-3.5" /> },
   { id: "appearance",    label: "Appearance",     icon: <Palette         className="w-3.5 h-3.5" /> },
   { id: "accessibility", label: "Accessibility",  icon: <SlidersHorizontal className="w-3.5 h-3.5" /> },
   { id: "goals",         label: "My Goals",       icon: <Target          className="w-3.5 h-3.5" /> },
+  { id: "avatar",        label: "Avatar",         icon: <Smile           className="w-3.5 h-3.5" /> },
   { id: "plan",          label: "Plan",           icon: <CreditCard      className="w-3.5 h-3.5" /> },
   { id: "help",          label: "Help",           icon: <HelpCircle      className="w-3.5 h-3.5" /> },
 ];
@@ -846,6 +1008,7 @@ export default function SettingsPage() {
           {activeTab === "appearance"    && <AppearanceTab />}
           {activeTab === "accessibility" && <AccessibilityTab />}
           {activeTab === "goals"         && !reminderLoading && <GoalsTab initialGoals={goals} />}
+          {activeTab === "avatar"        && <AvatarTab />}
           {activeTab === "plan"          && (
             <PlanTab
               tier={tier} reminderLoading={reminderLoading}
