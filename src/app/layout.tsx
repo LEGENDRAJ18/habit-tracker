@@ -14,7 +14,7 @@ import ConditionalAppShell from "@/components/layout/ConditionalAppShell";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://habitai.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.habitaiapp.com";
 
 const OG_TITLE       = "HabitAI - AI Habit Coaching That Actually Works";
 const OG_DESCRIPTION = "Track habits, protect streaks, and get personalised AI coaching. Join thousands building better habits with HabitAI — free forever.";
@@ -34,17 +34,8 @@ export const metadata: Metadata = {
     title: "HabitAI",
   },
   icons: {
-    icon: [
-      { url: "/favicon.ico",        sizes: "any" },
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
-      { url: "/icons/icon-192.svg", sizes: "192x192", type: "image/svg+xml" },
-    ],
-    apple: [
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-152.png", sizes: "152x152", type: "image/png" },
-      { url: "/apple-icon.svg",     sizes: "180x180", type: "image/svg+xml" },
-    ],
+    icon:     "/icons/icon-192.png",
+    apple:    "/icons/icon-192.png",
     shortcut: "/favicon.ico",
   },
   openGraph: {
@@ -58,6 +49,12 @@ export const metadata: Metadata = {
         width:  1200,
         height: 630,
         alt:    "HabitAI – AI Habit Coaching That Actually Works",
+      },
+      {
+        url:    `${APP_URL}/icons/icon-512.png`,
+        width:  512,
+        height: 512,
+        alt:    "HabitAI logo",
       },
     ],
     type:   "website",
