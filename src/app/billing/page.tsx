@@ -7,6 +7,7 @@ import {
   ArrowLeft, CreditCard, Zap, Brain, Check, Loader2,
   ExternalLink, AlertCircle, CheckCircle2, Crown, Diamond,
 } from "lucide-react";
+import posthog from "posthog-js";
 import { createClient } from "@/lib/supabase/client";
 import BottomNav from "@/components/ui/BottomNav";
 import type { Plan } from "@/types";
@@ -86,19 +87,27 @@ export default function BillingPage() {
         if (!user) { router.push("/auth/login"); return; }
       })
       .catch(() => router.push("/auth/login"));
+    const upgradeParam = new URLSearchParams(window.location.search).get("upgrade");
+
     supabase
       .from("profiles")
       .select("subscription_tier")
       .single()
       .then(({ data }) => {
-        if (data?.subscription_tier) setTier(data.subscription_tier as Plan);
+        const newTier = (data?.subscription_tier as Plan) ?? "free";
+        if (data?.subscription_tier) setTier(newTier);
         setPageLoading(false);
+
+        if (upgradeParam === "success" && !sessionStorage.getItem("ph_upgrade_tracked")) {
+          sessionStorage.setItem("ph_upgrade_tracked", "1");
+          if (newTier === "plus") posthog.capture("upgraded_to_plus");
+          else if (newTier === "pro") posthog.capture("upgraded_to_pro");
+        }
       });
 
     // Handle Stripe return params
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("upgrade") === "success") setSuccessMsg("Plan updated successfully! Welcome to your new plan.");
-    if (params.get("upgrade") === "cancel")  setError("Checkout was cancelled. No charge was made.");
+    if (upgradeParam === "success") setSuccessMsg("Plan updated successfully! Welcome to your new plan.");
+    if (upgradeParam === "cancel")  setError("Checkout was cancelled. No charge was made.");
   }, [supabase, router]);
 
   const openPortal = async () => {

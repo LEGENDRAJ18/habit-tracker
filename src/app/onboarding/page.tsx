@@ -8,6 +8,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { AVATARS, type AvatarId } from "@/lib/avatars";
 import { friendlyError } from "@/lib/friendlyError";
+import posthog from "posthog-js";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -654,6 +655,13 @@ function OnboardingFlow() {
           frequency: "daily",
         });
       }
+
+      posthog.capture("onboarding_completed", {
+        has_username:   !!username.trim(),
+        avatar_id:      avatarId,
+        categories:     categories,
+        has_first_habit: !!habit,
+      });
 
       const name = username.trim() || user.email?.split("@")[0] || "Champion";
       setDisplayName(name);

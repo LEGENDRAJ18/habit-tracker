@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, Sparkles, Loader2, AlertCircle, Zap, Target, Heart, CalendarDays, ExternalLink, Crown } from "lucide-react";
+import posthog from "posthog-js";
 import type { Plan } from "@/types";
 
 interface CoachingResult {
@@ -41,6 +42,7 @@ export default function AIInsightModal({ onClose, onUpgrade, tier }: Props) {
       if (!res.ok) throw new Error(data.error ?? "Something went wrong");
       setResult(data as CoachingResult);
       setFetched(true);
+      posthog.capture("ai_coach_used", { mode: "coaching" });
     } catch (e) {
       setError((e as Error).message);
     } finally {

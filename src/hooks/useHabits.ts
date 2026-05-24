@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import posthog from "posthog-js";
 import { createClient } from "@/lib/supabase/client";
 import type { Habit, HabitLog } from "@/types";
 
@@ -161,7 +162,14 @@ export function useHabits() {
       .single();
 
     if (error) return { error: error.message };
-    if (data) setHabits((prev) => [...prev, data]);
+    if (data) {
+      setHabits((prev) => [...prev, data]);
+      posthog.capture("habit_created", {
+        habit_name:     name,
+        frequency,
+        validity_score: validityScore ?? "valid",
+      });
+    }
     return { error: null };
   };
 
@@ -244,6 +252,8 @@ export function useHabits() {
       setHabits((prev) =>
         prev.map((h) => (h.id === habitId ? { ...h, habit_strength: newStrength } : h)),
       );
+
+      posthog.capture("habit_completed", { habit_name: habit?.name, frequency: habit?.frequency });
 
       const { data, error: insertErr } = await supabase
         .from("habit_logs")

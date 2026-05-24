@@ -10,6 +10,7 @@ import CookieBanner from "@/components/ui/CookieBanner";
 import { AppearanceProvider } from "@/contexts/AppearanceContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import ConditionalAppShell from "@/components/layout/ConditionalAppShell";
+import PostHogProvider from "@/components/PostHogProvider";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -84,13 +85,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} scroll-smooth`}>
       <body>
-        <AppearanceProvider>
-          <CurrencyProvider>
-            <ConditionalAppShell>
-              {children}
-            </ConditionalAppShell>
-          </CurrencyProvider>
-        </AppearanceProvider>
+        <PostHogProvider>
+          <AppearanceProvider>
+            <CurrencyProvider>
+              <ConditionalAppShell>
+                {children}
+              </ConditionalAppShell>
+            </CurrencyProvider>
+          </AppearanceProvider>
+        </PostHogProvider>
         <Analytics />
         <ServiceWorkerRegistration />
         <InstallBanner />

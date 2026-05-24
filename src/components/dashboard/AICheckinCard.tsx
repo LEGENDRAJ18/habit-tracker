@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, Sparkles, Loader2 } from "lucide-react";
+import posthog from "posthog-js";
 
 interface Props {
   missedHabitName: string;
@@ -25,6 +26,7 @@ export default function AICheckinCard({ missedHabitName, onDismiss }: Props) {
         const data = await res.json();
         if (!cancelled && res.ok && data.suggestion) {
           setSuggestion(data.suggestion);
+          posthog.capture("ai_coach_used", { mode: "checkin", habit: missedHabitName });
         } else if (!cancelled) {
           setError(true);
         }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Users, Flame, Zap, Send, Check, X, Loader2, UserPlus, Trophy, UserSearch, ChevronDown, Share2, Copy, Mail } from "lucide-react";
+import posthog from "posthog-js";
 import { friendlyError } from "@/lib/friendlyError";
 
 interface FriendStat {
@@ -408,11 +409,12 @@ export default function FriendsPage() {
 
   const handleRespond = async (requesterId: string, action: "accept" | "reject") => {
     setRespondingId(requesterId);
-    await fetch("/api/friends/respond", {
+    const res = await fetch("/api/friends/respond", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ requesterId, action }),
     });
+    if (res.ok && action === "accept") posthog.capture("friend_added");
     setRespondingId(null);
     loadFriends();
   };

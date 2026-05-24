@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyError } from "@/lib/friendlyError";
+import posthog from "posthog-js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -309,6 +310,8 @@ function AuthForm() {
       setLoading(false);
       return;
     }
+
+    posthog.capture("user_signed_up", { method: "email" });
 
     if (data.session) {
       await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
