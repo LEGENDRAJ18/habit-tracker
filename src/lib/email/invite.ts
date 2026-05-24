@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://habitai.app";
+const resend  = new Resend(process.env.RESEND_API_KEY);
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.habitaiapp.com";
 
 function buildInviteHtml(inviterName: string, acceptUrl: string): string {
   return `<!DOCTYPE html>
@@ -113,7 +113,7 @@ export async function sendInviteEmail(
 ): Promise<void> {
   const acceptUrl = `${APP_URL}/friends?invite=${inviterUserId}`;
   await resend.emails.send({
-    from: "HabitAI <hello@habitai.app>",
+    from: "HabitAI <hello@habitaiapp.com>",
     to: toEmail,
     subject: `${inviterName} invited you to build habits together on HabitAI 🔥`,
     html: buildInviteHtml(inviterName, acceptUrl),
