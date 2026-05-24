@@ -70,6 +70,7 @@ export const metadata: Metadata = {
     images:      [OG_IMAGE],
   },
   other: {
+    "google-site-verification": "gdTxKTDXWn4xAj3jfGDDJI8_ahrxOf_zxwD_FixLGQQ",
     "mobile-web-app-capable": "yes",
   },
 };
