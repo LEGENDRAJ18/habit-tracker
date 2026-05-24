@@ -10,6 +10,7 @@ import {
   HelpCircle, ArrowRight, Smile,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyError } from "@/lib/friendlyError";
 import { useProfile } from "@/hooks/useProfile";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { TOUR_STORAGE_KEY, TOUR_SESSION_KEY } from "@/components/ui/OnboardingTour";
@@ -207,7 +208,7 @@ function GoalsTab({ initialGoals }: { initialGoals: string[] }) {
       if (!user) return;
       const goalLabels = selected.map((id) => id === "custom" ? customGoal.trim() || "Custom goal" : GOAL_OPTIONS.find((g) => g.id === id)?.label ?? id);
       const { error } = await supabase.from("profiles").update({ goals: goalLabels, goal: goalLabels[0] ?? null }).eq("id", user.id);
-      setStatus(error ? { err: error.message } : { ok: "Goals saved! Habit suggestions and AI coaching will update." });
+      setStatus(error ? { err: friendlyError(error.message) } : { ok: "Goals saved! Habit suggestions and AI coaching will update." });
     } catch { setStatus({ err: "Failed to save goals." }); }
     finally { setSaving(false); }
   };
@@ -287,7 +288,7 @@ function UsernameSection() {
     if (!user) return;
     const { error } = await supabase.from("profiles").update({ username }).eq("id", user.id);
     if (error) {
-      setStatus({ err: error.message.includes("unique") ? "That username is already taken." : error.message });
+      setStatus({ err: error.message.includes("unique") ? "That username is already taken." : friendlyError(error.message) });
     } else {
       setOriginal(username);
       setStatus({ ok: "Username saved! Friends can now find you by @" + username });
@@ -810,9 +811,9 @@ function AvatarTab() {
   const handleSave = async () => {
     setSaving(true); setStatus(null);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) { setSaving(false); return; }
     const { error } = await supabase.from("profiles").update({ avatar_id: selected }).eq("id", user.id);
-    setStatus(error ? { err: "Failed to save." } : { ok: "Avatar saved!" });
+    setStatus(error ? { err: friendlyError(error.message) } : { ok: "Avatar saved!" });
     setSaving(false);
   };
 
@@ -912,13 +913,15 @@ export default function SettingsPage() {
   const [pageLoading, setPageLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) { router.push("/auth/login"); return; }
-      setEmail(user.email ?? "");
-      setName(user.user_metadata?.full_name ?? user.user_metadata?.name ?? "");
-      setIsOAuth((user.identities ?? []).some((i) => i.provider !== "email"));
-      setPageLoading(false);
-    });
+    supabase.auth.getUser()
+      .then(({ data: { user } }) => {
+        if (!user) { router.push("/auth/login"); return; }
+        setEmail(user.email ?? "");
+        setName(user.user_metadata?.full_name ?? user.user_metadata?.name ?? "");
+        setIsOAuth((user.identities ?? []).some((i) => i.provider !== "email"));
+        setPageLoading(false);
+      })
+      .catch(() => router.push("/auth/login"));
   }, [supabase, router]);
 
   const handleSaveName = async (e: React.FormEvent) => {
@@ -927,7 +930,7 @@ export default function SettingsPage() {
     setSavingName(true); setNameStatus(null);
     const { error } = await supabase.auth.updateUser({ data: { full_name: name.trim() } });
     setSavingName(false);
-    setNameStatus(error ? { err: error.message } : { ok: "Name updated successfully." });
+    setNameStatus(error ? { err: friendlyError(error.message) } : { ok: "Name updated successfully." });
   };
 
   const handleSaveEmail = async (e: React.FormEvent) => {
@@ -936,7 +939,7 @@ export default function SettingsPage() {
     setSavingEmail(true); setEmailStatus(null);
     const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
     setSavingEmail(false);
-    setEmailStatus(error ? { err: error.message } : { ok: "Confirmation email sent. Click the link to complete the change." });
+    setEmailStatus(error ? { err: friendlyError(error.message) } : { ok: "Confirmation email sent. Click the link to complete the change." });
     if (!error) setNewEmail("");
   };
 
@@ -947,19 +950,21 @@ export default function SettingsPage() {
     setSavingPw(true); setPwStatus(null);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setSavingPw(false);
-    setPwStatus(error ? { err: error.message } : { ok: "Password updated successfully." });
+    setPwStatus(error ? { err: friendlyError(error.message) } : { ok: "Password updated successfully." });
     if (!error) { setNewPassword(""); setConfirmPw(""); }
   };
 
   const handleDelete = async () => {
     setDeleting(true);
-    const res = await fetch("/api/delete-account", { method: "DELETE" });
-    if (res.ok) { await supabase.auth.signOut(); router.push("/?deleted=1"); }
-    else {
-      const data = await res.json();
-      alert(data.error ?? "Something went wrong.");
-      setDeleting(false); setShowDelete(false);
+    try {
+      const res = await fetch("/api/delete-account", { method: "DELETE" });
+      if (res.ok) { await supabase.auth.signOut(); router.push("/?deleted=1"); return; }
+      const data = await res.json().catch(() => ({}));
+      setNameStatus({ err: data.error ? friendlyError(data.error) : "Could not delete account. Please try again." });
+    } catch {
+      setNameStatus({ err: "Network error. Please check your connection and try again." });
     }
+    setDeleting(false); setShowDelete(false);
   };
 
   if (pageLoading) {

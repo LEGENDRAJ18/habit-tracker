@@ -8,6 +8,7 @@ import {
   CheckCircle2, ArrowRight, Mail, RefreshCw, Lock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyError } from "@/lib/friendlyError";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -272,7 +273,7 @@ function AuthForm() {
     setError(null);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      setError(error.message);
+      setError(friendlyError(error.message));
       setLoading(false);
     } else {
       router.push(nextUrl);

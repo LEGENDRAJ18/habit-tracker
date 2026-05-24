@@ -802,7 +802,8 @@ export default function DashboardPage() {
                     <button
                       key={rec.name}
                       onClick={async () => { await addHabit(rec.name, rec.desc, "daily"); }}
-                      className="w-full flex items-center gap-3 p-4 rounded-xl bg-[#0f0f1a] border border-violet-900/20 hover:border-violet-600/40 hover:bg-violet-950/20 group transition-all text-left"
+                      disabled={loading}
+                      className="w-full flex items-center gap-3 p-4 rounded-xl bg-[#0f0f1a] border border-violet-900/20 hover:border-violet-600/40 hover:bg-violet-950/20 group transition-all text-left disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       <div className="w-10 h-10 rounded-xl bg-violet-950/50 border border-violet-900/20 flex items-center justify-center text-xl flex-shrink-0 group-hover:border-violet-600/30 transition-colors">
                         {rec.emoji}

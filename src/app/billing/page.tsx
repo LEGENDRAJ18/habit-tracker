@@ -81,9 +81,11 @@ export default function BillingPage() {
   const [successMsg,  setSuccessMsg]  = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) { router.push("/auth/login"); return; }
-    });
+    supabase.auth.getUser()
+      .then(({ data: { user } }) => {
+        if (!user) { router.push("/auth/login"); return; }
+      })
+      .catch(() => router.push("/auth/login"));
     supabase
       .from("profiles")
       .select("subscription_tier")

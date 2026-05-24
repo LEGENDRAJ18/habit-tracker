@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Users, Flame, Zap, Send, Check, X, Loader2, UserPlus, Trophy, UserSearch, ChevronDown, Share2, Copy, Mail } from "lucide-react";
+import { friendlyError } from "@/lib/friendlyError";
 
 interface FriendStat {
   id: string;
@@ -72,7 +73,7 @@ function FriendProfileModal({
       .then((r) => r.json())
       .then((data) => {
         if (cancelled) return;
-        if (data.error) setError(data.error);
+        if (data.error) setError(friendlyError(data.error));
         else setProfile(data.profile);
         setLoading(false);
       })

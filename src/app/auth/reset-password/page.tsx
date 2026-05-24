@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Sparkles, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyError } from "@/lib/friendlyError";
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -49,7 +50,7 @@ function ResetPasswordForm() {
     const { error } = await createClient().auth.updateUser({ password });
 
     if (error) {
-      setError(error.message);
+      setError(friendlyError(error.message));
       setLoading(false);
     } else {
       router.push("/auth/login?message=password_updated");
