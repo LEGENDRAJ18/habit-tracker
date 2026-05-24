@@ -355,3 +355,29 @@ a { transition: color 0.15s ease, opacity 0.15s ease; }
 input, textarea, select {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
+
+/* ─── Onboarding step transitions ────────────────────────────────────────── */
+@keyframes stepSlideIn {
+  from { transform: translateX(36px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes stepSlideInLeft {
+  from { transform: translateX(-36px); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+.step-slide-in      { animation: stepSlideIn     0.28s cubic-bezier(0.22,1,0.36,1) both; }
+.step-slide-in-left { animation: stepSlideInLeft 0.28s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ─── Confetti particles ──────────────────────────────────────────────────── */
+@keyframes confettiFall {
+  0%   { transform: translateY(-10px) rotate(0deg);   opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+}
+
+/* ─── Welcome logo pulse ──────────────────────────────────────────────────── */
+@keyframes logoPulse {
+  0%, 100% { box-shadow: 0 0 40px rgba(124,58,237,0.5); transform: scale(1); }
+  50%       { box-shadow: 0 0 70px rgba(124,58,237,0.8); transform: scale(1.06); }
+}
+.logo-pulse { animation: logoPulse 2.4s ease-in-out infinite; }

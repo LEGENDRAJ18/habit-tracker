@@ -315,7 +315,7 @@ function AuthForm() {
         method: "POST",
         headers: { Authorization: `Bearer ${data.session.access_token}` },
       }).catch(() => {});
-      router.push(`/onboarding/username?next=${encodeURIComponent(nextUrl)}`);
+      router.push("/onboarding");
       router.refresh();
     } else {
       setStep("check-email");

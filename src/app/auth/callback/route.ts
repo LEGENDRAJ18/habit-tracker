@@ -5,7 +5,7 @@ import { sendWelcomeEmail } from "@/lib/email/welcome";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
-  const code  = searchParams.get("code");
+  const code    = searchParams.get("code");
   const rawNext = searchParams.get("next") ?? "/dashboard";
 
   // Prevent open-redirect — only allow relative paths
@@ -21,12 +21,10 @@ export async function GET(request: NextRequest) {
   }
 
   if (code) {
-    // Build the redirect response first so we can attach cookies to it
-    const redirectResponse = NextResponse.redirect(new URL(next, request.url));
+    // Collect cookies from the exchange so we can attach them to whichever
+    // redirect response we build after inspecting the user's profile.
+    const cookieJar: { name: string; value: string; options: Record<string, unknown> }[] = [];
 
-    // Create a Supabase client that reads cookies from the request and
-    // writes session cookies directly onto the redirect response — this
-    // is the only pattern that reliably persists the session in a route handler.
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -36,11 +34,9 @@ export async function GET(request: NextRequest) {
             return request.cookies.getAll();
           },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value }) =>
-              request.cookies.set(name, value)
-            );
-            cookiesToSet.forEach(({ name, value, options }) =>
-              redirectResponse.cookies.set(name, value, options)
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+            cookiesToSet.forEach((c) =>
+              cookieJar.push({ name: c.name, value: c.value, options: (c as Record<string, unknown>) })
             );
           },
         },
@@ -50,7 +46,24 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error && data.user) {
-      // Send welcome email once per account (covers OAuth + email-confirmation flows).
+      // Check if the user has completed onboarding
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("onboarding_completed")
+        .eq("id", data.user.id)
+        .single();
+
+      // New users → onboarding; returning users → their intended destination
+      const destination = profile?.onboarding_completed ? next : "/onboarding";
+      const response    = NextResponse.redirect(new URL(destination, request.url));
+
+      // Attach session cookies to the redirect response
+      for (const { name, value, options } of cookieJar) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        response.cookies.set(name, value, options as any);
+      }
+
+      // Send welcome email once per account (non-blocking)
       if (!data.user.user_metadata?.welcome_sent && data.user.email) {
         try {
           const name: string =
@@ -69,7 +82,7 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      return redirectResponse;
+      return response;
     }
 
     if (error) {
