@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { AVATARS, type AvatarId } from "@/lib/avatars";
+import { friendlyError } from "@/lib/friendlyError";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -86,10 +87,10 @@ function ProgressBar({ step }: { step: number }) {
     <div className="fixed top-0 left-0 right-0 z-50 px-4 pt-4 pb-2">
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-xs text-slate-500">Step {step} of {TOTAL_STEPS}</span>
-          <span className="text-xs text-violet-400 font-medium">{pct}%</span>
+          <span className="text-xs text-slate-300 font-medium">Step {step} of {TOTAL_STEPS}</span>
+          <span className="text-xs text-violet-400 font-semibold">{pct}%</span>
         </div>
-        <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
+        <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-violet-600 to-purple-400 rounded-full transition-all duration-500"
             style={{ width: `${pct}%` }}
@@ -118,10 +119,10 @@ function Step1Welcome({ onNext }: { onNext: () => void }) {
         Welcome to{" "}
         <span className="text-violet-400">HabitAI!</span>{" "}🎉
       </h1>
-      <p className="text-xl text-slate-300 mb-2">
+      <p className="text-xl text-slate-200 mb-2">
         You just made the best decision of your day.
       </p>
-      <p className="text-slate-500 mb-10">
+      <p className="text-slate-400 mb-10">
         Let&apos;s set you up in 60 seconds 🚀
       </p>
 
@@ -135,7 +136,7 @@ function Step1Welcome({ onNext }: { onNext: () => void }) {
         Let&apos;s Go! <ArrowRight className="w-5 h-5" />
       </button>
 
-      <p className="mt-5 text-xs text-slate-600">No credit card · Free forever</p>
+      <p className="mt-5 text-xs text-slate-400">No credit card · Free forever</p>
     </div>
   );
 }
@@ -157,8 +158,8 @@ function Step2Categories({
   return (
     <div className="w-full max-w-lg px-4">
       <div className="text-center mb-6">
-        <h2 className="text-3xl font-black mb-2">What do you want to work on? ✨</h2>
-        <p className="text-slate-400">Pick as many areas as you like</p>
+        <h2 className="text-3xl font-black mb-2 text-white">What do you want to work on? ✨</h2>
+        <p className="text-slate-300">Pick as many areas as you like</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-6">
@@ -226,8 +227,8 @@ function Step3Username({
   return (
     <div className="w-full max-w-md px-4">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-black mb-2">Choose your username 😎</h2>
-        <p className="text-slate-400">This is how friends will find you on HabitAI</p>
+        <h2 className="text-3xl font-black mb-2 text-white">Choose your username 😎</h2>
+        <p className="text-slate-300">This is how friends will find you on HabitAI</p>
       </div>
 
       <div className="bg-[#0c0c18]/90 backdrop-blur-xl border border-violet-800/25 rounded-3xl p-7 shadow-2xl">
@@ -256,7 +257,7 @@ function Step3Username({
 
         <div className="min-h-[1.25rem] mb-6">
           {!username && (
-            <p className="text-[11px] text-slate-600">3–20 characters · letters, numbers, underscores</p>
+            <p className="text-[11px] text-slate-400">3–20 characters · letters, numbers, underscores</p>
           )}
           {username && !isValidFormat && (
             <p className="text-[11px] text-red-400">3–20 chars, letters, numbers, underscores only</p>
@@ -283,7 +284,7 @@ function Step3Username({
 
       <button
         onClick={onNext}
-        className="w-full mt-3 py-2 text-xs text-slate-600 hover:text-slate-400 transition-colors"
+        className="w-full mt-3 py-2 text-xs text-slate-400 hover:text-slate-200 transition-colors"
       >
         Skip for now
       </button>
@@ -305,8 +306,8 @@ function Step4Avatar({
   return (
     <div className="w-full max-w-md px-4">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-black mb-2">Pick your vibe 🎨</h2>
-        <p className="text-slate-400">Choose an avatar that represents you</p>
+        <h2 className="text-3xl font-black mb-2 text-white">Pick your vibe 🎨</h2>
+        <p className="text-slate-300">Choose an avatar that represents you</p>
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-8">
@@ -329,7 +330,7 @@ function Step4Avatar({
               >
                 <span className={`text-3xl leading-none ${av.animClass}`}>{av.emoji}</span>
               </div>
-              <span className="text-xs text-slate-400 font-medium">{av.name}</span>
+              <span className="text-xs text-slate-300 font-medium">{av.name}</span>
               {active && (
                 <div className="w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center">
                   <Check className="w-3 h-3 text-white" />
@@ -377,8 +378,8 @@ function Step5Habit({
   return (
     <div className="w-full max-w-md px-4">
       <div className="text-center mb-6">
-        <h2 className="text-3xl font-black mb-2">Add your first habit! 💪</h2>
-        <p className="text-slate-400 text-sm leading-relaxed">
+        <h2 className="text-3xl font-black mb-2 text-white">Add your first habit! 💪</h2>
+        <p className="text-slate-300 text-sm leading-relaxed">
           Users who add a habit right now are{" "}
           <span className="text-violet-400 font-semibold">3× more likely</span> to stick with it
         </p>
@@ -441,7 +442,7 @@ function Step5Habit({
           }`}>
             {showCustom && <Check className="w-3 h-3 text-white" />}
           </div>
-          <span className="text-sm font-medium text-slate-400">Add my own habit…</span>
+          <span className="text-sm font-medium text-slate-300">Add my own habit…</span>
         </button>
 
         {showCustom && (
@@ -484,7 +485,7 @@ function Step5Habit({
       {!saving && (
         <button
           onClick={() => onComplete(null)}
-          className="w-full mt-3 py-2 text-xs text-slate-600 hover:text-slate-400 transition-colors"
+          className="w-full mt-3 py-2 text-xs text-slate-400 hover:text-slate-200 transition-colors"
         >
           Skip for now
         </button>
@@ -528,8 +529,8 @@ function Step6Done({
         You&apos;re all set,{" "}
         <span className="text-violet-400">{displayName}!</span>{" "}🎉
       </h1>
-      <p className="text-xl text-slate-300 mb-2">Your journey starts NOW.</p>
-      <p className="text-slate-500 mb-10">
+      <p className="text-xl text-slate-200 mb-2">Your journey starts NOW.</p>
+      <p className="text-slate-300 mb-10">
         Build streaks, earn XP, and crush your goals — one day at a time.
       </p>
 
@@ -644,7 +645,7 @@ function OnboardingFlow() {
       const { error: dbErr } = await supabase
         .from("profiles")
         .upsert(profileUpdate, { onConflict: "id" });
-      if (dbErr) throw new Error(dbErr.message);
+      if (dbErr) throw new Error(friendlyError(dbErr.message));
 
       if (habit) {
         await supabase.from("habits").insert({
@@ -659,7 +660,7 @@ function OnboardingFlow() {
       setDirection("fwd");
       setStep(6);
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : "Something went wrong. Try again.");
+      setSaveError(friendlyError(e));
     } finally {
       setSaving(false);
     }
@@ -710,7 +711,7 @@ function OnboardingFlow() {
         <button
           onClick={goBack}
           className="fixed top-14 left-4 z-50 flex items-center gap-1.5 text-sm
-                     text-slate-500 hover:text-white transition-colors p-2"
+                     text-slate-300 hover:text-white transition-colors p-2"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
