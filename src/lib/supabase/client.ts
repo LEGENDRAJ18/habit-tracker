@@ -9,6 +9,7 @@ export function createClient() {
         persistSession:     true,
         autoRefreshToken:   true,
         detectSessionInUrl: true,
+        flowType:           "pkce",
       },
       // Keep the session cookie alive for a year so PWA users stay logged in
       cookieOptions: {
