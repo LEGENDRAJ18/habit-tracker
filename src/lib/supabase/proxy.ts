@@ -10,6 +10,7 @@ const PROTECTED = [
   "/friends",
   "/calendar",
   "/onboarding",
+  "/admin",
 ];
 
 const AUTH_ROUTES = ["/auth/login", "/auth/signup"];
