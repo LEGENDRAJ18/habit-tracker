@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Users, Flame, Zap, Send, Check, X, Loader2, UserPlus, Trophy, UserSearch, ChevronDown, Share2, Copy, Mail } from "lucide-react";
+import { Users, Flame, Zap, Send, Check, X, Loader2, UserPlus, Trophy, UserSearch, ChevronDown, Share2, Copy, Mail, Swords } from "lucide-react";
 import posthog from "posthog-js";
 import { friendlyError } from "@/lib/friendlyError";
+import { useProfile } from "@/hooks/useProfile";
+import HabitBattleModal from "@/components/dashboard/HabitBattleModal";
 
 interface FriendStat {
   id: string;
@@ -295,9 +297,11 @@ function ShareModal({ onClose }: { onClose: () => void }) {
 // ─── Friends Page ────────────────────────────────────────────────────────────
 
 export default function FriendsPage() {
+  const { tier } = useProfile();
   const [friends, setFriends]   = useState<FriendStat[]>([]);
   const [pending, setPending]   = useState<PendingFriend[]>([]);
   const [loading, setLoading]   = useState(true);
+  const [showBattleModal, setShowBattleModal] = useState(false);
 
   const [inviteInput, setInviteInput]           = useState("");
   const [inviting, setInviting]                 = useState(false);
@@ -439,6 +443,14 @@ export default function FriendsPage() {
         />
       )}
       {showShareModal && <ShareModal onClose={() => setShowShareModal(false)} />}
+      {showBattleModal && (
+        <HabitBattleModal
+          tier={tier}
+          friends={friends.map((f) => ({ id: f.id, name: f.name, username: f.username ?? f.name }))}
+          onClose={() => setShowBattleModal(false)}
+          onUpgrade={() => setShowBattleModal(false)}
+        />
+      )}
 
       <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-8 pb-3 flex items-start justify-between">
@@ -446,13 +458,22 @@ export default function FriendsPage() {
             <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">👥 Friends</h1>
             <p className="text-sm text-slate-500 mt-1.5">Compete and stay accountable with your friends</p>
           </div>
-          <button
-            onClick={() => setShowShareModal(true)}
-            className="flex items-center gap-2 px-3.5 py-2 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-600/30 text-violet-300 text-sm font-medium rounded-xl transition-all flex-shrink-0 mt-1"
-          >
-            <Share2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Invite</span>
-          </button>
+          <div className="flex items-center gap-2 mt-1">
+            <button
+              onClick={() => setShowBattleModal(true)}
+              className="flex items-center gap-2 px-3.5 py-2 bg-violet-950/40 hover:bg-violet-900/40 border border-violet-700/30 text-violet-300 text-sm font-medium rounded-xl transition-all flex-shrink-0"
+            >
+              <Swords className="w-4 h-4" />
+              <span className="hidden sm:inline">Battles</span>
+            </button>
+            <button
+              onClick={() => setShowShareModal(true)}
+              className="flex items-center gap-2 px-3.5 py-2 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-600/30 text-violet-300 text-sm font-medium rounded-xl transition-all flex-shrink-0"
+            >
+              <Share2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Invite</span>
+            </button>
+          </div>
         </div>
 
         <main className="max-w-2xl mx-auto px-4 sm:px-6 pb-8 space-y-6">

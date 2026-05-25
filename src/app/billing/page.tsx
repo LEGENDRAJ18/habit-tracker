@@ -41,7 +41,7 @@ function PlanCard({ tier, current }: { tier: Plan; current: boolean }) {
   const meta = PLAN_META[tier];
   const { formatPrice, currency, loading: currencyLoading } = useCurrency();
   const planPrice = tier === "free" ? "$0/mo"
-    : tier === "plus" ? (currencyLoading ? "$5.99/mo" : `${formatPrice(5.99)}/mo`)
+    : tier === "plus" ? (currencyLoading ? "$4.99/mo" : `${formatPrice(4.99)}/mo`)
     : (currencyLoading ? "$9.99/mo" : `${formatPrice(9.99)}/mo`);
   return (
     <div className={`relative bg-[#0f0f1a] border ${meta.border} rounded-2xl p-5 flex items-start gap-4 ${current ? "ring-2 ring-violet-600/30" : ""}`}>
@@ -257,8 +257,8 @@ export default function BillingPage() {
                           <p className={`font-bold ${meta.color}`}>{meta.label}</p>
                           <p className="text-xs text-slate-500">
                             {currencyLoading
-                              ? (plan === "plus" ? "$5.99/mo" : "$9.99/mo")
-                              : `${formatPrice(plan === "plus" ? 5.99 : 9.99)}/mo`}
+                              ? (plan === "plus" ? "$4.99/mo" : "$9.99/mo")
+                              : `${formatPrice(plan === "plus" ? 4.99 : 9.99)}/mo`}
                           </p>
                           {!currencyLoading && (
                             <p className="text-[9px] text-slate-700 mt-0.5">

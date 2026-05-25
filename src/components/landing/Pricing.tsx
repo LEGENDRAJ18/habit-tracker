@@ -20,29 +20,31 @@ function Soon() {
 type FeatureItem = { label: string; soon?: boolean };
 
 const FREE_FEATURES: FeatureItem[] = [
-  { label: "Up to 5 active habits" },
-  { label: "Basic streak counters" },
-  { label: "7-day completion heatmap" },
-  { label: "XP & level system" },
+  { label: "Up to 3 active habits" },
+  { label: "Identity Score per habit" },
+  { label: "Basic Habit DNA preview" },
+  { label: "Streaks & XP level system" },
   { label: "Friends & leaderboard" },
 ];
 
 const PLUS_FEATURES: FeatureItem[] = [
   { label: "Unlimited habits" },
-  { label: "Full analytics dashboard" },
+  { label: "Full Habit DNA card + shareable" },
+  { label: "Habit Battles with friends" },
+  { label: "Public Commitment Contracts" },
   { label: "5 AI coaching insights per day" },
   { label: "Streak protection (freeze)" },
   { label: "Daily email reminders" },
-  { label: "Full habit history" },
 ];
 
 const PRO_FEATURES: FeatureItem[] = [
   { label: "Everything in Plus" },
+  { label: "Voice check-ins with AI coaching" },
+  { label: "Deep AI memory & pattern tracking" },
+  { label: "Monthly Wrapped summary" },
   { label: "Unlimited AI coaching insights" },
   { label: "Weekly AI email report" },
   { label: "CSV data export" },
-  { label: "Custom recovery plans" },
-  { label: "Priority support" },
 ];
 
 function PaidPlanButton({ plan, priceId, primary }: { plan: string; priceId: string; primary?: boolean }) {
@@ -102,7 +104,7 @@ function PriceDisclaimer({ currency }: { currency: string }) {
 
 export default function Pricing() {
   const { priceParts, currency, loading } = useCurrency();
-  const plus = priceParts(5.99);
+  const plus = priceParts(4.99);
   const pro  = priceParts(9.99);
 
   return (
@@ -171,11 +173,11 @@ export default function Pricing() {
             </div>
             <p className="text-sm font-semibold text-violet-200 mb-2">The Optimizer</p>
             <div className="mb-0.5 flex items-baseline gap-1.5 flex-wrap">
-              <span className="text-4xl font-extrabold text-white">{loading ? "$5.99" : plus.main}</span>
+              <span className="text-4xl font-extrabold text-white">{loading ? "$4.99" : plus.main}</span>
               <span className="text-slate-400 text-sm">{loading ? "" : plus.suffix} / mo</span>
             </div>
             <PriceDisclaimer currency={currency} />
-            <p className="text-xs text-slate-500 mt-3 mb-4">For the committed tracker who wants zero limits.</p>
+            <p className="text-xs text-slate-500 mt-3 mb-4">Battles, DNA card, contracts — everything to stay accountable.</p>
 
             <PaidPlanButton plan="Plus" priceId={process.env.NEXT_PUBLIC_STRIPE_PLUS_PRICE_ID!} />
 

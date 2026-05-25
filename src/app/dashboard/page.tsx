@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { Plus, Loader2, AlertCircle, CheckCircle2, Shield, Share2, Sparkles, Search, X, ClipboardList, Crown, Flame } from "lucide-react";
+import { Plus, Loader2, AlertCircle, CheckCircle2, Shield, Share2, Sparkles, Search, X, ClipboardList, Crown, Flame, Brain, Calendar } from "lucide-react";
 import type { Plan } from "@/types";
 import { useHabits } from "@/hooks/useHabits";
 import { useProfile } from "@/hooks/useProfile";
@@ -30,6 +30,9 @@ import { useAIInsight } from "@/contexts/AIInsightContext";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import PushPermissionPrompt from "@/components/pwa/PushPermissionPrompt";
 import { createClient } from "@/lib/supabase/client";
+import MonthlyWrapped from "@/components/dashboard/MonthlyWrapped";
+import HabitDNAModal from "@/components/dashboard/HabitDNAModal";
+import CommitmentModal from "@/components/dashboard/CommitmentModal";
 
 // ─── Greeting & quote ─────────────────────────────────────────────────────────
 
@@ -344,7 +347,7 @@ function getEmptyStateRecs(goals: string[]) {
 }
 
 export default function DashboardPage() {
-  const { habits, loading, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength, refetch } =
+  const { habits, loading, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength, refetch, historicalLogs } =
     useHabits();
   const { tier, profileLoading, onboardingCompleted, goals, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt } = useProfile();
   const { xp, level, achievements, totalCompletions, justLeveledUp, isDailyAchieved, onHabitCompleted, checkMilestones, dismissLevelUp } = useXP();
@@ -403,6 +406,9 @@ export default function DashboardPage() {
 
   const [firstHabitWowName,     setFirstHabitWowName]     = useState<string | null>(null);
   const [showFirstWeekCheckin,  setShowFirstWeekCheckin]  = useState(false);
+  const [showMonthlyWrapped,    setShowMonthlyWrapped]    = useState(false);
+  const [showHabitDNA,          setShowHabitDNA]          = useState(false);
+  const [commitmentHabit, setCommitmentHabit] = useState<{ id: string; name: string; isPublic: boolean; commitmentText: string | null } | null>(null);
 
   const isPaid = tier === "plus" || tier === "pro";
 
@@ -547,6 +553,17 @@ export default function DashboardPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [xp]);
 
+  // Monthly Wrapped — auto-show on 1st of month for Pro users
+  useEffect(() => {
+    if (tier !== "pro" || loading) return;
+    const today = new Date();
+    if (today.getDate() !== 1) return;
+    const key = `monthly_wrapped_shown_${today.getFullYear()}_${today.getMonth()}`;
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, "1");
+    setShowMonthlyWrapped(true);
+  }, [tier, loading]);
+
   // Daily check-in: detect missed habits from yesterday (once per day)
   useEffect(() => {
     if (loading || habits.length === 0) return;
@@ -667,6 +684,28 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2 mb-1">
             <h2 className="text-lg font-semibold text-white">Today&apos;s Habits</h2>
             <div className="ml-auto flex items-center gap-2">
+              {isPaid && habits.length > 0 && (
+                <button
+                  onClick={() => setShowHabitDNA(true)}
+                  title="Habit DNA"
+                  aria-label="View your Habit DNA"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-violet-800/30 text-violet-400 hover:text-violet-200 hover:border-violet-600/50 hover:bg-violet-950/20 transition-all text-xs font-medium"
+                >
+                  <Brain className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="hidden sm:inline">DNA</span>
+                </button>
+              )}
+              {tier === "pro" && (
+                <button
+                  onClick={() => setShowMonthlyWrapped(true)}
+                  title="Monthly Wrapped"
+                  aria-label="View monthly wrapped"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-amber-700/30 text-amber-400 hover:text-amber-200 hover:border-amber-600/50 hover:bg-amber-950/20 transition-all text-xs font-medium"
+                >
+                  <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="hidden sm:inline">Wrapped</span>
+                </button>
+              )}
               <button
                 onClick={handleAddClick}
                 data-tour="add-habit"
@@ -898,6 +937,13 @@ export default function DashboardPage() {
                 isProtected={info.freezeApplied}
                 stackAfterName={stackParent?.name}
                 tier={tier}
+                allLogs={historicalLogs}
+                onCommitment={() => setCommitmentHabit({
+                  id: habit.id,
+                  name: habit.name,
+                  isPublic: habit.is_public ?? false,
+                  commitmentText: habit.commitment_text ?? null,
+                })}
                 onUpgradePro={() => openUpgradeModal("pro_feature", tier === "plus")}
                 onSmartTimingToggle={async (enabled) => {
                   const res = await fetch(`/api/habits/${habit.id}/smart-timing`, {
@@ -1047,7 +1093,7 @@ export default function DashboardPage() {
                   ? <span className="text-slate-600">Unlimited insights · Pro</span>
                   : isPaid
                   ? <span className="text-slate-600">5 insights / day · Plus</span>
-                  : <span className="text-violet-400/70">✨ Starting at $5.99/mo · 7-day money-back</span>}
+                  : <span className="text-violet-400/70">✨ Starting at $4.99/mo · 7-day money-back</span>}
               </p>
             </div>
           </div>
@@ -1246,6 +1292,37 @@ export default function DashboardPage() {
       {/* First-visit onboarding tour (3 steps) */}
       {!loading && !profileLoading && (
         <OnboardingTour habitCount={habits.length} signedUpAt={signedUpAt} />
+      )}
+
+      {showHabitDNA && (
+        <HabitDNAModal
+          habits={habits}
+          logs={historicalLogs}
+          tier={tier}
+          totalXP={xp}
+          onClose={() => setShowHabitDNA(false)}
+          onUpgrade={() => { setShowHabitDNA(false); openUpgradeModal("habits"); }}
+        />
+      )}
+
+      {showMonthlyWrapped && (
+        <MonthlyWrapped
+          tier={tier}
+          onClose={() => setShowMonthlyWrapped(false)}
+        />
+      )}
+
+      {commitmentHabit && (
+        <CommitmentModal
+          habitId={commitmentHabit.id}
+          habitName={commitmentHabit.name}
+          isPublic={commitmentHabit.isPublic}
+          commitmentText={commitmentHabit.commitmentText}
+          tier={tier}
+          onSave={() => { setCommitmentHabit(null); refetch(); }}
+          onClose={() => setCommitmentHabit(null)}
+          onUpgrade={() => { setCommitmentHabit(null); openUpgradeModal("habits"); }}
+        />
       )}
     </div>
   );

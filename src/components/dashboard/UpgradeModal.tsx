@@ -227,7 +227,7 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
   const copy = REASON_COPY[reason];
   const { formatPrice, currency, loading: currencyLoading } = useCurrency();
   const { tier: currentTier } = useProfile();
-  const plusPrice = currencyLoading ? "$5.99" : formatPrice(5.99);
+  const plusPrice = currencyLoading ? "$4.99" : formatPrice(4.99);
   const proPrice  = currencyLoading ? "$9.99"  : formatPrice(9.99);
 
   const handleCheckout = async (plan: "plus" | "pro") => {
@@ -361,14 +361,14 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
                   {[
                     { f: "Everything in Free", ok: true },
                     { f: "Unlimited habits", ok: true },
+                    { f: "Full Habit DNA card", ok: true },
+                    { f: "Habit Battles with friends", ok: true },
+                    { f: "Public Commitment Contracts", ok: true },
                     { f: "AI coaching (5/day)", ok: true },
                     { f: "Streak protection", ok: true },
-                    { f: "Friends & leaderboard", ok: true },
-                    { f: "Email reminders", ok: true },
-                    { f: "AI Weekly Game Plan", ok: false },
-                    { f: "Deep Analytics & Trends", ok: false },
-                    { f: "Smart Notifications", ok: false },
-                    { f: "AI Habit Suggestions", ok: false },
+                    { f: "Voice check-ins", ok: false },
+                    { f: "Deep AI memory", ok: false },
+                    { f: "Monthly Wrapped", ok: false },
                   ].map(({ f, ok }) => (
                     <li key={f} className={`flex items-center gap-1.5 text-[10px] ${ok ? "text-slate-400" : "text-slate-600"}`}>
                       {ok ? <Check className="w-3 h-3 text-violet-500 flex-shrink-0" /> : <Minus className="w-3 h-3 text-slate-700 flex-shrink-0" />}
@@ -419,12 +419,12 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
               <ul className="space-y-1 mb-4">
                 {[
                   { f: "Everything in Plus" },
-                  { f: "AI Weekly Game Plan (weekly)" },
-                  { f: "Deep Analytics & Trends" },
-                  { f: "Smart Habit Notifications" },
-                  { f: "AI Habit Suggestions" },
+                  { f: "Voice check-ins with AI coaching" },
+                  { f: "Deep AI memory & pattern recall" },
+                  { f: "Monthly Wrapped summary" },
                   { f: "Unlimited AI insights" },
-                  { f: "Priority support" },
+                  { f: "Weekly AI email report" },
+                  { f: "CSV export & priority support" },
                 ].map(({ f }) => (
                   <li key={f} className="flex items-center gap-1.5 text-[10px] text-amber-200/80">
                     <Check className="w-3 h-3 text-amber-400 flex-shrink-0" />{f}

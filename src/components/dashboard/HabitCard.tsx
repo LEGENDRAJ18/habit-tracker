@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Trash2, Check, Flame, Snowflake, ArrowRight, Pencil, X, Loader2, Zap } from "lucide-react";
+import { Trash2, Check, Flame, Snowflake, ArrowRight, Pencil, X, Loader2, Zap, Globe } from "lucide-react";
 import type { Habit, Plan } from "@/types";
+import { useIdentityScore } from "@/hooks/useIdentityScore";
 
 interface Props {
   habit: Habit;
@@ -13,12 +14,14 @@ interface Props {
   stackAfterName?: string;
   isEditing?: boolean;
   tier?: Plan;
+  allLogs?: Array<{ habit_id: string; completed_at: string }>;
   onToggle: () => void;
   onDelete: () => void;
   onCompleted?: () => void;
   onRename?: (newName: string, validityScore: "valid" | "partial" | "invalid") => Promise<void>;
   onSmartTimingToggle?: (enabled: boolean) => Promise<void>;
   onUpgradePro?: () => void;
+  onCommitment?: () => void;
   isTourTarget?: boolean;
 }
 
@@ -69,9 +72,10 @@ function getTimeEmoji(whenTime: string | null): string | null {
 
 export default function HabitCard({
   habit, completed, streak, strength, isProtected, stackAfterName, isEditing,
-  tier, onToggle, onDelete, onCompleted, onRename, onSmartTimingToggle, onUpgradePro,
-  isTourTarget,
+  tier, allLogs = [], onToggle, onDelete, onCompleted, onRename, onSmartTimingToggle, onUpgradePro,
+  onCommitment, isTourTarget,
 }: Props) {
+  const { score: identityScore, phrase: identityPhrase } = useIdentityScore(habit, allLogs);
   const [deleting, setDeleting]     = useState(false);
   const [showParticles, setShowParticles] = useState(false);
   const [justCompleted, setJustCompleted] = useState(false);
@@ -293,6 +297,17 @@ export default function HabitCard({
             </p>
           )}
 
+          {/* Public commitment badge */}
+          {!editMode && habit.is_public && (
+            <button
+              onClick={onCommitment}
+              className="inline-flex items-center gap-1 mt-0.5 text-[10px] text-emerald-400/70 hover:text-emerald-300 transition-colors"
+              title="Public commitment"
+            >
+              <Globe className="w-2.5 h-2.5" /> Public
+            </button>
+          )}
+
           {!editMode && !completed && validity && validity !== "valid" && (
             <span className={`inline-flex items-center gap-1 text-[10px] border px-1.5 py-0.5 rounded-full mt-0.5 ${
               validity === "partial"
@@ -391,19 +406,34 @@ export default function HabitCard({
         </div>
       )}
 
-      {/* Habit Strength bar — desktop only */}
-      <div className="hidden sm:block px-4 pb-3"
-        onMouseEnter={() => setShowStrTooltip(true)}
-        onMouseLeave={() => setShowStrTooltip(false)}
-      >
-        <div className="relative">
+      {/* Identity Score + Habit Strength — desktop only */}
+      <div className="hidden sm:block px-4 pb-3">
+        {/* Identity Score */}
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[10px] text-violet-400/60 font-medium truncate max-w-[70%]">{identityPhrase}</span>
+          <div className="flex items-center gap-1">
+            <div className="w-16 h-1 bg-violet-950/60 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all duration-700"
+                style={{ width: `${identityScore}%` }}
+              />
+            </div>
+            <span className="text-[10px] font-bold text-violet-400">{identityScore}%</span>
+          </div>
+        </div>
+        {/* Strength bar */}
+        <div
+          className="relative"
+          onMouseEnter={() => setShowStrTooltip(true)}
+          onMouseLeave={() => setShowStrTooltip(false)}
+        >
           <div className="w-full h-1 bg-violet-950/50 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-700 ${strengthColor(strength)}`}
               style={{ width: `${strength}%` }}
             />
           </div>
-          <div className={`flex items-center justify-between mt-1 transition-opacity duration-150 ${showStrTooltip ? "opacity-100" : "opacity-0"}`}>
+          <div className={`flex items-center justify-between mt-0.5 transition-opacity duration-150 ${showStrTooltip ? "opacity-100" : "opacity-0"}`}>
             <span className="text-[9px] text-slate-600 font-semibold uppercase tracking-wider">
               Habit Strength · {strengthLabel(strength)}
             </span>

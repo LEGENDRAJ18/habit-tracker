@@ -84,10 +84,18 @@ export async function POST(request: NextRequest) {
     // Fetch user data server-side
     const admin = createAdminClient();
 
+    // Memory mode — Pro only, fetch and update AI memory
+    if (mode === "memory_coaching") {
+      const { data: tierData } = await admin.from("profiles").select("subscription_tier").eq("id", user.id).single();
+      if (!["plus", "pro"].includes(tierData?.subscription_tier ?? "free")) {
+        return NextResponse.json({ error: "Memory coaching is a Pro feature." }, { status: 403 });
+      }
+    }
+
     const [{ data: habits }, { data: rawLogs }, { data: profile }] = await Promise.all([
       admin.from("habits").select("id, name, habit_strength, created_at").eq("user_id", user.id).order("created_at"),
-      admin.from("habit_logs").select("habit_id, completed_at").eq("user_id", user.id).gte("completed_at", daysAgo(30)),
-      admin.from("profiles").select("goal, goals, subscription_tier").eq("id", user.id).single(),
+      admin.from("habit_logs").select("habit_id, completed_at").eq("user_id", user.id).gte("completed_at", daysAgo(90)),
+      admin.from("profiles").select("goal, goals, subscription_tier, ai_memory").eq("id", user.id).single(),
     ]);
 
     // Tier gate — free users cannot use AI insights
@@ -234,6 +242,61 @@ Give a recovery plan.`;
 
       const result = await callOpenAI(systemPrompt, userPrompt);
       return NextResponse.json({ mode: "streak_analysis", remaining, ...result });
+    }
+
+    // ── DEEP MEMORY COACHING (Pro) ────────────────────────────────────────────
+    if (mode === "memory_coaching") {
+      const memory = (Array.isArray(profile?.ai_memory) ? profile.ai_memory : []) as Array<{
+        date: string; summary: string; patterns: string[];
+      }>;
+
+      const memoryContext = memory.slice(-3).map((m) =>
+        `Session on ${m.date}: ${m.summary}. Patterns: ${m.patterns.join(", ")}`
+      ).join("\n");
+
+      const systemPrompt = `You are an AI coach who deeply knows this user. You remember their past sessions and can call out recurring patterns — gently but honestly.
+
+${memory.length > 0 ? `PAST SESSIONS:\n${memoryContext}` : "This is the first coaching session."}
+
+Respond with valid JSON:
+{
+  "struggling": "1-2 sentences referencing past patterns if applicable",
+  "fixes": ["specific fix 1", "specific fix 2", "specific fix 3"],
+  "encouragement": "1-2 sentences that reference something specific from their journey",
+  "patternInsight": "1 sentence calling out a recurring pattern you've noticed (null if first session)",
+  "sevenDayPlan": [
+    {"day": 1, "action": "specific action"},
+    {"day": 2, "action": "specific action"},
+    {"day": 3, "action": "specific action"},
+    {"day": 4, "action": "specific action"},
+    {"day": 5, "action": "specific action"},
+    {"day": 6, "action": "specific action"},
+    {"day": 7, "action": "specific action"}
+  ]
+}`;
+
+      const userPrompt = `User's goals: ${goalsText}
+Total completions (90 days): ${totalCompletions}
+Habits: ${habitSummaries.map((h) => `"${h.name}": ${h.rate7d}% this week, ${h.streak}-day streak`).join("; ")}
+
+Give deep personalized coaching, referencing what you know about this user.`;
+
+      const result = await callOpenAI(systemPrompt, userPrompt) as Record<string, unknown> & {
+        struggling?: string; patternInsight?: string;
+      };
+
+      // Save session to memory
+      const newMemory = {
+        date: new Date().toISOString().split("T")[0],
+        summary: (result.struggling ?? "Session completed") as string,
+        patterns: habitSummaries
+          .filter((h) => h.rate7d < 40)
+          .map((h) => `struggles with "${h.name}" on ${h.rate7d}% of days`),
+      };
+      const updatedMemory = [...memory.slice(-9), newMemory];
+      void admin.from("profiles").update({ ai_memory: updatedMemory }).eq("id", user.id);
+
+      return NextResponse.json({ mode: "memory_coaching", remaining, ...result });
     }
 
     return NextResponse.json({ error: "Invalid mode" }, { status: 400 });

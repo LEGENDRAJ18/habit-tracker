@@ -54,9 +54,10 @@ export function useHabits() {
       return;
     }
 
-    const today         = new Date().toISOString().split("T")[0];
-    const tomorrow      = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+    const today            = new Date().toISOString().split("T")[0];
+    const tomorrow         = new Date(Date.now() + 86400000).toISOString().split("T")[0];
     const thirtyOneDaysAgo = new Date(Date.now() - 31 * 86400000).toISOString().split("T")[0];
+    const ninetyDaysAgo    = new Date(Date.now() - 90 * 86400000).toISOString().split("T")[0];
 
     const [
       { data: habitsData, error: hErr },
@@ -78,7 +79,7 @@ export function useHabits() {
         .from("habit_logs")
         .select("habit_id, completed_at")
         .eq("user_id", user.id)
-        .gte("completed_at", thirtyOneDaysAgo)
+        .gte("completed_at", ninetyDaysAgo)
         .order("completed_at", { ascending: false }),
     ]);
 
@@ -90,9 +91,10 @@ export function useHabits() {
 
     // Sync habit_strength in DB: apply missed-day penalties accumulated while user was away
     if (loadedHabits.length > 0) {
-      // Build per-habit date sets from historical logs
+      // Build per-habit date sets from 31-day logs (strength uses 31-day window)
+      const recentHist = loadedHist.filter((l) => l.completed_at.split("T")[0] >= thirtyOneDaysAgo);
       const dateMap = new Map<string, string[]>();
-      for (const log of loadedHist) {
+      for (const log of recentHist) {
         const d   = log.completed_at.split("T")[0];
         const arr = dateMap.get(log.habit_id) ?? [];
         if (!arr.includes(d)) arr.push(d);
@@ -460,6 +462,7 @@ export function useHabits() {
   return {
     habits,
     todayLogs,
+    historicalLogs,
     loading,
     error,
     completedCount,
