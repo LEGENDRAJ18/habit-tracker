@@ -33,6 +33,7 @@ import { createClient } from "@/lib/supabase/client";
 import MonthlyWrapped from "@/components/dashboard/MonthlyWrapped";
 import HabitDNAModal from "@/components/dashboard/HabitDNAModal";
 import CommitmentModal from "@/components/dashboard/CommitmentModal";
+import MoodCheckin from "@/components/dashboard/MoodCheckin";
 
 // ─── Greeting & quote ─────────────────────────────────────────────────────────
 
@@ -769,6 +770,9 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+
+        {/* Mood check-in */}
+        {!loading && habits.length > 0 && <MoodCheckin />}
 
         {/* Daily AI check-in card */}
         {checkinHabit && isPaid && (

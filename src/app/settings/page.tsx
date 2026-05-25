@@ -675,10 +675,33 @@ function PlanTab({
   reminderEnabled: boolean; reminderHour: number; reminderMinute: number;
   saveReminderPrefs: (enabled: boolean, hour: number, minute?: number) => Promise<void>;
 }) {
+  const supabase = createClient();
   const isPaid = tier === "plus" || tier === "pro";
   const { formatPrice, currency, loading: currencyLoading } = useCurrency();
   const plusPrice = currencyLoading ? "$5.99" : formatPrice(5.99);
   const proPrice  = currencyLoading ? "$9.99"  : formatPrice(9.99);
+
+  const [weeklyEmail,    setWeeklyEmail]    = useState(false);
+  const [streakRoast,    setStreakRoast]    = useState(false);
+  const [togglesLoaded,  setTogglesLoaded]  = useState(false);
+
+  useEffect(() => {
+    supabase.from("profiles").select("weekly_email_enabled, streak_roast_enabled").single()
+      .then(({ data }) => {
+        if (data) {
+          setWeeklyEmail(data.weekly_email_enabled ?? false);
+          setStreakRoast(data.streak_roast_enabled ?? false);
+        }
+        setTogglesLoaded(true);
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function saveToggle(field: "weekly_email_enabled" | "streak_roast_enabled", value: boolean) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("profiles").update({ [field]: value }).eq("id", user.id);
+  }
 
   const planInfo = {
     free:  { label: "Free",  badge: "bg-slate-800 text-slate-300 border-slate-700",  desc: "Up to 3 habits, basic streak tracking" },
@@ -785,6 +808,32 @@ function PlanTab({
             <p className="text-xs text-slate-500">Download your full habit history as CSV. Exclusive to Pro.</p>
           </div>
         )
+      )}
+
+      {/* Notification preferences */}
+      {togglesLoaded && (
+        <div className={cardCls} style={{ padding: "1.25rem" }}>
+          <div className="flex items-center gap-2 mb-4">
+            <Bell className="w-4 h-4 text-violet-400" />
+            <p className="text-sm font-semibold text-white">Notification Preferences</p>
+          </div>
+          <div className="space-y-4 divide-y divide-violet-900/20">
+            <ToggleRow
+              label="Weekly AI Email Report"
+              sub="Every Sunday — personalised summary of your week, stats, and one tip. Sent to your account email."
+              value={weeklyEmail}
+              onChange={(v) => { setWeeklyEmail(v); void saveToggle("weekly_email_enabled", v); }}
+            />
+            <div className="pt-4">
+              <ToggleRow
+                label="Streak Roast Notifications"
+                sub="When you break a streak, your friends get a fun notification to nudge you. All in good spirit!"
+                value={streakRoast}
+                onChange={(v) => { setStreakRoast(v); void saveToggle("streak_roast_enabled", v); }}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

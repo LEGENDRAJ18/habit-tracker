@@ -120,6 +120,116 @@ function getGoalObservation(ids: string[]): string | null {
   return null;
 }
 
+// ─── Student Success Pack ─────────────────────────────────────────────────────
+
+const STUDENT_HABITS = [
+  { emoji: "📚", name: "Study 2 hours daily",            desc: "Deep focused study sessions"   },
+  { emoji: "😴", name: "Sleep 8 hours",                  desc: "Recovery for peak performance"  },
+  { emoji: "🏃", name: "Exercise 30 minutes",            desc: "Body and brain in sync"         },
+  { emoji: "📵", name: "No phone 1 hour before bed",     desc: "Protect your sleep quality"    },
+  { emoji: "📖", name: "Read 20 minutes",                desc: "Compound learning every day"   },
+  { emoji: "📝", name: "Review notes daily",             desc: "Spaced repetition builds mastery" },
+];
+
+function StudentPack({ onNext, onSkip }: { onNext: () => void; onSkip: () => void }) {
+  const [loading,  setLoading]  = useState(false);
+  const [done,     setDone]     = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  async function loadPack() {
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: existing } = await supabase.from("habits").select("name").eq("user_id", user.id);
+      const existingNames = new Set((existing ?? []).map((h: { name: string }) => h.name));
+      const toInsert = STUDENT_HABITS
+        .filter((h) => !existingNames.has(h.name))
+        .map((h) => ({ user_id: user.id, name: h.name, description: h.desc, frequency: "daily" as const }));
+      if (toInsert.length > 0) await supabase.from("habits").insert(toInsert);
+      setDone(true);
+    } finally { setLoading(false); }
+  }
+
+  if (done) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-gradient-to-b from-emerald-950/60 to-[#0f0f1a] border border-emerald-600/30 rounded-2xl p-5 text-left">
+          <div className="flex items-center gap-2.5 mb-3">
+            <span className="text-2xl leading-none">🎓</span>
+            <div>
+              <p className="text-sm font-bold text-emerald-300">Pack loaded!</p>
+              <p className="text-xs text-slate-500">{STUDENT_HABITS.length} habits added to your dashboard</p>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            {STUDENT_HABITS.map((h) => (
+              <div key={h.name} className="flex items-center gap-2 text-xs text-slate-400">
+                <Check className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                <span>{h.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <button type="button" onClick={onNext}
+          className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-violet-900/30"
+        >
+          Continue <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Featured pack */}
+      <div
+        className="bg-gradient-to-br from-violet-950/60 via-[#0f0f1a] to-indigo-950/30 border border-violet-500/30 rounded-2xl p-5 text-left cursor-pointer"
+        onClick={() => setExpanded((v) => !v)}
+        style={{ boxShadow: "0 0 30px rgba(139,92,246,0.12)" }}
+      >
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2.5">
+            <span className="text-3xl leading-none">🎓</span>
+            <div>
+              <p className="text-base font-bold text-white">Student Success Pack</p>
+              <p className="text-xs text-violet-400">{STUDENT_HABITS.length} science-backed habits · One click setup</p>
+            </div>
+          </div>
+          <span className="text-[10px] font-bold bg-emerald-600/20 text-emerald-400 border border-emerald-600/30 px-2 py-0.5 rounded-full flex-shrink-0">FREE</span>
+        </div>
+        {expanded && (
+          <div className="mt-3 space-y-2 pt-3 border-t border-violet-800/30">
+            {STUDENT_HABITS.map((h) => (
+              <div key={h.name} className="flex items-center gap-2.5">
+                <span className="text-base leading-none">{h.emoji}</span>
+                <div>
+                  <p className="text-xs font-semibold text-white">{h.name}</p>
+                  <p className="text-[10px] text-slate-600">{h.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <button type="button" onClick={() => void loadPack()} disabled={loading}
+        className="w-full py-3.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-60 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-violet-900/30"
+      >
+        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>🎓</span>}
+        {loading ? "Loading…" : "Load Student Success Pack"}
+      </button>
+
+      <button type="button" onClick={onSkip}
+        className="w-full py-2.5 text-slate-500 hover:text-slate-300 text-sm transition-colors"
+      >
+        Skip — I{"'"}ll set up my own habits
+      </button>
+    </div>
+  );
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 interface Props { onComplete: () => void; }
@@ -236,7 +346,7 @@ export default function OnboardingModal({ onComplete }: Props) {
             </div>
           )}
 
-          {/* ── Step 2: Your AI coach is ready ───────────────────────────── */}
+          {/* ── Step 2: Your AI coach + Student Pack ─────────────────────── */}
           {step === 2 && (
             <div className="text-center">
               <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
@@ -245,33 +355,12 @@ export default function OnboardingModal({ onComplete }: Props) {
               <h1 className="text-3xl font-extrabold text-white mb-3 leading-tight">
                 Your AI coach<br />is ready
               </h1>
-              <p className="text-slate-400 text-sm mb-7 leading-relaxed">
+              <p className="text-slate-400 text-sm mb-5 leading-relaxed">
                 It analyses your habits, spots patterns, and delivers a <span className="text-violet-300 font-semibold">personalised weekly game plan</span> — tailored exactly to where you are.
               </p>
 
-              <div className="bg-gradient-to-b from-violet-950/60 to-[#0f0f1a] border border-violet-600/30 rounded-2xl px-6 py-5 mb-8 text-left"
-                   style={{ boxShadow: "0 0 40px rgba(139,92,246,0.1)" }}>
-                <p className="text-xs text-violet-400 font-bold uppercase tracking-wider mb-3">What your AI coach does</p>
-                {[
-                  "Diagnoses which habits need attention",
-                  "Suggests specific tweaks to boost streaks",
-                  "Adapts your plan as your life changes",
-                  "Celebrates wins so you stay motivated",
-                ].map((line) => (
-                  <div key={line} className="flex items-start gap-2.5 mb-2.5 last:mb-0">
-                    <div className="w-4 h-4 rounded-full bg-violet-600/30 border border-violet-500/40 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="w-2.5 h-2.5 text-violet-400 stroke-[2.5]" />
-                    </div>
-                    <p className="text-sm text-slate-300 leading-snug">{line}</p>
-                  </div>
-                ))}
-              </div>
-
-              <button type="button" onClick={next}
-                className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-violet-900/30"
-              >
-                Next <ChevronRight className="w-4 h-4" />
-              </button>
+              {/* Student Success Pack */}
+              <StudentPack onNext={next} onSkip={next} />
             </div>
           )}
 

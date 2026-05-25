@@ -138,13 +138,15 @@ export default function DashboardNav() {
   const isFree = tier === "free";
 
   const PAGE_META: Record<string, { label: string; Icon: React.ElementType }> = {
-    "/dashboard": { label: "Dashboard",     Icon: LayoutDashboard },
-    "/analytics": { label: "Analytics",     Icon: BarChart2 },
-    "/calendar":  { label: "Calendar",      Icon: Calendar  },
-    "/friends":   { label: "Friends",       Icon: Users     },
-    "/profile":   { label: "Profile",       Icon: User      },
-    "/settings":  { label: "Settings",      Icon: Settings  },
-    "/help":      { label: "Help & Support", Icon: HelpCircle },
+    "/dashboard":     { label: "Dashboard",      Icon: LayoutDashboard },
+    "/analytics":     { label: "Analytics",      Icon: BarChart2 },
+    "/calendar":      { label: "Calendar",       Icon: Calendar  },
+    "/friends":       { label: "Friends",        Icon: Users     },
+    "/profile":       { label: "Profile",        Icon: User      },
+    "/settings":      { label: "Settings",       Icon: Settings  },
+    "/help":          { label: "Help & Support", Icon: HelpCircle },
+    "/organisations": { label: "Organisations",  Icon: Users     },
+    "/groups":        { label: "Group Habits",   Icon: Users     },
   };
   const pageMeta = PAGE_META[pathname];
 
@@ -366,6 +368,8 @@ export default function DashboardNav() {
 
                   <div className="py-1.5">
                     <MenuItem icon={<Settings className="w-3.5 h-3.5" />} label="Settings" href="/settings" onClick={() => setMenuOpen(false)} />
+                    <MenuItem icon={<Users    className="w-3.5 h-3.5" />} label="Group Habits" href="/groups" onClick={() => setMenuOpen(false)} />
+                    <MenuItem icon={<Users    className="w-3.5 h-3.5" />} label="Organisations" href="/organisations" onClick={() => setMenuOpen(false)} badge={tier === "pro" ? undefined : "Pro"} />
                     <MenuItem
                       icon={<CreditCard className="w-3.5 h-3.5" />}
                       label="Billing & Subscription"
