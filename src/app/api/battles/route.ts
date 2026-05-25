@@ -148,7 +148,7 @@ export async function PATCH(request: NextRequest) {
     if (action === "log_completion" && battle.status === "active") {
       const isChallenger = battle.challenger_id === user.id;
       const field = isChallenger ? "challenger_completions" : "opponent_completions";
-      const current = isChallenger ? battle.challenger_completions : battle.opponent_completions;
+      const current = (isChallenger ? battle.challenger_completions : battle.opponent_completions) ?? 0;
 
       const updates: Record<string, unknown> = { [field]: current + 1 };
 

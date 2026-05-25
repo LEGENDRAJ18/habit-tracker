@@ -71,7 +71,7 @@ export async function PATCH(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { action, org_id, invite_code } = await request.json() as {
+    const { action, org_id, invite_code, member_id } = await request.json() as {
       action: "join" | "kick";
       org_id?: string;
       invite_code?: string;
@@ -96,17 +96,26 @@ export async function PATCH(request: NextRequest) {
       }
       members.push({ user_id: user.id, joined_at: new Date().toISOString() });
 
-      await Promise.all([
+      const [orgResult, profileResult] = await Promise.all([
         admin.from("organisations").update({ members }).eq("id", org.id),
         admin.from("profiles").update({ organisation_id: org.id }).eq("id", user.id),
       ]);
+      if (orgResult.error) throw orgResult.error;
+      if (profileResult.error) throw profileResult.error;
 
       return NextResponse.json({ org });
     }
 
-    if (action === "kick" && org_id) {
+    if (action === "kick" && org_id && member_id) {
       const { data: org } = await admin.from("organisations").select("*").eq("id", org_id).eq("admin_id", user.id).single();
       if (!org) return NextResponse.json({ error: "Not authorised" }, { status: 403 });
+
+      const members = (org.members as Array<{ user_id: string }>) ?? [];
+      const filtered = members.filter((m) => m.user_id !== member_id);
+      await Promise.all([
+        admin.from("organisations").update({ members: filtered }).eq("id", org_id),
+        admin.from("profiles").update({ organisation_id: null }).eq("id", member_id),
+      ]);
       return NextResponse.json({ ok: true });
     }
 

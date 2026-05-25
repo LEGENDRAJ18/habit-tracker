@@ -5,6 +5,10 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+function esc(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+}
+
 function buildWeeklyHtml(
   name: string,
   consistency: number,
@@ -26,18 +30,18 @@ function buildWeeklyHtml(
 
     <div style="background:#0f0f1a;border:1px solid rgba(109,40,217,0.2);border-radius:16px;padding:24px;margin-bottom:16px;">
       <p style="color:#e2e8f0;font-size:15px;line-height:1.7;margin:0 0 16px;">
-        Hey <strong style="color:#a78bfa;">${name}</strong> 👋
+        Hey <strong style="color:#a78bfa;">${esc(name)}</strong> 👋
       </p>
       <p style="color:#94a3b8;font-size:14px;line-height:1.7;margin:0 0 16px;">
         This week you were <strong style="color:#fff;">${consistency}% consistent</strong> — that's ${completions} habit completions. ${consistency >= 80 ? "Incredible work, you're building something real." : consistency >= 60 ? "Solid week. One more push and you'll be in the 80%+ club." : "Tough week — but showing up even imperfectly is what separates you from people who never start."}
       </p>
-      ${bestHabit ? `<p style="color:#94a3b8;font-size:14px;line-height:1.7;margin:0 0 16px;">Your biggest win was <strong style="color:#34d399;">${bestHabit}</strong> — keep that momentum going.</p>` : ""}
-      ${weakHabit ? `<p style="color:#94a3b8;font-size:14px;line-height:1.7;margin:0;">Your weak spot this week was <strong style="color:#f87171;">${weakHabit}</strong>. That's the one to focus on.</p>` : ""}
+      ${bestHabit ? `<p style="color:#94a3b8;font-size:14px;line-height:1.7;margin:0 0 16px;">Your biggest win was <strong style="color:#34d399;">${esc(bestHabit)}</strong> — keep that momentum going.</p>` : ""}
+      ${weakHabit ? `<p style="color:#94a3b8;font-size:14px;line-height:1.7;margin:0;">Your weak spot this week was <strong style="color:#f87171;">${esc(weakHabit)}</strong>. That's the one to focus on.</p>` : ""}
     </div>
 
     <div style="background:linear-gradient(135deg,rgba(139,92,246,0.1),rgba(168,85,247,0.05));border:1px solid rgba(139,92,246,0.2);border-radius:16px;padding:20px;margin-bottom:16px;">
       <p style="color:#a78bfa;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 8px;">💡 Your tip for next week</p>
-      <p style="color:#e2e8f0;font-size:14px;line-height:1.6;margin:0;">${tip}</p>
+      <p style="color:#e2e8f0;font-size:14px;line-height:1.6;margin:0;">${esc(tip)}</p>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
@@ -156,7 +160,7 @@ async function buildUserReport(admin: ReturnType<typeof createAdminClient>, user
   for (const habit of habits) {
     const count = countByHabit.get(habit.id) ?? 0;
     if (count > bestCount) { bestCount = count; bestHabit = habit.name; }
-    if (count < worstCount) { worstCount = count; worstCount = count; worstId = habit.id; }
+    if (count < worstCount) { worstCount = count; worstId = habit.id; }
   }
   if (worstId && worstId !== habits.find((h) => h.name === bestHabit)?.id) {
     weakHabit = habitMap.get(worstId) ?? null;

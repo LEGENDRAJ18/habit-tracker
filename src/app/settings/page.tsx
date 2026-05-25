@@ -686,14 +686,17 @@ function PlanTab({
   const [togglesLoaded,  setTogglesLoaded]  = useState(false);
 
   useEffect(() => {
-    supabase.from("profiles").select("weekly_email_enabled, streak_roast_enabled").single()
-      .then(({ data }) => {
-        if (data) {
-          setWeeklyEmail(data.weekly_email_enabled ?? false);
-          setStreakRoast(data.streak_roast_enabled ?? false);
-        }
-        setTogglesLoaded(true);
-      });
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) { setTogglesLoaded(true); return; }
+      supabase.from("profiles").select("weekly_email_enabled, streak_roast_enabled").eq("id", user.id).single()
+        .then(({ data }) => {
+          if (data) {
+            setWeeklyEmail(data.weekly_email_enabled ?? false);
+            setStreakRoast(data.streak_roast_enabled ?? false);
+          }
+          setTogglesLoaded(true);
+        });
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
