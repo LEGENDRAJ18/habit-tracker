@@ -30,21 +30,21 @@ const FREE_FEATURES = [
 const PLUS_FEATURES = [
   { icon: Check,     text: "Everything in Free" },
   { icon: Star,      text: "Unlimited habits" },
-  { icon: Dna,       text: "Full Habit DNA shareable card" },
+  { icon: Brain,     text: "AI coaching and daily insights" },
+  { icon: Bell,      text: "Smart notifications" },
   { icon: Shield,    text: "Habit Battles with friends" },
-  { icon: Globe,     text: "Public Commitment Contracts" },
-  { icon: BarChart3, text: "Detailed analytics and insights" },
-  { icon: Bell,      text: "Priority support" },
+  { icon: Calendar,  text: "Calendar view" },
+  { icon: BarChart3, text: "CSV data export" },
 ];
 
 const PRO_FEATURES = [
   { icon: Check,     text: "Everything in Plus" },
-  { icon: Brain,     text: "Deep AI Memory" },
-  { icon: Mic,       text: "Voice Check-ins" },
-  { icon: Calendar,  text: "Monthly Wrapped shareable report" },
-  { icon: Sparkles,  text: "AI calls out your excuses personally" },
-  { icon: BarChart3, text: "Advanced performance insights" },
-  { icon: Gift,      text: "Early access to new features" },
+  { icon: Mic,       text: "Voice check-ins" },
+  { icon: Dna,       text: "Full Habit DNA card + download" },
+  { icon: Users,     text: "Organisation / School Mode" },
+  { icon: Globe,     text: "Weekly AI email report" },
+  { icon: BarChart3, text: "Mood tracking + AI correlations" },
+  { icon: Flame,     text: "Streak roast notifications" },
 ];
 
 // ─── Annual price helpers ─────────────────────────────────────────────────────
@@ -93,6 +93,7 @@ function PricingCard({ plan, currentTier, annual, checkoutLoading, portalLoading
       iconCls:    "text-slate-400",
       nameCls:    "text-slate-200",
       checkCls:   "text-emerald-400",
+      dotBg:      "bg-emerald-950/50",
       btnCls:     "",
       btnLabel:   "Current plan",
     },
@@ -107,6 +108,7 @@ function PricingCard({ plan, currentTier, annual, checkoutLoading, portalLoading
       iconCls:    "text-violet-300",
       nameCls:    "text-violet-200",
       checkCls:   "text-violet-400",
+      dotBg:      "bg-violet-950/50",
       btnCls:     "bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-600/25",
       btnLabel:   "Upgrade to Plus",
     },
@@ -121,6 +123,7 @@ function PricingCard({ plan, currentTier, annual, checkoutLoading, portalLoading
       iconCls:    "text-amber-300",
       nameCls:    "text-amber-200",
       checkCls:   "text-amber-400",
+      dotBg:      "bg-amber-950/50",
       btnCls:     "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white shadow-lg shadow-amber-500/25",
       btnLabel:   currentTier === "plus" ? "Upgrade to Pro" : "Upgrade to Pro",
     },
@@ -190,7 +193,7 @@ function PricingCard({ plan, currentTier, annual, checkoutLoading, portalLoading
           {features.map(({ icon: Icon, text }) => (
             <li key={text} className="flex items-start gap-2.5">
               <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                text.startsWith("Everything") ? "bg-emerald-950/50" : `bg-${plan === "pro" ? "amber" : plan === "plus" ? "violet" : "emerald"}-950/50`
+                text.startsWith("Everything") ? "bg-emerald-950/50" : cfg.dotBg
               }`}>
                 <Check className={`w-2.5 h-2.5 ${cfg.checkCls}`} />
               </div>

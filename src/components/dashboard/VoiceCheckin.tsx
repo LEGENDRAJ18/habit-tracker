@@ -104,7 +104,16 @@ export default function VoiceCheckin({ habitId, habitName, habitLogId, tier, onC
     try { recognitionRef.current?.stop(); } catch { /* ignore */ }
   }, []);
 
-  if (!isPro && stage === "idle") return null;
+  if (!isPro && stage === "idle") return (
+    <button
+      onClick={() => {}}
+      className="flex items-center gap-1.5 text-[11px] text-slate-600 hover:text-slate-500 transition-colors mt-1.5 touch-manipulation cursor-default"
+      title="Voice check-ins — Pro feature"
+    >
+      <Mic className="w-3 h-3" />
+      <span>Voice note <span className="text-[10px] text-violet-700/70 font-semibold ml-0.5">Pro</span></span>
+    </button>
+  );
 
   if (stage === "unsupported") {
     return (

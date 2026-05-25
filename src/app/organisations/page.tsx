@@ -50,6 +50,7 @@ export default function OrganisationsPage() {
   const [joinCode,    setJoinCode]    = useState("");
   const [creating,    setCreating]    = useState(false);
   const [joining,     setJoining]     = useState(false);
+  const [kicking,     setKicking]     = useState<string | null>(null);
   const [error,       setError]       = useState<string | null>(null);
 
   useEffect(() => {
@@ -90,6 +91,22 @@ export default function OrganisationsPage() {
       setOwnOrgs((prev) => [data.org, ...prev]);
       setShowCreate(false); setName(""); setDescription("");
     } finally { setCreating(false); }
+  }
+
+  async function kickMember(orgId: string, memberId: string) {
+    setKicking(memberId);
+    try {
+      const res = await fetch("/api/organisations", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "kick", org_id: orgId, member_id: memberId }),
+      });
+      if (res.ok) {
+        setOwnOrgs((prev) => prev.map((o) =>
+          o.id === orgId ? { ...o, members: o.members.filter((m) => m.user_id !== memberId) } : o
+        ));
+      }
+    } finally { setKicking(null); }
   }
 
   async function joinOrg() {
@@ -298,11 +315,19 @@ export default function OrganisationsPage() {
                         <div className="space-y-1.5">
                           {org.members.slice(0, 5).map((m, i) => (
                             <div key={i} className="flex items-center gap-2">
-                              <div className="w-5 h-5 rounded-full bg-violet-700/30 flex items-center justify-center">
+                              <div className="w-5 h-5 rounded-full bg-violet-700/30 flex items-center justify-center flex-shrink-0">
                                 <Users className="w-2.5 h-2.5 text-violet-400" />
                               </div>
-                              <span className="text-xs text-slate-400 font-mono truncate">{m.user_id.slice(0, 8)}…</span>
-                              <span className="text-[10px] text-slate-700 ml-auto">{new Date(m.joined_at).toLocaleDateString()}</span>
+                              <span className="text-xs text-slate-400 font-mono truncate flex-1">{m.user_id.slice(0, 8)}…</span>
+                              <span className="text-[10px] text-slate-500">{new Date(m.joined_at).toLocaleDateString()}</span>
+                              <button
+                                onClick={() => kickMember(org.id, m.user_id)}
+                                disabled={kicking === m.user_id}
+                                className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-red-950/40 text-slate-600 hover:text-red-400 transition-colors disabled:opacity-40"
+                                title="Remove member"
+                              >
+                                {kicking === m.user_id ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+                              </button>
                             </div>
                           ))}
                           {org.members.length > 5 && (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { X, Lock, Download, Share2, Star, Clock, Calendar, Sparkles, Award, TrendingUp } from "lucide-react";
+import { X, Lock, Download, Share2, Star, Clock, Calendar, Sparkles, Award, TrendingUp, Loader2, CheckCircle2 } from "lucide-react";
 import type { Habit, Plan } from "@/types";
 import { useHabitDNA } from "@/hooks/useHabitDNA";
 
@@ -321,6 +321,16 @@ const MOCK_CIRC = 2 * Math.PI * MOCK_R;
 export default function HabitDNAModal({ habits, logs, tier, totalXP, onClose, onUpgrade }: Props) {
   const dna   = useHabitDNA(habits, logs);
   const isPaid = tier === "plus" || tier === "pro";
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [shared, setShared]               = useState(false);
+
+  const handleDownload = () => {
+    setIsDownloading(true);
+    setTimeout(() => {
+      downloadDNACard(dna, habits, totalXP);
+      setIsDownloading(false);
+    }, 100);
+  };
 
   const handleShare = async () => {
     const text = `My Habit DNA:\n🏆 ${dna.overallConsistency}% consistency\n🔥 ${dna.longestStreak}-day streak\n⚡ ${totalXP.toLocaleString()} XP\n${dna.personalityTags.slice(0, 2).join(" · ")}\nhabitaiapp.com`;
@@ -328,6 +338,8 @@ export default function HabitDNAModal({ habits, logs, tier, totalXP, onClose, on
       try { await navigator.share({ title: "My Habit DNA", text }); } catch { /* dismissed */ }
     } else {
       await navigator.clipboard.writeText(text);
+      setShared(true);
+      setTimeout(() => setShared(false), 2000);
     }
   };
 
@@ -570,12 +582,13 @@ export default function HabitDNAModal({ habits, logs, tier, totalXP, onClose, on
                 style={{ animation: "dnaFadeUp 0.45s ease-out 510ms both" }}
               >
                 <button
-                  onClick={() => downloadDNACard(dna, habits, totalXP)}
-                  className="flex items-center justify-center gap-2 py-3 text-sm font-semibold text-slate-300 hover:text-white rounded-2xl transition-all"
+                  onClick={handleDownload}
+                  disabled={isDownloading}
+                  className="flex items-center justify-center gap-2 py-3 text-sm font-semibold text-slate-300 hover:text-white disabled:opacity-60 rounded-2xl transition-all"
                   style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
                 >
-                  <Download className="w-4 h-4" />
-                  Download
+                  {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  {isDownloading ? "Preparing…" : "Download"}
                 </button>
                 <button
                   onClick={handleShare}
@@ -585,8 +598,8 @@ export default function HabitDNAModal({ habits, logs, tier, totalXP, onClose, on
                     boxShadow: "0 4px 18px rgba(139,92,246,0.38)",
                   }}
                 >
-                  <Share2 className="w-4 h-4" />
-                  Share
+                  {shared ? <CheckCircle2 className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+                  {shared ? "Copied!" : "Share"}
                 </button>
               </div>
             </div>

@@ -32,8 +32,9 @@ export default function MoodCheckin() {
   }, []);
 
   async function load() {
+    try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) { setLoaded(true); return; }
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -88,6 +89,7 @@ export default function MoodCheckin() {
     }
 
     setLoaded(true);
+    } catch { setLoaded(true); }
   }
 
   async function saveMood(value: number) {
@@ -102,7 +104,14 @@ export default function MoodCheckin() {
     } finally { setSaving(false); }
   }
 
-  if (!loaded) return null;
+  if (!loaded) return (
+    <div className="bg-[#0f0f1a] border border-violet-900/20 rounded-2xl px-4 py-4 mb-4 animate-pulse">
+      <div className="h-4 w-32 bg-violet-900/30 rounded mb-3" />
+      <div className="flex gap-1 mb-3">
+        {[1,2,3,4,5].map((i) => <div key={i} className="flex-1 h-12 bg-violet-900/20 rounded-xl" />)}
+      </div>
+    </div>
+  );
 
   const todayLabel = todayMood ? MOODS.find((m) => m.value === todayMood)?.label : null;
 
@@ -128,7 +137,7 @@ export default function MoodCheckin() {
             onClick={() => { if (!todayMood) void saveMood(value); }}
             disabled={!!todayMood || saving}
             title={label}
-            className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-xl transition-all duration-200 ${
+            className={`flex-1 flex flex-col items-center gap-1 py-2 min-h-[44px] rounded-xl transition-all duration-200 ${
               selected === value
                 ? "bg-violet-600/25 border border-violet-500/40 scale-110"
                 : todayMood
@@ -163,7 +172,7 @@ export default function MoodCheckin() {
       )}
 
       {daysLogged > 0 && daysLogged < 14 && (
-        <p className="text-[10px] text-slate-700 text-center mt-2">
+        <p className="text-[10px] text-slate-500 text-center mt-2">
           {14 - daysLogged} more days until AI mood insights unlock
         </p>
       )}

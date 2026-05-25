@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { X, Swords, Loader2, Trophy, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import type { Plan } from "@/types";
 import FeatureUpgradeGate from "./FeatureUpgradeGate";
@@ -29,11 +30,12 @@ interface Props {
   onUpgrade: () => void;
 }
 
-function BattleCard({ battle, onAction }: { battle: BattleWithNames; onAction: (id: string, action: string) => void }) {
+function BattleCard({ battle, onAction, actioning }: { battle: BattleWithNames; onAction: (id: string, action: string) => void; actioning: string | null }) {
   const myCompletions    = (battle.is_challenger ? battle.challenger_completions : battle.opponent_completions) ?? 0;
   const theirCompletions = (battle.is_challenger ? battle.opponent_completions   : battle.challenger_completions) ?? 0;
-  const opponentName     = battle.is_challenger ? battle.opponent_name          : battle.challenger_name;
+  const opponentName     = (battle.is_challenger ? battle.opponent_name          : battle.challenger_name) ?? "Unknown";
   const iWon             = battle.winner_id === (battle.is_challenger ? battle.challenger_id : battle.opponent_id);
+  const isActioning      = (action: string) => actioning === `${battle.id}:${action}`;
 
   return (
     <div className={`bg-[#0f0f1a] border rounded-2xl p-4 ${
@@ -79,15 +81,17 @@ function BattleCard({ battle, onAction }: { battle: BattleWithNames; onAction: (
         <div className="flex gap-2">
           <button
             onClick={() => onAction(battle.id, "accept")}
-            className="flex-1 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold rounded-xl transition-all"
+            disabled={!!actioning}
+            className="flex-1 py-2.5 min-h-[44px] bg-violet-600 hover:bg-violet-500 disabled:opacity-60 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5"
           >
-            Accept ⚔️
+            {isActioning("accept") ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Accept ⚔️"}
           </button>
           <button
             onClick={() => onAction(battle.id, "decline")}
-            className="flex-1 py-2 border border-slate-700/40 text-slate-400 hover:text-slate-200 text-xs font-semibold rounded-xl transition-all"
+            disabled={!!actioning}
+            className="flex-1 py-2.5 min-h-[44px] border border-slate-700/40 text-slate-400 hover:text-slate-200 disabled:opacity-60 text-xs font-semibold rounded-xl transition-all flex items-center justify-center"
           >
-            Decline
+            {isActioning("decline") ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Decline"}
           </button>
         </div>
       )}
@@ -97,9 +101,10 @@ function BattleCard({ battle, onAction }: { battle: BattleWithNames; onAction: (
       {battle.status === "active" && (
         <button
           onClick={() => onAction(battle.id, "log_completion")}
-          className="w-full py-2 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-600/30 text-violet-300 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5"
+          disabled={!!actioning}
+          className="w-full py-2.5 min-h-[44px] bg-violet-600/20 hover:bg-violet-600/30 disabled:opacity-60 border border-violet-600/30 text-violet-300 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5"
         >
-          <CheckCircle2 className="w-3.5 h-3.5" /> Log today's completion
+          {isActioning("log_completion") ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><CheckCircle2 className="w-3.5 h-3.5" /> Log today's completion</>}
         </button>
       )}
     </div>
@@ -108,15 +113,19 @@ function BattleCard({ battle, onAction }: { battle: BattleWithNames; onAction: (
 
 export default function HabitBattleModal({ tier, friends, onClose, onUpgrade }: Props) {
   const isPaid = tier === "plus" || tier === "pro";
+  const router = useRouter();
 
   const [battles, setBattles]         = useState<BattleWithNames[]>([]);
   const [loading, setLoading]         = useState(true);
+  const [actioning, setActioning]     = useState<string | null>(null);
   const [creating, setCreating]       = useState(false);
   const [error, setError]             = useState<string | null>(null);
   const [showForm, setShowForm]       = useState(false);
   const [opponentId, setOpponentId]   = useState("");
   const [habitName, setHabitName]     = useState("");
   const [duration, setDuration]       = useState(7);
+
+  const handleUpgrade = () => { onClose(); router.push("/billing"); };
 
   useEffect(() => {
     if (!isPaid) { setLoading(false); return; }
@@ -127,15 +136,18 @@ export default function HabitBattleModal({ tier, friends, onClose, onUpgrade }: 
   }, [isPaid]);
 
   const handleAction = async (battleId: string, action: string) => {
-    const res  = await fetch("/api/battles", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ battle_id: battleId, action }),
-    });
-    const data = await res.json();
-    if (data.battle) {
-      setBattles((prev) => prev.map((b) => b.id === battleId ? { ...b, ...data.battle, is_challenger: b.is_challenger, challenger_name: b.challenger_name, opponent_name: b.opponent_name } : b));
-    }
+    setActioning(`${battleId}:${action}`);
+    try {
+      const res  = await fetch("/api/battles", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ battle_id: battleId, action }),
+      });
+      const data = await res.json();
+      if (data.battle) {
+        setBattles((prev) => prev.map((b) => b.id === battleId ? { ...b, ...data.battle, is_challenger: b.is_challenger, challenger_name: b.challenger_name, opponent_name: b.opponent_name } : b));
+      }
+    } finally { setActioning(null); }
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -201,7 +213,7 @@ export default function HabitBattleModal({ tier, friends, onClose, onUpgrade }: 
               requiredTier="plus"
               featureName="Habit Battles"
               description="Challenge friends to 7-day habit duels. Track your completions, compete for the win, and earn leaderboard bragging rights."
-              onUpgrade={onUpgrade}
+              onUpgrade={handleUpgrade}
             />
           ) : loading ? (
             <div className="flex justify-center py-10">
@@ -284,7 +296,7 @@ export default function HabitBattleModal({ tier, friends, onClose, onUpgrade }: 
                     <Clock className="w-3.5 h-3.5 text-amber-400" />
                     <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Pending ({pending.length})</span>
                   </div>
-                  <div className="space-y-2">{pending.map((b) => <BattleCard key={b.id} battle={b} onAction={handleAction} />)}</div>
+                  <div className="space-y-2">{pending.map((b) => <BattleCard key={b.id} battle={b} onAction={handleAction} actioning={actioning} />)}</div>
                 </div>
               )}
 
@@ -294,7 +306,7 @@ export default function HabitBattleModal({ tier, friends, onClose, onUpgrade }: 
                     <Swords className="w-3.5 h-3.5 text-violet-400" />
                     <span className="text-[10px] font-bold text-violet-400 uppercase tracking-wider">Active ({active.length})</span>
                   </div>
-                  <div className="space-y-2">{active.map((b) => <BattleCard key={b.id} battle={b} onAction={handleAction} />)}</div>
+                  <div className="space-y-2">{active.map((b) => <BattleCard key={b.id} battle={b} onAction={handleAction} actioning={actioning} />)}</div>
                 </div>
               )}
 
@@ -304,7 +316,7 @@ export default function HabitBattleModal({ tier, friends, onClose, onUpgrade }: 
                     <Trophy className="w-3.5 h-3.5 text-emerald-400" />
                     <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Completed</span>
                   </div>
-                  <div className="space-y-2">{completed.slice(0, 3).map((b) => <BattleCard key={b.id} battle={b} onAction={handleAction} />)}</div>
+                  <div className="space-y-2">{completed.slice(0, 3).map((b) => <BattleCard key={b.id} battle={b} onAction={handleAction} actioning={actioning} />)}</div>
                 </div>
               )}
 

@@ -120,9 +120,23 @@ export default function CommitmentModal({
               )}
 
               {isPublic && (
-                <div className="flex items-start gap-2.5 bg-violet-950/30 border border-violet-800/20 rounded-xl px-3 py-2.5">
-                  <Users className="w-3.5 h-3.5 text-violet-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-slate-400 leading-relaxed">Your friends will be able to see this habit and commitment on your public profile.</p>
+                <div className="bg-violet-950/30 border border-violet-800/20 rounded-xl px-3 py-2.5 space-y-2">
+                  <div className="flex items-start gap-2.5">
+                    <Users className="w-3.5 h-3.5 text-violet-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-slate-400 leading-relaxed">Your friends will be able to see this habit on your profile.</p>
+                  </div>
+                  <div className="flex items-center gap-2 bg-[#0f0f1a] border border-violet-900/30 rounded-lg px-2.5 py-1.5">
+                    <span className="text-[10px] text-slate-500 truncate flex-1 font-mono">
+                      {typeof window !== "undefined" ? window.location.origin : "https://habitaiapp.com"}/share/{habitId}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => navigator.clipboard.writeText(`${typeof window !== "undefined" ? window.location.origin : "https://habitaiapp.com"}/share/${habitId}`)}
+                      className="text-[10px] text-violet-400 hover:text-violet-300 font-semibold flex-shrink-0 transition-colors"
+                    >
+                      Copy
+                    </button>
+                  </div>
                 </div>
               )}
 

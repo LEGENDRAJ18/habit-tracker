@@ -147,7 +147,7 @@ function Hero() {
             {/* Headline — one sentence, crystal clear */}
             <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-black tracking-tight text-white mb-5 leading-[1.07]">
               Build habits that{" "}
-              <span className="bg-gradient-to-r from-violet-400 via-purple-300 to-fuchsia-400 bg-clip-text text-transparent whitespace-nowrap">
+              <span className="bg-gradient-to-r from-violet-400 via-purple-300 to-fuchsia-400 bg-clip-text text-transparent">
                 actually stick
               </span>
               , with AI.

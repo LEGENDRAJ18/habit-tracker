@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Lock, Flame, Zap, Trophy, CalendarDays, Gift, CheckCircle2 } from "lucide-react";
+import { Lock, Flame, Zap, Trophy, CalendarDays, Gift, CheckCircle2, User } from "lucide-react";
 import { useXP, ACHIEVEMENT_META, type AchievementId } from "@/hooks/useXP";
 import { levelName, levelColorKey, xpProgressPct, xpIntoLevel, xpSpanOfLevel, type LevelColorKey } from "@/lib/xp";
 import { LEVEL_REWARDS } from "@/lib/rewards";
 import { createClient } from "@/lib/supabase/client";
+import AvatarDisplay from "@/components/ui/AvatarDisplay";
 
 const ALL_ACHIEVEMENTS: AchievementId[] = [
   "first_habit",
@@ -41,6 +42,8 @@ export default function ProfilePage() {
   const { xp, level, achievements, totalCompletions, xpLoading } = useXP();
   const [joinedDate, setJoinedDate] = useState<string | null>(null);
   const [bestStreak, setBestStreak] = useState(0);
+  const [username, setUsername]     = useState<string | null>(null);
+  const [avatarId, setAvatarId]     = useState<string | null>(null);
   const supabase = useRef(createClient()).current;
 
   useEffect(() => {
@@ -49,6 +52,11 @@ export default function ProfilePage() {
       // Join date from auth
       const d = new Date(user.created_at);
       setJoinedDate(d.toLocaleDateString("en-US", { month: "long", year: "numeric" }));
+      // Profile data
+      supabase.from("profiles").select("username, avatar_id").eq("id", user.id).single()
+        .then(({ data }) => {
+          if (data) { setUsername(data.username ?? null); setAvatarId(data.avatar_id ?? null); }
+        });
       // Best streak from logs
       supabase
         .from("habit_logs")
@@ -99,13 +107,23 @@ export default function ProfilePage() {
             >
               <div className="absolute inset-0 bg-gradient-to-br from-violet-950/40 via-transparent to-transparent pointer-events-none" />
               <div className="relative flex items-center gap-5">
-                <div className={`w-20 h-20 rounded-2xl ring-4 flex items-center justify-center flex-shrink-0 ${ringCls}`}
-                     style={isGold ? { boxShadow: "0 0 20px rgba(251,191,36,0.4)" } : { boxShadow: "0 0 20px rgba(139,92,246,0.3)" }}>
-                  <span className="text-3xl font-extrabold text-white">{level}</span>
+                <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                  {avatarId ? (
+                    <AvatarDisplay avatarId={avatarId} size="lg" />
+                  ) : (
+                    <div className={`w-16 h-16 rounded-2xl ring-4 flex items-center justify-center ${ringCls}`}
+                         style={isGold ? { boxShadow: "0 0 20px rgba(251,191,36,0.4)" } : { boxShadow: "0 0 20px rgba(139,92,246,0.3)" }}>
+                      <User className="w-7 h-7 text-slate-400" />
+                    </div>
+                  )}
+                  <div className={`w-8 h-8 rounded-xl ring-2 flex items-center justify-center ${ringCls}`}>
+                    <span className="text-sm font-extrabold text-white">{level}</span>
+                  </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Current Level</p>
-                  <h1 className="text-2xl font-bold text-white mb-0.5">{name}</h1>
+                  {username && <p className="text-base font-bold text-violet-300 mb-0.5">@{username}</p>}
+                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Level {level} · {name}</p>
+                  <h1 className="text-xl font-bold text-white mb-0.5 hidden sm:block">{name}</h1>
                   <p className="text-xs text-slate-500 mb-3">
                     {xp.toLocaleString()} XP · {totalCompletions.toLocaleString()} completions
                     {joinedDate && <> · Joined {joinedDate}</>}
