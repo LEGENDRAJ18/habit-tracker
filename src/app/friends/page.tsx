@@ -301,7 +301,8 @@ export default function FriendsPage() {
   const [friends, setFriends]   = useState<FriendStat[]>([]);
   const [pending, setPending]   = useState<PendingFriend[]>([]);
   const [loading, setLoading]   = useState(true);
-  const [showBattleModal, setShowBattleModal] = useState(false);
+  const [showBattleModal, setShowBattleModal]         = useState(false);
+  const [pendingBattlesCount, setPendingBattlesCount] = useState(0);
 
   const [inviteInput, setInviteInput]           = useState("");
   const [inviting, setInviting]                 = useState(false);
@@ -371,6 +372,17 @@ export default function FriendsPage() {
   }, []);
 
   useEffect(() => { loadFriends(); }, [loadFriends]);
+
+  useEffect(() => {
+    fetch("/api/battles")
+      .then((r) => r.json())
+      .then((d) => {
+        const count = ((d.battles ?? []) as { status: string }[])
+          .filter((b) => b.status === "pending").length;
+        setPendingBattlesCount(count);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -460,11 +472,16 @@ export default function FriendsPage() {
           </div>
           <div className="flex items-center gap-2 mt-1">
             <button
-              onClick={() => setShowBattleModal(true)}
-              className="flex items-center gap-2 px-3.5 py-2 bg-violet-950/40 hover:bg-violet-900/40 border border-violet-700/30 text-violet-300 text-sm font-medium rounded-xl transition-all flex-shrink-0"
+              onClick={() => { setShowBattleModal(true); setPendingBattlesCount(0); }}
+              className="relative flex items-center gap-2 px-3.5 py-2 bg-violet-950/40 hover:bg-violet-900/40 border border-violet-700/30 text-violet-300 text-sm font-medium rounded-xl transition-all flex-shrink-0"
             >
               <Swords className="w-4 h-4" />
               <span className="hidden sm:inline">Battles</span>
+              {pendingBattlesCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold px-1 leading-none">
+                  {pendingBattlesCount > 9 ? "9+" : pendingBattlesCount}
+                </span>
+              )}
             </button>
             <button
               onClick={() => setShowShareModal(true)}

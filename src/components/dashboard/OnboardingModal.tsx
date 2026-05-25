@@ -327,10 +327,11 @@ export default function OnboardingModal({ onComplete }: Props) {
               <div className="bg-[#0f0f1a] border border-emerald-700/25 rounded-2xl px-5 py-5 mb-8 text-left">
                 <p className="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-4">What friends unlock</p>
                 {[
-                  { emoji: "🏆", text: "Weekly leaderboards with your circle"       },
-                  { emoji: "📣", text: "Streak shout-outs when you hit milestones"  },
-                  { emoji: "💬", text: "Habit challenges you can do together"        },
-                  { emoji: "🔔", text: "Nudge friends who are falling behind"        },
+                  { emoji: "🏆", text: "Weekly leaderboards with your circle"              },
+                  { emoji: "⚔️", text: "Habit Battles — 7-day duels against a friend"      },
+                  { emoji: "📣", text: "Streak shout-outs when you hit milestones"         },
+                  { emoji: "💬", text: "Habit challenges you can do together"               },
+                  { emoji: "🔔", text: "Nudge friends who are falling behind"               },
                 ].map(({ emoji, text }) => (
                   <div key={text} className="flex items-center gap-3 mb-3 last:mb-0">
                     <span className="text-xl leading-none">{emoji}</span>
@@ -420,6 +421,13 @@ export default function OnboardingModal({ onComplete }: Props) {
                     {selectedIds.length === 0 ? "Pick at least one goal to continue" : "Enter your custom goal above"}
                   </p>
                 )}
+                {/* DNA teaser */}
+                <div className="mt-4 flex items-center gap-2.5 bg-violet-950/40 border border-violet-800/25 rounded-xl px-4 py-2.5">
+                  <span className="text-lg leading-none">🧬</span>
+                  <p className="text-[11px] text-slate-400 leading-snug">
+                    After 30 days, unlock your <span className="text-violet-300 font-semibold">Habit DNA</span> — your full behavioral fingerprint with personality tags and shareable card.
+                  </p>
+                </div>
               </div>
             </div>
           )}

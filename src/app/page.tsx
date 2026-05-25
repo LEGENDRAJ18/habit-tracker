@@ -392,6 +392,250 @@ function SolutionSection() {
   );
 }
 
+// ─── 3b. NEW FEATURES SHOWCASE ───────────────────────────────────────────────
+
+function DNAMockup() {
+  // Ring: r=52, circ≈327, 87% → offset≈42
+  const r = 52, circ = 2 * Math.PI * r;
+  const offset = circ * (1 - 0.87);
+  return (
+    <div className="bg-[#0b0b18] border border-violet-700/20 rounded-2xl p-5 space-y-4 shadow-2xl shadow-black/40">
+      <div className="flex items-center gap-2 mb-1">
+        <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+        <span className="text-xs font-bold text-violet-300 uppercase tracking-widest">Habit DNA</span>
+      </div>
+      {/* Ring */}
+      <div className="flex items-center justify-center">
+        <div className="relative" style={{ width: 128, height: 128 }}>
+          <svg className="-rotate-90" width="128" height="128" viewBox="0 0 128 128">
+            <defs>
+              <linearGradient id="lpRing" x1="1" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#a78bfa" />
+                <stop offset="100%" stopColor="#e879f9" />
+              </linearGradient>
+            </defs>
+            <circle cx="64" cy="64" r={r} fill="none" stroke="rgba(109,40,217,0.12)" strokeWidth="7" />
+            <circle cx="64" cy="64" r={r} fill="none" stroke="url(#lpRing)" strokeWidth="7"
+              strokeLinecap="round"
+              strokeDasharray={circ}
+              strokeDashoffset={offset} />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <p className="text-2xl font-black leading-none" style={{ background: "linear-gradient(135deg,#a78bfa,#e879f9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>87%</p>
+            <p className="text-[9px] text-violet-400/60 font-bold uppercase tracking-widest mt-1">consistency</p>
+          </div>
+        </div>
+      </div>
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-2">
+        {[["142", "Completions", "text-violet-400"], ["21d", "Streak", "text-orange-400"], ["2.4k", "XP", "text-amber-400"]].map(([v, l, c]) => (
+          <div key={l} className="rounded-xl p-2 text-center" style={{ background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.05)" }}>
+            <p className={`text-sm font-black ${c}`}>{v}</p>
+            <p className="text-[8px] text-slate-600 uppercase tracking-wide mt-0.5">{l}</p>
+          </div>
+        ))}
+      </div>
+      {/* Tags */}
+      <div className="flex flex-wrap gap-1.5">
+        {["Morning Champion 🌅", "Fitness Warrior 💪"].map((t) => (
+          <span key={t} className="text-[10px] px-2 py-1 rounded-full font-semibold text-violet-300" style={{ background: "rgba(109,40,217,0.2)", border: "1px solid rgba(167,139,250,0.2)" }}>
+            {t}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BattlesMockup() {
+  return (
+    <div className="bg-[#0b0b18] border border-violet-700/20 rounded-2xl p-5 shadow-2xl shadow-black/40">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-sm">⚔️</span>
+        <span className="text-xs font-bold text-violet-300 uppercase tracking-widest">Habit Battles</span>
+        <span className="ml-auto text-[9px] px-2 py-0.5 rounded-full text-emerald-300 font-semibold" style={{ background: "rgba(52,211,153,0.15)", border: "1px solid rgba(52,211,153,0.25)" }}>● Live</span>
+      </div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-center">
+          <div className="w-10 h-10 rounded-full mx-auto mb-1" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.4), rgba(232,121,249,0.3))", border: "1px solid rgba(167,139,250,0.25)" }}>
+            <span className="text-sm font-bold text-violet-300 flex h-full items-center justify-center">Y</span>
+          </div>
+          <p className="text-xs text-white font-semibold">You</p>
+          <p className="text-[10px] text-violet-400">9 done</p>
+        </div>
+        <div className="flex-1 px-3">
+          <div className="flex items-center justify-center gap-1 mb-2">
+            <span className="text-[10px] text-slate-500">5 days left</span>
+          </div>
+          <div className="h-2.5 rounded-full overflow-hidden flex" style={{ background: "rgba(109,40,217,0.1)" }}>
+            <div className="h-full rounded-l-full" style={{ width: "60%", background: "linear-gradient(90deg, #7c3aed, #a855f7)" }} />
+            <div className="h-full rounded-r-full" style={{ width: "40%", background: "rgba(239,68,68,0.5)" }} />
+          </div>
+          <div className="flex justify-between mt-1">
+            <span className="text-[9px] text-violet-400">60%</span>
+            <span className="text-[9px] text-red-400">40%</span>
+          </div>
+        </div>
+        <div className="text-center">
+          <div className="w-10 h-10 rounded-full mx-auto mb-1" style={{ background: "linear-gradient(135deg, rgba(239,68,68,0.3), rgba(251,146,60,0.2))", border: "1px solid rgba(239,68,68,0.2)" }}>
+            <span className="text-sm font-bold text-red-300 flex h-full items-center justify-center">A</span>
+          </div>
+          <p className="text-xs text-white font-semibold">Alex</p>
+          <p className="text-[10px] text-red-400">6 done</p>
+        </div>
+      </div>
+      <p className="text-[10px] text-slate-500 text-center">Habit: Morning Run · 7-day challenge</p>
+    </div>
+  );
+}
+
+function WrappedMockup() {
+  return (
+    <div className="bg-[#0b0b18] border border-violet-700/20 rounded-2xl overflow-hidden shadow-2xl shadow-black/40">
+      <div className="px-5 py-4 flex items-center justify-between border-b border-white/[0.04]">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+          <span className="text-xs font-bold text-white">April Wrapped</span>
+        </div>
+        <div className="flex gap-1">
+          {[0,1,2,3,4,5,6,7].map(i => (
+            <div key={i} className={`h-1 rounded-full ${i === 1 ? "w-3 bg-violet-500" : "w-1 bg-violet-900/50"}`} />
+          ))}
+        </div>
+      </div>
+      <div className="px-5 py-6 text-center">
+        <p className="text-xs text-slate-400 mb-1">You completed</p>
+        <p className="text-6xl font-black mb-2" style={{ background: "linear-gradient(135deg,#a78bfa,#e879f9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+          142
+        </p>
+        <p className="text-sm text-slate-300 font-semibold">habit check-ins</p>
+        <p className="text-xs text-slate-500 mt-1">in April 🎉</p>
+      </div>
+    </div>
+  );
+}
+
+function NewFeaturesSection() {
+  const features = [
+    {
+      badge: "Plus & Pro",
+      badgeColor: "text-violet-300",
+      badgeBg: "rgba(109,40,217,0.18)",
+      badgeBorder: "rgba(139,92,246,0.3)",
+      tag: "New",
+      title: "Habit DNA",
+      desc: "Your behavioral fingerprint. After 30 days of tracking, unlock a full analysis of your consistency, peak performance times, and personality tags — all in one beautiful card you can share.",
+      bullets: [
+        "Circular consistency ring — see your overall %",
+        "Best & worst habits, peak day, peak time",
+        "Personality tags: Morning Champion, Fitness Warrior…",
+        "Download a shareable card or share the summary",
+      ],
+      mockup: <DNAMockup />,
+      flip: false,
+    },
+    {
+      badge: "Plus & Pro",
+      badgeColor: "text-violet-300",
+      badgeBg: "rgba(109,40,217,0.18)",
+      badgeBorder: "rgba(139,92,246,0.3)",
+      tag: "New",
+      title: "Habit Battles",
+      desc: "Challenge a friend to a 7-day head-to-head duel. Pick any habit, set the duration, and see who shows up more. The best accountability tool yet — because losing to someone you know stings.",
+      bullets: [
+        "7-day or custom duration duels",
+        "Real-time progress bar: you vs. them",
+        "Push notification when you get challenged",
+        "Works on any habit in your list",
+      ],
+      mockup: <BattlesMockup />,
+      flip: true,
+    },
+    {
+      badge: "Pro",
+      badgeColor: "text-amber-300",
+      badgeBg: "rgba(180,83,9,0.15)",
+      badgeBorder: "rgba(245,158,11,0.3)",
+      tag: "New",
+      title: "Monthly Wrapped",
+      desc: "Every month, get a Spotify Wrapped–style story of your habit journey — completions, consistency, streaks, XP earned, and your top personality tags. Auto-generated, animated, shareable.",
+      bullets: [
+        "8-slide animated recap every month",
+        "Top habit, longest streak, XP earned",
+        "Personality tags for the month",
+        "Share your Wrapped with one tap",
+      ],
+      mockup: <WrappedMockup />,
+      flip: false,
+    },
+  ] as const;
+
+  return (
+    <section className="py-24 px-4 sm:px-6 bg-[#060609]">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 bg-violet-950/50 border border-violet-700/25 rounded-full px-4 py-1.5 text-sm text-violet-300 mb-6">
+            <Sparkles className="w-3.5 h-3.5" />
+            Just shipped
+          </div>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 leading-tight">
+            Features that go{" "}
+            <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
+              beyond tracking
+            </span>
+          </h2>
+          <p className="text-lg text-slate-400 max-w-xl mx-auto">
+            DNA, Battles, and Wrapped — built for people who want to understand and compete, not just check boxes.
+          </p>
+        </div>
+
+        <div className="space-y-20">
+          {features.map(({ badge, badgeColor, badgeBg, badgeBorder, tag, title, desc, bullets, mockup, flip }) => (
+            <div
+              key={title}
+              className={`flex flex-col ${flip ? "lg:flex-row-reverse" : "lg:flex-row"} items-center gap-10 lg:gap-14`}
+            >
+              {/* Text side */}
+              <div className="flex-1 w-full">
+                <div className="flex items-center gap-2 mb-4">
+                  <span
+                    className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full ${badgeColor}`}
+                    style={{ background: badgeBg, border: `1px solid ${badgeBorder}` }}
+                  >
+                    {badge}
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full text-emerald-300"
+                        style={{ background: "rgba(52,211,153,0.12)", border: "1px solid rgba(52,211,153,0.25)" }}>
+                    {tag}
+                  </span>
+                </div>
+                <h3 className="text-3xl sm:text-4xl font-black text-white mb-4 leading-tight">{title}</h3>
+                <p className="text-base text-slate-400 leading-relaxed mb-6">{desc}</p>
+                <ul className="space-y-2.5">
+                  {bullets.map((b) => (
+                    <li key={b} className="flex items-start gap-2.5 text-sm text-slate-300">
+                      <Check className="w-4 h-4 text-violet-500 flex-shrink-0 mt-0.5" />
+                      {b}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Mockup side */}
+              <div className="flex-1 w-full max-w-sm sm:max-w-md lg:max-w-none mx-auto">
+                <div className="relative">
+                  <div className="absolute -inset-6 bg-violet-700/8 rounded-3xl blur-3xl pointer-events-none" />
+                  <div className="relative">{mockup}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── 4. WHO IT'S FOR ──────────────────────────────────────────────────────────
 
 const USE_CASES = [
@@ -692,6 +936,7 @@ export default async function LandingPage() {
         <Hero />
         <ProblemSection />
         <SolutionSection />
+        <NewFeaturesSection />
         <WhoItsFor />
         <div id="pricing">
           <Pricing />

@@ -41,15 +41,17 @@ export default function VoiceCheckin({ habitId, habitName, habitLogId, tier, onC
   const [coaching, setCoaching]     = useState<string | null>(null);
   const [expanded, setExpanded]     = useState(false);
   const recognitionRef              = useRef<SpeechRecognitionLike | null>(null);
+  // Ref to avoid stale closure in onend callback
+  const transcriptRef               = useRef("");
 
   const startRecording = useCallback(() => {
     const SR = (typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition));
     if (!SR) { setStage("unsupported"); return; }
 
     const recognition = new SR();
-    recognition.continuous = false;
+    recognition.continuous    = false;
     recognition.interimResults = true;
-    recognition.lang = "en-US";
+    recognition.lang          = "en-US";
     recognition.maxAlternatives = 1;
 
     recognition.onresult = (event) => {
@@ -57,14 +59,18 @@ export default function VoiceCheckin({ habitId, habitName, habitLogId, tier, onC
       for (let i = 0; i < event.results.length; i++) {
         if (event.results[i].isFinal) final += event.results[i][0].transcript + " ";
       }
-      if (final.trim()) setTranscript(final.trim());
+      if (final.trim()) {
+        setTranscript(final.trim());
+        transcriptRef.current = final.trim();
+      }
     };
 
     recognition.onerror = () => setStage("error");
 
     recognition.onend = async () => {
-      const text = transcript || "";
-      if (!text.trim()) { setStage("idle"); return; }
+      // Read from ref to avoid stale React state closure
+      const text = transcriptRef.current;
+      if (!text.trim()) { setStage("idle"); setExpanded(false); return; }
       setStage("processing");
       try {
         const res = await fetch("/api/voice-checkin", {
@@ -84,26 +90,27 @@ export default function VoiceCheckin({ habitId, habitName, habitLogId, tier, onC
     };
 
     recognitionRef.current = recognition;
+    transcriptRef.current  = "";
     setStage("recording");
     setTranscript("");
     setCoaching(null);
 
-    // Auto-stop after 30 seconds
     recognition.start();
+    // Auto-stop after 30 seconds
     setTimeout(() => { try { recognition.stop(); } catch { /* already stopped */ } }, 30000);
-  }, [habitId, habitLogId, habitName, transcript, onCoachingReceived]);
+  }, [habitId, habitLogId, habitName, onCoachingReceived]);
 
-  const stopRecording = () => {
+  const stopRecording = useCallback(() => {
     try { recognitionRef.current?.stop(); } catch { /* ignore */ }
-  };
+  }, []);
 
-  if (!isPro && stage === "idle") {
-    return null; // Only show for Pro users
-  }
+  if (!isPro && stage === "idle") return null;
 
   if (stage === "unsupported") {
     return (
-      <p className="text-[10px] text-slate-600 mt-1.5">Voice check-ins not supported in this browser.</p>
+      <p className="text-[10px] text-slate-600 mt-1.5">
+        Voice check-ins require Chrome or Edge — not supported in this browser.
+      </p>
     );
   }
 
@@ -111,7 +118,7 @@ export default function VoiceCheckin({ habitId, habitName, habitLogId, tier, onC
     return (
       <button
         onClick={() => { if (isPro) { setExpanded(true); startRecording(); } }}
-        className="flex items-center gap-1.5 text-[11px] text-violet-400/60 hover:text-violet-300 transition-colors mt-1"
+        className="flex items-center gap-1.5 text-[11px] text-violet-400/60 hover:text-violet-300 transition-colors mt-1.5 touch-manipulation"
         title="Voice check-in (Pro)"
       >
         <Mic className="w-3 h-3" />
@@ -126,13 +133,16 @@ export default function VoiceCheckin({ habitId, habitName, habitLogId, tier, onC
         <div className="flex items-center gap-1.5">
           <Mic className={`w-3.5 h-3.5 ${stage === "recording" ? "text-red-400 animate-pulse" : "text-violet-400"}`} />
           <span className="text-[11px] font-semibold text-violet-300">
-            {stage === "recording"  ? "Recording… (tap stop when done)" :
+            {stage === "recording"  ? "Recording… tap Stop when done" :
              stage === "processing" ? "Analysing…" :
              stage === "done"       ? "Check-in saved" :
              stage === "error"      ? "Something went wrong" : "Voice note"}
           </span>
         </div>
-        <button onClick={() => { stopRecording(); setStage("idle"); setExpanded(false); }} className="text-slate-600 hover:text-slate-400">
+        <button
+          onClick={() => { stopRecording(); setStage("idle"); setExpanded(false); transcriptRef.current = ""; }}
+          className="text-slate-600 hover:text-slate-400 p-1 touch-manipulation"
+        >
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -140,18 +150,19 @@ export default function VoiceCheckin({ habitId, habitName, habitLogId, tier, onC
       {stage === "recording" && (
         <div className="space-y-2">
           {transcript && <p className="text-xs text-slate-400 italic leading-relaxed">&ldquo;{transcript}&rdquo;</p>}
-          <div className="flex items-center gap-1 py-1">
-            {Array.from({ length: 12 }).map((_, i) => (
+          {/* Animated waveform */}
+          <div className="flex items-center gap-0.5 h-7 py-1 px-1">
+            {Array.from({ length: 16 }).map((_, i) => (
               <div
                 key={i}
-                className="w-1 bg-red-400 rounded-full flex-1"
-                style={{ height: `${8 + Math.sin(i * 0.7 + Date.now() / 200) * 6}px`, animation: `pulse ${0.5 + i * 0.05}s ease-in-out infinite alternate` }}
+                className="w-1 bg-red-400/80 rounded-full flex-1"
+                style={{ animation: `voiceWave ${0.4 + (i % 5) * 0.08}s ease-in-out ${(i * 0.04).toFixed(2)}s infinite alternate` }}
               />
             ))}
           </div>
           <button
             onClick={stopRecording}
-            className="w-full py-2 bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-semibold rounded-xl hover:bg-red-500/30 transition-all flex items-center justify-center gap-1.5"
+            className="w-full py-2.5 bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-semibold rounded-xl hover:bg-red-500/30 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 touch-manipulation min-h-[44px]"
           >
             <MicOff className="w-3.5 h-3.5" /> Stop recording
           </button>
@@ -187,13 +198,22 @@ export default function VoiceCheckin({ habitId, habitName, habitLogId, tier, onC
 
       {stage === "error" && (
         <div className="space-y-2">
-          <p className="text-xs text-red-400">Recording failed. Please try again.</p>
-          <button onClick={() => { setStage("idle"); startRecording(); }}
-            className="text-xs text-violet-400 hover:text-violet-300 transition-colors">
-            Try again
+          <p className="text-xs text-red-400">Recording failed — make sure microphone access is allowed.</p>
+          <button
+            onClick={() => { setStage("idle"); transcriptRef.current = ""; startRecording(); }}
+            className="text-xs text-violet-400 hover:text-violet-300 transition-colors touch-manipulation"
+          >
+            Try again →
           </button>
         </div>
       )}
+
+      <style>{`
+        @keyframes voiceWave {
+          0%   { height: 4px;  opacity: 0.5; }
+          100% { height: 20px; opacity: 1;   }
+        }
+      `}</style>
     </div>
   );
 }
