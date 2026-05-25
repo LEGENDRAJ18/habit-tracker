@@ -215,11 +215,10 @@ export default function PrivacyPage() {
         <div className="mt-4 pt-8 border-t border-violet-900/20">
           <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl px-5 py-5 space-y-1.5 text-sm text-slate-400 leading-relaxed">
             <p>
-              <strong className="text-slate-300">Legal operator:</strong> Surjeet Jubbal
+              <strong className="text-slate-300">Legal operator:</strong> HabitAI
             </p>
             <p>
-              HabitAI is created by <strong className="text-slate-300">Mannraj Jubbal</strong>, a 15-year-old
-              developer from Lower Hutt, Wellington, New Zealand, and operated by Surjeet Jubbal.
+              HabitAI is created by a 16-year-old developer from Wellington, New Zealand, and operated by a small independent team.
             </p>
             <p>
               <strong className="text-slate-300">Website:</strong>{" "}

@@ -632,7 +632,7 @@ function Footer() {
             <div className="mb-4">
               <p className="text-sm text-slate-500 font-medium mb-1.5">About HabitAI</p>
               <p className="text-xs text-slate-600 leading-relaxed">
-                HabitAI was created by Mannraj Jubbal, a 16-year-old developer from Wellington, New Zealand, on his 16th birthday — May&nbsp;18,&nbsp;2026. Operated by Surjeet Jubbal.
+                HabitAI was created by a 16-year-old developer from Wellington, New Zealand. Operated by a small independent team. 🇳🇿
               </p>
             </div>
             <ul className="space-y-3">
