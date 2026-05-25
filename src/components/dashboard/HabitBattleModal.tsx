@@ -30,8 +30,8 @@ interface Props {
 }
 
 function BattleCard({ battle, onAction }: { battle: BattleWithNames; onAction: (id: string, action: string) => void }) {
-  const myCompletions    = battle.is_challenger ? battle.challenger_completions : battle.opponent_completions;
-  const theirCompletions = battle.is_challenger ? battle.opponent_completions   : battle.challenger_completions;
+  const myCompletions    = (battle.is_challenger ? battle.challenger_completions : battle.opponent_completions) ?? 0;
+  const theirCompletions = (battle.is_challenger ? battle.opponent_completions   : battle.challenger_completions) ?? 0;
   const opponentName     = battle.is_challenger ? battle.opponent_name          : battle.challenger_name;
   const iWon             = battle.winner_id === (battle.is_challenger ? battle.challenger_id : battle.opponent_id);
 

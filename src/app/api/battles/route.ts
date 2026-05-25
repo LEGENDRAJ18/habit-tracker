@@ -83,6 +83,8 @@ export async function POST(request: NextRequest) {
         habit_name: habit_name.trim(),
         duration_days,
         status: "pending",
+        challenger_completions: 0,
+        opponent_completions: 0,
       })
       .select()
       .single();

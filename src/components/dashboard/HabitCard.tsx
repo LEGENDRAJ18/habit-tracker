@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Trash2, Check, Flame, Snowflake, ArrowRight, Pencil, X, Loader2, Zap, Globe } from "lucide-react";
 import type { Habit, Plan } from "@/types";
 import { useIdentityScore } from "@/hooks/useIdentityScore";
+import VoiceCheckin from "./VoiceCheckin";
 
 interface Props {
   habit: Habit;
@@ -405,6 +406,16 @@ export default function HabitCard({
           </button>
         </div>
       )}
+
+      {/* Voice Check-in — Pro feature */}
+      <div className="px-4">
+        <VoiceCheckin
+          habitId={habit.id}
+          habitName={habit.name}
+          habitLogId={null}
+          tier={tier ?? "free"}
+        />
+      </div>
 
       {/* Identity Score + Habit Strength — desktop only */}
       <div className="hidden sm:block px-4 pb-3">
