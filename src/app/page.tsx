@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import {
   ArrowRight, ArrowDown, Check, Sparkles, Flame, Users, Brain,
   Smartphone, Cigarette, Dumbbell, Moon, X as XIcon,
-  Download, Crown, Play, Shield,
+  Download, Crown,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
@@ -41,114 +41,165 @@ export const metadata: Metadata = {
 // ─── Mock habits for hero mockup ──────────────────────────────────────────────
 
 const MOCK_HABITS = [
-  { name: "No phone before 9am",  done: true,  streak: 12 },
-  { name: "Exercise 30 min",      done: true,  streak: 9  },
+  { name: "No phone before 9am",    done: true,  streak: 12 },
+  { name: "Exercise 30 min",        done: true,  streak: 9  },
   { name: "Read instead of scroll", done: true,  streak: 5  },
-  { name: "In bed by 11pm",       done: false, streak: 3  },
+  { name: "In bed by 11pm",         done: false, streak: 3  },
 ];
+
+// ─── App mockup (shared between Hero and How It Works) ────────────────────────
+
+function AppMockup() {
+  return (
+    <div className="relative">
+      {/* Glow behind mockup */}
+      <div className="absolute -inset-4 bg-gradient-to-br from-violet-600/20 to-purple-700/10 rounded-3xl blur-3xl pointer-events-none" />
+      <div className="relative bg-[#0f0f1a] border border-violet-700/30 rounded-2xl overflow-hidden shadow-2xl shadow-violet-950/70">
+        {/* Window bar */}
+        <div className="flex items-center gap-2 px-4 py-3 bg-[#0a0a14] border-b border-violet-900/20">
+          <div className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
+          <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/70" />
+          <span className="flex-1 text-center text-[11px] text-slate-600 font-medium">habitAI — Dashboard</span>
+        </div>
+        <div className="p-4 sm:p-5">
+          {/* Header row */}
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-[11px] text-slate-500 mb-0.5">Good morning 👋</p>
+              <p className="text-sm font-bold text-white">Today&apos;s Habits</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xl font-black text-violet-400 leading-none">3<span className="text-slate-600 text-sm font-normal">/4</span></p>
+              <p className="text-[10px] text-slate-600 mt-0.5">completed</p>
+            </div>
+          </div>
+          {/* Progress bar */}
+          <div className="w-full h-2 bg-violet-950/80 rounded-full mb-3 overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full transition-all" style={{ width: "75%" }} />
+          </div>
+          {/* XP row */}
+          <div className="flex items-center justify-between mb-3 px-0.5">
+            <span className="text-[10px] text-slate-600">Level 7 · Committed</span>
+            <span className="text-[10px] text-violet-400 font-semibold">+30 XP today ⚡</span>
+          </div>
+          {/* Habit list */}
+          <div className="space-y-2 mb-3">
+            {MOCK_HABITS.map((h) => (
+              <div key={h.name} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all ${
+                h.done
+                  ? "bg-violet-600/10 border-violet-600/25"
+                  : "bg-[#0c0c18] border-violet-900/25"
+              }`}>
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  h.done ? "bg-violet-500" : "border-2 border-slate-700"
+                }`}>
+                  {h.done && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                </div>
+                <span className={`text-xs flex-1 text-left font-medium ${h.done ? "text-slate-500 line-through" : "text-slate-200"}`}>
+                  {h.name}
+                </span>
+                <span className="text-[11px] text-orange-400 font-semibold">🔥{h.streak}</span>
+              </div>
+            ))}
+          </div>
+          {/* AI coach strip */}
+          <div className="flex items-start gap-2.5 bg-violet-950/60 border border-violet-700/25 rounded-xl px-3 py-2.5">
+            <Sparkles className="w-3.5 h-3.5 text-violet-400 flex-shrink-0 mt-0.5" />
+            <p className="text-[11px] text-slate-300 leading-relaxed">
+              <span className="text-violet-300 font-semibold">AI coach: </span>
+              You struggle on Thursdays — here&apos;s a 3-step plan to fix that.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ─── 1. HERO ──────────────────────────────────────────────────────────────────
 
+const BENEFITS = [
+  { emoji: "✨", text: "AI coach finds why you keep failing — and fixes it" },
+  { emoji: "🔥", text: "Streaks stay alive even when life gets in the way" },
+  { emoji: "👥", text: "Friends leaderboard keeps you accountable daily" },
+];
+
 function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center pt-20 pb-24 overflow-hidden">
+    <section className="relative pt-16 pb-12 sm:pt-20 sm:pb-16 lg:pt-24 lg:pb-20 overflow-hidden">
       {/* Background glows */}
-      <div className="absolute top-1/3 left-[15%] w-[560px] h-[560px] bg-violet-700/10 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-[15%] w-[420px] h-[420px] bg-purple-700/10 rounded-full blur-[130px] pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[600px] bg-violet-700/8 rounded-full blur-[160px] pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-purple-700/6 rounded-full blur-[130px] pointer-events-none" />
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 text-center">
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 bg-violet-950/60 border border-violet-700/30 rounded-full px-4 py-1.5 text-sm text-violet-300 mb-8">
-          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse flex-shrink-0" />
-          AI-powered habit coaching
-        </div>
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-14">
 
-        {/* Headline */}
-        <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white mb-6 leading-[1.08]">
-          Break bad habits.{" "}
-          <br className="hidden sm:block" />
-          Build better ones.{" "}
-          <span className="bg-gradient-to-r from-violet-400 via-purple-300 to-fuchsia-400 bg-clip-text text-transparent">
-            With AI.
-          </span>
-        </h1>
+          {/* ── Left: copy ─────────────────────────────────────────────────── */}
+          <div className="flex-1 w-full text-center lg:text-left">
 
-        {/* Subheadline */}
-        <p className="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-          Most habit apps just track. HabitAI{" "}
-          <span className="text-slate-200 font-medium">coaches.</span>{" "}
-          Get personalized AI advice for phone addiction, smoking, fitness, sleep — whatever you&apos;re working on.
-        </p>
-
-        {/* CTAs */}
-        <div className="flex justify-center mb-8">
-          <Link
-            href="/auth/login"
-            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-violet-900/40 hover:shadow-violet-800/50 hover:-translate-y-0.5 text-base"
-          >
-            Open HabitAI
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        {/* Trust line */}
-        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-slate-500 mb-20">
-          {["No credit card required", "Free forever plan", "Cancel anytime"].map((t) => (
-            <span key={t} className="flex items-center gap-1.5">
-              <Check className="w-3.5 h-3.5 text-violet-600 flex-shrink-0" />
-              {t}
-            </span>
-          ))}
-        </div>
-
-        {/* App mockup */}
-        <div className="relative max-w-lg mx-auto">
-          <div className="absolute inset-0 bg-gradient-to-r from-violet-600/15 to-purple-600/15 rounded-2xl blur-2xl scale-105 pointer-events-none" />
-          <div className="relative bg-[#0f0f1a]/95 border border-violet-800/30 rounded-2xl overflow-hidden shadow-2xl shadow-violet-950/60">
-            {/* Window chrome */}
-            <div className="flex items-center gap-2 px-4 py-3 bg-[#0a0a14] border-b border-violet-900/20">
-              <div className="w-3 h-3 rounded-full bg-red-500/60" />
-              <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
-              <div className="w-3 h-3 rounded-full bg-green-500/60" />
-              <span className="flex-1 text-center text-xs text-slate-500">HabitAI — Dashboard</span>
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 bg-violet-950/60 border border-violet-700/30 rounded-full px-4 py-1.5 text-sm text-violet-300 mb-6">
+              <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse flex-shrink-0" />
+              Free forever · AI-powered
             </div>
-            <div className="p-5">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <p className="text-xs text-slate-500 mb-0.5">Good morning 👋</p>
-                  <p className="text-base font-semibold text-white">Today&apos;s Habits</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-violet-400">3<span className="text-slate-600 text-base font-normal">/4</span></p>
-                  <p className="text-xs text-slate-500">completed</p>
-                </div>
-              </div>
-              <div className="w-full h-1.5 bg-violet-950/80 rounded-full mb-4 overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full" style={{ width: "75%" }} />
-              </div>
-              <div className="space-y-2">
-                {MOCK_HABITS.map((h) => (
-                  <div key={h.name} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border ${
-                    h.done ? "bg-violet-600/10 border-violet-600/25" : "bg-violet-950/30 border-violet-900/20"
-                  }`}>
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      h.done ? "bg-violet-500" : "border-2 border-violet-700/60"
-                    }`}>
-                      {h.done && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
-                    </div>
-                    <span className={`text-sm flex-1 text-left ${h.done ? "text-slate-500 line-through" : "text-slate-200"}`}>
-                      {h.name}
-                    </span>
-                    <span className="text-xs text-violet-400">🔥 {h.streak}d</span>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-3.5 flex items-center gap-2.5 bg-violet-950/50 border border-violet-800/30 rounded-xl px-3 py-2.5">
-                <Sparkles className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" />
-                <p className="text-xs text-slate-400">
-                  <span className="text-violet-300 font-medium">AI coach:</span> You struggle on Thursdays. Let&apos;s fix that — here&apos;s a 3-step plan.
-                </p>
-              </div>
+
+            {/* Headline — one sentence, crystal clear */}
+            <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-black tracking-tight text-white mb-5 leading-[1.07]">
+              Build habits that{" "}
+              <span className="bg-gradient-to-r from-violet-400 via-purple-300 to-fuchsia-400 bg-clip-text text-transparent whitespace-nowrap">
+                actually stick
+              </span>
+              , with AI.
+            </h1>
+
+            {/* Benefits — 3 bullets, each ≤ 10 words */}
+            <ul className="space-y-3 mb-8 text-left max-w-sm mx-auto lg:mx-0">
+              {BENEFITS.map(({ emoji, text }) => (
+                <li key={text} className="flex items-start gap-3">
+                  <span className="text-lg leading-none flex-shrink-0 mt-0.5">{emoji}</span>
+                  <span className="text-base text-slate-300 leading-snug">{text}</span>
+                </li>
+              ))}
+            </ul>
+
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-3 mb-5">
+              <Link
+                href="/auth/login"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-violet-600 hover:bg-violet-500 active:scale-[0.98] text-white font-bold rounded-2xl transition-all duration-150 shadow-xl shadow-violet-900/50 hover:shadow-violet-700/50 hover:-translate-y-0.5 text-base"
+              >
+                Start for free
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+              <Link
+                href="#features"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 border border-violet-800/40 hover:border-violet-600/60 text-slate-400 hover:text-white font-medium rounded-2xl transition-all duration-150 text-sm"
+              >
+                See how it works
+                <ArrowDown className="w-4 h-4" />
+              </Link>
+            </div>
+
+            {/* Trust line */}
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2 text-sm text-slate-600">
+              {["No credit card", "Free forever plan", "Takes 60 seconds"].map((t) => (
+                <span key={t} className="flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-violet-600 flex-shrink-0" />{t}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Right: app preview ──────────────────────────────────────────── */}
+          <div className="flex-1 w-full max-w-sm sm:max-w-md lg:max-w-none mx-auto lg:mx-0">
+            {/* On mobile: clip to keep above-fold tight */}
+            <div className="lg:hidden max-h-[340px] overflow-hidden rounded-2xl">
+              <AppMockup />
+            </div>
+            {/* On desktop: full mockup */}
+            <div className="hidden lg:block">
+              <AppMockup />
             </div>
           </div>
         </div>
@@ -410,67 +461,6 @@ function WhoItsFor() {
 // ─── 5. PRICING ───────────────────────────────────────────────────────────────
 // Uses the existing Pricing component (already updated with accurate feature lists)
 
-// ─── DEMO VIDEO ───────────────────────────────────────────────────────────────
-
-function DemoSection() {
-  return (
-    <section className="py-24 px-4 sm:px-6 bg-[#060609]">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-            See it in action
-          </h2>
-          <p className="text-slate-400 max-w-lg mx-auto">
-            Watch how HabitAI helped someone quit doom scrolling in 21 days.
-          </p>
-        </div>
-
-        {/* Video placeholder */}
-        <div className="relative group cursor-pointer rounded-2xl overflow-hidden border border-violet-700/30 shadow-2xl shadow-violet-950/50">
-          {/* Gradient background stand-in */}
-          <div className="relative aspect-video bg-gradient-to-br from-[#0d0d1f] via-[#0f0a1e] to-[#0a0a16] flex items-center justify-center">
-            {/* Ambient glow */}
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-900/20 via-transparent to-purple-900/15 pointer-events-none" />
-            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
-
-            {/* Mockup content behind video */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none select-none">
-              <div className="w-64 bg-[#0f0f1a] border border-violet-800/30 rounded-xl p-4 text-left">
-                <p className="text-xs text-slate-500 mb-2">HabitAI — Day 21</p>
-                <div className="space-y-1.5">
-                  {["No phone before 9am ✓", "Read 20 pages ✓", "No social media ✓"].map((t) => (
-                    <div key={t} className="text-xs text-violet-300 bg-violet-900/30 rounded-lg px-3 py-1.5">{t}</div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Play button */}
-            <div className="relative z-10 flex flex-col items-center gap-4">
-              <div
-                className="w-20 h-20 rounded-full bg-violet-600/90 hover:bg-violet-500 flex items-center justify-center shadow-2xl shadow-violet-900/60 transition-all duration-300 group-hover:scale-110"
-                style={{ boxShadow: "0 0 0 12px rgba(139,92,246,0.12), 0 0 40px rgba(139,92,246,0.4)" }}
-              >
-                <Play className="w-8 h-8 text-white ml-1" fill="white" />
-              </div>
-              <span className="text-xs text-violet-400/80 tracking-wide font-medium">Coming soon</span>
-            </div>
-
-            {/* Duration badge */}
-            <div className="absolute bottom-4 right-4 bg-black/60 text-white text-xs font-mono px-2 py-1 rounded-md">
-              3:21
-            </div>
-          </div>
-        </div>
-
-        <p className="text-center text-sm text-slate-500 mt-5">
-          No demo yet — but the app is live. Start your own story today.
-        </p>
-      </div>
-    </section>
-  );
-}
-
 // ─── ABOUT SECTION ────────────────────────────────────────────────────────────
 
 function AboutSection() {
@@ -529,7 +519,7 @@ function FinalCta() {
               href="/auth/login"
               className="inline-flex items-center gap-2 px-10 py-4 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all duration-200 shadow-xl shadow-violet-900/40 hover:-translate-y-0.5 text-base mb-4"
             >
-              Open HabitAI
+              Start for free
               <ArrowRight className="w-5 h-5" />
             </Link>
 
@@ -700,7 +690,6 @@ export default async function LandingPage() {
       <Navbar />
       <main>
         <Hero />
-        <DemoSection />
         <ProblemSection />
         <SolutionSection />
         <WhoItsFor />
