@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 const Navbar  = dynamic(() => import("@/components/landing/Navbar"));
 const Pricing = dynamic(() => import("@/components/landing/Pricing"));
 const LandingPageTracker = dynamic(() => import("@/components/landing/LandingPageTracker"));
+const ModesSection = dynamic(() => import("@/components/landing/ModesSection"));
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://habitai.app";
 
@@ -945,6 +946,7 @@ export default async function LandingPage() {
         <SolutionSection />
         <NewFeaturesSection />
         <WhoItsFor />
+        <ModesSection />
         <div id="pricing">
           <Pricing />
         </div>

@@ -21,6 +21,7 @@ export function useProfile() {
   const [subscriptionStatus, setSubscriptionStatus]         = useState<string | null>(null);
   const [trialEndDate, setTrialEndDate]                     = useState<string | null>(null);
   const [dreamUniversity, setDreamUniversity]               = useState<string | null>(null);
+  const [userMode, setUserMode]                             = useState<"student" | "parent" | "teacher" | "personal">("personal");
   const supabase = useRef(createClient()).current;
 
   useEffect(() => {
@@ -41,6 +42,7 @@ export function useProfile() {
       subscription_status?: string | null;
       trial_end_date?: string | null;
       dream_university?: string | null;
+      user_mode?: string | null;
     }) {
       if (d.subscription_tier) setTier(d.subscription_tier as Plan);
       setOnboardingCompleted(d.onboarding_completed ?? false);
@@ -58,6 +60,7 @@ export function useProfile() {
       setSubscriptionStatus(d.subscription_status ?? null);
       setTrialEndDate(d.trial_end_date ?? null);
       setDreamUniversity(d.dream_university ?? null);
+      setUserMode((d.user_mode as "student" | "parent" | "teacher" | "personal") ?? "personal");
     }
 
     (async () => {
@@ -67,7 +70,7 @@ export function useProfile() {
       const { data } = await supabase
         .from("profiles")
         .select(
-          "subscription_tier, onboarding_completed, goal, goals, last_freeze_used, freeze_protected_date, reminder_enabled, reminder_hour, reminder_minute, subscription_cancel_at_period_end, subscription_current_period_end, subscription_status, trial_end_date, dream_university"
+          "subscription_tier, onboarding_completed, goal, goals, last_freeze_used, freeze_protected_date, reminder_enabled, reminder_hour, reminder_minute, subscription_cancel_at_period_end, subscription_current_period_end, subscription_status, trial_end_date, dream_university, user_mode"
         )
         .eq("id", user.id)
         .single();
@@ -154,5 +157,6 @@ export function useProfile() {
     subscriptionStatus,
     trialEndDate,
     dreamUniversity,
+    userMode,
   };
 }

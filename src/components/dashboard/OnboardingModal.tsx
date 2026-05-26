@@ -3,10 +3,56 @@
 import { useState, useMemo } from "react";
 import {
   ChevronRight, ArrowLeft, Loader2, Check, Bot, Shield, Users, Zap,
+  GraduationCap, UserCheck, BookOpen, Smile,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
+
+type UserMode = "student" | "parent" | "teacher" | "personal";
+
+const MODES: { id: UserMode; emoji: string; label: string; tagline: string; desc: string; color: string; border: string; glow: string }[] = [
+  {
+    id: "student",
+    emoji: "🎓",
+    label: "Student",
+    tagline: "Academic excellence",
+    desc: "I want to build habits that help me achieve academically and get into my dream uni",
+    color: "text-indigo-300",
+    border: "border-indigo-500/50",
+    glow: "bg-indigo-500/10",
+  },
+  {
+    id: "parent",
+    emoji: "👨‍👩‍👧",
+    label: "Parent",
+    tagline: "Monitor & encourage",
+    desc: "I want to monitor and encourage my child's habit journey",
+    color: "text-emerald-300",
+    border: "border-emerald-500/50",
+    glow: "bg-emerald-500/10",
+  },
+  {
+    id: "teacher",
+    emoji: "👨‍🏫",
+    label: "Teacher / Coach",
+    tagline: "Lead your team",
+    desc: "I want to track habits for my class, team, or organisation",
+    color: "text-amber-300",
+    border: "border-amber-500/50",
+    glow: "bg-amber-500/10",
+  },
+  {
+    id: "personal",
+    emoji: "🙋",
+    label: "Personal",
+    tagline: "Self improvement",
+    desc: "I want to build better habits for my own self improvement",
+    color: "text-violet-300",
+    border: "border-violet-500/50",
+    glow: "bg-violet-500/10",
+  },
+];
 
 const GOALS = [
   { id: "fitness",    emoji: "🏋️", label: "Get fit & healthy"    },
@@ -22,7 +68,13 @@ const CONFETTI_COLORS = [
   "#e879f9","#60a5fa","#34d399","#fb923c","#f472b6","#ffffff",
 ];
 
-const TOTAL_STEPS = 6;
+// Step counts per mode (for progress dots)
+const MODE_TOTAL_STEPS: Record<UserMode, number> = {
+  student:  7,
+  parent:   5,
+  teacher:  5,
+  personal: 6,
+};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -82,7 +134,7 @@ function SelectDot({ selected }: { selected: boolean }) {
   );
 }
 
-// ─── Goal observation (shown in real-time as goals are selected) ─────────────
+// ─── Goal observation ─────────────────────────────────────────────────────────
 
 const GOAL_PAIR_OBS: Record<string, string> = {
   "fitness+mental":     "💡 These two reinforce each other directly — exercise reduces cortisol as effectively as some medications. You've picked the highest-synergy combination.",
@@ -183,7 +235,6 @@ function StudentPack({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
 
   return (
     <div className="space-y-4">
-      {/* Featured pack */}
       <div
         className="bg-gradient-to-br from-violet-950/60 via-[#0f0f1a] to-indigo-950/30 border border-violet-500/30 rounded-2xl p-5 text-left cursor-pointer"
         onClick={() => setExpanded((v) => !v)}
@@ -213,14 +264,12 @@ function StudentPack({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
           </div>
         )}
       </div>
-
       <button type="button" onClick={() => void loadPack()} disabled={loading}
         className="w-full py-3.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-60 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-violet-900/30"
       >
         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>🎓</span>}
         {loading ? "Loading…" : "Load Student Success Pack"}
       </button>
-
       <button type="button" onClick={onSkip}
         className="w-full py-2.5 text-slate-500 hover:text-slate-300 text-sm transition-colors"
       >
@@ -235,11 +284,15 @@ function StudentPack({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
 interface Props { onComplete: () => void; }
 
 export default function OnboardingModal({ onComplete }: Props) {
-  const [step, setStep]             = useState(1);
+  const [step, setStep]               = useState(1);
+  const [userMode, setUserMode]       = useState<UserMode | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [customGoal, setCustomGoal] = useState("");
-  const [dreamUni, setDreamUni]     = useState("");
-  const [saving, setSaving]         = useState(false);
+  const [customGoal, setCustomGoal]   = useState("");
+  const [dreamUni, setDreamUni]       = useState("");
+  const [orgName, setOrgName]         = useState("");
+  const [saving, setSaving]           = useState(false);
+
+  const totalSteps = userMode ? MODE_TOTAL_STEPS[userMode] : 7;
 
   const toggle = (id: string) =>
     setSelectedIds((prev) =>
@@ -247,10 +300,17 @@ export default function OnboardingModal({ onComplete }: Props) {
     );
 
   const hasCustom  = selectedIds.includes("custom");
-  const canFinish  = selectedIds.length > 0 && (!hasCustom || customGoal.trim() !== "");
+  const needsGoals = userMode === "student" || userMode === "personal" || userMode === null;
+  const canFinish  = !needsGoals || (selectedIds.length > 0 && (!hasCustom || customGoal.trim() !== ""));
 
   const next = () => setStep((s) => s + 1);
   const back = () => setStep((s) => s - 1);
+
+  // For parent/teacher, skip habit steps and jump to final
+  const handleModeNext = (mode: UserMode) => {
+    setUserMode(mode);
+    next();
+  };
 
   const handleFinish = async () => {
     setSaving(true);
@@ -262,12 +322,17 @@ export default function OnboardingModal({ onComplete }: Props) {
           if (id === "custom") return customGoal.trim() || "Custom goal";
           return GOALS.find((g) => g.id === id)?.label ?? id;
         });
-        await supabase.from("profiles").update({
+        const update: Record<string, unknown> = {
           onboarding_completed: true,
-          goals: goalLabels,
-          goal:  goalLabels[0] ?? null,
+          user_mode: userMode ?? "personal",
+          ...(goalLabels.length > 0 ? { goals: goalLabels, goal: goalLabels[0] } : {}),
           ...(dreamUni.trim() ? { dream_university: dreamUni.trim() } : {}),
-        }).eq("id", user.id);
+        };
+        // Save org name as invite_code for teacher mode
+        if (userMode === "teacher" && orgName.trim()) {
+          update.invite_code = orgName.trim().toUpperCase().replace(/\s+/g, "").slice(0, 8);
+        }
+        await supabase.from("profiles").update(update).eq("id", user.id);
       }
     } catch {
       // non-blocking
@@ -279,7 +344,7 @@ export default function OnboardingModal({ onComplete }: Props) {
 
   const dots = (
     <div className="flex gap-2 justify-center mb-10">
-      {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((s) => (
+      {Array.from({ length: totalSteps }, (_, i) => i + 1).map((s) => (
         <div key={s} className={`h-1 rounded-full transition-all duration-500 ${
           s === step ? "w-8 bg-violet-500" : s < step ? "w-4 bg-violet-700/60" : "w-4 bg-slate-800"
         }`} />
@@ -287,13 +352,16 @@ export default function OnboardingModal({ onComplete }: Props) {
     </div>
   );
 
+  // Final step index varies by mode
+  const finalStep = totalSteps;
+
   return (
     <div className="fixed inset-0 z-50 bg-[#09090f] flex flex-col items-center justify-center px-4 py-10 overflow-auto">
       <div className="fixed -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-violet-700/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="fixed -bottom-32 left-1/2 -translate-x-1/2 w-[500px] h-[250px] bg-purple-700/8 rounded-full blur-[100px] pointer-events-none" />
 
       <div className="w-full max-w-md relative">
-        {step > 1 && step < TOTAL_STEPS && (
+        {step > 1 && step < finalStep && (
           <button type="button" onClick={back}
             className="flex items-center gap-1.5 text-slate-500 hover:text-slate-300 text-sm mb-6 transition-colors"
           >
@@ -311,7 +379,6 @@ export default function OnboardingModal({ onComplete }: Props) {
               <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
                 🔥
               </div>
-
               <h1 className="text-3xl font-extrabold text-white mb-3 leading-tight tracking-tight">
                 You&apos;re about to<br />join the 8%
               </h1>
@@ -319,7 +386,6 @@ export default function OnboardingModal({ onComplete }: Props) {
                 92% of people abandon their habits within 7 days.<br />
                 <span className="text-violet-300 font-semibold">HabitAI exists to make sure you&apos;re not one of them.</span>
               </p>
-
               <div className="space-y-2.5 mb-8 text-left">
                 {[
                   { icon: Bot,    color: "text-violet-400", bg: "bg-violet-900/30", title: "AI coaching",              desc: "Personalised guidance that adapts to your life" },
@@ -338,7 +404,6 @@ export default function OnboardingModal({ onComplete }: Props) {
                   </div>
                 ))}
               </div>
-
               <button type="button" onClick={next}
                 className="w-full py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-xl shadow-violet-900/40"
                 style={{ animation: "ctaPulse 2s ease-in-out 1.2s infinite" }}
@@ -348,8 +413,49 @@ export default function OnboardingModal({ onComplete }: Props) {
             </div>
           )}
 
-          {/* ── Step 2: Dream university ─────────────────────────────────── */}
+          {/* ── Step 2: Who are you? Mode selection ──────────────────────── */}
           {step === 2 && (
+            <div>
+              <div className="text-center mb-8">
+                <div className="text-5xl mb-5 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+                  👋
+                </div>
+                <h1 className="text-3xl font-extrabold text-white mb-2 leading-tight">
+                  HabitAI adapts<br />to who you are
+                </h1>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  Choose your mode — your dashboard, AI coaching, and habit suggestions all personalise to your life.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {MODES.map((mode) => (
+                  <button
+                    key={mode.id}
+                    type="button"
+                    onClick={() => handleModeNext(mode.id)}
+                    className={`w-full text-left rounded-2xl border p-4 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] ${mode.border} ${mode.glow} hover:shadow-lg`}
+                    style={{ background: "rgba(15,15,26,0.95)" }}
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <span className="text-3xl leading-none flex-shrink-0">{mode.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <p className={`text-sm font-bold ${mode.color}`}>{mode.label}</p>
+                          <span className={`text-[10px] font-semibold ${mode.color} opacity-60`}>· {mode.tagline}</span>
+                        </div>
+                        <p className="text-xs text-slate-500 leading-snug">{mode.desc}</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-slate-600 flex-shrink-0" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Step 3: Mode-specific setup ───────────────────────────────── */}
+          {step === 3 && userMode === "student" && (
             <div className="text-center">
               <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
                 🎓
@@ -360,7 +466,6 @@ export default function OnboardingModal({ onComplete }: Props) {
               <p className="text-slate-400 text-sm mb-7 leading-relaxed">
                 HabitAI will build a personalised habit plan around your application timeline — completely free, and totally unique to you.
               </p>
-
               <input
                 autoFocus
                 value={dreamUni}
@@ -370,28 +475,130 @@ export default function OnboardingModal({ onComplete }: Props) {
                 maxLength={80}
                 className="w-full bg-violet-950/40 border border-violet-700/40 focus:border-violet-500/60 focus:outline-none focus:ring-2 focus:ring-violet-500/20 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 mb-4 transition-all"
               />
-
               {dreamUni.trim() && (
-                <div
-                  className="mb-5 p-3.5 rounded-xl bg-indigo-950/50 border border-indigo-700/30 text-left"
-                  style={{ animation: "stepIn 0.25s ease-out both" }}
-                >
+                <div className="mb-5 p-3.5 rounded-xl bg-indigo-950/50 border border-indigo-700/30 text-left" style={{ animation: "stepIn 0.25s ease-out both" }}>
                   <p className="text-xs text-indigo-300 leading-relaxed">
                     🎓 Your <span className="font-semibold text-white">{dreamUni.trim()}</span> journey starts now — your dashboard will track every day toward your application deadline.
                   </p>
                 </div>
               )}
-
               <button type="button" onClick={next}
                 className="w-full py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-xl shadow-violet-900/40"
               >
-                {dreamUni.trim() ? "Let's do this " : "Skip for now "}<ChevronRight className="w-4 h-4" />
+                {dreamUni.trim() ? "Let's do this" : "Skip for now"} <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           )}
 
-          {/* ── Step 3: Your AI coach + Student Pack ─────────────────────── */}
-          {step === 3 && (
+          {step === 3 && userMode === "parent" && (
+            <div className="text-center">
+              <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+                👨‍👩‍👧
+              </div>
+              <h1 className="text-3xl font-extrabold text-white mb-3 leading-tight">
+                Invite your child<br />to connect
+              </h1>
+              <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+                Once your child signs up and links their account, you&apos;ll see their habit completions in real-time from your dashboard.
+              </p>
+              <div className="bg-emerald-950/30 border border-emerald-700/30 rounded-2xl p-5 mb-6 text-left">
+                <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-3">As a parent you can:</p>
+                {[
+                  { emoji: "🟢", text: "See when your child completes all habits (green)" },
+                  { emoji: "🟡", text: "Know when they've done some habits (yellow)" },
+                  { emoji: "🔴", text: "Get alerted when they've done none (red)" },
+                  { emoji: "💬", text: "Send encouraging messages directly" },
+                  { emoji: "📊", text: "View their weekly progress summary" },
+                ].map(({ emoji, text }) => (
+                  <div key={text} className="flex items-center gap-3 mb-2.5 last:mb-0">
+                    <span className="text-lg leading-none flex-shrink-0">{emoji}</span>
+                    <p className="text-sm text-slate-300">{text}</p>
+                  </div>
+                ))}
+              </div>
+              <button type="button" onClick={next}
+                className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-xl shadow-emerald-900/40"
+              >
+                Continue <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {step === 3 && userMode === "teacher" && (
+            <div className="text-center">
+              <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+                👨‍🏫
+              </div>
+              <h1 className="text-3xl font-extrabold text-white mb-3 leading-tight">
+                Create your<br />first class
+              </h1>
+              <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+                Give your class or team a name. Students join using your unique invite code — they&apos;ll see it in your dashboard.
+              </p>
+              <input
+                autoFocus
+                value={orgName}
+                onChange={(e) => setOrgName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && orgName.trim()) next(); }}
+                placeholder="e.g. Year 11 Biology, Swim Team A…"
+                maxLength={40}
+                className="w-full bg-amber-950/30 border border-amber-700/40 focus:border-amber-500/60 focus:outline-none focus:ring-2 focus:ring-amber-500/20 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 mb-4 transition-all"
+              />
+              {orgName.trim() && (
+                <div className="mb-5 p-3.5 rounded-xl bg-amber-950/40 border border-amber-700/30 text-left" style={{ animation: "stepIn 0.25s ease-out both" }}>
+                  <p className="text-xs text-amber-300 leading-relaxed">
+                    🏫 Your class <span className="font-semibold text-white">&ldquo;{orgName.trim()}&rdquo;</span> will get an invite code your students can use to join.
+                  </p>
+                </div>
+              )}
+              <button type="button" onClick={next} disabled={!orgName.trim()}
+                className="w-full py-3.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-xl shadow-amber-900/40"
+              >
+                Create class <ChevronRight className="w-4 h-4" />
+              </button>
+              <button type="button" onClick={next} className="w-full py-2.5 text-slate-500 hover:text-slate-300 text-sm transition-colors mt-2">
+                Skip — set up later
+              </button>
+            </div>
+          )}
+
+          {step === 3 && userMode === "personal" && (
+            <div className="text-center">
+              <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+                🙋
+              </div>
+              <h1 className="text-3xl font-extrabold text-white mb-3 leading-tight">
+                Your AI coach<br />is ready
+              </h1>
+              <p className="text-slate-400 text-sm mb-5 leading-relaxed">
+                It analyses your habits, spots patterns, and delivers a <span className="text-violet-300 font-semibold">personalised weekly game plan</span> — tailored exactly to where you are.
+              </p>
+              <div className="space-y-2.5 mb-7 text-left">
+                {[
+                  { emoji: "🎯", title: "Fitness & health",     desc: "Run, sleep, hydrate — track what moves the needle" },
+                  { emoji: "💰", title: "Productivity",          desc: "Deep work, no-phone mornings, evening planning"     },
+                  { emoji: "🧠", title: "Mental wellness",       desc: "Meditation, journaling, gratitude practice"          },
+                  { emoji: "📈", title: "Finance & learning",    desc: "Daily reading, saving habits, skill-building"        },
+                ].map(({ emoji, title, desc }) => (
+                  <div key={title} className="flex items-start gap-3 bg-[#0f0f1a] border border-violet-900/15 rounded-xl px-4 py-3">
+                    <span className="text-xl leading-none flex-shrink-0">{emoji}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-white">{title}</p>
+                      <p className="text-xs text-slate-500 mt-0.5 leading-snug">{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button type="button" onClick={next}
+                className="w-full py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-xl shadow-violet-900/40"
+              >
+                Let&apos;s go <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* ── Step 4: Mode-specific pack / overview ─────────────────────── */}
+          {step === 4 && (userMode === "student") && (
             <div className="text-center">
               <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
                 🤖
@@ -400,16 +607,80 @@ export default function OnboardingModal({ onComplete }: Props) {
                 Your AI coach<br />is ready
               </h1>
               <p className="text-slate-400 text-sm mb-5 leading-relaxed">
-                It analyses your habits, spots patterns, and delivers a <span className="text-violet-300 font-semibold">personalised weekly game plan</span> — tailored exactly to where you are.
+                It analyses your habits, spots patterns, and delivers a <span className="text-violet-300 font-semibold">personalised weekly game plan</span> — tailored to your academic goals.
               </p>
-
-              {/* Student Success Pack */}
               <StudentPack onNext={next} onSkip={next} />
             </div>
           )}
 
-          {/* ── Step 4: Never lose your streak again ─────────────────────── */}
-          {step === 4 && (
+          {step === 4 && userMode === "parent" && (
+            <div className="text-center">
+              <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+                📊
+              </div>
+              <h1 className="text-3xl font-extrabold text-white mb-3 leading-tight">
+                Your monitoring<br />dashboard
+              </h1>
+              <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+                After your child links their account, you&apos;ll see this view in real-time — updated as they complete habits throughout the day.
+              </p>
+              <div className="space-y-3 text-left mb-7">
+                {[
+                  { icon: "🟢", label: "All habits done",   desc: "Your child is on track — celebrate with an encouragement message", bg: "bg-emerald-950/40", border: "border-emerald-700/30" },
+                  { icon: "🟡", label: "Some habits done",  desc: "A gentle nudge might be all they need to finish strong",           bg: "bg-amber-950/40",   border: "border-amber-700/30" },
+                  { icon: "🔴", label: "No habits done yet",desc: "Send a motivating message — one tap from your dashboard",          bg: "bg-red-950/30",     border: "border-red-700/25" },
+                ].map(({ icon, label, desc, bg, border }) => (
+                  <div key={label} className={`flex items-start gap-3 ${bg} border ${border} rounded-xl px-4 py-3`}>
+                    <span className="text-xl leading-none flex-shrink-0 mt-0.5">{icon}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-white">{label}</p>
+                      <p className="text-xs text-slate-500 mt-0.5 leading-snug">{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button type="button" onClick={next}
+                className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-xl shadow-emerald-900/40"
+              >
+                Got it <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {step === 4 && userMode === "teacher" && (
+            <div className="text-center">
+              <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+                🏫
+              </div>
+              <h1 className="text-3xl font-extrabold text-white mb-3 leading-tight">
+                Your class<br />dashboard
+              </h1>
+              <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+                Assign habits, track completion rates, and highlight top performers — all from one place.
+              </p>
+              <div className="space-y-2.5 mb-7 text-left">
+                {[
+                  { emoji: "📈", text: "See overall class completion rate at a glance" },
+                  { emoji: "🏆", text: "Highlight top 3 performers each week" },
+                  { emoji: "📣", text: "Send group announcements and habit challenges" },
+                  { emoji: "📋", text: "Export progress reports for parents or admin" },
+                  { emoji: "🔗", text: "Invite students via your unique class code" },
+                ].map(({ emoji, text }) => (
+                  <div key={text} className="flex items-center gap-3 bg-[#0f0f1a] border border-amber-900/20 rounded-xl px-4 py-3">
+                    <span className="text-xl leading-none flex-shrink-0">{emoji}</span>
+                    <p className="text-sm text-slate-300">{text}</p>
+                  </div>
+                ))}
+              </div>
+              <button type="button" onClick={next}
+                className="w-full py-3.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-xl shadow-amber-900/40"
+              >
+                Let&apos;s go <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {step === 4 && userMode === "personal" && (
             <div className="text-center">
               <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
                 🛡️
@@ -420,7 +691,6 @@ export default function OnboardingModal({ onComplete }: Props) {
               <p className="text-slate-400 text-sm mb-7 leading-relaxed">
                 Life happens. Travel, illness, emergencies — <span className="text-blue-300 font-semibold">Streak Shield</span> protects your streak when you have to miss a day.
               </p>
-
               <div className="grid grid-cols-2 gap-3 mb-8">
                 {[
                   { emoji: "🔥", stat: "21 days",  label: "Average streak on HabitAI"  },
@@ -435,7 +705,6 @@ export default function OnboardingModal({ onComplete }: Props) {
                   </div>
                 ))}
               </div>
-
               <button type="button" onClick={next}
                 className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-violet-900/30"
               >
@@ -444,8 +713,86 @@ export default function OnboardingModal({ onComplete }: Props) {
             </div>
           )}
 
-          {/* ── Step 5: Your squad keeps you honest ──────────────────────── */}
-          {step === 5 && (
+          {/* ── Step 5 ────────────────────────────────────────────────────── */}
+          {step === 5 && (userMode === "student") && (
+            <div className="text-center">
+              <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+                🛡️
+              </div>
+              <h1 className="text-3xl font-extrabold text-white mb-3 leading-tight">
+                Never lose your<br />streak again
+              </h1>
+              <p className="text-slate-400 text-sm mb-7 leading-relaxed">
+                Exam season, illness, off days — <span className="text-blue-300 font-semibold">Streak Shield</span> protects your streak so one bad day doesn&apos;t undo weeks of progress.
+              </p>
+              <div className="grid grid-cols-2 gap-3 mb-8">
+                {[
+                  { emoji: "🔥", stat: "21 days",  label: "Average streak on HabitAI"  },
+                  { emoji: "🛡️", stat: "1 skip",   label: "Protected free every week"   },
+                  { emoji: "📈", stat: "3×",        label: "More likely to reach 30 days" },
+                  { emoji: "⚡", stat: "10 XP",     label: "Earned per habit completed"  },
+                ].map(({ emoji, stat, label }) => (
+                  <div key={label} className="bg-[#0f0f1a] border border-violet-900/20 rounded-xl px-4 py-3.5 text-center">
+                    <div className="text-2xl mb-1.5 leading-none">{emoji}</div>
+                    <p className="text-lg font-extrabold text-white leading-none">{stat}</p>
+                    <p className="text-[11px] text-slate-500 mt-1 leading-snug">{label}</p>
+                  </div>
+                ))}
+              </div>
+              <button type="button" onClick={next}
+                className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-violet-900/30"
+              >
+                Next <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* Parent + Teacher final step */}
+          {step === 5 && (userMode === "parent" || userMode === "teacher") && (
+            <div className="relative">
+              <Confetti />
+              <div className="relative text-center">
+                <div className="text-6xl mb-5 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+                  {userMode === "parent" ? "👨‍👩‍👧" : "🏫"}
+                </div>
+                <h1 className="text-3xl font-extrabold text-white mb-2 leading-tight">
+                  You&apos;re all set!
+                </h1>
+                <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+                  {userMode === "parent"
+                    ? "Your parent dashboard is ready. Invite your child from the dashboard to start monitoring their progress."
+                    : "Your teacher dashboard is ready. Share your class invite code with students to get them on board."}
+                </p>
+                <div className={`${userMode === "parent" ? "bg-emerald-950/30 border-emerald-700/30" : "bg-amber-950/30 border-amber-700/30"} border rounded-2xl p-5 mb-7 text-left`}>
+                  <p className={`text-xs font-bold uppercase tracking-wider mb-3 ${userMode === "parent" ? "text-emerald-400" : "text-amber-400"}`}>What happens next</p>
+                  {(userMode === "parent" ? [
+                    "Go to your dashboard to find your invite link",
+                    "Share it with your child — they sign up with their own account",
+                    "Once they accept, their habits appear in your monitoring view",
+                  ] : [
+                    "Your class invite code is shown on your dashboard",
+                    "Share it with your students — they sign up and enter the code",
+                    "Their habit completions appear in your class analytics view",
+                  ]).map((t) => (
+                    <div key={t} className="flex items-start gap-2.5 mb-2 last:mb-0">
+                      <Check className={`w-4 h-4 flex-shrink-0 mt-0.5 ${userMode === "parent" ? "text-emerald-400" : "text-amber-400"}`} />
+                      <p className="text-sm text-slate-300 leading-snug">{t}</p>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleFinish}
+                  disabled={saving}
+                  className={`w-full py-4 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all text-base flex items-center justify-center gap-2 shadow-xl ${userMode === "parent" ? "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/40" : "bg-amber-600 hover:bg-amber-500 shadow-amber-900/40"}`}
+                >
+                  {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <>Go to my dashboard <ChevronRight className="w-5 h-5" /></>}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 5 && userMode === "personal" && (
             <div className="text-center">
               <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
                 👥
@@ -456,7 +803,6 @@ export default function OnboardingModal({ onComplete }: Props) {
               <p className="text-slate-400 text-sm mb-7 leading-relaxed">
                 Invite friends, compare streaks, and compete on leaderboards. <span className="text-emerald-300 font-semibold">Accountability is the #1 predictor of long-term habit success.</span>
               </p>
-
               <div className="bg-[#0f0f1a] border border-emerald-700/25 rounded-2xl px-5 py-5 mb-8 text-left">
                 <p className="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-4">What friends unlock</p>
                 {[
@@ -472,7 +818,6 @@ export default function OnboardingModal({ onComplete }: Props) {
                   </div>
                 ))}
               </div>
-
               <button type="button" onClick={next}
                 className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-violet-900/30"
               >
@@ -481,8 +826,41 @@ export default function OnboardingModal({ onComplete }: Props) {
             </div>
           )}
 
-          {/* ── Step 6: Let's build something that lasts ─────────────────── */}
-          {step === 6 && (
+          {/* ── Step 6 ────────────────────────────────────────────────────── */}
+          {step === 6 && userMode === "student" && (
+            <div className="text-center">
+              <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+                👥
+              </div>
+              <h1 className="text-3xl font-extrabold text-white mb-3 leading-tight">
+                Your squad keeps<br />you honest
+              </h1>
+              <p className="text-slate-400 text-sm mb-7 leading-relaxed">
+                Compare streaks with classmates, run Habit Battles, and keep each other accountable through exam season.
+              </p>
+              <div className="bg-[#0f0f1a] border border-emerald-700/25 rounded-2xl px-5 py-5 mb-8 text-left">
+                <p className="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-4">Study squad features</p>
+                {[
+                  { emoji: "🏆", text: "Class leaderboard — who studied most this week?"  },
+                  { emoji: "⚔️", text: "Habit Battles — challenge a classmate for 7 days" },
+                  { emoji: "📣", text: "Streak shout-outs when you hit milestones"         },
+                  { emoji: "🔔", text: "Nudge study partners who are falling behind"       },
+                ].map(({ emoji, text }) => (
+                  <div key={text} className="flex items-center gap-3 mb-3 last:mb-0">
+                    <span className="text-xl leading-none">{emoji}</span>
+                    <p className="text-sm text-slate-300">{text}</p>
+                  </div>
+                ))}
+              </div>
+              <button type="button" onClick={next}
+                className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-violet-900/30"
+              >
+                Next <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {step === 6 && userMode === "personal" && (
             <div className="relative">
               <Confetti />
               <div className="relative text-center mb-7">
@@ -496,7 +874,6 @@ export default function OnboardingModal({ onComplete }: Props) {
                   What are you building towards? Pick as many as you like.
                 </p>
               </div>
-
               <div className="grid grid-cols-2 gap-2 mb-3">
                 {GOALS.map((g) => (
                   <OptionCard key={g.id} selected={selectedIds.includes(g.id)} onClick={() => toggle(g.id)}>
@@ -510,62 +887,102 @@ export default function OnboardingModal({ onComplete }: Props) {
                   </OptionCard>
                 ))}
               </div>
-
-              {/* Real-time AI observation based on selected goals */}
               {(() => {
                 const obs = getGoalObservation(selectedIds);
                 return obs ? (
-                  <div
-                    key={obs}
-                    className="mt-3 p-3.5 rounded-xl bg-violet-950/50 border border-violet-600/25 text-left"
-                    style={{ animation: "stepIn 0.25s ease-out both" }}
-                  >
+                  <div key={obs} className="mt-3 p-3.5 rounded-xl bg-violet-950/50 border border-violet-600/25 text-left" style={{ animation: "stepIn 0.25s ease-out both" }}>
                     <p className="text-xs text-slate-300 leading-relaxed">{obs}</p>
                   </div>
                 ) : null;
               })()}
-
               {hasCustom && (
-                <input
-                  autoFocus
-                  value={customGoal}
-                  onChange={(e) => setCustomGoal(e.target.value)}
-                  placeholder="Describe your goal…"
-                  maxLength={80}
+                <input autoFocus value={customGoal} onChange={(e) => setCustomGoal(e.target.value)}
+                  placeholder="Describe your goal…" maxLength={80}
                   className="w-full bg-violet-950/40 border border-violet-700/40 focus:border-violet-500/60 focus:outline-none focus:ring-2 focus:ring-violet-500/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 mb-4 mt-2 transition-all"
                 />
               )}
-
               <div className="mt-5">
-                <button
-                  type="button"
-                  onClick={handleFinish}
-                  disabled={saving || !canFinish}
+                <button type="button" onClick={handleFinish} disabled={saving || !canFinish}
                   className="w-full py-4 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all text-base flex items-center justify-center gap-2 shadow-xl shadow-violet-900/50"
                   style={canFinish ? { animation: "ctaPulse 2s ease-in-out infinite" } : undefined}
                 >
-                  {saving
-                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</>
-                    : <>I&apos;m ready. Let&apos;s go! <ChevronRight className="w-5 h-5" /></>
-                  }
+                  {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <>I&apos;m ready. Let&apos;s go! <ChevronRight className="w-5 h-5" /></>}
                 </button>
                 {!canFinish && (
                   <p className="text-[11px] text-slate-600 text-center mt-2">
                     {selectedIds.length === 0 ? "Pick at least one goal to continue" : "Enter your custom goal above"}
                   </p>
                 )}
-                {/* DNA teaser */}
                 <div className="mt-4 flex items-center gap-2.5 bg-violet-950/40 border border-violet-800/25 rounded-xl px-4 py-2.5">
                   <span className="text-lg leading-none">🧬</span>
                   <p className="text-[11px] text-slate-400 leading-snug">
                     After 30 days, unlock your <span className="text-violet-300 font-semibold">Habit DNA</span> — your full behavioral fingerprint with personality tags and shareable card.
                   </p>
                 </div>
-                {/* Identity Score 0% message */}
-                <div className="mt-3 flex items-center gap-2.5 bg-emerald-950/30 border border-emerald-800/20 rounded-xl px-4 py-2.5">
-                  <span className="text-lg leading-none">🌱</span>
+              </div>
+            </div>
+          )}
+
+          {/* ── Step 7: Student final (Goals + finish) ────────────────────── */}
+          {step === 7 && userMode === "student" && (
+            <div className="relative">
+              <Confetti />
+              <div className="relative text-center mb-7">
+                <div className="text-6xl mb-5 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+                  💪
+                </div>
+                <h1 className="text-3xl font-extrabold text-white mb-2 leading-tight">
+                  Let&apos;s build something<br />that lasts
+                </h1>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  What are you building towards? Pick as many as you like.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                {GOALS.map((g) => (
+                  <OptionCard key={g.id} selected={selectedIds.includes(g.id)} onClick={() => toggle(g.id)}>
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xl leading-none flex-shrink-0">{g.emoji}</span>
+                      <span className={`text-xs font-medium leading-snug ${selectedIds.includes(g.id) ? "text-violet-100" : "text-slate-300"}`}>
+                        {g.label}
+                      </span>
+                      <SelectDot selected={selectedIds.includes(g.id)} />
+                    </div>
+                  </OptionCard>
+                ))}
+              </div>
+              {(() => {
+                const obs = getGoalObservation(selectedIds);
+                return obs ? (
+                  <div key={obs} className="mt-3 p-3.5 rounded-xl bg-violet-950/50 border border-violet-600/25 text-left" style={{ animation: "stepIn 0.25s ease-out both" }}>
+                    <p className="text-xs text-slate-300 leading-relaxed">{obs}</p>
+                  </div>
+                ) : null;
+              })()}
+              {hasCustom && (
+                <input autoFocus value={customGoal} onChange={(e) => setCustomGoal(e.target.value)}
+                  placeholder="Describe your goal…" maxLength={80}
+                  className="w-full bg-violet-950/40 border border-violet-700/40 focus:border-violet-500/60 focus:outline-none focus:ring-2 focus:ring-violet-500/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 mb-4 mt-2 transition-all"
+                />
+              )}
+              <div className="mt-5">
+                <button type="button" onClick={handleFinish} disabled={saving || !canFinish}
+                  className="w-full py-4 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all text-base flex items-center justify-center gap-2 shadow-xl shadow-violet-900/50"
+                  style={canFinish ? { animation: "ctaPulse 2s ease-in-out infinite" } : undefined}
+                >
+                  {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <>I&apos;m ready. Let&apos;s go! <ChevronRight className="w-5 h-5" /></>}
+                </button>
+                {!canFinish && (
+                  <p className="text-[11px] text-slate-600 text-center mt-2">
+                    {selectedIds.length === 0 ? "Pick at least one goal to continue" : "Enter your custom goal above"}
+                  </p>
+                )}
+                <div className="mt-4 flex items-center gap-2.5 bg-indigo-950/40 border border-indigo-800/25 rounded-xl px-4 py-2.5">
+                  <span className="text-lg leading-none">🎓</span>
                   <p className="text-[11px] text-slate-400 leading-snug">
-                    Your <span className="text-emerald-300 font-semibold">Identity Score</span> starts at 0% — every habit you complete builds who you&apos;re becoming. Your journey starts now.
+                    {dreamUni.trim()
+                      ? `Your ${dreamUni} journey starts now — every habit you complete brings you one step closer.`
+                      : "Every habit you complete builds toward your university application and beyond."}
                   </p>
                 </div>
               </div>

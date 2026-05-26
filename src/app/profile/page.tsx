@@ -38,12 +38,21 @@ const TIERS = [
   { range: "500",      name: "GOAT 🐐",       color: "text-yellow-300",  bg: "bg-yellow-900/20"  },
 ] as const;
 
+type UserMode = "student" | "parent" | "teacher" | "personal";
+const MODE_BADGE: Record<UserMode, { emoji: string; label: string; color: string; bg: string; border: string }> = {
+  student:  { emoji: "🎓", label: "Student",        color: "text-indigo-300",  bg: "bg-indigo-950/40",  border: "border-indigo-700/40"  },
+  parent:   { emoji: "👨‍👩‍👧", label: "Parent",         color: "text-emerald-300", bg: "bg-emerald-950/40", border: "border-emerald-700/40" },
+  teacher:  { emoji: "👨‍🏫", label: "Teacher / Coach", color: "text-amber-300",   bg: "bg-amber-950/30",   border: "border-amber-700/35"   },
+  personal: { emoji: "🙋", label: "Personal",        color: "text-violet-300",  bg: "bg-violet-950/40",  border: "border-violet-700/40"  },
+};
+
 export default function ProfilePage() {
   const { xp, level, achievements, totalCompletions, xpLoading } = useXP();
   const [joinedDate, setJoinedDate] = useState<string | null>(null);
   const [bestStreak, setBestStreak] = useState(0);
   const [username, setUsername]     = useState<string | null>(null);
   const [avatarId, setAvatarId]     = useState<string | null>(null);
+  const [userMode, setUserMode]     = useState<UserMode>("personal");
   const [shared,   setShared]       = useState(false);
   const supabase = useRef(createClient()).current;
 
@@ -65,9 +74,13 @@ export default function ProfilePage() {
       const d = new Date(user.created_at);
       setJoinedDate(d.toLocaleDateString("en-US", { month: "long", year: "numeric" }));
       // Profile data
-      supabase.from("profiles").select("username, avatar_id").eq("id", user.id).single()
+      supabase.from("profiles").select("username, avatar_id, user_mode").eq("id", user.id).single()
         .then(({ data }) => {
-          if (data) { setUsername(data.username ?? null); setAvatarId(data.avatar_id ?? null); }
+          if (data) {
+            setUsername(data.username ?? null);
+            setAvatarId(data.avatar_id ?? null);
+            setUserMode((data.user_mode as UserMode) ?? "personal");
+          }
         });
       // Best streak from logs
       supabase
@@ -133,7 +146,18 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  {username && <p className="text-base font-bold text-violet-300 mb-0.5">@{username}</p>}
+                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                    {username && <p className="text-base font-bold text-violet-300">@{username}</p>}
+                    {(() => {
+                      const badge = MODE_BADGE[userMode];
+                      return (
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${badge.color} ${badge.bg} ${badge.border}`}>
+                          <span>{badge.emoji}</span>
+                          <span>{badge.label}</span>
+                        </span>
+                      );
+                    })()}
+                  </div>
                   <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Level {level} · {name}</p>
                   <h1 className="text-xl font-bold text-white mb-0.5 hidden sm:block">{name}</h1>
                   <p className="text-xs text-slate-500 mb-3">

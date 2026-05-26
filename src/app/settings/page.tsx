@@ -936,7 +936,100 @@ function AvatarTab() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-type Tab = "account" | "appearance" | "accessibility" | "goals" | "avatar" | "plan" | "help";
+// ─── Mode switcher tab ────────────────────────────────────────────────────────
+
+type UserMode = "student" | "parent" | "teacher" | "personal";
+
+const MODE_INFO: { id: UserMode; emoji: string; label: string; tagline: string; color: string; border: string }[] = [
+  { id: "student",  emoji: "🎓", label: "Student",        tagline: "Academic excellence",  color: "text-indigo-300",  border: "border-indigo-500/50"  },
+  { id: "parent",   emoji: "👨‍👩‍👧", label: "Parent",         tagline: "Monitor & encourage", color: "text-emerald-300", border: "border-emerald-500/50" },
+  { id: "teacher",  emoji: "👨‍🏫", label: "Teacher / Coach", tagline: "Lead your team",      color: "text-amber-300",   border: "border-amber-500/50"   },
+  { id: "personal", emoji: "🙋", label: "Personal",        tagline: "Self improvement",    color: "text-violet-300",  border: "border-violet-500/50"  },
+];
+
+function ModeTab() {
+  const supabase = createClient();
+  const [current, setCurrent] = useState<UserMode>("personal");
+  const [saving,  setSaving]  = useState(false);
+  const [status,  setStatus]  = useState<{ ok?: string; err?: string } | null>(null);
+  const [loaded,  setLoaded]  = useState(false);
+
+  useEffect(() => {
+    if (loaded) return;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase.from("profiles").select("user_mode").eq("id", user.id).single();
+      if (data?.user_mode) setCurrent(data.user_mode as UserMode);
+      setLoaded(true);
+    })();
+  }, [loaded, supabase]);
+
+  const handleSwitch = async (mode: UserMode) => {
+    if (mode === current) return;
+    setSaving(true); setStatus(null);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setSaving(false); return; }
+    const { error } = await supabase.from("profiles").update({ user_mode: mode }).eq("id", user.id);
+    if (error) {
+      setStatus({ err: "Failed to switch mode. Please try again." });
+    } else {
+      setCurrent(mode);
+      setStatus({ ok: `Switched to ${MODE_INFO.find((m) => m.id === mode)?.label} mode! Refresh your dashboard to see the changes.` });
+    }
+    setSaving(false);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-base font-semibold text-white mb-1">Your Mode</h2>
+        <p className="text-sm text-slate-500">Your dashboard, AI coaching, and habit suggestions all adapt to your selected mode. Switch anytime — your data is never lost.</p>
+      </div>
+
+      <div className={cardCls} style={{ padding: "1.25rem" }}>
+        <div className="space-y-3">
+          {MODE_INFO.map((mode) => {
+            const isActive = current === mode.id;
+            return (
+              <button
+                key={mode.id}
+                type="button"
+                onClick={() => !saving && void handleSwitch(mode.id)}
+                disabled={saving}
+                className={`w-full text-left rounded-xl border p-4 transition-all duration-200 ${
+                  isActive
+                    ? `${mode.border} bg-violet-950/30 ring-1 ring-violet-500/20`
+                    : "border-violet-900/20 bg-[#0c0c18] hover:border-violet-700/35 hover:bg-violet-950/20"
+                } ${saving ? "opacity-60 cursor-not-allowed" : ""}`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl leading-none flex-shrink-0">{mode.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className={`text-sm font-bold ${mode.color}`}>{mode.label}</p>
+                      <span className={`text-[10px] ${mode.color} opacity-60`}>· {mode.tagline}</span>
+                    </div>
+                  </div>
+                  {isActive && (
+                    <span className="flex-shrink-0 text-[10px] font-bold text-violet-300 bg-violet-900/40 border border-violet-600/30 px-2 py-0.5 rounded-full">
+                      Active
+                    </span>
+                  )}
+                  {saving && !isActive && <Loader2 className="w-3.5 h-3.5 text-slate-600 animate-spin flex-shrink-0" />}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        {status?.ok  && <Success msg={status.ok} />}
+        {status?.err && <Err msg={status.err} />}
+      </div>
+    </div>
+  );
+}
+
+type Tab = "account" | "appearance" | "accessibility" | "goals" | "avatar" | "plan" | "mode" | "help";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "account",       label: "Account",       icon: <User            className="w-3.5 h-3.5" /> },
@@ -945,6 +1038,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "goals",         label: "My Goals",       icon: <Target          className="w-3.5 h-3.5" /> },
   { id: "avatar",        label: "Avatar",         icon: <Smile           className="w-3.5 h-3.5" /> },
   { id: "plan",          label: "Plan",           icon: <CreditCard      className="w-3.5 h-3.5" /> },
+  { id: "mode",          label: "Mode",           icon: <span className="text-[13px] leading-none">🎓</span> },
   { id: "help",          label: "Help",           icon: <HelpCircle      className="w-3.5 h-3.5" /> },
 ];
 
@@ -1083,6 +1177,7 @@ export default function SettingsPage() {
               saveReminderPrefs={saveReminderPrefs}
             />
           )}
+          {activeTab === "mode" && <ModeTab />}
           {activeTab === "help" && <HelpTab />}
         </div>
       </div>

@@ -34,6 +34,8 @@ import MonthlyWrapped from "@/components/dashboard/MonthlyWrapped";
 import HabitDNAModal from "@/components/dashboard/HabitDNAModal";
 import CommitmentModal from "@/components/dashboard/CommitmentModal";
 import MoodCheckin from "@/components/dashboard/MoodCheckin";
+import ParentDashboard from "@/components/dashboard/ParentDashboard";
+import TeacherDashboard from "@/components/dashboard/TeacherDashboard";
 
 // ─── Greeting & quote ─────────────────────────────────────────────────────────
 
@@ -350,7 +352,7 @@ function getEmptyStateRecs(goals: string[]) {
 export default function DashboardPage() {
   const { habits, loading, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength, refetch, historicalLogs } =
     useHabits();
-  const { tier, profileLoading, onboardingCompleted, goals, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt, dreamUniversity } = useProfile();
+  const { tier, profileLoading, onboardingCompleted, goals, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt, dreamUniversity, userMode } = useProfile();
   const { xp, level, achievements, totalCompletions, justLeveledUp, isDailyAchieved, onHabitCompleted, checkMilestones, dismissLevelUp } = useXP();
   const { openUpgradeModal } = useUpgrade();
   const { openAIInsight } = useAIInsight();
@@ -619,6 +621,10 @@ export default function DashboardPage() {
     [habits, search],
   );
 
+  // ── Mode-specific dashboard routing ───────────────────────────────────────
+  if (!profileLoading && userMode === "parent") return <ParentDashboard />;
+  if (!profileLoading && userMode === "teacher") return <TeacherDashboard />;
+
   return (
     <div className="bg-[#09090f]">
       {showPushPrompt && (
@@ -666,19 +672,28 @@ export default function DashboardPage() {
               </span>
             )}
           </div>
-          {formatGoalsLine(goals) && (
+          {userMode === "student" && dreamUniversity && signedUpAt ? (
+            <p className="text-sm text-indigo-300/90 font-semibold mb-1">
+              🎓 Your {dreamUniversity} journey — Day {Math.max(1, Math.round((Date.now() - new Date(signedUpAt).getTime()) / 86400000))}
+            </p>
+          ) : formatGoalsLine(goals) ? (
             <p className="text-sm text-violet-300/80 font-medium mb-1">{formatGoalsLine(goals)}</p>
-          )}
+          ) : null}
           <p className="text-sm text-slate-500 italic mb-5">&ldquo;{getDailyQuote()}&rdquo;</p>
 
           {/* Quick stats — only when habits exist */}
           {!loading && habits.length > 0 && (
-            <QuickStats
-              completedCount={completedCount}
-              totalHabits={habits.length}
-              bestStreak={bestStreak}
-              totalXP={xp}
-            />
+            <>
+              {userMode === "student" && (
+                <p className="text-[10px] text-indigo-400/70 uppercase tracking-wider font-semibold mb-1">📚 Academic Performance Score</p>
+              )}
+              <QuickStats
+                completedCount={completedCount}
+                totalHabits={habits.length}
+                bestStreak={bestStreak}
+                totalXP={xp}
+              />
+            </>
           )}
 
           {/* Row 1: heading + action buttons */}
@@ -1060,7 +1075,9 @@ export default function DashboardPage() {
                 )}
               </div>
               <p className="text-[11px] text-slate-400 mb-4 leading-relaxed">
-                Get personalised insights on your habits, streaks, and patterns — tailored to your goals.
+                {userMode === "student"
+                  ? `Focus on your study habits${dreamUniversity ? ` — ${dreamUniversity} applications take consistency, not cramming.` : " — build the academic discipline that top universities look for."}`
+                  : "Get personalised insights on your habits, streaks, and patterns — tailored to your goals."}
               </p>
               <button
                 onClick={() => openAIInsight()}
