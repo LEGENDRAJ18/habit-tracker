@@ -1,5 +1,5 @@
 // HabitAI Service Worker — app shell caching + push notifications
-const CACHE = "habitai-v2";
+const CACHE = "habitai-v3";
 
 const PRECACHE = [
   "/",
@@ -124,27 +124,71 @@ self.addEventListener("fetch", (event) => {
 // ─── Push notifications ───────────────────────────────────────────────────────
 self.addEventListener("push", (event) => {
   const data = event.data?.json() ?? {};
+  const tag  = data.tag ?? "habitai";
+
+  // Choose action buttons based on notification type
+  const actions = [];
+  if (tag === "streak-risk" || tag.startsWith("habit-") || tag === "habits-reminder" || tag === "final-nudge") {
+    actions.push({ action: "open", title: "✅ Open app" });
+    actions.push({ action: "snooze", title: "⏰ Snooze 1h" });
+  } else if (tag === "morning-alarm") {
+    actions.push({ action: "open", title: "📋 See today's habits" });
+  } else if (tag === "weekly-monday" || tag === "weekly-sunday") {
+    actions.push({ action: "open", title: "🚀 Go to dashboard" });
+  }
+
   event.waitUntil(
     self.registration.showNotification(data.title ?? "HabitAI", {
       body:      data.body ?? "",
       icon:      "/icons/icon-192.png",
       badge:     "/icons/icon-96.png",
-      tag:       data.tag ?? "habitai",
+      tag,
       renotify:  true,
-      data:      { url: data.url ?? "/dashboard" },
+      actions,
+      data:      { url: data.url ?? "/dashboard", tag },
+      vibrate:   [100, 50, 100],
     })
   );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const target = event.notification.data?.url ?? "/dashboard";
+
+  const action = event.action;
+  const notifData = event.notification.data ?? {};
+  const target = notifData.url ?? "/dashboard";
+
+  if (action === "snooze") {
+    // Re-show notification after 1 hour (client-side via setTimeout in SW)
+    const title = event.notification.title;
+    const body  = event.notification.body;
+    const tag   = notifData.tag ?? "habitai";
+
+    event.waitUntil(
+      new Promise((resolve) => {
+        setTimeout(async () => {
+          await self.registration.showNotification(title, {
+            body,
+            icon:  "/icons/icon-192.png",
+            badge: "/icons/icon-96.png",
+            tag:   `${tag}-snoozed`,
+            data:  notifData,
+          });
+          resolve(undefined);
+        }, 3600000); // 1 hour
+      })
+    );
+    return;
+  }
+
+  // Default: open / focus the app
   event.waitUntil(
     clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((list) => {
         for (const client of list) {
-          if (client.url.includes("/dashboard") && "focus" in client) {
+          if (client.url.includes(self.location.origin) && "focus" in client) {
+            client.navigate(target);
             return client.focus();
           }
         }

@@ -28,7 +28,7 @@ import FirstWeekCheckin from "@/components/dashboard/FirstWeekCheckin";
 import { useUpgrade } from "@/contexts/UpgradeContext";
 import { useAIInsight } from "@/contexts/AIInsightContext";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
-import PushPermissionPrompt from "@/components/pwa/PushPermissionPrompt";
+import NotificationPermissionModal from "@/components/pwa/NotificationPermissionModal";
 import { createClient } from "@/lib/supabase/client";
 import MonthlyWrapped from "@/components/dashboard/MonthlyWrapped";
 import HabitDNAModal from "@/components/dashboard/HabitDNAModal";
@@ -356,7 +356,7 @@ export default function DashboardPage() {
   const { xp, level, achievements, totalCompletions, justLeveledUp, isDailyAchieved, onHabitCompleted, checkMilestones, dismissLevelUp } = useXP();
   const { openUpgradeModal } = useUpgrade();
   const { openAIInsight } = useAIInsight();
-  const { showPrompt: showPushPrompt, allow: allowPush, dismiss: dismissPush } = usePushNotifications();
+  const { showModal: showPushModal, allow: allowPush, dismiss: dismissPush } = usePushNotifications();
 
   // Update last_seen_at so streak-at-risk detection works
   useEffect(() => {
@@ -627,8 +627,8 @@ export default function DashboardPage() {
 
   return (
     <div className="bg-[#09090f]">
-      {showPushPrompt && (
-        <PushPermissionPrompt onAllow={allowPush} onDismiss={dismissPush} />
+      {showPushModal && (
+        <NotificationPermissionModal onAllow={allowPush} onDismiss={dismissPush} />
       )}
 
       <SmartNotification

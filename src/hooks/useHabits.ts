@@ -141,6 +141,7 @@ export function useHabits() {
     whereLocation?: string | null,
     howLong?: string | null,
     validityScore?: "valid" | "partial" | "invalid",
+    reminderTime?: string | null,
   ): Promise<{ error: string | null }> => {
     const {
       data: { user },
@@ -150,15 +151,16 @@ export function useHabits() {
     const { data, error } = await supabase
       .from("habits")
       .insert({
-        user_id:        user.id,
+        user_id:                user.id,
         name,
-        description:    description || null,
+        description:            description || null,
         frequency,
-        stack_after_id: stackAfterId  ?? null,
-        when_time:      whenTime      ?? null,
-        where_location: whereLocation ?? null,
-        how_long:       howLong       ?? null,
-        validity_score: validityScore ?? "valid",
+        stack_after_id:         stackAfterId  ?? null,
+        when_time:              whenTime      ?? null,
+        where_location:         whereLocation ?? null,
+        how_long:               howLong       ?? null,
+        validity_score:         validityScore ?? "valid",
+        preferred_reminder_time: reminderTime  ?? null,
       })
       .select()
       .single();

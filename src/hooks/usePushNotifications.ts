@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 const DISMISSED_KEY = "habitai-push-dismissed";
+const SUBSCRIBED_KEY = "habitai-push-subscribed";
 
 function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -14,27 +15,30 @@ function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
 }
 
 export function usePushNotifications() {
-  const [showPrompt, setShowPrompt] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [isSubscribed, setSubscribed] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+
     if (Notification.permission === "granted") {
       setSubscribed(true);
       return;
     }
     if (Notification.permission === "denied") return;
     if (localStorage.getItem(DISMISSED_KEY)) return;
+    if (localStorage.getItem(SUBSCRIBED_KEY)) return;
 
-    // Delay so the page settles before showing the prompt
-    const t = setTimeout(() => setShowPrompt(true), 3000);
+    // Show the beautiful modal 5 seconds after the dashboard loads
+    // (give user time to see their habits first)
+    const t = setTimeout(() => setShowModal(true), 5000);
     return () => clearTimeout(t);
   }, []);
 
   const subscribe = useCallback(async () => {
     const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-    if (!vapidKey) return;
+    if (!vapidKey) return false;
     try {
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.subscribe({
@@ -50,13 +54,15 @@ export function usePushNotifications() {
         }),
       });
       setSubscribed(true);
+      localStorage.setItem(SUBSCRIBED_KEY, "1");
+      return true;
     } catch {
-      // Permission denied or subscription failed — silently ignore
+      return false;
     }
   }, []);
 
   const allow = useCallback(async () => {
-    setShowPrompt(false);
+    setShowModal(false);
     const permission = await Notification.requestPermission();
     if (permission === "granted") {
       await subscribe();
@@ -66,9 +72,31 @@ export function usePushNotifications() {
   }, [subscribe]);
 
   const dismiss = useCallback(() => {
-    setShowPrompt(false);
+    setShowModal(false);
     localStorage.setItem(DISMISSED_KEY, "1");
   }, []);
 
-  return { showPrompt, isSubscribed, allow, dismiss };
+  // Allow external trigger (e.g. from settings page "Enable notifications" button)
+  const requestPermission = useCallback(async (): Promise<boolean> => {
+    if (Notification.permission === "granted") {
+      return subscribe();
+    }
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      return subscribe();
+    }
+    return false;
+  }, [subscribe]);
+
+  // Called after onboarding completes — show modal immediately (no timeout)
+  const showAfterOnboarding = useCallback(() => {
+    if (typeof window === "undefined") return;
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    if (Notification.permission === "granted") return; // already subscribed
+    if (Notification.permission === "denied") return;
+    if (localStorage.getItem(DISMISSED_KEY)) return;
+    setShowModal(true);
+  }, []);
+
+  return { showModal, isSubscribed, allow, dismiss, requestPermission, showAfterOnboarding };
 }

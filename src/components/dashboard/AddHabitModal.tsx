@@ -175,6 +175,7 @@ interface Props {
     stackAfterId?: string | null, whenTime?: string | null,
     whereLocation?: string | null, howLong?: string | null,
     validityScore?: "valid" | "partial" | "invalid",
+    reminderTime?: string | null,
   ) => Promise<{ error: string | null }>;
   onSchedule?: (
     name: string, description: string, frequency: "daily" | "weekly",
@@ -200,6 +201,7 @@ export default function AddHabitModal({
   const [whenTime, setWhenTime]           = useState("");
   const [whereLocation, setWhereLocation] = useState("");
   const [howLong, setHowLong]             = useState("");
+  const [reminderTime, setReminderTime]   = useState("");
   const [loading, setLoading]             = useState(false);
   const [error, setError]                 = useState<string | null>(null);
   const [suggestionOffset, setSuggestionOffset] = useState(0);
@@ -275,6 +277,7 @@ export default function AddHabitModal({
     const { error } = await onAdd(
       name.trim(), description.trim(), frequency,
       null, whenTime || null, whereLocation || null, howLong || null, getValidity(),
+      reminderTime || null,
     );
     if (error) { setError(error); setLoading(false); }
     else onClose();
@@ -531,6 +534,24 @@ export default function AddHabitModal({
                       placeholder="e.g. mindfulness"
                       maxLength={200} className={inputCls}
                     />
+                  </div>
+
+                  {/* Reminder time — available to all users */}
+                  <div>
+                    <label className={labelCls}>
+                      🔔 Remind me at <span className="text-slate-600 font-normal">(optional)</span>
+                    </label>
+                    <input
+                      type="time"
+                      value={reminderTime}
+                      onChange={(e) => setReminderTime(e.target.value)}
+                      className={`${inputCls} [color-scheme:dark]`}
+                    />
+                    {reminderTime && (
+                      <p className="mt-1 text-[10px] text-violet-400">
+                        You&apos;ll get a push notification at {reminderTime} if this habit isn&apos;t done yet.
+                      </p>
+                    )}
                   </div>
 
                   {isSchedulingMode ? (

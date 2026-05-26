@@ -1029,7 +1029,303 @@ function ModeTab() {
   );
 }
 
-type Tab = "account" | "appearance" | "accessibility" | "goals" | "avatar" | "plan" | "mode" | "help";
+// ─── Notifications Tab ────────────────────────────────────────────────────────
+
+type NotifPrefs = {
+  morning_alarm?: boolean;
+  morning_alarm_time?: string;
+  habit_reminders?: boolean;
+  final_nudge?: boolean;
+  final_nudge_time?: string;
+  streak_protection?: boolean;
+  weekly_motivation?: boolean;
+  battle_notifications?: boolean;
+  friend_notifications?: boolean;
+  quiet_hours_enabled?: boolean;
+  quiet_hours_start?: string;
+  quiet_hours_end?: string;
+};
+
+const DEFAULT_PREFS: NotifPrefs = {
+  morning_alarm: false,
+  morning_alarm_time: "07:00",
+  habit_reminders: true,
+  final_nudge: true,
+  final_nudge_time: "21:00",
+  streak_protection: true,
+  weekly_motivation: true,
+  battle_notifications: true,
+  friend_notifications: true,
+  quiet_hours_enabled: false,
+  quiet_hours_start: "22:00",
+  quiet_hours_end: "07:00",
+};
+
+function NotificationsTab() {
+  const supabase = createClient();
+  const [prefs, setPrefs] = useState<NotifPrefs>(DEFAULT_PREFS);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    // Check push permission state
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setPushEnabled(Notification.permission === "granted");
+    }
+    // Load prefs from DB
+    void (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("notification_preferences")
+        .eq("id", user.id)
+        .single();
+      if (data?.notification_preferences) {
+        setPrefs({ ...DEFAULT_PREFS, ...(data.notification_preferences as NotifPrefs) });
+      }
+      setLoading(false);
+    })();
+  }, [supabase]);
+
+  async function savePrefs(updated: NotifPrefs) {
+    setPrefs(updated);
+    setSaving(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from("profiles")
+        .update({ notification_preferences: updated })
+        .eq("id", user.id);
+    }
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  function update(key: keyof NotifPrefs, value: boolean | string) {
+    const updated = { ...prefs, [key]: value };
+    void savePrefs(updated);
+  }
+
+  async function enablePush() {
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      setPushEnabled(true);
+      // Subscribe via service worker
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      if (vapidKey && "serviceWorker" in navigator) {
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          const padding = "=".repeat((4 - (vapidKey.length % 4)) % 4);
+          const base64 = (vapidKey + padding).replace(/-/g, "+").replace(/_/g, "/");
+          const raw = atob(base64);
+          const arr = new Uint8Array(raw.length);
+          for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+          const sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: arr.buffer,
+          });
+          await fetch("/api/push/subscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              subscription: sub.toJSON(),
+              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            }),
+          });
+        } catch { /* ignore */ }
+      }
+    }
+  }
+
+  const inputCls = "bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none rounded-xl px-3 py-1.5 text-sm text-white [color-scheme:dark] transition-all";
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-5 h-5 animate-spin text-violet-500" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-base font-semibold text-white mb-1">Notifications</h2>
+        <p className="text-sm text-slate-500">Control when and how HabitAI reminds you to build your habits.</p>
+      </div>
+
+      {/* Push permission status */}
+      {!pushEnabled && (
+        <div className="flex items-start gap-3 bg-violet-950/40 border border-violet-700/30 rounded-2xl p-4">
+          <Bell className="w-5 h-5 text-violet-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-white">Push notifications are off</p>
+            <p className="text-xs text-slate-500 mt-0.5">Enable to receive reminders, streak alerts, and weekly motivation directly to your device.</p>
+          </div>
+          <button
+            onClick={() => void enablePush()}
+            className="flex-shrink-0 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold rounded-xl transition-all"
+          >
+            Enable
+          </button>
+        </div>
+      )}
+
+      {pushEnabled && (
+        <div className="flex items-center gap-2 bg-emerald-950/30 border border-emerald-800/30 rounded-xl px-3 py-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <p className="text-xs text-emerald-300 font-medium">Push notifications are enabled on this device</p>
+          {(saving || saved) && (
+            <span className="ml-auto text-[10px] text-slate-500">
+              {saving ? "Saving…" : "✓ Saved"}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Morning alarm */}
+      <div className={cardCls}>
+        <h3 className="text-sm font-bold text-white flex items-center gap-2">
+          ☀️ Morning Alarm
+        </h3>
+        <ToggleRow
+          label="Daily briefing"
+          sub="Get a morning summary of your habits for the day."
+          value={prefs.morning_alarm ?? false}
+          onChange={(v) => update("morning_alarm", v)}
+        />
+        {prefs.morning_alarm && (
+          <div className="flex items-center justify-between gap-4 pt-1">
+            <p className="text-sm text-slate-400">Alarm time</p>
+            <input
+              type="time"
+              value={prefs.morning_alarm_time ?? "07:00"}
+              onChange={(e) => update("morning_alarm_time", e.target.value)}
+              className={inputCls}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Habit reminders */}
+      <div className={cardCls}>
+        <h3 className="text-sm font-bold text-white flex items-center gap-2">
+          🔔 Habit Reminders
+        </h3>
+        <ToggleRow
+          label="Per-habit reminders"
+          sub="Get a notification at each habit's custom reminder time (set when creating or editing a habit)."
+          value={prefs.habit_reminders !== false}
+          onChange={(v) => update("habit_reminders", v)}
+        />
+        <div className="border-t border-violet-900/20 pt-4">
+          <ToggleRow
+            label="Final nudge"
+            sub="One last reminder if you still have incomplete habits by the end of the day."
+            value={prefs.final_nudge !== false}
+            onChange={(v) => update("final_nudge", v)}
+          />
+          {prefs.final_nudge !== false && (
+            <div className="flex items-center justify-between gap-4 mt-3">
+              <p className="text-sm text-slate-400">Nudge time</p>
+              <input
+                type="time"
+                value={prefs.final_nudge_time ?? "21:00"}
+                onChange={(e) => update("final_nudge_time", e.target.value)}
+                className={inputCls}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Streak & weekly */}
+      <div className={cardCls}>
+        <h3 className="text-sm font-bold text-white flex items-center gap-2">
+          🔥 Streak &amp; Motivation
+        </h3>
+        <ToggleRow
+          label="Streak protection"
+          sub="Alert when you haven't opened the app in 24 hours and your streak is at risk."
+          value={prefs.streak_protection !== false}
+          onChange={(v) => update("streak_protection", v)}
+        />
+        <div className="border-t border-violet-900/20 pt-4">
+          <ToggleRow
+            label="Weekly motivation"
+            sub="A kickoff nudge on Monday morning and a closing push on Sunday evening."
+            value={prefs.weekly_motivation !== false}
+            onChange={(v) => update("weekly_motivation", v)}
+          />
+        </div>
+      </div>
+
+      {/* Social */}
+      <div className={cardCls}>
+        <h3 className="text-sm font-bold text-white flex items-center gap-2">
+          ⚔️ Social &amp; Battles
+        </h3>
+        <ToggleRow
+          label="Battle notifications"
+          sub="Alerts when you receive a challenge, fall behind, or win a Habit Battle."
+          value={prefs.battle_notifications !== false}
+          onChange={(v) => update("battle_notifications", v)}
+        />
+        <div className="border-t border-violet-900/20 pt-4">
+          <ToggleRow
+            label="Friend activity"
+            sub="When a friend hits a milestone or sends you an encouragement."
+            value={prefs.friend_notifications !== false}
+            onChange={(v) => update("friend_notifications", v)}
+          />
+        </div>
+      </div>
+
+      {/* Quiet hours */}
+      <div className={cardCls}>
+        <h3 className="text-sm font-bold text-white flex items-center gap-2">
+          🌙 Quiet Hours
+        </h3>
+        <ToggleRow
+          label="Enable quiet hours"
+          sub="No notifications during this window — even if a habit reminder is due."
+          value={prefs.quiet_hours_enabled ?? false}
+          onChange={(v) => update("quiet_hours_enabled", v)}
+        />
+        {prefs.quiet_hours_enabled && (
+          <div className="grid grid-cols-2 gap-4 pt-1">
+            <div>
+              <p className="text-xs text-slate-500 mb-1.5">Start</p>
+              <input
+                type="time"
+                value={prefs.quiet_hours_start ?? "22:00"}
+                onChange={(e) => update("quiet_hours_start", e.target.value)}
+                className={`w-full ${inputCls}`}
+              />
+            </div>
+            <div>
+              <p className="text-xs text-slate-500 mb-1.5">End</p>
+              <input
+                type="time"
+                value={prefs.quiet_hours_end ?? "07:00"}
+                onChange={(e) => update("quiet_hours_end", e.target.value)}
+                className={`w-full ${inputCls}`}
+              />
+            </div>
+          </div>
+        )}
+        <p className="text-[11px] text-slate-600 leading-snug -mt-1">
+          Tip: Set reminder times on individual habits by editing them in your dashboard.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+type Tab = "account" | "appearance" | "accessibility" | "goals" | "avatar" | "plan" | "mode" | "notifications" | "help";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "account",       label: "Account",       icon: <User            className="w-3.5 h-3.5" /> },
@@ -1039,6 +1335,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "avatar",        label: "Avatar",         icon: <Smile           className="w-3.5 h-3.5" /> },
   { id: "plan",          label: "Plan",           icon: <CreditCard      className="w-3.5 h-3.5" /> },
   { id: "mode",          label: "Mode",           icon: <span className="text-[13px] leading-none">🎓</span> },
+  { id: "notifications", label: "Notifications",  icon: <Bell            className="w-3.5 h-3.5" /> },
   { id: "help",          label: "Help",           icon: <HelpCircle      className="w-3.5 h-3.5" /> },
 ];
 
@@ -1178,6 +1475,7 @@ export default function SettingsPage() {
             />
           )}
           {activeTab === "mode" && <ModeTab />}
+          {activeTab === "notifications" && <NotificationsTab />}
           {activeTab === "help" && <HelpTab />}
         </div>
       </div>
