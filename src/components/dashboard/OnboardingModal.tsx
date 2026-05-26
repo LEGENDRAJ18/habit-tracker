@@ -517,6 +517,13 @@ export default function OnboardingModal({ onComplete }: Props) {
                     After 30 days, unlock your <span className="text-violet-300 font-semibold">Habit DNA</span> — your full behavioral fingerprint with personality tags and shareable card.
                   </p>
                 </div>
+                {/* Identity Score 0% message */}
+                <div className="mt-3 flex items-center gap-2.5 bg-emerald-950/30 border border-emerald-800/20 rounded-xl px-4 py-2.5">
+                  <span className="text-lg leading-none">🌱</span>
+                  <p className="text-[11px] text-slate-400 leading-snug">
+                    Your <span className="text-emerald-300 font-semibold">Identity Score</span> starts at 0% — every habit you complete builds who you&apos;re becoming. Your journey starts now.
+                  </p>
+                </div>
               </div>
             </div>
           )}

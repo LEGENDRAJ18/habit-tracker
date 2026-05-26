@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { X, Swords, Loader2, Trophy, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import type { Plan } from "@/types";
 import FeatureUpgradeGate from "./FeatureUpgradeGate";
+import posthog from "posthog-js";
 
 interface BattleWithNames {
   id: string;
@@ -163,6 +164,7 @@ export default function HabitBattleModal({ tier, friends, onClose, onUpgrade }: 
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Failed to create battle"); return; }
+      posthog.capture("battle_created", { habit_name: habitName.trim(), duration_days: duration });
       // Refetch
       const r2 = await fetch("/api/battles");
       const d2 = await r2.json();

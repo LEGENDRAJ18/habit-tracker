@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { X, Lock, Download, Share2, Star, Clock, Calendar, Sparkles, Award, TrendingUp, Loader2, CheckCircle2 } from "lucide-react";
 import type { Habit, Plan } from "@/types";
 import { useHabitDNA } from "@/hooks/useHabitDNA";
+import posthog from "posthog-js";
 
 interface Props {
   habits: Habit[];
@@ -334,6 +335,7 @@ export default function HabitDNAModal({ habits, logs, tier, totalXP, onClose, on
 
   const handleShare = async () => {
     const text = `My Habit DNA:\n🏆 ${dna.overallConsistency}% consistency\n🔥 ${dna.longestStreak}-day streak\n⚡ ${totalXP.toLocaleString()} XP\n${dna.personalityTags.slice(0, 2).join(" · ")}\nhabitaiapp.com`;
+    posthog.capture("habit_dna_shared", { method: typeof navigator.share === "function" ? "native" : "clipboard" });
     if (navigator.share) {
       try { await navigator.share({ title: "My Habit DNA", text }); } catch { /* dismissed */ }
     } else {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Lock, Flame, Zap, Trophy, CalendarDays, Gift, CheckCircle2, User } from "lucide-react";
+import { Lock, Flame, Zap, Trophy, CalendarDays, Gift, CheckCircle2, User, Share2 } from "lucide-react";
 import { useXP, ACHIEVEMENT_META, type AchievementId } from "@/hooks/useXP";
 import { levelName, levelColorKey, xpProgressPct, xpIntoLevel, xpSpanOfLevel, type LevelColorKey } from "@/lib/xp";
 import { LEVEL_REWARDS } from "@/lib/rewards";
@@ -44,7 +44,19 @@ export default function ProfilePage() {
   const [bestStreak, setBestStreak] = useState(0);
   const [username, setUsername]     = useState<string | null>(null);
   const [avatarId, setAvatarId]     = useState<string | null>(null);
+  const [shared,   setShared]       = useState(false);
   const supabase = useRef(createClient()).current;
+
+  const handleShare = async () => {
+    const text = `I'm Level ${level} on HabitAI with ${xp.toLocaleString()} XP and a ${bestStreak}-day streak! 🔥\nJoin me and build habits that actually stick: https://habitaiapp.com`;
+    if (navigator.share) {
+      try { await navigator.share({ title: "My HabitAI Profile", text }); } catch { /* dismissed */ }
+    } else {
+      await navigator.clipboard.writeText(text);
+      setShared(true);
+      setTimeout(() => setShared(false), 2000);
+    }
+  };
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -154,6 +166,26 @@ export default function ProfilePage() {
                   <p className="text-[10px] text-slate-600 mt-1">{label}</p>
                 </div>
               ))}
+            </div>
+
+            {/* Share HabitAI */}
+            <div className="mb-8">
+              <button
+                onClick={() => void handleShare()}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-violet-600/15 hover:bg-violet-600/25 border border-violet-600/30 hover:border-violet-500/50 text-violet-300 hover:text-violet-200 font-semibold rounded-xl transition-all text-sm"
+              >
+                {shared ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span className="text-emerald-300">Copied to clipboard!</span>
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="w-4 h-4" />
+                    Share HabitAI with friends
+                  </>
+                )}
+              </button>
             </div>
 
             {/* Achievements */}

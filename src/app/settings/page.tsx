@@ -681,18 +681,20 @@ function PlanTab({
   const plusPrice = currencyLoading ? "$5.99" : formatPrice(5.99);
   const proPrice  = currencyLoading ? "$9.99"  : formatPrice(9.99);
 
-  const [weeklyEmail,    setWeeklyEmail]    = useState(false);
-  const [streakRoast,    setStreakRoast]    = useState(false);
-  const [togglesLoaded,  setTogglesLoaded]  = useState(false);
+  const [weeklyEmail,         setWeeklyEmail]         = useState(false);
+  const [streakRoast,         setStreakRoast]          = useState(false);
+  const [battleNotifications, setBattleNotifications] = useState(true);
+  const [togglesLoaded,       setTogglesLoaded]       = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) { setTogglesLoaded(true); return; }
-      supabase.from("profiles").select("weekly_email_enabled, streak_roast_enabled").eq("id", user.id).single()
+      supabase.from("profiles").select("weekly_email_enabled, streak_roast_enabled, battle_notifications_enabled").eq("id", user.id).single()
         .then(({ data }) => {
           if (data) {
             setWeeklyEmail(data.weekly_email_enabled ?? false);
             setStreakRoast(data.streak_roast_enabled ?? false);
+            setBattleNotifications(data.battle_notifications_enabled ?? true);
           }
           setTogglesLoaded(true);
         });
@@ -700,7 +702,7 @@ function PlanTab({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function saveToggle(field: "weekly_email_enabled" | "streak_roast_enabled", value: boolean) {
+  async function saveToggle(field: "weekly_email_enabled" | "streak_roast_enabled" | "battle_notifications_enabled", value: boolean) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     await supabase.from("profiles").update({ [field]: value }).eq("id", user.id);
@@ -833,6 +835,14 @@ function PlanTab({
                 sub="When you break a streak, your friends get a fun notification to nudge you. All in good spirit!"
                 value={streakRoast}
                 onChange={(v) => { setStreakRoast(v); void saveToggle("streak_roast_enabled", v); }}
+              />
+            </div>
+            <div className="pt-4">
+              <ToggleRow
+                label="Battle Notifications"
+                sub="Get notified when someone challenges you to a Habit Battle, or when a battle result comes in."
+                value={battleNotifications}
+                onChange={(v) => { setBattleNotifications(v); void saveToggle("battle_notifications_enabled", v); }}
               />
             </div>
           </div>

@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const Navbar  = dynamic(() => import("@/components/landing/Navbar"));
 const Pricing = dynamic(() => import("@/components/landing/Pricing"));
+const LandingPageTracker = dynamic(() => import("@/components/landing/LandingPageTracker"));
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://habitai.app";
 
@@ -144,14 +145,19 @@ function Hero() {
               Free forever · AI-powered
             </div>
 
-            {/* Headline — one sentence, crystal clear */}
-            <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-black tracking-tight text-white mb-5 leading-[1.07]">
+            {/* Headline */}
+            <h1 className="text-4xl sm:text-5xl lg:text-[3.4rem] font-black tracking-tight text-white mb-4 leading-[1.07]">
               Build habits that{" "}
               <span className="bg-gradient-to-r from-violet-400 via-purple-300 to-fuchsia-400 bg-clip-text text-transparent">
                 actually stick
               </span>
-              , with AI.
+              {" "}— with an AI coach that knows you personally
             </h1>
+
+            {/* Social proof */}
+            <p className="text-sm text-slate-500 mb-6 text-center lg:text-left">
+              Join <span className="text-violet-300 font-semibold">students and high achievers</span> building better habits every day
+            </p>
 
             {/* Benefits — 3 bullets, each ≤ 10 words */}
             <ul className="space-y-3 mb-8 text-left max-w-sm mx-auto lg:mx-0">
@@ -164,13 +170,13 @@ function Hero() {
             </ul>
 
             {/* CTAs */}
-            <div className="flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-3 mb-5">
+            <div className="flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-3 mb-3">
               <Link
                 href="/auth/login"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-violet-600 hover:bg-violet-500 active:scale-[0.98] text-white font-bold rounded-2xl transition-all duration-150 shadow-xl shadow-violet-900/50 hover:shadow-violet-700/50 hover:-translate-y-0.5 text-base"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-10 py-4 bg-violet-600 hover:bg-violet-500 active:scale-[0.98] text-white font-extrabold rounded-2xl transition-all duration-150 shadow-2xl shadow-violet-900/60 hover:shadow-violet-600/50 hover:-translate-y-0.5 text-lg"
+                style={{ letterSpacing: "-0.01em" }}
               >
-                Start for free
-                <ArrowRight className="w-5 h-5" />
+                Start for free →
               </Link>
               <Link
                 href="#features"
@@ -180,6 +186,11 @@ function Hero() {
                 <ArrowDown className="w-4 h-4" />
               </Link>
             </div>
+
+            {/* Urgency */}
+            <p className="text-center lg:text-left text-xs text-slate-600 mb-4">
+              <Check className="w-3 h-3 text-violet-600 inline mr-1" />Free forever — no credit card needed
+            </p>
 
             {/* Trust line */}
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2 text-sm text-slate-600">
@@ -931,6 +942,7 @@ export default async function LandingPage() {
 
   return (
     <div className="bg-[#09090f] min-h-screen">
+      <LandingPageTracker />
       <Navbar />
       <main>
         <Hero />

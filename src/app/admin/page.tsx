@@ -4,18 +4,22 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Users, UserPlus, Layers, CheckSquare, RefreshCw, Sparkles, TrendingUp,
+  Swords, Building2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 const ADMIN_EMAILS  = ["mannrajsj@gmail.com", "surjeetsj@gmail.com"];
-const REFRESH_MS    = 30_000;
+const REFRESH_MS    = 10_000;
 
 interface Stats {
   totalUsers:       number;
   todayUsers:       number;
   totalHabits:      number;
   todayCompletions: number;
+  activeBattles:    number;
+  orgsCount:        number;
   tiers:            { free: number; plus: number; pro: number };
+  weeklySignups:    Array<{ date: string; count: number }>;
   updatedAt:        string;
 }
 
@@ -180,11 +184,11 @@ export default function AdminPage() {
 
         {/* ── Stat cards ──────────────────────────────────────────────────── */}
         {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+            {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
           </div>
         ) : stats ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
             <StatCard
               label="Total Users"
               value={stats.totalUsers}
@@ -210,6 +214,18 @@ export default function AdminPage() {
               sub="habit logs (UTC)"
               icon={<CheckSquare className="w-4 h-4" />}
               accent
+            />
+            <StatCard
+              label="Active Battles"
+              value={stats.activeBattles}
+              sub="live right now"
+              icon={<Swords className="w-4 h-4" />}
+            />
+            <StatCard
+              label="Organisations"
+              value={stats.orgsCount}
+              sub="total created"
+              icon={<Building2 className="w-4 h-4" />}
             />
           </div>
         ) : null}
@@ -268,9 +284,44 @@ export default function AdminPage() {
           ) : null}
         </div>
 
+        {/* ── Weekly signups chart ─────────────────────────────────────────── */}
+        {stats?.weeklySignups && stats.weeklySignups.length > 0 && (
+          <div className="bg-[#0c0c18] border border-slate-800 rounded-2xl p-6 mb-6">
+            <div className="flex items-center gap-2 mb-5">
+              <TrendingUp className="w-4 h-4 text-slate-500" />
+              <p className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">
+                Daily Signups (last 7 days)
+              </p>
+            </div>
+            {(() => {
+              const max = Math.max(...stats.weeklySignups.map((d) => d.count), 1);
+              return (
+                <div className="flex items-end gap-2 h-24">
+                  {stats.weeklySignups.map((day) => {
+                    const pct = max > 0 ? (day.count / max) * 100 : 0;
+                    const label = new Date(day.date + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "short" });
+                    return (
+                      <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
+                        <p className="text-[10px] text-slate-500 tabular-nums">{day.count}</p>
+                        <div className="w-full rounded-t-md overflow-hidden flex items-end" style={{ height: 60 }}>
+                          <div
+                            className="w-full rounded-t-md bg-gradient-to-t from-violet-700 to-violet-500 transition-all duration-700"
+                            style={{ height: `${Math.max(pct, 4)}%` }}
+                          />
+                        </div>
+                        <p className="text-[9px] text-slate-600">{label}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
         {/* ── Footer ──────────────────────────────────────────────────────── */}
         <p className="text-center text-xs text-slate-700">
-          Auto-refreshes every 30 seconds · all times UTC
+          Auto-refreshes every 10 seconds · all times UTC
           {stats?.updatedAt
             ? ` · Last fetch: ${new Date(stats.updatedAt).toLocaleString()}`
             : ""}

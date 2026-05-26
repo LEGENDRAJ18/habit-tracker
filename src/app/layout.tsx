@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.habitaiapp.com";
 
-const OG_TITLE       = "HabitAI - AI Habit Coaching That Actually Works";
-const OG_DESCRIPTION = "Track habits, protect streaks, and get personalised AI coaching. Join thousands building better habits with HabitAI — free forever.";
+const OG_TITLE       = "HabitAI — AI Habit Coach & Tracker";
+const OG_DESCRIPTION = "Build habits that actually stick with an AI coach that knows you personally. Track habits, battle friends, and discover who you're becoming.";
 const OG_IMAGE       = `${APP_URL}/opengraph-image`;
 
 export const metadata: Metadata = {

@@ -293,6 +293,7 @@ export default function BillingPage() {
   };
 
   const startCheckout = async (plan: Plan) => {
+    posthog.capture("upgrade_clicked", { plan });
     // Annual toggle shows discounted price UI but routes to same monthly Stripe until annual SKUs are live
     const priceId = plan === "plus"
       ? process.env.NEXT_PUBLIC_STRIPE_PLUS_PRICE_ID!

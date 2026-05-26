@@ -125,6 +125,7 @@ export default function HabitCard({
       setShowParticles(true);
       setJustCompleted(true);
       setTimeout(() => { setShowParticles(false); setJustCompleted(false); }, 700);
+      if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(50);
       onCompleted?.();
     }
     // Optimistic — fire and forget; parent handles revert on error
