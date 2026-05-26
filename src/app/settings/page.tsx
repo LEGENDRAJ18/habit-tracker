@@ -1321,6 +1321,68 @@ function NotificationsTab() {
           Tip: Set reminder times on individual habits by editing them in your dashboard.
         </p>
       </div>
+
+      {/* Notification Previews */}
+      <div className={cardCls}>
+        <h3 className="text-sm font-bold text-white flex items-center gap-2">
+          👁️ Preview notifications
+        </h3>
+        <p className="text-xs text-slate-500 -mt-1">This is what your notifications will look like.</p>
+        <div className="space-y-2">
+          {[
+            {
+              emoji: "🔔", title: "Time for: Morning run!",
+              body: "Your reminder is here. Tap to mark it done and keep your streak!",
+              show: prefs.habit_reminders !== false,
+            },
+            {
+              emoji: "☀️", title: "Good morning! Your habits await",
+              body: "You have 4 habits to complete today. Let's go!",
+              show: prefs.morning_alarm === true,
+            },
+            {
+              emoji: "🌙", title: "Last chance tonight!",
+              body: "2 habits left for today. You're so close!",
+              show: prefs.final_nudge !== false,
+            },
+            {
+              emoji: "🔥", title: "Your streak is at risk",
+              body: "You haven't opened HabitAI in 24 hours. Tap to keep your streak alive!",
+              show: prefs.streak_protection !== false,
+            },
+            {
+              emoji: "🎯", title: "One day from 30 days!",
+              body: "Morning run: You're on a 29-day streak. Don't stop now!",
+              show: prefs.streak_protection !== false,
+            },
+            {
+              emoji: "⚔️", title: "You've been challenged!",
+              body: "alex_m challenged you to a 7-day Habit Battle: 'Run every day'. Accept?",
+              show: prefs.battle_notifications !== false,
+            },
+            {
+              emoji: "💪", title: "New week, new wins",
+              body: "Start the week strong — even one habit counts!",
+              show: prefs.weekly_motivation !== false,
+            },
+          ]
+            .filter((n) => n.show)
+            .map((n) => (
+              <div
+                key={n.title}
+                className="flex items-start gap-2.5 bg-black/30 border border-white/[0.05] rounded-xl p-3"
+              >
+                <div className="w-8 h-8 rounded-xl bg-[#1a1a2e] border border-violet-900/30 flex items-center justify-center flex-shrink-0 text-sm">
+                  {n.emoji}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-white leading-tight">{n.title}</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">{n.body}</p>
+                </div>
+              </div>
+            ))}
+        </div>
+      </div>
     </div>
   );
 }

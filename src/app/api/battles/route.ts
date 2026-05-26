@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { pushNotify } from "@/lib/pushNotify";
 
 export async function GET() {
   try {
@@ -90,6 +91,22 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) throw error;
+
+    // Push to opponent: you've been challenged
+    const { data: challengerProfile } = await admin
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .single();
+    const challengerName = challengerProfile?.username ?? "Someone";
+
+    void pushNotify(admin, opponent_id, {
+      title: "⚔️ You've been challenged!",
+      body:  `${challengerName} challenged you to a ${duration_days}-day Habit Battle: "${habit_name}". Accept or decline?`,
+      tag:   `battle-invite-${battle?.id}`,
+      url:   "/friends",
+    });
+
     return NextResponse.json({ battle });
   } catch (err) {
     console.error("[battles POST]", err);
@@ -131,6 +148,18 @@ export async function PATCH(request: NextRequest) {
         .select()
         .single();
       if (error) throw error;
+
+      // Push challenger: battle accepted
+      const { data: opponentProfile } = await admin
+        .from("profiles").select("username").eq("id", user.id).single();
+      const opponentName = opponentProfile?.username ?? "Your opponent";
+      void pushNotify(admin, battle.challenger_id, {
+        title: "🤝 Battle accepted!",
+        body:  `${opponentName} accepted your Habit Battle: "${battle.habit_name}". It's on! 💪`,
+        tag:   `battle-accepted-${battle_id}`,
+        url:   "/friends",
+      });
+
       return NextResponse.json({ battle: updated });
     }
 
@@ -142,6 +171,18 @@ export async function PATCH(request: NextRequest) {
         .select()
         .single();
       if (error) throw error;
+
+      // Push challenger: battle declined
+      const { data: opProfile } = await admin
+        .from("profiles").select("username").eq("id", user.id).single();
+      const opName = opProfile?.username ?? "Your opponent";
+      void pushNotify(admin, battle.challenger_id, {
+        title: "❌ Battle declined",
+        body:  `${opName} declined your Habit Battle. Challenge someone else?`,
+        tag:   `battle-declined-${battle_id}`,
+        url:   "/friends",
+      });
+
       return NextResponse.json({ battle: updated });
     }
 
@@ -171,6 +212,42 @@ export async function PATCH(request: NextRequest) {
         .select()
         .single();
       if (error) throw error;
+
+      // Push both participants if battle just completed
+      if (updates.status === "completed" && updates.winner_id) {
+        const winnerId  = updates.winner_id as string;
+        const loserId   = winnerId === battle.challenger_id ? battle.opponent_id : battle.challenger_id;
+        const habitName = battle.habit_name as string;
+
+        void pushNotify(admin, winnerId, {
+          title: "🏆 You won the battle!",
+          body:  `Congratulations! You beat your opponent in the "${habitName}" Habit Battle. Keep it up!`,
+          tag:   `battle-win-${battle_id}`,
+          url:   "/friends",
+        });
+        void pushNotify(admin, loserId, {
+          title: "😤 Battle over",
+          body:  `The "${habitName}" battle is done. You fought hard — challenge them again?`,
+          tag:   `battle-lose-${battle_id}`,
+          url:   "/friends",
+        });
+      }
+
+      // Push opponent if challenger is pulling ahead mid-battle
+      if (!updates.status && isChallenger) {
+        const newCount   = current + 1;
+        const opCount    = battle.opponent_completions ?? 0;
+        const gap        = newCount - opCount;
+        if (gap === 3 || gap === 5) {
+          void pushNotify(admin, battle.opponent_id, {
+            title: "😤 Your opponent is pulling ahead!",
+            body:  `They're ${gap} completions ahead in your "${battle.habit_name}" battle. Time to catch up!`,
+            tag:   `battle-update-${battle_id}`,
+            url:   "/friends",
+          });
+        }
+      }
+
       return NextResponse.json({ battle: updated });
     }
 

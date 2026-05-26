@@ -143,7 +143,7 @@ async function handle(req: NextRequest) {
   const expiredIds: string[] = [];
   const stats = {
     morning: 0, habit_reminder: 0, final_nudge: 0,
-    streak: 0, weekly: 0,
+    streak: 0, weekly: 0, milestone: 0,
   };
 
   for (const sub of subs as PushSub[]) {
@@ -319,7 +319,57 @@ async function handle(req: NextRequest) {
       }
     }
 
-    // ── 6. Weekly motivation ───────────────────────────────────────────────
+    // ── 6. Streak milestone — "Tomorrow you hit X days!" ─────────────────
+    // Fire once per day around 6 PM when a user is 1 day away from 7/14/30/100
+    if (prefs.streak_protection !== false && localHour === 18 && hasHabits) {
+      const MILESTONES = [7, 14, 30, 50, 100, 200, 365];
+      const { data: userHabits } = await admin
+        .from("habits")
+        .select("id, name")
+        .eq("user_id", sub.user_id)
+        .limit(10);
+
+      for (const h of userHabits ?? []) {
+        // Count distinct days completed in the last 400 days
+        const { data: logs } = await admin
+          .from("habit_logs")
+          .select("completed_at")
+          .eq("user_id", sub.user_id)
+          .eq("habit_id", h.id)
+          .gte("completed_at", new Date(Date.now() - 400 * 86400000).toISOString())
+          .order("completed_at", { ascending: false })
+          .limit(400);
+
+        // Simple streak calc: count consecutive days back from yesterday
+        const doneDates = new Set(
+          (logs ?? []).map((l) => (l.completed_at as string).slice(0, 10))
+        );
+        let currentStreak = 0;
+        const yesterday = new Date(Date.now() - 86400000);
+        for (let i = 0; i < 400; i++) {
+          const d = new Date(yesterday.getTime() - i * 86400000)
+            .toISOString().slice(0, 10);
+          if (doneDates.has(d)) currentStreak++;
+          else break;
+        }
+
+        const nextMilestone = MILESTONES.find((m) => m === currentStreak + 1);
+        if (nextMilestone) {
+          const result = await sendPush(sub, {
+            title: `🎯 One day from ${nextMilestone} days!`,
+            body:  `${h.name}: You're on a ${currentStreak}-day streak. Complete it tomorrow to hit ${nextMilestone} days! Don't stop now.`,
+            tag:   `milestone-${h.id}-${nextMilestone}`,
+            url:   "/dashboard",
+          });
+          if (result === "expired") { expiredIds.push(sub.id); break; }
+          if (result) stats.milestone++;
+          break; // Only one milestone notification per user per hour
+        }
+      }
+      if (expiredIds.includes(sub.id)) continue;
+    }
+
+    // ── 7. Weekly motivation ───────────────────────────────────────────────
     if (prefs.weekly_motivation !== false) {
       // Monday 8 AM — weekly kickoff
       if (localDow === 1 && localHour === 8) {

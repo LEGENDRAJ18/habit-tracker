@@ -81,9 +81,10 @@ export default function HabitCard({
   const [showParticles, setShowParticles] = useState(false);
   const [justCompleted, setJustCompleted] = useState(false);
   const [showStrTooltip, setShowStrTooltip] = useState(false);
-  const [editMode, setEditMode]     = useState(false);
-  const [editName, setEditName]     = useState(habit.name);
-  const [editSaving, setEditSaving] = useState(false);
+  const [editMode, setEditMode]         = useState(false);
+  const [editName, setEditName]         = useState(habit.name);
+  const [editReminderTime, setEditReminderTime] = useState(habit.preferred_reminder_time ?? "");
+  const [editSaving, setEditSaving]     = useState(false);
   const [smartToggling, setSmartToggling] = useState(false);
   const [swipeX, setSwipeX]         = useState(0);
   const swipeXRef   = useRef(0);
@@ -96,22 +97,37 @@ export default function HabitCard({
   const handleRename = async () => {
     if (!onRename) return;
     const trimmed = editName.trim();
-    if (!trimmed || trimmed === habit.name) { setEditMode(false); return; }
+    const nameChanged     = trimmed && trimmed !== habit.name;
+    const reminderChanged = editReminderTime !== (habit.preferred_reminder_time ?? "");
+
+    if (!trimmed) { setEditMode(false); return; }
     setEditSaving(true);
     try {
-      let validityScore: "valid" | "partial" | "invalid" = "valid";
-      try {
-        const res = await fetch("/api/validate-habit", {
-          method: "POST",
+      if (nameChanged) {
+        let validityScore: "valid" | "partial" | "invalid" = "valid";
+        try {
+          const res = await fetch("/api/validate-habit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ habitName: trimmed }),
+          });
+          if (res.ok) {
+            const data = await res.json() as { status: "good" | "warning" | "blocked" };
+            validityScore = data.status === "warning" ? "partial" : data.status === "blocked" ? "invalid" : "valid";
+          }
+        } catch { /* silently use "valid" on network error */ }
+        await onRename(trimmed, validityScore);
+      }
+
+      // Save reminder time change (separate fetch — lightweight)
+      if (reminderChanged) {
+        await fetch(`/api/habits/${habit.id}/reminder`, {
+          method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ habitName: trimmed }),
+          body: JSON.stringify({ reminder_time: editReminderTime || null }),
         });
-        if (res.ok) {
-          const data = await res.json() as { status: "good" | "warning" | "blocked" };
-          validityScore = data.status === "warning" ? "partial" : data.status === "blocked" ? "invalid" : "valid";
-        }
-      } catch { /* silently use "valid" on network error */ }
-      await onRename(trimmed, validityScore);
+      }
+
       setEditMode(false);
     } finally {
       setEditSaving(false);
@@ -243,33 +259,55 @@ export default function HabitCard({
         {/* Name + description */}
         <div className="flex-1 min-w-0">
           {editMode && onRename ? (
-            <div className="flex items-center gap-1.5">
-              <input
-                autoFocus
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                maxLength={100}
-                className="flex-1 min-w-0 bg-violet-950/40 border border-violet-700/50 rounded-lg px-2 py-1 text-sm text-white outline-none focus:border-violet-500/70"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleRename();
-                  if (e.key === "Escape") { setEditMode(false); setEditName(habit.name); }
-                }}
-              />
-              <button
-                onClick={handleRename}
-                disabled={editSaving}
-                className="flex-shrink-0 p-1 text-emerald-400 hover:text-emerald-300 transition-colors"
-                title="Save"
-              >
-                {editSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-              </button>
-              <button
-                onClick={() => { setEditMode(false); setEditName(habit.name); }}
-                className="flex-shrink-0 p-1 text-slate-500 hover:text-slate-300 transition-colors"
-                title="Cancel"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <input
+                  autoFocus
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  maxLength={100}
+                  className="flex-1 min-w-0 bg-violet-950/40 border border-violet-700/50 rounded-lg px-2 py-1 text-sm text-white outline-none focus:border-violet-500/70"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleRename();
+                    if (e.key === "Escape") { setEditMode(false); setEditName(habit.name); setEditReminderTime(habit.preferred_reminder_time ?? ""); }
+                  }}
+                />
+                <button
+                  onClick={handleRename}
+                  disabled={editSaving}
+                  className="flex-shrink-0 p-1 text-emerald-400 hover:text-emerald-300 transition-colors"
+                  title="Save"
+                >
+                  {editSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                </button>
+                <button
+                  onClick={() => { setEditMode(false); setEditName(habit.name); setEditReminderTime(habit.preferred_reminder_time ?? ""); }}
+                  className="flex-shrink-0 p-1 text-slate-500 hover:text-slate-300 transition-colors"
+                  title="Cancel"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              {/* Reminder time inline edit */}
+              <div className="flex items-center gap-1.5 pl-0.5">
+                <span className="text-[10px] text-slate-600">🔔 Remind at</span>
+                <input
+                  type="time"
+                  value={editReminderTime}
+                  onChange={(e) => setEditReminderTime(e.target.value)}
+                  className="bg-violet-950/40 border border-violet-700/30 rounded-lg px-1.5 py-0.5 text-[11px] text-white outline-none focus:border-violet-500/70 [color-scheme:dark]"
+                />
+                {editReminderTime && (
+                  <button
+                    type="button"
+                    onClick={() => setEditReminderTime("")}
+                    className="text-[10px] text-slate-600 hover:text-slate-400"
+                    title="Clear reminder"
+                  >
+                    clear
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <div className="flex items-center gap-1.5">
@@ -350,7 +388,7 @@ export default function HabitCard({
       </div>
 
       {/* Implementation intentions — desktop only */}
-      {(habit.when_time || habit.where_location || habit.how_long) && (
+      {(habit.when_time || habit.where_location || habit.how_long || habit.preferred_reminder_time) && (
         <div className="hidden sm:flex items-center gap-2.5 px-4 pb-1.5 flex-wrap">
           {habit.where_location && (
             <span className="text-[11px] text-slate-600 flex items-center gap-1">
@@ -365,6 +403,11 @@ export default function HabitCard({
           {habit.how_long && (
             <span className="text-[11px] text-slate-600 flex items-center gap-1">
               <span>⏱</span>{habit.how_long}
+            </span>
+          )}
+          {habit.preferred_reminder_time && !habit.smart_timing && (
+            <span className="text-[11px] text-violet-500/70 flex items-center gap-1">
+              <span>🔔</span>{formatTime(habit.preferred_reminder_time)}
             </span>
           )}
         </div>

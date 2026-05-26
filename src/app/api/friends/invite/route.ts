@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendInviteEmail } from "@/lib/email/invite";
+import { pushNotify } from "@/lib/pushNotify";
 
 // Username pattern: optional leading @, then 3–20 alphanumeric/underscore chars
 const USERNAME_RE = /^@?[a-z0-9_]{3,20}$/i;
@@ -72,6 +73,20 @@ export async function POST(req: NextRequest) {
         { onConflict: "requester_id,addressee_id", ignoreDuplicates: true },
       );
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    // Push notification to the invitee
+    const { data: senderProfile } = await admin
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .single();
+    const senderName = senderProfile?.username ?? "Someone";
+    void pushNotify(admin, inviteeId, {
+      title: "👋 New friend request",
+      body:  `${senderName} wants to be your friend on HabitAI. Accept to compete on leaderboards!`,
+      tag:   `friend-request-${user.id}`,
+      url:   "/friends",
+    });
   }
 
   // Send invite email (only if we have an email address — username-only users already exist)
