@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
+import { pushNotify } from "@/lib/pushNotify";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://habitai.app";
@@ -31,6 +32,14 @@ export async function POST(req: NextRequest) {
   if (!friendEmail) return NextResponse.json({ error: "Friend not found" }, { status: 404 });
 
   const senderName = (user.email ?? "Your friend").split("@")[0];
+
+  // Push notification (non-blocking)
+  void pushNotify(admin, friendId, {
+    title: `${senderName} is cheering you on! 🎉`,
+    body:  "Your friend believes in you — go complete your habits today!",
+    tag:   `cheer-${user.id}`,
+    url:   "/dashboard",
+  }, "friend");
 
   await resend.emails.send({
     from: "HabitAI <hello@habitai.app>",

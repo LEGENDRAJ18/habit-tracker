@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       body:  `${challengerName} challenged you to a ${duration_days}-day Habit Battle: "${habit_name}". Accept or decline?`,
       tag:   `battle-invite-${battle?.id}`,
       url:   "/friends",
-    });
+    }, "battle");
 
     return NextResponse.json({ battle });
   } catch (err) {
@@ -158,7 +158,7 @@ export async function PATCH(request: NextRequest) {
         body:  `${opponentName} accepted your Habit Battle: "${battle.habit_name}". It's on! 💪`,
         tag:   `battle-accepted-${battle_id}`,
         url:   "/friends",
-      });
+      }, "battle");
 
       return NextResponse.json({ battle: updated });
     }
@@ -181,7 +181,7 @@ export async function PATCH(request: NextRequest) {
         body:  `${opName} declined your Habit Battle. Challenge someone else?`,
         tag:   `battle-declined-${battle_id}`,
         url:   "/friends",
-      });
+      }, "battle");
 
       return NextResponse.json({ battle: updated });
     }
@@ -224,13 +224,13 @@ export async function PATCH(request: NextRequest) {
           body:  `Congratulations! You beat your opponent in the "${habitName}" Habit Battle. Keep it up!`,
           tag:   `battle-win-${battle_id}`,
           url:   "/friends",
-        });
+        }, "battle");
         void pushNotify(admin, loserId, {
           title: "😤 Battle over",
           body:  `The "${habitName}" battle is done. You fought hard — challenge them again?`,
           tag:   `battle-lose-${battle_id}`,
           url:   "/friends",
-        });
+        }, "battle");
       }
 
       // Push opponent if challenger is pulling ahead mid-battle
@@ -244,7 +244,7 @@ export async function PATCH(request: NextRequest) {
             body:  `They're ${gap} completions ahead in your "${battle.habit_name}" battle. Time to catch up!`,
             tag:   `battle-update-${battle_id}`,
             url:   "/friends",
-          });
+          }, "battle");
         }
       }
 

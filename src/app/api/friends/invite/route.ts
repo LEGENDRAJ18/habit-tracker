@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
       body:  `${senderName} wants to be your friend on HabitAI. Accept to compete on leaderboards!`,
       tag:   `friend-request-${user.id}`,
       url:   "/friends",
-    });
+    }, "friend");
   }
 
   // Send invite email (only if we have an email address — username-only users already exist)
