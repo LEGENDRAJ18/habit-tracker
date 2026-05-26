@@ -1047,57 +1047,34 @@ export default function DashboardPage() {
         {/* ── Right sidebar (xl only) ────────────────────────────────────── */}
         <div className="hidden xl:flex xl:flex-col gap-4 sticky top-20 h-[calc(100vh-5rem)] overflow-hidden pb-4">
 
-          {/* AI Insight — prominent card */}
-          <div data-tour="ai-insight" className={`relative overflow-hidden rounded-2xl bg-[#0c0c18] ${isPaid ? "border border-violet-600/30" : "border border-violet-500/50"}`}>
+          {/* AI Insight — available to all users */}
+          <div data-tour="ai-insight" className="relative overflow-hidden rounded-2xl bg-[#0c0c18] border border-violet-600/30">
             <div className="absolute inset-0 bg-gradient-to-br from-violet-950/80 via-[#0f0f1a] to-purple-950/60" />
-            <div className={`absolute -top-8 left-1/2 -translate-x-1/2 w-48 h-12 rounded-full blur-3xl pointer-events-none ${isPaid ? "bg-violet-500/20" : "bg-violet-500/35"}`} />
-            {!isPaid && (
-              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
-            )}
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-48 h-12 rounded-full blur-3xl pointer-events-none bg-violet-500/20" />
             <div className="relative p-5">
               <div className="flex items-center gap-2 mb-1.5">
-                <Sparkles className={`w-4 h-4 ${isPaid ? "text-violet-400" : "text-violet-300"}`} />
+                <Sparkles className="w-4 h-4 text-violet-400" />
                 <p className="text-sm font-semibold text-white">AI Coaching</p>
-                {!isPaid && (
-                  <span className="ml-auto text-[10px] font-bold text-violet-300 bg-violet-500/20 border border-violet-500/30 px-2 py-0.5 rounded-full">
-                    UNLOCK
-                  </span>
+                {tier === "pro" && (
+                  <span className="ml-auto text-[10px] font-bold text-amber-300 bg-amber-900/25 border border-amber-600/30 px-2 py-0.5 rounded-full">PRO</span>
                 )}
               </div>
               <p className="text-[11px] text-slate-400 mb-4 leading-relaxed">
-                {isPaid
-                  ? "Get personalised insights on your habits, streaks, and patterns."
-                  : "Personalised AI insights, weekly game plans, and habit coaching — tailored to your goals."}
+                Get personalised insights on your habits, streaks, and patterns — tailored to your goals.
               </p>
-              {isPaid ? (
-                <button
-                  onClick={() => openAIInsight()}
-                  className="w-full py-2.5 rounded-xl text-sm font-semibold bg-violet-600 hover:bg-violet-500 text-white transition-all"
-                  style={{ boxShadow: "0 0 20px rgba(139,92,246,0.4)" }}
-                >
-                  Analyse My Habits
-                </button>
-              ) : (
-                <button
-                  onClick={() => openUpgradeModal("ai")}
-                  className="w-full py-3 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 relative overflow-hidden"
-                  style={{
-                    background: "linear-gradient(135deg, #6d28d9, #8b5cf6, #a855f7, #8b5cf6, #6d28d9)",
-                    backgroundSize: "300% 100%",
-                    animation: "upgradeShimmer 3s ease-in-out infinite",
-                    boxShadow: "0 0 28px rgba(139,92,246,0.55), 0 4px 16px rgba(139,92,246,0.3)",
-                  }}
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Upgrade to Unlock
-                </button>
-              )}
+              <button
+                onClick={() => openAIInsight()}
+                className="w-full py-2.5 rounded-xl text-sm font-semibold bg-violet-600 hover:bg-violet-500 text-white transition-all"
+                style={{ boxShadow: "0 0 20px rgba(139,92,246,0.4)" }}
+              >
+                Analyse My Habits
+              </button>
               <p className="text-[10px] text-center mt-2">
                 {tier === "pro"
                   ? <span className="text-slate-600">Unlimited insights · Pro</span>
                   : isPaid
                   ? <span className="text-slate-600">5 insights / day · Plus</span>
-                  : <span className="text-violet-400/70">✨ Starting at $4.99/mo · 7-day money-back</span>}
+                  : <span className="text-slate-600">1 insight / day · Free</span>}
               </p>
             </div>
           </div>

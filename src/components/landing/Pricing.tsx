@@ -20,31 +20,32 @@ function Soon() {
 type FeatureItem = { label: string; soon?: boolean };
 
 const FREE_FEATURES: FeatureItem[] = [
-  { label: "Up to 3 active habits" },
-  { label: "Identity Score per habit" },
-  { label: "Basic Habit DNA preview" },
-  { label: "Streaks & XP level system" },
+  { label: "Unlimited habits — no limits" },
+  { label: "Full AI coach from day one" },
+  { label: "Identity Score" },
   { label: "Friends & leaderboard" },
+  { label: "Habit Battles (2 per month)" },
+  { label: "Streaks & XP level system" },
 ];
 
 const PLUS_FEATURES: FeatureItem[] = [
-  { label: "Unlimited habits" },
-  { label: "Full Habit DNA card + shareable" },
-  { label: "Habit Battles with friends" },
+  { label: "Everything in Free" },
+  { label: "Unlimited Habit Battles" },
+  { label: "Full Habit DNA shareable card" },
   { label: "Public Commitment Contracts" },
-  { label: "5 AI coaching insights per day" },
-  { label: "Streak protection (freeze)" },
-  { label: "Daily email reminders" },
+  { label: "Group habits" },
+  { label: "Weekly AI email report" },
+  { label: "Priority support" },
 ];
 
 const PRO_FEATURES: FeatureItem[] = [
   { label: "Everything in Plus" },
-  { label: "Voice check-ins with AI coaching" },
-  { label: "Deep AI memory & pattern tracking" },
+  { label: "Deep AI Memory" },
+  { label: "Voice check-ins" },
   { label: "Monthly Wrapped summary" },
-  { label: "Unlimited AI coaching insights" },
-  { label: "Weekly AI email report" },
-  { label: "CSV data export" },
+  { label: "University Goal Mode" },
+  { label: "AI remembers your excuses" },
+  { label: "Early access to new features" },
 ];
 
 function PaidPlanButton({ plan, priceId, primary }: { plan: string; priceId: string; primary?: boolean }) {
@@ -217,7 +218,7 @@ export default function Pricing() {
 
         {/* Footer note */}
         <p className="text-center text-sm text-slate-500 mt-10">
-          14-day free trial on paid plans · Cancel anytime · No credit card required to start
+          30-day free trial on paid plans · Cancel anytime · No credit card required to start
         </p>
       </div>
     </section>

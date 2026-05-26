@@ -312,7 +312,7 @@ function PricingCard({ plan, currentTier, annual, checkoutLoading, portalLoading
                 </>
               )}
             </button>
-            <p className="text-center text-[10px] text-slate-600 mt-2">No credit card required during trial</p>
+            <p className="text-center text-[10px] text-slate-600 mt-2">Cancel before day 30 and pay nothing</p>
           </div>
         ) : null}
       </div>
@@ -440,7 +440,7 @@ export default function BillingPage() {
         <div className="text-center mb-10 sm:mb-14">
           <div className="inline-flex items-center gap-1.5 bg-emerald-950/60 border border-emerald-700/40 rounded-full px-4 py-1.5 mb-5">
             <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="text-xs font-semibold text-emerald-300">30-day free trial · No credit card required</span>
+            <span className="text-xs font-semibold text-emerald-300">30-day free trial · Cancel anytime · Pay nothing if you cancel</span>
           </div>
           <h1 className="text-4xl sm:text-5xl font-black text-white mb-4 tracking-tight leading-tight">
             Start free.<br className="sm:hidden" /> Grow when you{"'"}re ready.

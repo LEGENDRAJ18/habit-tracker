@@ -32,7 +32,7 @@ const TESTIMONIALS = [
     name: "Maria L.",
     role: "Entrepreneur, 45",
     quote:
-      "The streak protection feature alone is worth the $5.99. I travel constantly and used to lose all my progress. Not anymore.",
+      "The streak protection feature alone is worth the $4.99. I travel constantly and used to lose all my progress. Not anymore.",
   },
 ];
 

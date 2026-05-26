@@ -98,26 +98,28 @@ export async function POST(request: NextRequest) {
       admin.from("profiles").select("goal, goals, subscription_tier, ai_memory").eq("id", user.id).single(),
     ]);
 
-    // Tier gate — free users cannot use AI insights
     const userTier = (profile?.subscription_tier ?? "free") as "free" | "plus" | "pro";
-    if (userTier === "free") {
-      return NextResponse.json(
-        { error: "AI coaching is a Plus & Pro feature. Upgrade to unlock personalised insights." },
-        { status: 403 },
-      );
-    }
 
-    // Rate limit — Plus: 5/day, Pro: unlimited
+    // Rate limit — Free: 1/day, Plus: 5/day, Pro: unlimited
     let remaining = 9999;
-    if (userTier === "plus") {
-      const { allowed, remaining: rem } = checkRateLimit(user.id);
-      if (!allowed) {
-        return NextResponse.json(
-          { error: "You've used all 5 AI insights for today. Come back tomorrow, or upgrade to Pro for unlimited insights!" },
-          { status: 429 },
-        );
+    if (userTier === "pro") {
+      remaining = 9999;
+    } else {
+      const dailyLimit = userTier === "plus" ? DAILY_LIMIT : 1;
+      const entry = rateLimitMap.get(user.id);
+      const today = new Date().toISOString().split("T")[0];
+      if (!entry || entry.date !== today) {
+        rateLimitMap.set(user.id, { date: today, count: 1 });
+        remaining = dailyLimit - 1;
+      } else if (entry.count >= dailyLimit) {
+        const limitMsg = userTier === "plus"
+          ? "You've used all 5 AI insights for today. Come back tomorrow, or upgrade to Pro for unlimited insights!"
+          : "You've used your free AI insight for today. Upgrade to Plus for 5 insights per day, or Pro for unlimited!";
+        return NextResponse.json({ error: limitMsg }, { status: 429 });
+      } else {
+        entry.count++;
+        remaining = dailyLimit - entry.count;
       }
-      remaining = rem;
     }
 
     if (!habits || habits.length === 0) {

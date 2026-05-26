@@ -470,7 +470,7 @@ function BlurGate({ children }: { children: React.ReactNode }) {
               window.location.href = url.toString();
             }}
           >
-            Upgrade to Plus — $5.99/mo
+            Upgrade to Plus — $4.99/mo
           </Link>
         </div>
       </div>

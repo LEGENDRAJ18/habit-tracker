@@ -83,7 +83,7 @@ export default function PaymentPolicyPage() {
         <Section icon={<Sparkles className="w-4 h-4 text-violet-400" />} title="Pricing">
           <div className="bg-[#0c0c18] border border-violet-900/20 rounded-xl overflow-hidden mb-3">
             <Row label="Free plan" value="$0 — always free, no credit card required" />
-            <Row label="Plus plan" value="$5.99 USD / month, billed monthly" />
+            <Row label="Plus plan" value="$4.99 USD / month, billed monthly" />
             <Row label="Pro plan"  value="$9.99 USD / month, billed monthly" />
           </div>
           <p>

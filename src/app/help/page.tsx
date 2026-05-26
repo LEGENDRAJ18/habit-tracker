@@ -72,21 +72,22 @@ const SECTIONS: Section[] = [
         q: "What's included in the Free plan?",
         a: (
           <>
-            The Free plan lets you track up to <strong className="text-white">5 habits</strong>, view basic analytics, and earn XP. It&apos;s a great way to get started — no credit card required.
+            The Free plan gives you <strong className="text-white">unlimited habits</strong>, a full AI coach, Identity Score, Habit Battles (2/month), friends &amp; leaderboard, and XP tracking. No credit card required — it&apos;s genuinely unlimited.
           </>
         ),
       },
       {
-        q: "What does Plus ($5.99/mo) include?",
+        q: "What does Plus ($4.99/mo) include?",
         a: (
           <ul className="space-y-1 mt-1">
             {[
-              "Unlimited habits",
-              "Full analytics & streak charts",
-              "5 AI coaching insights per day",
-              "Streak freeze protection (1 per week)",
-              "Daily email reminders",
-              "Friends & leaderboards",
+              "Everything in Free",
+              "Unlimited Habit Battles (free gets 2/month)",
+              "Full Habit DNA shareable card",
+              "Public Commitment Contracts",
+              "Group habits",
+              "Weekly AI email report",
+              "Priority support",
             ].map((f) => (
               <li key={f} className="flex items-center gap-2 text-slate-300">
                 <span className="w-1.5 h-1.5 rounded-full bg-violet-500 flex-shrink-0" />
@@ -120,7 +121,7 @@ const SECTIONS: Section[] = [
         q: "Is there a free trial?",
         a: (
           <>
-            Yes — the <strong className="text-white">Plus plan</strong> comes with a <strong className="text-white">7-day free trial</strong>. No charge during the trial. You can cancel any time before it ends and won&apos;t be billed. After the trial, it&apos;s $5.99 USD/month.
+            Yes — both Plus and Pro come with a <strong className="text-white">30-day free trial</strong>. No credit card required. Cancel any time before it ends and you won&apos;t be charged. After the trial, Plus is $4.99/month and Pro is $9.99/month.
           </>
         ),
       },
@@ -399,16 +400,16 @@ export default function HelpPage() {
             <div className="bg-[#0c0c18] border border-violet-900/20 rounded-xl p-4">
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Free</p>
               <p className="text-lg font-bold text-white mb-1">$0 <span className="text-xs font-normal text-slate-600">/ mo</span></p>
-              <p className="text-xs text-slate-600 leading-relaxed">Up to 5 habits, basic XP tracking</p>
+              <p className="text-xs text-slate-600 leading-relaxed">Unlimited habits, AI coach, friends</p>
             </div>
             <div className="bg-[#0c0c18] border border-violet-600/40 rounded-xl p-4">
               <div className="flex items-center gap-1.5 mb-1.5">
                 <Sparkles className="w-3 h-3 text-violet-400" />
                 <p className="text-xs font-bold text-violet-400 uppercase tracking-wider">Plus</p>
               </div>
-              <p className="text-lg font-bold text-white mb-0.5">$5.99 <span className="text-xs font-normal text-slate-600">USD / mo</span></p>
-              <p className="text-[10px] text-violet-400 font-semibold mb-1">7-day free trial</p>
-              <p className="text-xs text-slate-600 leading-relaxed">Unlimited habits, AI coaching, reminders</p>
+              <p className="text-lg font-bold text-white mb-0.5">$4.99 <span className="text-xs font-normal text-slate-600">USD / mo</span></p>
+              <p className="text-[10px] text-violet-400 font-semibold mb-1">30-day free trial</p>
+              <p className="text-xs text-slate-600 leading-relaxed">Unlimited Battles, group habits, weekly email</p>
             </div>
             <div className="bg-[#0c0c18] border border-amber-600/40 rounded-xl p-4">
               <div className="flex items-center gap-1.5 mb-1.5">

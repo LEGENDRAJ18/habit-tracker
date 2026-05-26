@@ -678,7 +678,7 @@ function PlanTab({
   const supabase = createClient();
   const isPaid = tier === "plus" || tier === "pro";
   const { formatPrice, currency, loading: currencyLoading } = useCurrency();
-  const plusPrice = currencyLoading ? "$5.99" : formatPrice(5.99);
+  const plusPrice = currencyLoading ? "$4.99" : formatPrice(4.99);
   const proPrice  = currencyLoading ? "$9.99"  : formatPrice(9.99);
 
   const [weeklyEmail,         setWeeklyEmail]         = useState(false);
@@ -709,7 +709,7 @@ function PlanTab({
   }
 
   const planInfo = {
-    free:  { label: "Free",  badge: "bg-slate-800 text-slate-300 border-slate-700",  desc: "Up to 3 habits, basic streak tracking" },
+    free:  { label: "Free",  badge: "bg-slate-800 text-slate-300 border-slate-700",  desc: "Unlimited habits, AI coach, friends & leaderboard" },
     plus:  { label: "Plus",  badge: "bg-violet-900/50 text-violet-300 border-violet-700/50", desc: "Unlimited habits, AI coaching, email reminders" },
     pro:   { label: "Pro",   badge: "bg-amber-900/40 text-amber-300 border-amber-700/40",    desc: "Everything in Plus, unlimited AI, data export" },
   };
@@ -750,7 +750,7 @@ function PlanTab({
                   <Zap className="w-3.5 h-3.5 text-violet-400" />
                   <span className="text-sm font-bold text-white">Plus</span>
                 </div>
-                <span className="text-[11px] text-slate-400 leading-snug">AI coaching, unlimited habits, reminders</span>
+                <span className="text-[11px] text-slate-400 leading-snug">Unlimited Battles, group habits, weekly email</span>
                 <span className="text-sm font-bold text-violet-300 mt-1">{plusPrice}/mo</span>
               </Link>
               <Link href="/billing?plan=pro"
@@ -759,11 +759,11 @@ function PlanTab({
                   <Crown className="w-3.5 h-3.5 text-amber-400" />
                   <span className="text-sm font-bold text-white">Pro</span>
                 </div>
-                <span className="text-[11px] text-slate-400 leading-snug">Unlimited AI, data export, priority support</span>
+                <span className="text-[11px] text-slate-400 leading-snug">Deep AI memory, University Goal Mode, voice check-ins</span>
                 <span className="text-sm font-bold text-amber-300 mt-1">{proPrice}/mo</span>
               </Link>
             </div>
-            <p className="text-[11px] text-slate-600 text-center">7-day money-back guarantee · No lock-in</p>
+            <p className="text-[11px] text-slate-600 text-center">30-day free trial · Cancel anytime · No lock-in</p>
             <p className="text-[10px] text-slate-700 text-center">Prices shown in {currency} · Charged in USD by Stripe</p>
           </div>
         )}

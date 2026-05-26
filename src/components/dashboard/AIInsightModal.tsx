@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Sparkles, Loader2, AlertCircle, Zap, Target, Heart, CalendarDays, ExternalLink, Crown } from "lucide-react";
 import posthog from "posthog-js";
 import type { Plan } from "@/types";
@@ -28,6 +28,8 @@ export default function AIInsightModal({ onClose, onUpgrade, tier }: Props) {
   const [result, setResult]   = useState<CoachingResult | null>(null);
   const [error, setError]     = useState<string | null>(null);
   const [fetched, setFetched] = useState(false);
+
+  useEffect(() => { void fetchInsight(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchInsight() {
     setLoading(true);
@@ -83,30 +85,8 @@ export default function AIInsightModal({ onClose, onUpgrade, tier }: Props) {
 
         {/* Body */}
         <div className="p-6 overflow-y-auto flex-1">
-          {/* Upgrade gate — free users */}
-          {!isPaid && (
-            <div className="text-center py-4">
-              <div className="w-12 h-12 rounded-2xl bg-violet-600/20 border border-violet-500/25 flex items-center justify-center mx-auto mb-4">
-                <Sparkles className="w-6 h-6 text-violet-400" />
-              </div>
-              <h3 className="text-base font-bold text-white mb-2">Plus & Pro Feature</h3>
-              <p className="text-sm text-slate-400 mb-5 leading-relaxed">
-                Get personalized AI coaching that analyzes your habit patterns and gives you a custom 7-day action plan.
-              </p>
-              <button
-                onClick={onUpgrade}
-                className="w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-all text-sm"
-              >
-                Upgrade to Plus — $5.99/mo →
-              </button>
-              <button onClick={onClose} className="mt-2.5 w-full py-2 text-slate-500 hover:text-slate-300 text-sm transition-colors">
-                Maybe later
-              </button>
-            </div>
-          )}
-
           {/* Loading */}
-          {isPaid && loading && (
+          {loading && (
             <div className="flex flex-col items-center gap-4 py-10">
               <div className="relative">
                 <div className="w-12 h-12 rounded-full border-2 border-violet-800/40" />
@@ -120,7 +100,7 @@ export default function AIInsightModal({ onClose, onUpgrade, tier }: Props) {
           )}
 
           {/* Error */}
-          {isPaid && error && (
+          {error && (
             <div className="flex flex-col items-center gap-3 py-6">
               <AlertCircle className="w-8 h-8 text-amber-400" />
               <div className="text-center">
@@ -137,7 +117,7 @@ export default function AIInsightModal({ onClose, onUpgrade, tier }: Props) {
           )}
 
           {/* Results */}
-          {isPaid && result && !loading && (
+          {result && !loading && (
             <div className="space-y-4">
               <div className="bg-violet-950/30 border border-violet-800/25 rounded-2xl p-4">
                 <div className="flex items-center gap-2 mb-2">
@@ -210,7 +190,7 @@ export default function AIInsightModal({ onClose, onUpgrade, tier }: Props) {
                 </div>
               )}
 
-              {/* Insight count — Plus shows remaining, Pro shows unlimited */}
+              {/* Insight count */}
               <p className="text-center text-[10px] text-slate-600">
                 {isPro ? (
                   <span className="flex items-center justify-center gap-1">
@@ -218,7 +198,7 @@ export default function AIInsightModal({ onClose, onUpgrade, tier }: Props) {
                     Unlimited insights · Pro plan
                   </span>
                 ) : result.remaining !== undefined ? (
-                  `${result.remaining} AI insight${result.remaining !== 1 ? "s" : ""} remaining today`
+                  `${result.remaining} AI insight${result.remaining !== 1 ? "s" : ""} remaining today · Upgrade for more`
                 ) : null}
               </p>
             </div>
