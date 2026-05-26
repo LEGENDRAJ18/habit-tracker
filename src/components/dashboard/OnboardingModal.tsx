@@ -919,6 +919,12 @@ export default function OnboardingModal({ onComplete }: Props) {
                     After 30 days, unlock your <span className="text-violet-300 font-semibold">Habit DNA</span> — your full behavioral fingerprint with personality tags and shareable card.
                   </p>
                 </div>
+                <div className="mt-3 flex items-center gap-2.5 bg-emerald-950/30 border border-emerald-700/25 rounded-xl px-4 py-2.5">
+                  <span className="text-lg leading-none">🎉</span>
+                  <p className="text-[11px] text-slate-400 leading-snug">
+                    You&apos;ve unlocked a <span className="text-emerald-300 font-semibold">30-day Plus trial</span> — experience all Plus features free. No credit card needed.
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -983,6 +989,12 @@ export default function OnboardingModal({ onComplete }: Props) {
                     {dreamUni.trim()
                       ? `Your ${dreamUni} journey starts now — every habit you complete brings you one step closer.`
                       : "Every habit you complete builds toward your university application and beyond."}
+                  </p>
+                </div>
+                <div className="mt-3 flex items-center gap-2.5 bg-emerald-950/30 border border-emerald-700/25 rounded-xl px-4 py-2.5">
+                  <span className="text-lg leading-none">🎉</span>
+                  <p className="text-[11px] text-slate-400 leading-snug">
+                    You&apos;ve unlocked a <span className="text-emerald-300 font-semibold">30-day Plus trial</span> — experience all Plus features free. No credit card needed.
                   </p>
                 </div>
               </div>

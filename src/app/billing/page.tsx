@@ -303,7 +303,7 @@ function PricingCard({ plan, currentTier, annual, checkoutLoading, portalLoading
                 <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</>
               ) : (
                 <>
-                  Start 30-day free trial
+                  {isPlus ? "Start 30-day free trial" : "Upgrade to Pro"}
                   <ArrowRight className="w-4 h-4" />
                   <span className="absolute inset-0 pointer-events-none" style={{
                     background: "linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.12) 50%,transparent 60%)",
@@ -312,7 +312,9 @@ function PricingCard({ plan, currentTier, annual, checkoutLoading, portalLoading
                 </>
               )}
             </button>
-            <p className="text-center text-[10px] text-slate-600 mt-2">Cancel before day 30 and pay nothing</p>
+            {isPlus && (
+              <p className="text-center text-[10px] text-slate-600 mt-2">No credit card needed · Cancel before day 30 and pay nothing</p>
+            )}
           </div>
         ) : null}
       </div>
@@ -440,7 +442,7 @@ export default function BillingPage() {
         <div className="text-center mb-10 sm:mb-14">
           <div className="inline-flex items-center gap-1.5 bg-emerald-950/60 border border-emerald-700/40 rounded-full px-4 py-1.5 mb-5">
             <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="text-xs font-semibold text-emerald-300">30-day free trial · Cancel anytime · Pay nothing if you cancel</span>
+            <span className="text-xs font-semibold text-emerald-300">30-day Plus trial · No credit card needed · Cancel anytime</span>
           </div>
           <h1 className="text-4xl sm:text-5xl font-black text-white mb-4 tracking-tight leading-tight">
             Start free.<br className="sm:hidden" /> Grow when you{"'"}re ready.

@@ -35,14 +35,16 @@ export async function POST(request: NextRequest) {
       metadata: { userId: user.id },
       subscription_data: {
         metadata: { userId: user.id },
-        trial_period_days: 30,
+        ...(isPlus ? { trial_period_days: 30 } : {}),
       },
       consent_collection: {
         terms_of_service: 'required',
       },
       custom_text: {
         terms_of_service_acceptance: {
-          message: `I agree to the [Payment Policy](${origin}/payment-policy) and [Terms of Service](${origin}/terms). Free for 30 days, then billed monthly. Cancel anytime before trial ends and you won't be charged.`,
+          message: isPlus
+            ? `I agree to the [Payment Policy](${origin}/payment-policy) and [Terms of Service](${origin}/terms). Free for 30 days, then billed monthly. Cancel anytime before trial ends and you won't be charged.`
+            : `I agree to the [Payment Policy](${origin}/payment-policy) and [Terms of Service](${origin}/terms). Billed monthly. Cancel anytime.`,
         },
       },
     });

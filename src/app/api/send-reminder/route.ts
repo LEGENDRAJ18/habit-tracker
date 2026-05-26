@@ -484,9 +484,9 @@ function buildTrialReminderHtml(firstName: string, trialEnd: string, unsubscribe
 
   <!-- Body -->
   <tr><td style="padding:32px 36px 28px;">
-    <h1 style="margin:0 0 10px;font-size:22px;font-weight:700;color:#ffffff;">Your free trial ends in 5 days, ${firstName} ⏰</h1>
+    <h1 style="margin:0 0 10px;font-size:22px;font-weight:700;color:#ffffff;">Your Plus trial ends in 5 days, ${firstName} ⏰</h1>
     <p style="margin:0 0 20px;font-size:14px;color:#8b8fa8;line-height:1.65;">
-      Your 30-day free trial of <strong style="color:#c4b5fd;">HabitAI</strong> ends on
+      Your 30-day Plus trial of <strong style="color:#c4b5fd;">HabitAI</strong> ends on
       <strong style="color:#ffffff;">${trialEnd}</strong>.
       Cancel before then and you won't be charged a thing.
     </p>
@@ -515,7 +515,7 @@ function buildTrialReminderHtml(firstName: string, trialEnd: string, unsubscribe
   <!-- Footer -->
   <tr><td style="padding:20px 36px;border-top:1px solid rgba(109,40,217,0.12);">
     <p style="margin:0;font-size:11px;color:#3d3d5c;text-align:center;line-height:1.6;">
-      Trial reminder from HabitAI<br/>
+      Plus trial reminder from HabitAI<br/>
       <a href="${unsubscribeUrl}" style="color:#6d28d9;text-decoration:none;">Unsubscribe</a>
       &nbsp;&middot;&nbsp;
       <a href="${APP_URL}/dashboard" style="color:#6d28d9;text-decoration:none;">Open HabitAI</a>
@@ -573,7 +573,7 @@ async function runTrialReminders(supabase: ReturnType<typeof createAdminClient>)
       await resend.emails.send({
         from: "HabitAI <reminders@habitai.app>",
         to: email,
-        subject: `⏰ Your HabitAI free trial ends in 5 days, ${display}`,
+        subject: `⏰ Your HabitAI Plus trial ends in 5 days, ${display}`,
         html: buildTrialReminderHtml(display, trialEnd, unsubscribeUrl),
       });
 

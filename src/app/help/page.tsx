@@ -121,7 +121,7 @@ const SECTIONS: Section[] = [
         q: "Is there a free trial?",
         a: (
           <>
-            Yes — both Plus and Pro come with a <strong className="text-white">30-day free trial</strong>. No credit card required. Cancel any time before it ends and you won&apos;t be charged. After the trial, Plus is $4.99/month and Pro is $9.99/month.
+            Yes — <strong className="text-white">Plus</strong> comes with a <strong className="text-white">30-day free trial</strong>. No credit card required. Cancel any time before it ends and you won&apos;t be charged. Pro is charged immediately but includes a 7-day money-back guarantee.
           </>
         ),
       },

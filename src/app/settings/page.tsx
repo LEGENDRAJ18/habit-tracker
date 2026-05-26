@@ -763,7 +763,7 @@ function PlanTab({
                 <span className="text-sm font-bold text-amber-300 mt-1">{proPrice}/mo</span>
               </Link>
             </div>
-            <p className="text-[11px] text-slate-600 text-center">30-day free trial · Cancel anytime · No lock-in</p>
+            <p className="text-[11px] text-slate-600 text-center">Plus: 30-day free trial · Cancel anytime · Pro: no trial period</p>
             <p className="text-[10px] text-slate-700 text-center">Prices shown in {currency} · Charged in USD by Stripe</p>
           </div>
         )}

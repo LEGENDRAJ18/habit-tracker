@@ -39,7 +39,7 @@ export default function TrialBanner() {
     <div className="w-full bg-violet-900/40 border-b border-violet-700/40 px-4 py-2.5 flex items-center gap-3">
       <Sparkles className="w-4 h-4 text-violet-400 flex-shrink-0" />
       <p className="flex-1 text-sm text-violet-200 min-w-0">
-        <span className="font-semibold">Free trial active</span>
+        <span className="font-semibold">Plus trial active</span>
         {" — "}
         {daysLeft > 0
           ? <>{daysLeft} day{daysLeft !== 1 ? "s" : ""} left · cancel before <span className="font-semibold">{endDate}</span> and you won&apos;t be charged.</>
