@@ -350,7 +350,7 @@ function getEmptyStateRecs(goals: string[]) {
 export default function DashboardPage() {
   const { habits, loading, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength, refetch, historicalLogs } =
     useHabits();
-  const { tier, profileLoading, onboardingCompleted, goals, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt } = useProfile();
+  const { tier, profileLoading, onboardingCompleted, goals, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt, dreamUniversity } = useProfile();
   const { xp, level, achievements, totalCompletions, justLeveledUp, isDailyAchieved, onHabitCompleted, checkMilestones, dismissLevelUp } = useXP();
   const { openUpgradeModal } = useUpgrade();
   const { openAIInsight } = useAIInsight();
@@ -710,12 +710,12 @@ export default function DashboardPage() {
               <button
                 onClick={handleAddClick}
                 data-tour="add-habit"
-                aria-label={!isPaid && habits.length >= FREE_HABIT_LIMIT ? "Upgrade to add more habits" : "Add a new habit (press N)"}
-                title={!isPaid && habits.length >= FREE_HABIT_LIMIT ? "Upgrade to add more" : "Add habit  ·  Press N"}
+                aria-label="Add a new habit (press N)"
+                title="Add habit  ·  Press N"
                 className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-full text-white bg-violet-600 hover:bg-violet-500 active:scale-95 transition-all shadow-md shadow-violet-900/30 min-h-[40px]"
               >
                 <Plus className="w-4 h-4 flex-shrink-0" />
-                {!isPaid && habits.length >= FREE_HABIT_LIMIT ? "Upgrade" : "Add Habit"}
+                Add Habit
               </button>
               <button
                 onClick={() => setShowTemplates(true)}
@@ -1152,6 +1152,37 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <p className="text-[11px] text-violet-300/80 mt-3 font-medium">{motivational}</p>
+              </div>
+            );
+          })()}
+
+          {/* University Journey card */}
+          {dreamUniversity && (() => {
+            const appDeadline = new Date(new Date().getFullYear() + 2, 9, 1); // Oct 1 two years out
+            const today_ = new Date();
+            today_.setHours(0, 0, 0, 0);
+            const daysSinceSignup = signedUpAt
+              ? Math.max(1, Math.round((today_.getTime() - new Date(signedUpAt).getTime()) / 86400000))
+              : 1;
+            const daysUntil = Math.max(1, Math.round((appDeadline.getTime() - today_.getTime()) / 86400000));
+            return (
+              <div className="bg-gradient-to-br from-indigo-950/60 to-[#0c0c18] border border-indigo-600/30 rounded-2xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-base leading-none">🎓</span>
+                  <p className="text-xs font-bold text-indigo-300 uppercase tracking-wider">University Journey</p>
+                </div>
+                <p className="text-sm font-semibold text-white leading-snug mb-1">
+                  Your {dreamUniversity} journey
+                </p>
+                <p className="text-[11px] text-indigo-300/80 leading-relaxed">
+                  Day {daysSinceSignup} · {daysUntil.toLocaleString()} days until application deadline
+                </p>
+                <div className="mt-3 h-1.5 bg-indigo-950/60 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full"
+                    style={{ width: `${Math.min(100, Math.round((daysSinceSignup / (daysSinceSignup + daysUntil)) * 100))}%` }}
+                  />
+                </div>
               </div>
             );
           })()}

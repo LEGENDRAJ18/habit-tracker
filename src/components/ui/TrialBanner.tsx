@@ -42,8 +42,8 @@ export default function TrialBanner() {
         <span className="font-semibold">Free trial active</span>
         {" — "}
         {daysLeft > 0
-          ? <>{daysLeft} day{daysLeft !== 1 ? "s" : ""} left. Your Plus plan starts on{" "}<span className="font-semibold">{endDate}</span>.</>
-          : <>Trial ends today. Your Plus plan starts after billing.</>}
+          ? <>{daysLeft} day{daysLeft !== 1 ? "s" : ""} left · cancel before <span className="font-semibold">{endDate}</span> and you won&apos;t be charged.</>
+          : <>Trial ends today — cancel now if you don&apos;t want to be charged.</>}
       </p>
       <button
         onClick={handleManage}

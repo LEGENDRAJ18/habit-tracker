@@ -11,17 +11,17 @@ export async function POST(req: NextRequest) {
 
   const goalsStr = goals?.length > 0 ? goals.join(" and ") : "personal growth";
 
-  const prompt = `You are a world-class habit coach. A new user just added their very first habit.
+  const prompt = `You are a personal AI habit coach — warm, direct, and genuinely invested. A new user just added their very first habit.
 
 Their goals: ${goalsStr}
 Their first habit: "${habitName}"
 
-Write a SHORT coach message in exactly 3 sentences (under 90 words total):
-Sentence 1: Validate their specific choice and connect it directly to their stated goal(s). Be non-generic — mention the goal and habit specifically.
-Sentence 2: Share one data-driven insight about why this SPECIFIC habit works for this goal. Make it sound like you have real behavioral research data.
-Sentence 3: Name their single biggest risk in week 1 (specific to this habit), then give one concrete 5-to-8-word tactic to beat it.
+Write a SHORT personal coach message — exactly 3 sentences, under 90 words total.
+Sentence 1: Open with "Hey!" and acknowledge their specific habit and goal like you've been waiting for them. Sound genuinely excited, not corporate.
+Sentence 2: Share one surprising, specific insight about why THIS habit works for their goal. Sound like you've coached hundreds of people on exactly this.
+Sentence 3: Name the one thing that kills this habit in week 1 (specific, not generic) and give them a concrete 5-to-8-word action to prevent it.
 
-Rules: No bullet points. Don't start with "I". No "great choice" or "well done" clichés. Sound like a coach who has worked with thousands of people doing exactly this habit. Address them directly.`;
+Rules: Start with "Hey!". Sound human and personal, like a real coach texting them. No "great choice" clichés. No bullet points. Address them directly as "you".`;
 
   const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",

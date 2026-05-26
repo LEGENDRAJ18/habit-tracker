@@ -22,7 +22,7 @@ const CONFETTI_COLORS = [
   "#e879f9","#60a5fa","#34d399","#fb923c","#f472b6","#ffffff",
 ];
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -238,6 +238,7 @@ export default function OnboardingModal({ onComplete }: Props) {
   const [step, setStep]             = useState(1);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [customGoal, setCustomGoal] = useState("");
+  const [dreamUni, setDreamUni]     = useState("");
   const [saving, setSaving]         = useState(false);
 
   const toggle = (id: string) =>
@@ -265,6 +266,7 @@ export default function OnboardingModal({ onComplete }: Props) {
           onboarding_completed: true,
           goals: goalLabels,
           goal:  goalLabels[0] ?? null,
+          ...(dreamUni.trim() ? { dream_university: dreamUni.trim() } : {}),
         }).eq("id", user.id);
       }
     } catch {
@@ -346,8 +348,50 @@ export default function OnboardingModal({ onComplete }: Props) {
             </div>
           )}
 
-          {/* ── Step 2: Your AI coach + Student Pack ─────────────────────── */}
+          {/* ── Step 2: Dream university ─────────────────────────────────── */}
           {step === 2 && (
+            <div className="text-center">
+              <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+                🎓
+              </div>
+              <h1 className="text-3xl font-extrabold text-white mb-3 leading-tight">
+                What&apos;s your<br />dream university?
+              </h1>
+              <p className="text-slate-400 text-sm mb-7 leading-relaxed">
+                HabitAI will build a personalised habit plan around your application timeline — completely free, and totally unique to you.
+              </p>
+
+              <input
+                autoFocus
+                value={dreamUni}
+                onChange={(e) => setDreamUni(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") next(); }}
+                placeholder="e.g. Oxford, Harvard, MIT…"
+                maxLength={80}
+                className="w-full bg-violet-950/40 border border-violet-700/40 focus:border-violet-500/60 focus:outline-none focus:ring-2 focus:ring-violet-500/20 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 mb-4 transition-all"
+              />
+
+              {dreamUni.trim() && (
+                <div
+                  className="mb-5 p-3.5 rounded-xl bg-indigo-950/50 border border-indigo-700/30 text-left"
+                  style={{ animation: "stepIn 0.25s ease-out both" }}
+                >
+                  <p className="text-xs text-indigo-300 leading-relaxed">
+                    🎓 Your <span className="font-semibold text-white">{dreamUni.trim()}</span> journey starts now — your dashboard will track every day toward your application deadline.
+                  </p>
+                </div>
+              )}
+
+              <button type="button" onClick={next}
+                className="w-full py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-xl shadow-violet-900/40"
+              >
+                {dreamUni.trim() ? "Let's do this " : "Skip for now "}<ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* ── Step 3: Your AI coach + Student Pack ─────────────────────── */}
+          {step === 3 && (
             <div className="text-center">
               <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
                 🤖
@@ -364,8 +408,8 @@ export default function OnboardingModal({ onComplete }: Props) {
             </div>
           )}
 
-          {/* ── Step 3: Never lose your streak again ─────────────────────── */}
-          {step === 3 && (
+          {/* ── Step 4: Never lose your streak again ─────────────────────── */}
+          {step === 4 && (
             <div className="text-center">
               <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
                 🛡️
@@ -400,8 +444,8 @@ export default function OnboardingModal({ onComplete }: Props) {
             </div>
           )}
 
-          {/* ── Step 4: Your squad keeps you honest ──────────────────────── */}
-          {step === 4 && (
+          {/* ── Step 5: Your squad keeps you honest ──────────────────────── */}
+          {step === 5 && (
             <div className="text-center">
               <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
                 👥
@@ -437,8 +481,8 @@ export default function OnboardingModal({ onComplete }: Props) {
             </div>
           )}
 
-          {/* ── Step 5: Let's build something that lasts ─────────────────── */}
-          {step === 5 && (
+          {/* ── Step 6: Let's build something that lasts ─────────────────── */}
+          {step === 6 && (
             <div className="relative">
               <Confetti />
               <div className="relative text-center mb-7">

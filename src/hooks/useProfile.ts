@@ -20,6 +20,7 @@ export function useProfile() {
   const [currentPeriodEnd, setCurrentPeriodEnd]             = useState<string | null>(null);
   const [subscriptionStatus, setSubscriptionStatus]         = useState<string | null>(null);
   const [trialEndDate, setTrialEndDate]                     = useState<string | null>(null);
+  const [dreamUniversity, setDreamUniversity]               = useState<string | null>(null);
   const supabase = useRef(createClient()).current;
 
   useEffect(() => {
@@ -39,6 +40,7 @@ export function useProfile() {
       subscription_current_period_end?: string | null;
       subscription_status?: string | null;
       trial_end_date?: string | null;
+      dream_university?: string | null;
     }) {
       if (d.subscription_tier) setTier(d.subscription_tier as Plan);
       setOnboardingCompleted(d.onboarding_completed ?? false);
@@ -55,6 +57,7 @@ export function useProfile() {
       setCurrentPeriodEnd(d.subscription_current_period_end ?? null);
       setSubscriptionStatus(d.subscription_status ?? null);
       setTrialEndDate(d.trial_end_date ?? null);
+      setDreamUniversity(d.dream_university ?? null);
     }
 
     (async () => {
@@ -64,7 +67,7 @@ export function useProfile() {
       const { data } = await supabase
         .from("profiles")
         .select(
-          "subscription_tier, onboarding_completed, goal, goals, last_freeze_used, freeze_protected_date, reminder_enabled, reminder_hour, reminder_minute, subscription_cancel_at_period_end, subscription_current_period_end, subscription_status, trial_end_date"
+          "subscription_tier, onboarding_completed, goal, goals, last_freeze_used, freeze_protected_date, reminder_enabled, reminder_hour, reminder_minute, subscription_cancel_at_period_end, subscription_current_period_end, subscription_status, trial_end_date, dream_university"
         )
         .eq("id", user.id)
         .single();
@@ -150,5 +153,6 @@ export function useProfile() {
     currentPeriodEnd,
     subscriptionStatus,
     trialEndDate,
+    dreamUniversity,
   };
 }

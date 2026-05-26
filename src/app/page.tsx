@@ -121,9 +121,9 @@ function AppMockup() {
 // ─── 1. HERO ──────────────────────────────────────────────────────────────────
 
 const BENEFITS = [
-  { emoji: "✨", text: "AI coach finds why you keep failing — and fixes it" },
+  { emoji: "✨", text: "Learns your patterns, goals, and excuses — adapts daily" },
   { emoji: "🔥", text: "Streaks stay alive even when life gets in the way" },
-  { emoji: "👥", text: "Friends leaderboard keeps you accountable daily" },
+  { emoji: "👥", text: "Battle friends, build groups, stay accountable together" },
 ];
 
 function Hero() {
@@ -142,21 +142,21 @@ function Hero() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 bg-violet-950/60 border border-violet-700/30 rounded-full px-4 py-1.5 text-sm text-violet-300 mb-6">
               <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse flex-shrink-0" />
-              Free forever · AI-powered
+              Free forever · 30-day Pro trial included
             </div>
 
             {/* Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-[3.4rem] font-black tracking-tight text-white mb-4 leading-[1.07]">
-              Build habits that{" "}
+              The AI habit coach{" "}
               <span className="bg-gradient-to-r from-violet-400 via-purple-300 to-fuchsia-400 bg-clip-text text-transparent">
-                actually stick
+                that actually knows you
               </span>
-              {" "}— with an AI coach that knows you personally
             </h1>
 
             {/* Social proof */}
-            <p className="text-sm text-slate-500 mb-6 text-center lg:text-left">
-              Join <span className="text-violet-300 font-semibold">students and high achievers</span> building better habits every day
+            <p className="text-base text-slate-400 mb-6 text-center lg:text-left leading-relaxed">
+              Free forever — unlimited habits, full AI coach, battles with friends.{" "}
+              <span className="text-violet-300 font-semibold">No credit card needed.</span>
             </p>
 
             {/* Benefits — 3 bullets, each ≤ 10 words */}
@@ -187,14 +187,9 @@ function Hero() {
               </Link>
             </div>
 
-            {/* Urgency */}
-            <p className="text-center lg:text-left text-xs text-slate-600 mb-4">
-              <Check className="w-3 h-3 text-violet-600 inline mr-1" />Free forever — no credit card needed
-            </p>
-
             {/* Trust line */}
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2 text-sm text-slate-600">
-              {["No credit card", "Free forever plan", "Takes 60 seconds"].map((t) => (
+              {["Free forever", "30-day Pro trial", "Takes 60 seconds"].map((t) => (
                 <span key={t} className="flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5 text-violet-600 flex-shrink-0" />{t}
                 </span>

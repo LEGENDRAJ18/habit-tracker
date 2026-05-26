@@ -484,17 +484,17 @@ function buildTrialReminderHtml(firstName: string, trialEnd: string, unsubscribe
 
   <!-- Body -->
   <tr><td style="padding:32px 36px 28px;">
-    <h1 style="margin:0 0 10px;font-size:22px;font-weight:700;color:#ffffff;">Your free trial ends in 2 days, ${firstName} ⏰</h1>
+    <h1 style="margin:0 0 10px;font-size:22px;font-weight:700;color:#ffffff;">Your free trial ends in 5 days, ${firstName} ⏰</h1>
     <p style="margin:0 0 20px;font-size:14px;color:#8b8fa8;line-height:1.65;">
-      Your 7-day free trial of <strong style="color:#c4b5fd;">HabitAI Plus</strong> ends on
+      Your 30-day free trial of <strong style="color:#c4b5fd;">HabitAI</strong> ends on
       <strong style="color:#ffffff;">${trialEnd}</strong>.
-      After that, your plan continues at $5.99 USD/month — no action needed.
+      Cancel before then and you won't be charged a thing.
     </p>
 
     <div style="background:rgba(109,40,217,0.12);border:1px solid rgba(109,40,217,0.25);border-radius:14px;padding:18px 20px;margin-bottom:24px;">
-      <p style="margin:0 0 10px;font-size:11px;font-weight:700;color:#7c3aed;letter-spacing:0.08em;text-transform:uppercase;">What you keep with Plus</p>
+      <p style="margin:0 0 10px;font-size:11px;font-weight:700;color:#7c3aed;letter-spacing:0.08em;text-transform:uppercase;">What you keep after your trial</p>
       <table cellpadding="0" cellspacing="0" style="width:100%;">
-        ${["Unlimited habits", "Full analytics", "5 AI coaching insights per day", "Streak freeze protection", "Daily email reminders"]
+        ${["Unlimited habits & full AI coach", "Unlimited Habit Battles", "Group habits & Commitment Contracts", "Weekly AI email report", "Priority support"]
           .map((f) => `<tr><td style="padding:3px 0;font-size:13px;color:#c4b5fd;">✓ &nbsp;${f}</td></tr>`)
           .join("")}
       </table>
@@ -531,9 +531,9 @@ function buildTrialReminderHtml(firstName: string, trialEnd: string, unsubscribe
 
 async function runTrialReminders(supabase: ReturnType<typeof createAdminClient>): Promise<{ sent: number }> {
   const now = new Date();
-  // Window: trials ending in 48 h ± 1 h (cron runs hourly, so we match the right hour)
-  const windowStart = new Date(now.getTime() + 47 * 3600000).toISOString();
-  const windowEnd   = new Date(now.getTime() + 49 * 3600000).toISOString();
+  // Window: trials ending in 5 days ± 1 h (day 25 of 30-day trial)
+  const windowStart = new Date(now.getTime() + 119 * 3600000).toISOString();
+  const windowEnd   = new Date(now.getTime() + 121 * 3600000).toISOString();
 
   const { data: profiles } = await supabase
     .from("profiles")
@@ -573,7 +573,7 @@ async function runTrialReminders(supabase: ReturnType<typeof createAdminClient>)
       await resend.emails.send({
         from: "HabitAI <reminders@habitai.app>",
         to: email,
-        subject: `⏰ Your HabitAI free trial ends in 2 days, ${display}`,
+        subject: `⏰ Your HabitAI free trial ends in 5 days, ${display}`,
         html: buildTrialReminderHtml(display, trialEnd, unsubscribeUrl),
       });
 

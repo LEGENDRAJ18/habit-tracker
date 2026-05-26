@@ -27,7 +27,7 @@ export interface HabitLog {
 
 export type Plan = "free" | "plus" | "pro";
 
-export const FREE_HABIT_LIMIT = 3;
+export const FREE_HABIT_LIMIT = 999; // free plan is now unlimited
 
 export interface Battle {
   id: string;

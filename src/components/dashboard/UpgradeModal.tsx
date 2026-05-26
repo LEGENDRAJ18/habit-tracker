@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { X, Sparkles, Check, Minus, Zap, Loader2, Brain, Crown, Lock, ClipboardList } from "lucide-react";
-import { FREE_HABIT_LIMIT } from "@/types";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useProfile } from "@/hooks/useProfile";
 
@@ -34,24 +33,27 @@ type Cell = "yes" | "no" | string;
 interface ComparisonRow { label: string; free: Cell; plus: Cell; pro: Cell; proOnly?: boolean }
 
 const ROWS: ComparisonRow[] = [
-  { label: "Active habits",          free: `${FREE_HABIT_LIMIT}`,  plus: "Unlimited",  pro: "Unlimited"  },
-  { label: "Full analytics",         free: "Basic",   plus: "yes",        pro: "yes"        },
-  { label: "AI coaching insights",   free: "no",      plus: "5 / day",    pro: "Unlimited", proOnly: true },
-  { label: "Streak protection",      free: "no",      plus: "yes",        pro: "yes"        },
-  { label: "Email reminders",        free: "no",      plus: "yes",        pro: "yes"        },
-  { label: "Friends & leaderboard",  free: "no",      plus: "yes",        pro: "yes"        },
-  { label: "AI Weekly Game Plan",     free: "no",      plus: "no",         pro: "yes",       proOnly: true },
-  { label: "Deep Analytics & Trends",free: "no",      plus: "no",         pro: "yes",       proOnly: true },
-  { label: "Smart Notifications",    free: "no",      plus: "no",         pro: "yes",       proOnly: true },
-  { label: "AI Habit Suggestions",   free: "no",      plus: "no",         pro: "yes",       proOnly: true },
+  { label: "Habits",                 free: "Unlimited", plus: "Unlimited",  pro: "Unlimited"  },
+  { label: "Full AI coach",          free: "yes",       plus: "yes",        pro: "yes"        },
+  { label: "Identity Score",         free: "yes",       plus: "yes",        pro: "yes"        },
+  { label: "Friends & leaderboard",  free: "yes",       plus: "yes",        pro: "yes"        },
+  { label: "Habit Battles",          free: "2 / month", plus: "Unlimited",  pro: "Unlimited"  },
+  { label: "Full Habit DNA",         free: "Basic",     plus: "yes",        pro: "yes"        },
+  { label: "Commitment Contracts",   free: "no",        plus: "yes",        pro: "yes"        },
+  { label: "Group habits",           free: "no",        plus: "yes",        pro: "yes"        },
+  { label: "Weekly AI email report", free: "no",        plus: "yes",        pro: "yes"        },
+  { label: "Deep AI Memory",         free: "no",        plus: "no",         pro: "yes",       proOnly: true },
+  { label: "University Goal Mode",   free: "no",        plus: "no",         pro: "yes",       proOnly: true },
+  { label: "Monthly Wrapped",        free: "no",        plus: "no",         pro: "yes",       proOnly: true },
+  { label: "AI Habit Suggestions",   free: "no",        plus: "no",         pro: "yes",       proOnly: true },
 ];
 
 const REASON_COPY: Record<UpgradeReason, { title: string; sub: string }> = {
-  habits:      { title: `You've hit the ${FREE_HABIT_LIMIT} habit limit`, sub: "Upgrade to Plus for unlimited habits and full analytics." },
-  ai:          { title: "AI coaching is a Plus & Pro feature",            sub: "Upgrade to unlock personalized AI insights and 7-day plans." },
+  habits:      { title: "Unlock the full HabitAI experience",             sub: "Start your free 30-day trial — no credit card required." },
+  ai:          { title: "Unlock advanced AI coaching",                    sub: "Get personalised weekly game plans, deep memory, and voice check-ins." },
   reminders:   { title: "Email reminders are a Plus feature",             sub: "Upgrade to Plus to set daily reminder emails for your habits." },
   export:      { title: "Data export is a Pro feature",                   sub: "Upgrade to Pro to download your full habit history as CSV." },
-  pro_feature: { title: "This is a Pro-exclusive feature",                sub: "Unlock AI game plans, deep analytics, and smart notifications tailored to your goals." },
+  pro_feature: { title: "This is a Pro-exclusive feature",                sub: "Unlock deep AI memory, University Goal Mode, Monthly Wrapped, and more." },
 };
 
 function CellValue({ value, highlight, proOnly }: { value: Cell; highlight?: boolean; proOnly?: boolean }) {
@@ -87,15 +89,16 @@ function ProBadge() {
 
 function consentBullets(plan: "plus" | "pro", plusPrice: string, proPrice: string): string[] {
   if (plan === "plus") return [
-    "Free for 7 days — no charge today",
+    "Free for 30 days — no charge today",
     `Then ${plusPrice}/month, billed monthly`,
     "Cancel anytime before trial ends — no charge",
-    "7-day money back guarantee after first charge",
+    "30-day free trial, no credit card required",
   ];
   return [
-    `${proPrice}/month, billed monthly`,
-    "Cancel anytime — no cancellation fees",
-    "7-day money back guarantee on first payment",
+    "Free for 30 days — no charge today",
+    `Then ${proPrice}/month, billed monthly`,
+    "Cancel anytime before trial ends — no charge",
+    "30-day free trial, no credit card required",
   ];
 }
 
@@ -313,13 +316,13 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
                 </div>
                 <ul className="space-y-1 mb-4">
                   {[
-                    { f: `Up to ${FREE_HABIT_LIMIT} habits`, ok: true },
-                    { f: "Basic tracking & analytics", ok: true },
+                    { f: "Unlimited habits", ok: true },
+                    { f: "Full AI coach", ok: true },
+                    { f: "Friends & leaderboard", ok: true },
+                    { f: "Habit Battles (2/month)", ok: true },
                     { f: "XP & leveling system", ok: true },
-                    { f: "AI coaching", ok: false },
-                    { f: "Unlimited habits", ok: false },
-                    { f: "Streak protection", ok: false },
-                    { f: "Friends & leaderboard", ok: false },
+                    { f: "Unlimited Battles", ok: false },
+                    { f: "Group habits", ok: false },
                   ].map(({ f, ok }) => (
                     <li key={f} className={`flex items-center gap-1.5 text-[10px] ${ok ? "text-slate-400" : "text-slate-600"}`}>
                       {ok ? <Check className="w-3 h-3 text-slate-500 flex-shrink-0" /> : <Minus className="w-3 h-3 text-slate-700 flex-shrink-0" />}
@@ -353,21 +356,21 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
                 <p className="text-[10px] text-violet-400/70 mb-2 font-medium">The Optimizer</p>
                 <div className="mb-1">
                   <span className="text-2xl font-extrabold text-white">Free</span>
-                  <span className="text-violet-300 text-xs ml-1 font-semibold">7-day trial</span>
+                  <span className="text-violet-300 text-xs ml-1 font-semibold">30-day trial</span>
                 </div>
                 <p className="text-[10px] text-slate-500 mb-1">then {plusPrice} / mo</p>
                 <p className="text-[9px] text-slate-700 mb-3">Prices shown in {currency} · Charged in USD</p>
                 <ul className="space-y-1 mb-4">
                   {[
                     { f: "Everything in Free", ok: true },
-                    { f: "Unlimited habits", ok: true },
-                    { f: "Full Habit DNA card", ok: true },
-                    { f: "Habit Battles with friends", ok: true },
-                    { f: "Public Commitment Contracts", ok: true },
-                    { f: "AI coaching (5/day)", ok: true },
-                    { f: "Streak protection", ok: true },
-                    { f: "Voice check-ins", ok: false },
+                    { f: "Unlimited Habit Battles", ok: true },
+                    { f: "Full Habit DNA shareable card", ok: true },
+                    { f: "Commitment Contracts", ok: true },
+                    { f: "Group habits", ok: true },
+                    { f: "Weekly AI email report", ok: true },
+                    { f: "Priority support", ok: true },
                     { f: "Deep AI memory", ok: false },
+                    { f: "University Goal Mode", ok: false },
                     { f: "Monthly Wrapped", ok: false },
                   ].map(({ f, ok }) => (
                     <li key={f} className={`flex items-center gap-1.5 text-[10px] ${ok ? "text-slate-400" : "text-slate-600"}`}>
@@ -392,7 +395,7 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
                       className="w-full py-2 border border-violet-500/60 hover:border-violet-400 text-violet-300 hover:text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       {loading === "plus" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                      Start free trial
+                      Start 30-day free trial
                     </button>
                   )}
                 </div>
@@ -412,19 +415,20 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
               </div>
               <p className="text-[10px] text-amber-400/70 mb-2 font-medium">The Full Experience</p>
               <div className="mb-1">
-                <span className="text-2xl font-extrabold text-white">{proPrice}</span>
-                <span className="text-slate-400 text-xs ml-1">/ mo</span>
+                <span className="text-2xl font-extrabold text-white">Free</span>
+                <span className="text-amber-300 text-xs ml-1 font-semibold">30-day trial</span>
               </div>
+              <p className="text-[10px] text-slate-500 mb-1">then {proPrice} / mo</p>
               <p className="text-[9px] text-slate-700 mb-3">Prices shown in {currency} · Charged in USD</p>
               <ul className="space-y-1 mb-4">
                 {[
                   { f: "Everything in Plus" },
-                  { f: "Voice check-ins with AI coaching" },
-                  { f: "Deep AI memory & pattern recall" },
+                  { f: "Deep AI Memory" },
+                  { f: "Voice check-ins" },
                   { f: "Monthly Wrapped summary" },
-                  { f: "Unlimited AI insights" },
-                  { f: "Weekly AI email report" },
-                  { f: "CSV export & priority support" },
+                  { f: "University Goal Mode" },
+                  { f: "AI remembers your excuses" },
+                  { f: "Early access to new features" },
                 ].map(({ f }) => (
                   <li key={f} className="flex items-center gap-1.5 text-[10px] text-amber-200/80">
                     <Check className="w-3 h-3 text-amber-400 flex-shrink-0" />{f}
@@ -443,7 +447,7 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
                     className="w-full py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-orange-900/20 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {loading === "pro" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Crown className="w-3 h-3" />}
-                    {currentTier === "plus" ? "Upgrade to Pro" : "Get Pro"} — {proPrice}/mo
+                    {currentTier === "plus" ? "Upgrade to Pro" : "Start 30-day free trial"}
                   </button>
                 )}
               </div>
@@ -477,7 +481,7 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
           )}
 
           <p className="text-center text-xs text-slate-600 mt-4">
-            Cancel anytime · No credit card required for free plan
+            30-day free trial · No credit card required · Cancel anytime
           </p>
 
           <p className="text-center text-[11px] text-slate-700 mt-3">
@@ -485,7 +489,7 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
             <Link href="/payment-policy" className="text-slate-600 hover:text-slate-400 underline underline-offset-2 transition-colors" target="_blank">
               Payment Policy
             </Link>
-            {" "}· 7-day money-back guarantee
+            {" "}· Free for 30 days, then billed monthly
           </p>
 
           <button

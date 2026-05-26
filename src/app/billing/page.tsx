@@ -22,37 +22,37 @@ interface Feature {
 }
 
 const FREE_FEATURES: Feature[] = [
-  { text: "Up to 3 habits" },
-  { text: "Basic habit tracking and streaks" },
+  { text: "Unlimited habits — no limits" },
+  { text: "Full AI coach from day one" },
   { text: "Identity Score" },
-  { text: "Basic Habit DNA preview (blurred)" },
-  { text: "Mood tracking", isNew: true },
-  { text: "Student Success Pack" },
+  { text: "Mood tracking" },
   { text: "Friends and leaderboard" },
-  { text: "AI habit suggestions" },
-  { text: "PWA installable on phone" },
+  { text: "Habit Battles (2 per month)" },
+  { text: "Basic Habit DNA" },
+  { text: "Student Success Pack" },
+  { text: "PWA — install on your phone" },
 ];
 
 const PLUS_FEATURES: Feature[] = [
   { text: "Everything in Free", isEverything: true },
-  { text: "Unlimited habits" },
+  { text: "Unlimited Habit Battles" },
   { text: "Full Habit DNA shareable card" },
-  { text: "Habit Battles with friends" },
   { text: "Public Commitment Contracts", isNew: true },
   { text: "Group habits", isNew: true },
-  { text: "Detailed analytics and insights" },
+  { text: "Weekly AI email report" },
+  { text: "Advanced analytics and insights" },
   { text: "Priority support" },
 ];
 
 const PRO_FEATURES: Feature[] = [
   { text: "Everything in Plus", isEverything: true },
   { text: "Deep AI Memory" },
-  { text: "Voice Check-ins" },
+  { text: "Voice check-ins" },
   { text: "Monthly Wrapped shareable report", isNew: true },
   { text: "Organisation and School mode" },
-  { text: "Weekly AI email report" },
-  { text: "AI calls out your excuses personally", isNew: true },
-  { text: "Advanced performance insights" },
+  { text: "AI remembers and calls out your excuses", isNew: true },
+  { text: "University Goal Mode", isNew: true },
+  { text: "Parent visibility dashboard", isNew: true },
   { text: "Early access to new features" },
 ];
 
@@ -292,26 +292,28 @@ function PricingCard({ plan, currentTier, annual, checkoutLoading, portalLoading
             Current plan
           </div>
         ) : canUpgrade ? (
-          <button
-            onClick={() => onUpgrade(plan)}
-            disabled={!!checkoutLoading}
-            className="relative w-full py-3.5 text-sm font-extrabold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed overflow-hidden text-white"
-            style={checkoutLoading ? {} : btnStyle}
-          >
-            {checkoutLoading === plan ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</>
-            ) : (
-              <>
-                {isPlus ? "Upgrade to Plus" : "Upgrade to Pro"}
-                <ArrowRight className="w-4 h-4" />
-                {/* shimmer sweep */}
-                <span className="absolute inset-0 pointer-events-none" style={{
-                  background: "linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.12) 50%,transparent 60%)",
-                  animation: "shimmer 2.5s linear infinite",
-                }} />
-              </>
-            )}
-          </button>
+          <div>
+            <button
+              onClick={() => onUpgrade(plan)}
+              disabled={!!checkoutLoading}
+              className="relative w-full py-3.5 text-sm font-extrabold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed overflow-hidden text-white"
+              style={checkoutLoading ? {} : btnStyle}
+            >
+              {checkoutLoading === plan ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</>
+              ) : (
+                <>
+                  Start 30-day free trial
+                  <ArrowRight className="w-4 h-4" />
+                  <span className="absolute inset-0 pointer-events-none" style={{
+                    background: "linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.12) 50%,transparent 60%)",
+                    animation: "shimmer 2.5s linear infinite",
+                  }} />
+                </>
+              )}
+            </button>
+            <p className="text-center text-[10px] text-slate-600 mt-2">No credit card required during trial</p>
+          </div>
         ) : null}
       </div>
     </div>
@@ -436,16 +438,16 @@ export default function BillingPage() {
 
         {/* ── Hero ────────────────────────────────────────────────────────── */}
         <div className="text-center mb-10 sm:mb-14">
-          <div className="inline-flex items-center gap-1.5 bg-violet-950/60 border border-violet-700/40 rounded-full px-4 py-1.5 mb-5">
-            <Sparkles className="w-3.5 h-3.5 text-violet-400" />
-            <span className="text-xs font-semibold text-violet-300">7-day money-back guarantee</span>
+          <div className="inline-flex items-center gap-1.5 bg-emerald-950/60 border border-emerald-700/40 rounded-full px-4 py-1.5 mb-5">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="text-xs font-semibold text-emerald-300">30-day free trial · No credit card required</span>
           </div>
           <h1 className="text-4xl sm:text-5xl font-black text-white mb-4 tracking-tight leading-tight">
             Start free.<br className="sm:hidden" /> Grow when you{"'"}re ready.
           </h1>
           <p className="text-slate-400 text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
-            Every plan starts with the habits that will change your life.
-            Upgrade for the AI and analytics that make them stick.
+            The free plan is genuinely unlimited — unlimited habits, full AI coach, battles with friends.
+            Upgrade for the features that compound your results.
           </p>
 
           {/* Annual / Monthly toggle */}
@@ -557,7 +559,7 @@ export default function BillingPage() {
                   </tr>
                   <tr className="border-t border-violet-900/15">
                     <td className="py-3 px-5 text-sm text-slate-400">Habits</td>
-                    <td className="py-3 px-3 text-center"><span className="text-xs text-slate-300">Up to 3</span></td>
+                    <td className="py-3 px-3 text-center"><span className="text-xs text-emerald-400 font-semibold">Unlimited</span></td>
                     <td className="py-3 px-3 text-center"><span className="text-xs text-violet-300 font-semibold">Unlimited</span></td>
                     <td className="py-3 px-3 text-center"><span className="text-xs text-amber-300 font-semibold">Unlimited</span></td>
                   </tr>
@@ -601,8 +603,20 @@ export default function BillingPage() {
                     <td className="py-3 px-3 text-center"><Check className="w-4 h-4 text-emerald-400 mx-auto" /></td>
                   </tr>
                   <tr className="border-t border-violet-900/15">
+                    <td className="py-3 px-5 text-sm text-slate-400">Full AI coach</td>
+                    <td className="py-3 px-3 text-center"><Check className="w-4 h-4 text-emerald-400 mx-auto" /></td>
+                    <td className="py-3 px-3 text-center"><Check className="w-4 h-4 text-emerald-400 mx-auto" /></td>
+                    <td className="py-3 px-3 text-center"><Check className="w-4 h-4 text-emerald-400 mx-auto" /></td>
+                  </tr>
+                  <tr className="border-t border-violet-900/15">
+                    <td className="py-3 px-5 text-sm text-slate-400">Habit Battles</td>
+                    <td className="py-3 px-3 text-center"><span className="text-xs text-slate-400">2 per month</span></td>
+                    <td className="py-3 px-3 text-center"><span className="text-xs text-violet-300 font-semibold">Unlimited</span></td>
+                    <td className="py-3 px-3 text-center"><span className="text-xs text-amber-300 font-semibold">Unlimited</span></td>
+                  </tr>
+                  <tr className="border-t border-violet-900/15">
                     <td className="py-3 px-5 text-sm text-slate-400">Habit DNA card</td>
-                    <td className="py-3 px-3 text-center"><span className="text-xs text-slate-500">Preview only</span></td>
+                    <td className="py-3 px-3 text-center"><span className="text-xs text-slate-500">Basic preview</span></td>
                     <td className="py-3 px-3 text-center"><span className="text-xs text-violet-300 font-semibold">Full + shareable</span></td>
                     <td className="py-3 px-3 text-center"><span className="text-xs text-amber-300 font-semibold">Full + shareable</span></td>
                   </tr>
