@@ -461,7 +461,7 @@ async function runReminders(): Promise<{ sent: number; skipped: number; hour: nu
 function buildTrialReminderHtml(firstName: string, trialEnd: string, unsubscribeUrl: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Your free trial ends soon</title></head>
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Your Plus trial ends soon</title></head>
 <body style="margin:0;padding:0;background:#09090f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
 <table cellpadding="0" cellspacing="0" style="width:100%;background:#09090f;">
 <tr><td align="center" style="padding:40px 16px;">

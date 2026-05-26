@@ -5,6 +5,7 @@ import { Trash2, Check, Flame, Snowflake, ArrowRight, Pencil, X, Loader2, Zap, G
 import type { Habit, Plan } from "@/types";
 import { useIdentityScore } from "@/hooks/useIdentityScore";
 import VoiceCheckin from "./VoiceCheckin";
+import { toast } from "@/components/ui/Toast";
 
 interface Props {
   habit: Habit;
@@ -121,11 +122,14 @@ export default function HabitCard({
 
       // Save reminder time change (separate fetch — lightweight)
       if (reminderChanged) {
-        await fetch(`/api/habits/${habit.id}/reminder`, {
+        const remRes = await fetch(`/api/habits/${habit.id}/reminder`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ reminder_time: editReminderTime || null }),
         });
+        if (!remRes.ok) {
+          toast("Couldn't save reminder time — please try again.", "error");
+        }
       }
 
       setEditMode(false);

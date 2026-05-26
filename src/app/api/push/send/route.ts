@@ -82,6 +82,13 @@ function getLocalDate(now: Date, timezone: string): string {
   }
 }
 
+/** Advance a "YYYY-MM-DD" date string by one day */
+function nextDateStr(dateStr: string): string {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
 /** Get user's local day-of-week (0=Sun,1=Mon,...6=Sat) */
 function getLocalDow(now: Date, timezone: string): number {
   try {
@@ -189,12 +196,13 @@ async function handle(req: NextRequest) {
     }
 
     // Count today's completions once (shared by multiple checks below)
+    const nextDate = nextDateStr(localDate);
     const { count: completedToday } = await admin
       .from("habit_logs")
       .select("id", { count: "exact", head: true })
       .eq("user_id", sub.user_id)
       .gte("completed_at", `${localDate}T00:00:00`)
-      .lt("completed_at", `${localDate}T23:59:59`);
+      .lt("completed_at", `${nextDate}T00:00:00`);
 
     const { count: totalHabits } = await admin
       .from("habits")
@@ -250,7 +258,7 @@ async function handle(req: NextRequest) {
             .eq("user_id", sub.user_id)
             .eq("habit_id", habit.id)
             .gte("completed_at", `${localDate}T00:00:00`)
-            .lt("completed_at", `${localDate}T23:59:59`);
+            .lt("completed_at", `${nextDate}T00:00:00`);
 
           if ((habitDoneToday ?? 0) > 0) continue; // already done — skip
 

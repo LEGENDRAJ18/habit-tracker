@@ -391,10 +391,13 @@ export default function BillingPage() {
   };
 
   const startCheckout = async (plan: Plan) => {
-    posthog.capture("upgrade_clicked", { plan });
+    posthog.capture("upgrade_clicked", { plan, billing: annual ? "annual" : "monthly" });
+    // Use annual price IDs if the env vars exist and annual toggle is on
+    const plusAnnual  = process.env.NEXT_PUBLIC_STRIPE_PLUS_ANNUAL_PRICE_ID;
+    const proAnnual   = process.env.NEXT_PUBLIC_STRIPE_PRO_ANNUAL_PRICE_ID;
     const priceId = plan === "plus"
-      ? process.env.NEXT_PUBLIC_STRIPE_PLUS_PRICE_ID!
-      : process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID!;
+      ? (annual && plusAnnual) ? plusAnnual : process.env.NEXT_PUBLIC_STRIPE_PLUS_PRICE_ID!
+      : (annual && proAnnual)  ? proAnnual  : process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID!;
     setCheckoutLoading(plan); setError(null);
     try {
       const res  = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ priceId }) });
