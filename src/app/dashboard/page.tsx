@@ -641,7 +641,7 @@ export default function DashboardPage() {
         onAIInsightClick={() => openAIInsight()}
       />
 
-      <main className="max-w-[1340px] mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-8 page-fade">
+      <main className="max-w-[1340px] mx-auto px-4 sm:px-6 py-8 pb-20 sm:pb-8 page-fade">
         {/* Upgrade success banner */}
         {upgradeSuccess && (
           <div className="flex items-center gap-3 bg-green-950/40 border border-green-800/40 rounded-xl p-4 mb-6">
@@ -924,6 +924,10 @@ export default function DashboardPage() {
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Filter habits…"
                   aria-label="Filter habits by name"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   className="w-full bg-violet-950/20 border border-violet-900/25 focus:border-violet-600/50 focus:outline-none focus:ring-1 focus:ring-violet-600/20 rounded-xl pl-9 pr-8 py-2 text-sm text-white placeholder-slate-600 transition-all"
                 />
                 {search && (
@@ -1237,17 +1241,6 @@ export default function DashboardPage() {
         </div>
         </div>{/* end two-column grid */}
 
-        {/* Floating add button on mobile */}
-        {!loading && habits.length > 0 && (
-          <button
-            onClick={handleAddClick}
-            aria-label="Add a new habit"
-            title="Add habit"
-            className="fixed bottom-20 right-4 sm:hidden w-14 h-14 bg-violet-600 hover:bg-violet-500 text-white rounded-full shadow-xl shadow-violet-900/40 flex items-center justify-center transition-all"
-          >
-            <Plus className="w-6 h-6" />
-          </button>
-        )}
       </main>
 
       {showAdd && (

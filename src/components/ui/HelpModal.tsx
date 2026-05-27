@@ -55,10 +55,10 @@ export default function HelpModal() {
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-start justify-center pt-16 p-4 overflow-y-auto bg-black/60 backdrop-blur-sm"
           onClick={(e) => e.target === e.currentTarget && setOpen(false)}
         >
-          <div className="w-full sm:max-w-sm bg-[#0f0f1a] border border-violet-800/30 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden">
+          <div className="w-full max-w-sm bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-violet-900/20">
               <div className="flex items-center gap-2.5">

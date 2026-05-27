@@ -325,7 +325,7 @@ export default function AddHabitModal({
         // sm+: floating dialog with border, shadow, rounded corners, constrained size
         isSchedulingMode
           ? "sm:inset-auto sm:border sm:border-violet-800/30 sm:shadow-2xl sm:shadow-violet-950/60 sm:left-1/2 sm:top-[5vh] sm:bottom-auto sm:-translate-x-1/2 sm:rounded-2xl sm:w-[min(620px,calc(100vw-32px))] sm:max-h-[90vh]"
-          : "sm:inset-auto sm:border sm:border-violet-800/30 sm:shadow-2xl sm:shadow-violet-950/60 sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:w-[min(640px,calc(100vw-32px))] sm:max-h-[88vh]",
+          : "sm:inset-auto sm:border sm:border-violet-800/30 sm:shadow-2xl sm:shadow-violet-950/60 sm:left-1/2 sm:top-6 sm:bottom-auto sm:-translate-x-1/2 sm:rounded-2xl sm:w-[min(640px,calc(100vw-32px))] sm:max-h-[88vh]",
       ].join(" ")}>
 
         {/* Drag handle — tap or drag down to dismiss, mobile only */}

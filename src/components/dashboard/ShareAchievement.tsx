@@ -218,10 +218,10 @@ export default function ShareAchievement({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex items-start justify-center pt-16 p-4 overflow-y-auto bg-black/70 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full sm:max-w-sm bg-[#0f0f1a] border border-violet-700/35 rounded-t-3xl sm:rounded-2xl shadow-2xl shadow-violet-950/60 overflow-hidden">
+      <div className="w-full max-w-sm bg-[#0f0f1a] border border-violet-700/35 rounded-2xl shadow-2xl shadow-violet-950/60 overflow-hidden">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-violet-900/20">

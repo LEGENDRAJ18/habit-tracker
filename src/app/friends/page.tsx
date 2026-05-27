@@ -90,7 +90,7 @@ function FriendProfileModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-16 p-4 overflow-y-auto bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
@@ -243,9 +243,9 @@ function ShareModal({ onClose }: { onClose: () => void }) {
   const canNativeShare = typeof navigator !== "undefined" && !!navigator.share;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 p-4 overflow-y-auto bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="bg-[#0f0f1a] border border-violet-800/30 rounded-t-2xl sm:rounded-2xl p-6 w-full sm:max-w-sm shadow-2xl"
+        className="bg-[#0f0f1a] border border-violet-800/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
