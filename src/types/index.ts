@@ -15,6 +15,19 @@ export interface Habit {
   preferred_reminder_time?: string | null;
   is_public?: boolean;
   commitment_text?: string | null;
+  duration_minutes?: number | null;
+}
+
+export interface FocusSession {
+  id: string;
+  user_id: string;
+  habit_id: string | null;
+  habit_name: string | null;
+  duration_minutes: number;
+  actual_minutes: number;
+  was_completed: boolean;
+  completed_at: string;
+  created_at: string;
 }
 
 export interface HabitLog {

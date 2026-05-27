@@ -142,6 +142,7 @@ export function useHabits() {
     howLong?: string | null,
     validityScore?: "valid" | "partial" | "invalid",
     reminderTime?: string | null,
+    durationMinutes?: number | null,
   ): Promise<{ error: string | null }> => {
     const {
       data: { user },
@@ -155,12 +156,13 @@ export function useHabits() {
         name,
         description:            description || null,
         frequency,
-        stack_after_id:         stackAfterId  ?? null,
-        when_time:              whenTime      ?? null,
-        where_location:         whereLocation ?? null,
-        how_long:               howLong       ?? null,
-        validity_score:         validityScore ?? "valid",
-        preferred_reminder_time: reminderTime  ?? null,
+        stack_after_id:         stackAfterId    ?? null,
+        when_time:              whenTime        ?? null,
+        where_location:         whereLocation   ?? null,
+        how_long:               howLong         ?? null,
+        validity_score:         validityScore   ?? "valid",
+        preferred_reminder_time: reminderTime   ?? null,
+        duration_minutes:       durationMinutes ?? null,
       })
       .select()
       .single();

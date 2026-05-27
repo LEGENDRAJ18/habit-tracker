@@ -175,12 +175,12 @@ function getGoalObservation(ids: string[]): string | null {
 // ─── Student Success Pack ─────────────────────────────────────────────────────
 
 const STUDENT_HABITS = [
-  { emoji: "📚", name: "Study 2 hours daily",            desc: "Deep focused study sessions"   },
-  { emoji: "😴", name: "Sleep 8 hours",                  desc: "Recovery for peak performance"  },
-  { emoji: "🏃", name: "Exercise 30 minutes",            desc: "Body and brain in sync"         },
-  { emoji: "📵", name: "No phone 1 hour before bed",     desc: "Protect your sleep quality"    },
-  { emoji: "📖", name: "Read 20 minutes",                desc: "Compound learning every day"   },
-  { emoji: "📝", name: "Review notes daily",             desc: "Spaced repetition builds mastery" },
+  { emoji: "📚", name: "Study 2 hours daily",            desc: "Deep focused study sessions",      duration_minutes: 25  },
+  { emoji: "😴", name: "Sleep 8 hours",                  desc: "Recovery for peak performance",    duration_minutes: null },
+  { emoji: "🏃", name: "Exercise 30 minutes",            desc: "Body and brain in sync",           duration_minutes: 30  },
+  { emoji: "📵", name: "No phone 1 hour before bed",     desc: "Protect your sleep quality",       duration_minutes: null },
+  { emoji: "📖", name: "Read 20 minutes",                desc: "Compound learning every day",      duration_minutes: 20  },
+  { emoji: "📝", name: "Review notes daily",             desc: "Spaced repetition builds mastery", duration_minutes: 15  },
 ];
 
 function StudentPack({ onNext, onSkip }: { onNext: () => void; onSkip: () => void }) {
@@ -198,7 +198,13 @@ function StudentPack({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
       const existingNames = new Set((existing ?? []).map((h: { name: string }) => h.name));
       const toInsert = STUDENT_HABITS
         .filter((h) => !existingNames.has(h.name))
-        .map((h) => ({ user_id: user.id, name: h.name, description: h.desc, frequency: "daily" as const }));
+        .map((h) => ({
+          user_id: user.id,
+          name: h.name,
+          description: h.desc,
+          frequency: "daily" as const,
+          duration_minutes: h.duration_minutes ?? null,
+        }));
       if (toInsert.length > 0) await supabase.from("habits").insert(toInsert);
       setDone(true);
     } finally { setLoading(false); }
@@ -219,7 +225,10 @@ function StudentPack({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
             {STUDENT_HABITS.map((h) => (
               <div key={h.name} className="flex items-center gap-2 text-xs text-slate-400">
                 <Check className="w-3 h-3 text-emerald-400 flex-shrink-0" />
-                <span>{h.name}</span>
+                <span className="flex-1">{h.name}</span>
+                {h.duration_minutes && (
+                  <span className="text-[9px] text-violet-400/60">⏳{h.duration_minutes}m</span>
+                )}
               </div>
             ))}
           </div>
@@ -255,10 +264,15 @@ function StudentPack({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
             {STUDENT_HABITS.map((h) => (
               <div key={h.name} className="flex items-center gap-2.5">
                 <span className="text-base leading-none">{h.emoji}</span>
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-white">{h.name}</p>
                   <p className="text-[10px] text-slate-600">{h.desc}</p>
                 </div>
+                {h.duration_minutes && (
+                  <span className="text-[9px] font-semibold text-violet-400/70 bg-violet-950/50 border border-violet-800/30 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                    ⏳ {h.duration_minutes}m
+                  </span>
+                )}
               </div>
             ))}
           </div>

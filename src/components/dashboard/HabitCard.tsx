@@ -24,6 +24,7 @@ interface Props {
   onSmartTimingToggle?: (enabled: boolean) => Promise<void>;
   onUpgradePro?: () => void;
   onCommitment?: () => void;
+  onStartTimer?: () => void;
   isTourTarget?: boolean;
 }
 
@@ -75,7 +76,7 @@ function getTimeEmoji(whenTime: string | null): string | null {
 export default function HabitCard({
   habit, completed, streak, strength, isProtected, stackAfterName, isEditing,
   tier, allLogs = [], onToggle, onDelete, onCompleted, onRename, onSmartTimingToggle, onUpgradePro,
-  onCommitment, isTourTarget,
+  onCommitment, onStartTimer, isTourTarget,
 }: Props) {
   const { score: identityScore, phrase: identityPhrase } = useIdentityScore(habit, allLogs);
   const [deleting, setDeleting]     = useState(false);
@@ -390,6 +391,29 @@ export default function HabitCard({
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
+
+      {/* Focus Timer button — shown when habit has a duration set */}
+      {habit.duration_minutes && onStartTimer && !editMode && (
+        <div className="px-4 pb-2.5 flex items-center gap-2">
+          <button
+            onClick={onStartTimer}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+              completed
+                ? "border-violet-800/20 bg-violet-950/10 text-violet-500/60 cursor-default"
+                : "border-violet-700/40 bg-violet-950/30 text-violet-300 hover:bg-violet-950/50 hover:border-violet-600/50 hover:text-violet-200 active:scale-95"
+            }`}
+            title={completed ? "Already completed today" : `Start ${habit.duration_minutes}-min focus session`}
+          >
+            <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20">
+              <path d="M6.3 2.84A1.5 1.5 0 0 0 4 4.11v11.78a1.5 1.5 0 0 0 2.3 1.27l9.344-5.891a1.5 1.5 0 0 0 0-2.538L6.3 2.841Z" />
+            </svg>
+            {habit.duration_minutes} min focus
+          </button>
+          {tier === "pro" && (
+            <span className="text-[10px] text-amber-400/60 font-medium">🍅 Pomodoro</span>
+          )}
+        </div>
+      )}
 
       {/* Implementation intentions — desktop only */}
       {(habit.when_time || habit.where_location || habit.how_long || habit.preferred_reminder_time) && (

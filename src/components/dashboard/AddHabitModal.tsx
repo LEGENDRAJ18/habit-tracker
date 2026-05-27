@@ -161,6 +161,9 @@ function TimePicker({ value, onChange }: { value: string; onChange: (v: string) 
 
 // ─── props ────────────────────────────────────────────────────────────────────
 
+const DURATION_PRESETS = [5, 10, 15, 20, 25, 30, 45, 60];
+const FREE_MAX_DURATION = 25; // minutes, free plan cap
+
 interface Props {
   onClose: () => void;
   existingHabits: Habit[];
@@ -176,6 +179,7 @@ interface Props {
     whereLocation?: string | null, howLong?: string | null,
     validityScore?: "valid" | "partial" | "invalid",
     reminderTime?: string | null,
+    durationMinutes?: number | null,
   ) => Promise<{ error: string | null }>;
   onSchedule?: (
     name: string, description: string, frequency: "daily" | "weekly",
@@ -202,6 +206,7 @@ export default function AddHabitModal({
   const [whereLocation, setWhereLocation] = useState("");
   const [howLong, setHowLong]             = useState("");
   const [reminderTime, setReminderTime]   = useState("");
+  const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
   const [loading, setLoading]             = useState(false);
   const [error, setError]                 = useState<string | null>(null);
   const [suggestionOffset, setSuggestionOffset] = useState(0);
@@ -277,7 +282,7 @@ export default function AddHabitModal({
     const { error } = await onAdd(
       name.trim(), description.trim(), frequency,
       null, whenTime || null, whereLocation || null, howLong || null, getValidity(),
-      reminderTime || null,
+      reminderTime || null, durationMinutes,
     );
     if (error) { setError(error); setLoading(false); }
     else onClose();
@@ -472,6 +477,50 @@ export default function AddHabitModal({
                       items={HOW_LONG_OPTIONS.map((o) => ({ value: o, label: o }))}
                       placeholder="Duration…" emptyLabel="— No duration —"
                     />
+                  </div>
+
+                  {/* ── Focus Timer Duration ──────────────────────────────── */}
+                  <div>
+                    <label className={labelCls}>
+                      ⏳ Focus timer <span className="text-slate-600 font-normal">(optional)</span>
+                    </label>
+                    <div className="flex flex-wrap gap-1">
+                      {DURATION_PRESETS.map((min) => {
+                        const isLocked = (tier === "free" || !tier) && min > FREE_MAX_DURATION;
+                        const isSelected = durationMinutes === min;
+                        return (
+                          <button
+                            key={min}
+                            type="button"
+                            disabled={isLocked}
+                            onClick={() => {
+                              if (isLocked) { onUpgradePro?.(); return; }
+                              setDurationMinutes(isSelected ? null : min);
+                            }}
+                            title={isLocked ? `Plus/Pro required for ${min}+ min` : undefined}
+                            className={`px-2 py-1 rounded-lg text-[10px] font-semibold border transition-all flex items-center gap-0.5 ${
+                              isSelected
+                                ? "bg-violet-600/25 border-violet-500/60 text-violet-200"
+                                : isLocked
+                                ? "opacity-40 bg-violet-950/20 border-violet-900/20 text-slate-600 cursor-not-allowed"
+                                : "bg-violet-950/20 border-violet-900/20 text-slate-400 hover:border-violet-700/40 hover:text-slate-200"
+                            }`}
+                          >
+                            {isLocked && <span className="text-[8px]">🔒</span>}
+                            {min}m
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {durationMinutes && (
+                      <p className="mt-1 text-[10px] text-violet-400">
+                        ▶ Start a {durationMinutes}-min focus session right from the habit card.
+                        {tier === "pro" && " Pomodoro mode included!"}
+                      </p>
+                    )}
+                    {!tier || tier === "free" ? (
+                      <p className="mt-1 text-[10px] text-slate-600">Free: up to 25 min. <span className="text-violet-400 cursor-pointer hover:text-violet-300" onClick={onUpgradePro}>Plus/Pro for longer →</span></p>
+                    ) : null}
                   </div>
                 </div>
 

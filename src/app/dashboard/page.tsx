@@ -36,6 +36,8 @@ import CommitmentModal from "@/components/dashboard/CommitmentModal";
 import MoodCheckin from "@/components/dashboard/MoodCheckin";
 import ParentDashboard from "@/components/dashboard/ParentDashboard";
 import TeacherDashboard from "@/components/dashboard/TeacherDashboard";
+import FocusTimer from "@/components/dashboard/FocusTimer";
+import type { Habit } from "@/types";
 
 // ─── Greeting & quote ─────────────────────────────────────────────────────────
 
@@ -412,6 +414,7 @@ export default function DashboardPage() {
   const [showMonthlyWrapped,    setShowMonthlyWrapped]    = useState(false);
   const [showHabitDNA,          setShowHabitDNA]          = useState(false);
   const [commitmentHabit, setCommitmentHabit] = useState<{ id: string; name: string; isPublic: boolean; commitmentText: string | null } | null>(null);
+  const [focusHabit, setFocusHabit] = useState<Habit | null>(null);
 
   const isPaid = tier === "plus" || tier === "pro";
 
@@ -964,6 +967,7 @@ export default function DashboardPage() {
                   commitmentText: habit.commitment_text ?? null,
                 })}
                 onUpgradePro={() => openUpgradeModal("pro_feature", tier === "plus")}
+                onStartTimer={habit.duration_minutes ? () => setFocusHabit(habit) : undefined}
                 onSmartTimingToggle={async (enabled) => {
                   const res = await fetch(`/api/habits/${habit.id}/smart-timing`, {
                     method: "POST",
@@ -1351,6 +1355,26 @@ export default function DashboardPage() {
           onSave={() => { setCommitmentHabit(null); refetch(); }}
           onClose={() => setCommitmentHabit(null)}
           onUpgrade={() => { setCommitmentHabit(null); openUpgradeModal("habits"); }}
+        />
+      )}
+
+      {/* Focus Timer */}
+      {focusHabit && (
+        <FocusTimer
+          habit={focusHabit}
+          tier={tier}
+          isCompleted={isCompletedToday(focusHabit.id)}
+          onComplete={() => {
+            if (!isCompletedToday(focusHabit.id)) {
+              void toggleHabit(focusHabit.id);
+            }
+          }}
+          onXP={() => {
+            const validity = focusHabit.validity_score ?? "valid";
+            playSound("complete");
+            onHabitCompleted(validity, focusHabit.how_long);
+          }}
+          onClose={() => setFocusHabit(null)}
         />
       )}
     </div>
