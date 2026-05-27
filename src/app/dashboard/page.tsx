@@ -634,14 +634,15 @@ export default function DashboardPage() {
         <NotificationPermissionModal onAllow={allowPush} onDismiss={dismissPush} />
       )}
 
-      <SmartNotification
-        tier={tier}
-        habitCount={habits.length}
-        onUpgradeClick={() => openUpgradeModal("habits")}
-        onAIInsightClick={() => openAIInsight()}
-      />
-
       <main className="max-w-[1340px] mx-auto px-4 sm:px-6 py-8 pb-20 sm:pb-8 page-fade">
+        {/* ── Inline contextual banners ── */}
+        <SmartNotification
+          tier={tier}
+          habitCount={habits.length}
+          onUpgradeClick={() => openUpgradeModal("habits")}
+          onAIInsightClick={() => openAIInsight()}
+        />
+
         {/* Upgrade success banner */}
         {upgradeSuccess && (
           <div className="flex items-center gap-3 bg-green-950/40 border border-green-800/40 rounded-xl p-4 mb-6">

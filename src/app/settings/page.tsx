@@ -592,30 +592,60 @@ function InstallAppSection() {
   if (isInstalled || (!canInstall && !isIOS)) return null;
   return (
     <div>
-      <h2 className="text-base font-semibold text-white mb-4">Install App</h2>
-      <div className={cardCls} style={{ padding: "1rem 1.25rem" }}>
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium text-white">Add to Home Screen</p>
-            {isIOS ? (
-              <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                Tap the <strong className="text-slate-300">Share</strong> button in Safari, then{" "}
-                <strong className="text-slate-300">Add to Home Screen</strong> for a full-screen app experience.
-              </p>
-            ) : (
-              <p className="text-[11px] text-slate-500 mt-0.5">Install HabitAI as an app for faster, offline-ready access</p>
-            )}
+      <h2 className="text-base font-semibold text-white mb-4">Get the App</h2>
+      <div className={cardCls} style={{ padding: "1.25rem" }}>
+        {isIOS ? (
+          /* iOS — no beforeinstallprompt, guide user through Safari Share sheet */
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-violet-600/15 border border-violet-600/25 flex items-center justify-center flex-shrink-0 text-lg">
+                📲
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Add to Home Screen</p>
+                <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                  Install HabitAI as a full-screen app on your iPhone or iPad — no App Store required.
+                </p>
+              </div>
+            </div>
+            <div className="bg-violet-950/20 border border-violet-800/20 rounded-xl p-4 space-y-3">
+              <p className="text-[11px] font-semibold text-violet-300 uppercase tracking-wider">How to install on iOS</p>
+              {[
+                { step: "1", text: <>Open this page in <strong className="text-white">Safari</strong> (not Chrome)</> },
+                { step: "2", text: <>Tap the <strong className="text-white">Share</strong> button (the box with an arrow at the bottom of the screen)</> },
+                { step: "3", text: <>Scroll down and tap <strong className="text-white">Add to Home Screen</strong></> },
+                { step: "4", text: <>Tap <strong className="text-white">Add</strong> — HabitAI will appear on your home screen</> },
+              ].map(({ step, text }) => (
+                <div key={step} className="flex items-start gap-3">
+                  <span className="w-5 h-5 rounded-full bg-violet-600/30 text-violet-300 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{step}</span>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">{text}</p>
+                </div>
+              ))}
+            </div>
           </div>
-          {!isIOS && (
+        ) : (
+          /* Chrome / Edge / Android */
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-violet-600/15 border border-violet-600/25 flex items-center justify-center flex-shrink-0 text-lg">
+                📲
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-white">Install HabitAI</p>
+                <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                  Add HabitAI to your home screen for a full-screen, offline-ready experience — no App Store needed.
+                </p>
+              </div>
+            </div>
             <button
               onClick={promptInstall}
-              className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-violet-300 border border-violet-700/40 hover:border-violet-500/60 hover:text-violet-200 hover:bg-violet-950/40 rounded-xl transition-all"
+              className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-violet-600 hover:bg-violet-500 rounded-xl transition-all shadow-lg shadow-violet-900/30"
             >
               <Download className="w-3.5 h-3.5" />
-              Install
+              Install App
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

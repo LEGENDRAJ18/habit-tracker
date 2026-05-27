@@ -15,6 +15,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useXP } from "@/hooks/useXP";
 import { useUpgrade } from "@/contexts/UpgradeContext";
 import { useAIInsight } from "@/contexts/AIInsightContext";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
 import {
   levelColorKey, xpProgressPct,
   xpIntoLevel,
@@ -127,6 +128,7 @@ export default function DashboardNav() {
   const { tier } = useProfile();
   const { openUpgradeModal } = useUpgrade();
   const { openAIInsight } = useAIInsight();
+  const { canInstall, isInstalled, promptInstall } = usePWAInstall();
   const [signingOut, setSigningOut] = useState(false);
   const [menuOpen, setMenuOpen]     = useState(false);
   const [initials, setInitials]     = useState("··");
@@ -307,6 +309,31 @@ export default function DashboardNav() {
 
             {/* Full XP widget — desktop only */}
             <NavXP />
+
+            {/* PWA Install button — shown when installable (Chrome/Edge/Android), hidden if already installed or iOS */}
+            {canInstall && !isInstalled && (
+              <button
+                onClick={promptInstall}
+                aria-label="Install HabitAI app"
+                title="Install app"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-violet-300 bg-violet-600/15 hover:bg-violet-600/25 border border-violet-600/30 hover:border-violet-500/50 rounded-lg transition-all flex-shrink-0"
+              >
+                <span>📲</span>
+                <span>Install App</span>
+              </button>
+            )}
+
+            {/* Mobile install button */}
+            {canInstall && !isInstalled && (
+              <button
+                onClick={promptInstall}
+                aria-label="Install HabitAI app"
+                title="Install app"
+                className="sm:hidden flex items-center justify-center w-8 h-8 text-violet-400 hover:text-white hover:bg-violet-950/40 rounded-lg transition-all flex-shrink-0"
+              >
+                <span className="text-base leading-none">📲</span>
+              </button>
+            )}
 
             {/* AI Coaching — desktop only */}
             <button
