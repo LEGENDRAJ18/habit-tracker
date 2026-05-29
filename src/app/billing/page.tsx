@@ -35,6 +35,7 @@ const FREE_FEATURES: Feature[] = [
 
 const PLUS_FEATURES: Feature[] = [
   { text: "Everything in Free", isEverything: true },
+  { text: "Streak freeze (1 per week)" },
   { text: "Unlimited Habit Battles" },
   { text: "Full Habit DNA shareable card" },
   { text: "Public Commitment Contracts", isNew: true },
@@ -48,6 +49,7 @@ const PRO_FEATURES: Feature[] = [
   { text: "Everything in Plus", isEverything: true },
   { text: "Deep AI Memory" },
   { text: "Voice check-ins" },
+  { text: "CSV export — download all your habit data" },
   { text: "Monthly Wrapped shareable report", isNew: true },
   { text: "Organisation and School mode" },
   { text: "AI remembers and calls out your excuses", isNew: true },

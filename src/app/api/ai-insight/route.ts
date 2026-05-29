@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     // Memory mode — Pro only, fetch and update AI memory
     if (mode === "memory_coaching") {
       const { data: tierData } = await admin.from("profiles").select("subscription_tier").eq("id", user.id).single();
-      if (!["plus", "pro"].includes(tierData?.subscription_tier ?? "free")) {
+      if (tierData?.subscription_tier !== "pro") {
         return NextResponse.json({ error: "Memory coaching is a Pro feature." }, { status: 403 });
       }
     }

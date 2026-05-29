@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import {
   Flame, Zap, CheckCircle2, TrendingUp,
-  Calendar, BarChart2, Loader2, Lock, BarChart as BarChartIcon, Crown,
+  Calendar, BarChart2, Loader2, Lock, BarChart as BarChartIcon, Crown, Download,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -514,17 +514,51 @@ function ProBlurGate({ children }: { children: React.ReactNode }) {
 // ─── page ─────────────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
-  const [habits, setHabits]     = useState<Habit[]>([]);
-  const [logs, setLogs]         = useState<Pick<HabitLog, "habit_id" | "completed_at">[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [noHabits, setNoHabits] = useState(false);
-  const [tier, setTier]         = useState<Plan>("free");
+  const [habits, setHabits]         = useState<Habit[]>([]);
+  const [logs, setLogs]             = useState<Pick<HabitLog, "habit_id" | "completed_at">[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [noHabits, setNoHabits]     = useState(false);
+  const [tier, setTier]             = useState<Plan>("free");
+  const [userId, setUserId]         = useState<string | null>(null);
+  const [exporting, setExporting]   = useState(false);
+
+  const downloadCSV = useCallback(async () => {
+    if (!userId) return;
+    setExporting(true);
+    try {
+      const supabase = createClient();
+      const { data: allLogs } = await supabase
+        .from("habit_logs")
+        .select("habit_id, completed_at")
+        .eq("user_id", userId)
+        .order("completed_at", { ascending: false });
+
+      const habitMap = new Map(habits.map((h) => [h.id, h.name]));
+      const rows: string[][] = [["Date", "Habit Name"]];
+      for (const log of allLogs ?? []) {
+        const date = log.completed_at.split("T")[0];
+        const name = habitMap.get(log.habit_id) ?? "Deleted Habit";
+        rows.push([date, `"${name.replace(/"/g, '""')}"`]);
+      }
+      const csv = rows.map((r) => r.join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `habitai-data-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
+  }, [userId, habits]);
 
   useEffect(() => {
     const supabase = createClient();
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      setUserId(user.id);
       const [{ data: h }, { data: l }, { data: p }] = await Promise.all([
         supabase.from("habits").select("*").eq("user_id", user.id).order("created_at"),
         supabase.from("habit_logs")
@@ -621,15 +655,27 @@ export default function AnalyticsPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">📊 Analytics</h1>
           <p className="text-sm text-slate-500 mt-1.5">Track your progress and build better habits over time</p>
         </div>
-        {!isPaid && (
-          <Link
-            href="/dashboard?checkout=plus"
-            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/20 border border-violet-500/30 text-violet-300 text-xs font-semibold rounded-xl hover:bg-violet-600/30 transition-all"
-          >
-            <Lock className="w-3 h-3" />
-            Unlock full analytics
-          </Link>
-        )}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {isPro ? (
+            <button
+              onClick={() => void downloadCSV()}
+              disabled={exporting}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600/20 border border-amber-500/30 text-amber-300 text-xs font-semibold rounded-xl hover:bg-amber-600/30 transition-all disabled:opacity-50"
+              title="Export all habit data as CSV"
+            >
+              {exporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+              Export CSV
+            </button>
+          ) : !isPaid ? (
+            <Link
+              href="/dashboard?checkout=plus"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/20 border border-violet-500/30 text-violet-300 text-xs font-semibold rounded-xl hover:bg-violet-600/30 transition-all"
+            >
+              <Lock className="w-3 h-3" />
+              Unlock full analytics
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 pb-8 space-y-6 page-fade">

@@ -107,6 +107,7 @@ const SECTIONS: Section[] = [
               "📊 Deep Analytics & Trends (best day, monthly trend, at-risk warnings, habit pairs)",
               "🔔 Smart Habit Notifications (AI learns your best completion time per habit)",
               "💡 AI Habit Suggestions (goal-based chips when adding habits)",
+              "📥 CSV export — download all your habit data from Analytics",
               "Unlimited AI coaching insights",
             ].map((f) => (
               <li key={f} className="flex items-center gap-2 text-slate-300">

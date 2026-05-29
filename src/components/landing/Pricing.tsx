@@ -30,6 +30,7 @@ const FREE_FEATURES: FeatureItem[] = [
 
 const PLUS_FEATURES: FeatureItem[] = [
   { label: "Everything in Free" },
+  { label: "Streak freeze (1 per week)" },
   { label: "Unlimited Habit Battles" },
   { label: "Full Habit DNA shareable card" },
   { label: "Public Commitment Contracts" },
@@ -43,6 +44,7 @@ const PRO_FEATURES: FeatureItem[] = [
   { label: "Deep AI Memory" },
   { label: "Voice check-ins" },
   { label: "Monthly Wrapped summary" },
+  { label: "CSV export — download all your data" },
   { label: "University Goal Mode" },
   { label: "AI remembers your excuses" },
   { label: "Early access to new features" },

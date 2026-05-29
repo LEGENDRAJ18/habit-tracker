@@ -10,9 +10,9 @@ export const metadata: Metadata = {
 const UPDATED   = "May 2026";
 const EFFECTIVE = "18 May 2026";
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ id, title, children }: { id?: string; title: string; children: React.ReactNode }) {
   return (
-    <section className="mb-10">
+    <section id={id} className="mb-10">
       <h2 className="text-lg font-bold text-white mb-3">{title}</h2>
       <div className="space-y-3 text-sm text-slate-400 leading-relaxed">{children}</div>
     </section>
@@ -135,7 +135,7 @@ export default function PrivacyPage() {
           </p>
         </Section>
 
-        <Section title="5. Cookies &amp; Tracking">
+        <Section id="cookies" title="5. Cookies &amp; Tracking">
           <p>
             We use strictly necessary cookies to maintain authentication sessions. We do not use
             third-party advertising cookies or cross-site tracking technologies.

@@ -303,9 +303,9 @@ export default function OrganisationsPage() {
                         <p className="text-lg font-bold text-violet-400">{org.members.length}</p>
                         <p className="text-[10px] text-slate-600 mt-0.5">Members</p>
                       </div>
-                      <div className="bg-[#0c0c18] border border-violet-900/20 rounded-xl p-3 text-center flex items-center justify-center gap-1.5">
-                        <BarChart3 className="w-4 h-4 text-violet-500" />
-                        <span className="text-xs text-slate-500">Dashboard coming soon</span>
+                      <div className="bg-[#0c0c18] border border-violet-900/20 rounded-xl p-3 text-center">
+                        <p className="text-lg font-bold text-emerald-400">{new Date(org.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
+                        <p className="text-[10px] text-slate-600 mt-0.5">Created</p>
                       </div>
                     </div>
 
