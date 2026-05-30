@@ -16,7 +16,7 @@ import LevelUpModal from "@/components/dashboard/LevelUpModal";
 import ShareAchievement from "@/components/dashboard/ShareAchievement";
 import { useXP } from "@/hooks/useXP";
 import { playSound } from "@/lib/sounds";
-import { levelName } from "@/lib/xp";
+import { levelName, levelEmoji } from "@/lib/xp";
 import AICheckinCard from "@/components/dashboard/AICheckinCard";
 import SmartNotification from "@/components/ui/SmartNotification";
 import { toast } from "@/components/ui/Toast";
@@ -663,19 +663,35 @@ export default function DashboardPage() {
         <div className="mb-4 sticky top-14 z-10 bg-[#09090f] pt-6 pb-4">
           {/* Greeting */}
           <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">{today}</p>
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
             <h1 className="text-2xl font-bold text-white">{getGreeting()} 👋</h1>
             {!loading && (
-              <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
-                bestStreak > 0
-                  ? "text-orange-300 bg-orange-950/40 border border-orange-700/30"
-                  : "text-slate-500 bg-slate-900/40 border border-slate-700/30"
-              }`}>
-                <Flame className={`w-3 h-3 flex-shrink-0 ${bestStreak > 0 ? "text-orange-400" : "text-slate-600"}`} />
-                {bestStreak} day{bestStreak !== 1 ? "s" : ""} streak
-              </span>
+              <>
+                <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
+                  bestStreak > 0
+                    ? "text-orange-300 bg-orange-950/40 border border-orange-700/30"
+                    : "text-slate-500 bg-slate-900/40 border border-slate-700/30"
+                }`}>
+                  <Flame className={`w-3 h-3 flex-shrink-0 ${bestStreak > 0 ? "text-orange-400" : "text-slate-600"}`} />
+                  {bestStreak}d streak
+                </span>
+                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full text-violet-300 bg-violet-950/40 border border-violet-700/30">
+                  {levelEmoji(level)} Lv.{level} {levelName(level)}
+                </span>
+              </>
             )}
           </div>
+          {!loading && bestStreak > 0 && (() => {
+            const milestones = [7, 14, 30, 60, 100];
+            const next = milestones.find((m) => m > bestStreak);
+            if (!next) return null;
+            const daysLeft = next - bestStreak;
+            return (
+              <p className="text-xs text-amber-400/70 font-medium mb-1">
+                🎯 {daysLeft} more day{daysLeft !== 1 ? "s" : ""} to {next}-day streak
+              </p>
+            );
+          })()}
           {userMode === "student" && dreamUniversity && signedUpAt ? (
             <p className="text-sm text-indigo-300/90 font-semibold mb-1">
               🎓 Your {dreamUniversity} journey — Day {Math.max(1, Math.round((Date.now() - new Date(signedUpAt).getTime()) / 86400000))}

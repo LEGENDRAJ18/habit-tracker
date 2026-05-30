@@ -58,6 +58,12 @@ body {
 
 /* ─── Dashboard animations ──────────────────────────────────────────── */
 
+/* ─── Splash screen ──────────────────────────────────────────────────── */
+@keyframes splashDot {
+  0%, 100% { opacity: 0.25; transform: scale(0.75); }
+  50%       { opacity: 1;   transform: scale(1.25); }
+}
+
 /* Checkbox pop when completing a habit */
 @keyframes checkPop {
   0%   { transform: scale(1); }

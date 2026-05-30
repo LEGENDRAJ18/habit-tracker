@@ -1,23 +1,12 @@
-// Cumulative XP required to reach level n. Max level: 500.
-//
-// Levels 1–10:   base = Math.floor(50 * (n-1)^1.8)          multiplier ×1
-// Levels 11–50:  base = Math.floor(50 * n^2.2)              multiplier ×1.5
-// Levels 51–100: base = Math.floor(50 * n^2.2)              multiplier ×2
-// Levels 101–200:base = Math.floor(50 * n^2.2)              multiplier ×2.5
-// Levels 201–300:base = Math.floor(50 * n^2.2)              multiplier ×3
-// Levels 301–500:base = Math.floor(50 * n^2.2)              multiplier ×3.5
+// XP required to reach each level.
+// Levels 1–10: exact thresholds.
+// Levels 11+:  each level costs 3 000 more XP than the previous.
+const LEVEL_XP_TABLE = [0, 0, 100, 250, 500, 1000, 2000, 3500, 5000, 7500, 10000];
+
 export function xpForLevel(n: number): number {
   if (n <= 1) return 0;
-  const lvl = Math.min(n, 500);
-  if (lvl <= 10) {
-    return Math.floor(50 * Math.pow(lvl - 1, 1.8));
-  }
-  const base = Math.floor(50 * Math.pow(lvl, 2.2));
-  if (lvl > 300) return Math.floor(base * 3.5);
-  if (lvl > 200) return Math.floor(base * 3);
-  if (lvl > 100) return Math.floor(base * 2.5);
-  if (lvl > 50)  return Math.floor(base * 2);
-  return Math.floor(base * 1.5);
+  if (n <= 10) return LEVEL_XP_TABLE[n];
+  return 10000 + (n - 10) * 3000;
 }
 
 export function levelFromXP(xp: number): number {
@@ -32,25 +21,31 @@ export function levelFromXP(xp: number): number {
 }
 
 export function levelName(level: number): string {
-  if (level >= 500) return "GOAT";
-  if (level >= 401) return "Grandmaster";
-  if (level >= 251) return "Legend";
-  if (level >= 151) return "Elite";
-  if (level >= 76)  return "Dedicated";
-  if (level >= 31)  return "Habit Builder";
-  if (level >= 11)  return "Apprentice";
+  if (level >= 11) return "Legend";
+  if (level >= 9)  return "Elite";
+  if (level >= 7)  return "Dedicated";
+  if (level >= 5)  return "Committed";
+  if (level >= 3)  return "Rising";
   return "Beginner";
+}
+
+export function levelEmoji(level: number): string {
+  if (level >= 11) return "👑";
+  if (level >= 9)  return "⚡";
+  if (level >= 7)  return "🔥";
+  if (level >= 5)  return "💪";
+  if (level >= 3)  return "🌿";
+  return "🌱";
 }
 
 export type LevelColorKey = "slate" | "emerald" | "blue" | "violet" | "amber" | "red" | "gold";
 
 export function levelColorKey(level: number): LevelColorKey {
-  if (level >= 500) return "gold";
-  if (level >= 401) return "red";
-  if (level >= 251) return "amber";
-  if (level >= 151) return "violet";
-  if (level >= 76)  return "blue";
-  if (level >= 11)  return "emerald";
+  if (level >= 11) return "gold";
+  if (level >= 9)  return "amber";
+  if (level >= 7)  return "red";
+  if (level >= 5)  return "violet";
+  if (level >= 3)  return "blue";
   return "slate";
 }
 
