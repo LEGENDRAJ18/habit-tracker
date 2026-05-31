@@ -31,6 +31,7 @@ function tone(
 }
 
 export function playSound(type: SoundType) {
+  if (typeof window === "undefined" || localStorage.getItem("habitai_sounds") !== "on") return;
   try {
     switch (type) {
       case "complete":

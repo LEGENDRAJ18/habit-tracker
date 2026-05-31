@@ -37,6 +37,7 @@ import MoodCheckin from "@/components/dashboard/MoodCheckin";
 import ParentDashboard from "@/components/dashboard/ParentDashboard";
 import TeacherDashboard from "@/components/dashboard/TeacherDashboard";
 import FocusTimer from "@/components/dashboard/FocusTimer";
+import FirstCompletionModal from "@/components/dashboard/FirstCompletionModal";
 import type { Habit } from "@/types";
 
 // ─── Greeting & quote ─────────────────────────────────────────────────────────
@@ -267,34 +268,82 @@ function ProgressRing({ completed, total, tier }: { completed: number; total: nu
   );
 }
 
+// ─── Celebration confetti ─────────────────────────────────────────────────────
+const CELEB_CONFETTI = Array.from({ length: 36 }, (_, i) => ({
+  left: `${(i * 2.8) % 100}%`,
+  delay: (i * 61) % 900,
+  duration: 1300 + ((i * 113) % 700),
+  size: 5 + (i % 4) * 2,
+  color: ["#8b5cf6","#a78bfa","#fbbf24","#34d399","#60a5fa","#f472b6","#fb923c","#e879f9"][i % 8],
+  isCircle: i % 3 === 0,
+}));
+
 // ─── All-done celebration ─────────────────────────────────────────────────────
 
 function AllDoneCelebration({
   onDismiss,
   onShare,
+  completedCount,
+  bestStreak,
+  xpToday,
 }: {
   onDismiss: () => void;
   onShare: () => void;
+  completedCount: number;
+  bestStreak: number;
+  xpToday: number;
 }) {
   return (
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center"
+      className="fixed inset-0 z-40 flex items-center justify-center overflow-hidden"
       style={{ animation: "celebIn 0.45s cubic-bezier(0.34,1.56,0.64,1) both" }}
       onClick={onDismiss}
     >
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      {CELEB_CONFETTI.map((c, i) => (
+        <div
+          key={i}
+          className="absolute top-0 pointer-events-none"
+          style={{
+            left: c.left,
+            width: c.size, height: c.size,
+            backgroundColor: c.color,
+            borderRadius: c.isCircle ? "50%" : "2px",
+            animation: `confettiFall ${c.duration}ms linear ${c.delay}ms both`,
+            zIndex: 0,
+          }}
+        />
+      ))}
       <div
-        className="relative bg-[#0f0f1a] border border-violet-700/30 rounded-3xl px-10 py-8 text-center shadow-2xl shadow-violet-950/60 max-w-xs mx-4"
+        className="relative z-10 bg-[#0f0f1a] border border-violet-700/30 rounded-3xl px-8 py-8 text-center shadow-2xl shadow-violet-950/60 max-w-xs mx-4"
         onClick={(e) => e.stopPropagation()}
+        style={{ boxShadow: "0 0 60px rgba(139,92,246,0.3), 0 25px 60px rgba(0,0,0,0.6)" }}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-violet-600/10 to-transparent rounded-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-b from-violet-600/12 to-transparent rounded-3xl" />
         <div className="relative">
-          <div className="text-6xl mb-4 leading-none">🔥</div>
-          <h3 className="text-2xl font-bold text-white mb-1.5">All done!</h3>
-          <p className="text-sm text-violet-300 mb-4">Streak continues. Keep it up!</p>
+          <div className="text-5xl mb-3 leading-none" style={{ animation: "checkPop 0.5s cubic-bezier(0.34,1.56,0.64,1) 100ms both" }}>🔥</div>
+          <h3 className="text-2xl font-black text-white mb-1">All done!</h3>
+          <p className="text-sm text-violet-300 mb-4 font-medium">Streak continues. You showed up today.</p>
+
+          {/* Stats row */}
+          <div className="grid grid-cols-3 gap-2 mb-5">
+            <div className="bg-violet-950/40 rounded-xl py-2.5 border border-violet-800/20">
+              <p className="text-lg font-bold text-violet-300 leading-none">{completedCount}</p>
+              <p className="text-[9px] text-slate-600 mt-0.5 uppercase tracking-wider">Done</p>
+            </div>
+            <div className="bg-orange-950/30 rounded-xl py-2.5 border border-orange-800/20">
+              <p className="text-lg font-bold text-orange-300 leading-none">{bestStreak}d</p>
+              <p className="text-[9px] text-slate-600 mt-0.5 uppercase tracking-wider">Streak</p>
+            </div>
+            <div className="bg-amber-950/30 rounded-xl py-2.5 border border-amber-800/20">
+              <p className="text-lg font-bold text-amber-300 leading-none">+{xpToday}</p>
+              <p className="text-[9px] text-slate-600 mt-0.5 uppercase tracking-wider">XP Today</p>
+            </div>
+          </div>
+
           <button
             onClick={onShare}
-            className="w-full py-2.5 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-600/30 text-violet-300 font-medium rounded-xl text-sm transition-all mb-4 flex items-center justify-center gap-2"
+            className="w-full py-2.5 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-600/30 text-violet-300 font-semibold rounded-xl text-sm transition-all mb-4 flex items-center justify-center gap-2"
           >
             <Share2 className="w-3.5 h-3.5" />
             Share your win
@@ -409,6 +458,7 @@ export default function DashboardPage() {
   const prevBestStreakRef    = useRef<number>(0);
   const prevXPRef            = useRef<number>(0);
 
+  const [showFirstCompletion,   setShowFirstCompletion]   = useState(false);
   const [firstHabitWowName,     setFirstHabitWowName]     = useState<string | null>(null);
   const [showFirstWeekCheckin,  setShowFirstWeekCheckin]  = useState(false);
   const [showMonthlyWrapped,    setShowMonthlyWrapped]    = useState(false);
@@ -474,7 +524,12 @@ export default function DashboardPage() {
     const prev = prevCompletedRef.current;
     if (prev !== null) {
       if (prev === 0 && completedCount === 1) {
-        toast("💪 First habit of the day done! Keep the momentum!", "success", undefined, 3000);
+        if (!localStorage.getItem("habitai_first_ever_completion")) {
+          localStorage.setItem("habitai_first_ever_completion", "1");
+          setShowFirstCompletion(true);
+        } else {
+          toast("💪 First habit of the day done! Keep the momentum!", "success", undefined, 3000);
+        }
       }
       if (prev < habits.length && completedCount === habits.length) {
         setShowCelebration(true);
@@ -1287,6 +1342,9 @@ export default function DashboardPage() {
             setShowCelebration(false);
             setShareData({ type: "daily", value: bestStreak });
           }}
+          completedCount={completedCount}
+          bestStreak={bestStreak}
+          xpToday={completedCount * 10}
         />
       )}
 
@@ -1366,6 +1424,10 @@ export default function DashboardPage() {
           onClose={() => setCommitmentHabit(null)}
           onUpgrade={() => { setCommitmentHabit(null); openUpgradeModal("habits"); }}
         />
+      )}
+
+      {showFirstCompletion && (
+        <FirstCompletionModal onDismiss={() => setShowFirstCompletion(false)} />
       )}
 
       {/* Focus Timer */}

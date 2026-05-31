@@ -6,6 +6,7 @@ import type { Habit, Plan } from "@/types";
 import { useIdentityScore } from "@/hooks/useIdentityScore";
 import VoiceCheckin from "./VoiceCheckin";
 import { toast } from "@/components/ui/Toast";
+import { DURATION_BONUS_XP } from "@/lib/xp";
 
 interface Props {
   habit: Habit;
@@ -82,6 +83,8 @@ export default function HabitCard({
   const [deleting, setDeleting]     = useState(false);
   const [showParticles, setShowParticles] = useState(false);
   const [justCompleted, setJustCompleted] = useState(false);
+  const [showXPFloat, setShowXPFloat] = useState(false);
+  const [xpFloatKey, setXPFloatKey] = useState(0);
   const [showStrTooltip, setShowStrTooltip] = useState(false);
   const [editMode, setEditMode]         = useState(false);
   const [editName, setEditName]         = useState(habit.name);
@@ -141,11 +144,20 @@ export default function HabitCard({
 
   const validity = habit.validity_score;
 
+  const xpAmount = (() => {
+    const base = validity === "invalid" ? 0 : validity === "partial" ? 5 : 10;
+    const bonus = habit.how_long ? (DURATION_BONUS_XP[habit.how_long] ?? 0) : 0;
+    return base + bonus;
+  })();
+
   const handleToggle = () => {
     if (!completed) {
       setShowParticles(true);
       setJustCompleted(true);
+      setShowXPFloat(true);
+      setXPFloatKey((k) => k + 1);
       setTimeout(() => { setShowParticles(false); setJustCompleted(false); }, 700);
+      setTimeout(() => setShowXPFloat(false), 1200);
       if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(50);
       onCompleted?.();
     }
@@ -259,6 +271,23 @@ export default function HabitCard({
               } as React.CSSProperties}
             />
           ))}
+          {showXPFloat && xpAmount > 0 && (
+            <div
+              key={xpFloatKey}
+              className="absolute pointer-events-none select-none"
+              style={{ top: "-4px", left: "50%", zIndex: 60, animation: "xpFloat 1.1s ease-out forwards" }}
+            >
+              <span style={{
+                display: "block", transform: "translateX(-50%)",
+                fontSize: "10px", fontWeight: 800,
+                color: "#a78bfa",
+                textShadow: "0 0 10px rgba(167,139,250,0.8)",
+                whiteSpace: "nowrap",
+              }}>
+                +{xpAmount} XP
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Name + description */}

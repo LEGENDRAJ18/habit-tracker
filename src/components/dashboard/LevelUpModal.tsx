@@ -236,10 +236,11 @@ export default function LevelUpModal({ newLevel, onDismiss, onShare }: Props) {
         </div>
 
         <p className="text-xs font-bold text-violet-400 uppercase tracking-widest mb-1">
-          Level Up!
+          Level Up! 🎉
         </p>
-        <h2 className="text-2xl font-extrabold text-white mb-1">Level {newLevel}</h2>
-        <p className={`text-base font-semibold ${style.text} mb-3`}>{name}</p>
+        <h2 className="text-2xl font-extrabold text-white mb-0.5">You are now Level {newLevel}</h2>
+        <p className={`text-base font-bold ${style.text} mb-1`}>{name}</p>
+        <p className="text-xs text-slate-500 mb-3">Keep going. Every level is proof you showed up.</p>
 
         {/* Reward unlocked at this level */}
         {justUnlocked && (
@@ -284,9 +285,9 @@ export default function LevelUpModal({ newLevel, onDismiss, onShare }: Props) {
           )}
           <button
             onClick={onDismiss}
-            className="w-full px-6 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-violet-900/30"
+            className="w-full px-6 py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-violet-900/30"
           >
-            Keep going!
+            Let&apos;s keep going →
           </button>
         </div>
       </div>

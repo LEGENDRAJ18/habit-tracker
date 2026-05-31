@@ -643,14 +643,21 @@ export default function FriendsPage() {
               <Loader2 className="w-6 h-6 text-violet-500 animate-spin" />
             </div>
           ) : friends.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="w-14 h-14 rounded-2xl bg-violet-900/20 border border-violet-800/25 flex items-center justify-center mx-auto mb-4">
-                <Users className="w-7 h-7 text-violet-500" />
+            <div className="text-center py-14 px-4">
+              {/* Two overlapping avatar circles */}
+              <div className="relative flex items-center justify-center mb-6" style={{ height: "72px" }}>
+                <div className="absolute left-1/2 -translate-x-[120%] w-14 h-14 rounded-full bg-gradient-to-br from-violet-500/40 to-purple-500/40 border-2 border-violet-500/40 flex items-center justify-center shadow-lg shadow-violet-900/30">
+                  <span className="text-2xl leading-none">😊</span>
+                </div>
+                <div className="absolute left-1/2 translate-x-[20%] w-14 h-14 rounded-full bg-gradient-to-br from-fuchsia-500/40 to-pink-500/40 border-2 border-fuchsia-500/40 flex items-center justify-center shadow-lg shadow-fuchsia-900/30">
+                  <span className="text-2xl leading-none">🔥</span>
+                </div>
               </div>
-              <h2 className="text-base font-semibold text-slate-300 mb-2">No friends yet</h2>
-              <p className="text-sm text-slate-500 max-w-xs mx-auto mb-5">
-                Invite friends to compete on streaks and cheer each other on.
+              <h2 className="text-xl font-black text-white mb-2">Habits are more fun with friends.</h2>
+              <p className="text-sm text-slate-500 max-w-xs mx-auto mb-2 leading-relaxed">
+                Accountability is the cheat code. When someone&apos;s watching, you show up.
               </p>
+              <p className="text-xs text-violet-400/60 mb-6">Add a friend. Challenge them. Don&apos;t lose.</p>
               <button
                 onClick={() => {
                   document.getElementById("invite-form")?.scrollIntoView({ behavior: "smooth" });
@@ -659,10 +666,10 @@ export default function FriendsPage() {
                     input?.focus();
                   }, 400);
                 }}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-all text-sm"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-2xl transition-all text-sm shadow-lg shadow-violet-900/30"
               >
                 <UserPlus className="w-4 h-4" />
-                Invite friends
+                Invite your first friend
               </button>
             </div>
           ) : (

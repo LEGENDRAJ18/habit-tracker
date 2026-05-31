@@ -413,6 +413,21 @@ input, textarea, select {
   100% { transform: translateY(105vh) rotate(720deg); opacity: 0; }
 }
 
+/* ─── XP float ────────────────────────────────────────────────────────────── */
+@keyframes xpFloat {
+  0%   { opacity: 0; transform: translateX(-50%) scale(0.6); }
+  18%  { opacity: 1; transform: translateX(-50%) translateY(-8px) scale(1.2); }
+  70%  { opacity: 1; transform: translateX(-50%) translateY(-28px) scale(1.0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-44px) scale(0.8); }
+}
+
+/* ─── First completion celebration ──────────────────────────────────────── */
+@keyframes firstCompIn {
+  0%   { opacity: 0; transform: scale(0.7) translateY(20px); }
+  60%  { opacity: 1; transform: scale(1.04) translateY(-4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
 /* ─── Welcome logo pulse ──────────────────────────────────────────────────── */
 @keyframes logoPulse {
   0%, 100% { box-shadow: 0 0 40px rgba(124,58,237,0.5); transform: scale(1); }
