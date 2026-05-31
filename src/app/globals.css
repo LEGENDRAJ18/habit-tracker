@@ -59,9 +59,29 @@ body {
 /* ─── Dashboard animations ──────────────────────────────────────────── */
 
 /* ─── Splash screen ──────────────────────────────────────────────────── */
+
+/* Logo gentle scale pulse */
+@keyframes splashLogoPulse {
+  0%, 100% { transform: scale(1);    }
+  50%       { transform: scale(1.07); }
+}
+
+/* Outer ring glow breathe */
+@keyframes splashRingGlow {
+  0%, 100% { opacity: 0.6; transform: scale(1);    }
+  50%       { opacity: 1;  transform: scale(1.18); }
+}
+
+/* Ambient background glow pulse */
+@keyframes splashGlow {
+  0%, 100% { opacity: 0.7; transform: scale(1);    }
+  50%       { opacity: 1;  transform: scale(1.12); }
+}
+
+/* Loading dots bounce */
 @keyframes splashDot {
-  0%, 100% { opacity: 0.25; transform: scale(0.75); }
-  50%       { opacity: 1;   transform: scale(1.25); }
+  0%, 100% { opacity: 0.2; transform: translateY(0)    scale(0.8); }
+  50%       { opacity: 1;  transform: translateY(-5px) scale(1.1); }
 }
 
 /* Checkbox pop when completing a habit */
