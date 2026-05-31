@@ -897,7 +897,7 @@ function Footer() {
               </li>
               <li>
                 <a
-                  href="https://discord.gg/U3FFHFq3"
+                  href="https://discord.gg/JM6QJks8"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-violet-400 transition-colors duration-150"
