@@ -12,6 +12,7 @@ import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import ConditionalAppShell from "@/components/layout/ConditionalAppShell";
 import PostHogProvider from "@/components/PostHogProvider";
 import SplashScreen from "@/components/ui/SplashScreen";
+import AuthStateManager from "@/components/AuthStateManager";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -95,6 +96,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </CurrencyProvider>
           </AppearanceProvider>
         </PostHogProvider>
+        <AuthStateManager />
         <SplashScreen />
         <Analytics />
         <ServiceWorkerRegistration />

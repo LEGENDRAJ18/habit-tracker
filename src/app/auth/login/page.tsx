@@ -272,14 +272,20 @@ function AuthForm() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       setError(friendlyError(error.message));
       setLoading(false);
-    } else {
-      router.push(nextUrl);
-      router.refresh();
+      return;
     }
+    // Check onboarding status — new/incomplete users go to /onboarding, others to dashboard.
+    // Run immediately after login since signInWithPassword returns the user object.
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("onboarding_completed")
+      .eq("id", data.user.id)
+      .single();
+    router.push(profile?.onboarding_completed ? nextUrl : "/onboarding");
   };
 
   // ── Signup ────────────────────────────────────────────────────────────────
@@ -320,7 +326,6 @@ function AuthForm() {
         headers: { Authorization: `Bearer ${data.session.access_token}` },
       }).catch(() => {});
       router.push("/onboarding");
-      router.refresh();
     } else {
       setStep("check-email");
       setLoading(false);
