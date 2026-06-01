@@ -46,13 +46,23 @@ export default function StreakBrokenModal({ onUpgrade, onDismiss, brokenHabitNam
         <div className="p-6">
           {/* Icon + title */}
           <div className="text-center mb-5">
-            <div className="text-5xl mb-3 leading-none">😢</div>
-            <h2 className="text-xl font-bold text-white mb-1.5">Your streak broke</h2>
+            <div className="text-5xl mb-3 leading-none">💔</div>
+            <h2 className="text-xl font-bold text-white mb-1">Streak lost.</h2>
+            <p className="text-xs text-slate-500 leading-relaxed mb-1">
+              That stings. But one missed day doesn&apos;t define you.
+            </p>
             {brokenHabitName && (
-              <p className="text-xs text-slate-500">
-                Habit: <span className="text-slate-400 font-medium">{brokenHabitName}</span>
+              <p className="text-xs text-slate-600">
+                <span className="text-slate-500 font-medium">{brokenHabitName}</span>
               </p>
             )}
+          </div>
+
+          {/* Recovery quote */}
+          <div className="bg-violet-950/30 border border-violet-800/20 rounded-xl px-4 py-3 mb-5 text-center">
+            <p className="text-xs text-violet-300/80 leading-relaxed italic">
+              &ldquo;The champion isn&apos;t the one who never falls — it&apos;s the one who gets back up.&rdquo;
+            </p>
           </div>
 
           {/* AI Analysis (paid users) */}
@@ -95,7 +105,7 @@ export default function StreakBrokenModal({ onUpgrade, onDismiss, brokenHabitNam
           {!isPaid && (
             <>
               <p className="text-sm text-slate-400 mb-5 text-center">
-                Upgrade to Plus to get automatic streak protection — never lose your progress again.
+                Upgrade to Plus and your streak is protected — life happens, your progress doesn&apos;t vanish.
               </p>
               <div className="flex items-start gap-3 bg-violet-950/40 border border-violet-700/30 rounded-xl p-4 mb-5">
                 <Shield className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
@@ -119,7 +129,7 @@ export default function StreakBrokenModal({ onUpgrade, onDismiss, brokenHabitNam
             onClick={onDismiss}
             className="w-full py-2 text-slate-500 hover:text-slate-300 text-sm transition-colors"
           >
-            {isPaid ? "Got it, let's recover" : "Maybe later"}
+            {isPaid ? "Start fresh today →" : "Maybe later"}
           </button>
         </div>
       </div>

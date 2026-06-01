@@ -342,7 +342,7 @@ const SOLUTIONS = [
     badgeColor: "text-emerald-400",
     title: "Friends who keep you honest",
     desc: "Invite people you actually know. Compete on live leaderboards, send cheer reactions, and share achievements. Social accountability is the single most effective behaviour-change tool.",
-    bullets: ["Friend leaderboard with XP", "Cheer & challenge each other", "Shared accountability feed"],
+    bullets: ["Friend leaderboard with XP", "Cheer reactions & Habit Battles", "Compete, challenge, and stay accountable"],
   },
   {
     emoji: "🔥",

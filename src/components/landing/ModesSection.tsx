@@ -10,7 +10,7 @@ const MODES_LANDING = [
     label: "Student",
     tagline: "Academic excellence",
     desc: "University goal tracking, study timer, exam countdown, Academic Performance Score, and an AI coach focused on getting you into your dream uni.",
-    bullets: ["Dream university journey tracker", "Study session timer widget", "Student Success Pack (6 habits)", "Classmate leaderboard"],
+    bullets: ["Dream university journey tracker", "Study session timer widget", "Student Success Pack (6 habits)", "Leaderboard with classmates & friends"],
     color:  "text-indigo-300",
     border: "border-indigo-500/30",
     glow:   "bg-indigo-500/8",

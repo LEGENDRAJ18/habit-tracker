@@ -268,6 +268,49 @@ function ProgressRing({ completed, total, tier }: { completed: number; total: nu
   );
 }
 
+// ─── Weekly progress bar ─────────────────────────────────────────────────────
+
+function WeeklyProgressBar({ logs }: { logs: Pick<{ habit_id: string; completed_at: string }, "habit_id" | "completed_at">[] }) {
+  const today = new Date();
+  const todayKey = today.toISOString().split("T")[0];
+  const dow = today.getDay();
+  const daysFromMon = dow === 0 ? 6 : dow - 1;
+
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - daysFromMon + i);
+    const key = d.toISOString().split("T")[0];
+    return { key, label: ["M", "T", "W", "T", "F", "S", "S"][i], isToday: key === todayKey, isFuture: key > todayKey };
+  });
+
+  const completedDays = new Set(logs.map((l) => l.completed_at.split("T")[0]));
+  const activeDays = weekDays.filter((d) => !d.isFuture && completedDays.has(d.key)).length;
+
+  return (
+    <div className="flex items-center gap-2.5 mt-3">
+      <div className="flex items-center gap-1">
+        {weekDays.map((d) => (
+          <div
+            key={d.key}
+            className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
+              d.isFuture
+                ? "bg-slate-900/20 text-slate-800"
+                : completedDays.has(d.key)
+                ? "bg-violet-600 text-white shadow-sm shadow-violet-900/40"
+                : d.isToday
+                ? "bg-violet-950/60 border border-violet-700/40 text-violet-500"
+                : "bg-slate-900/40 text-slate-700"
+            }`}
+          >
+            {d.label}
+          </div>
+        ))}
+      </div>
+      <span className="text-[10px] text-slate-600 font-medium whitespace-nowrap">{activeDays}/7 this week</span>
+    </div>
+  );
+}
+
 // ─── Celebration confetti ─────────────────────────────────────────────────────
 const CELEB_CONFETTI = Array.from({ length: 36 }, (_, i) => ({
   left: `${(i * 2.8) % 100}%`,
@@ -404,7 +447,7 @@ export default function DashboardPage() {
   const { habits, loading, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength, refetch, historicalLogs } =
     useHabits();
   const { tier, profileLoading, onboardingCompleted, goals, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt, dreamUniversity, userMode } = useProfile();
-  const { xp, level, achievements, totalCompletions, justLeveledUp, isDailyAchieved, onHabitCompleted, checkMilestones, dismissLevelUp } = useXP();
+  const { xp, level, achievements, totalCompletions, justLeveledUp, xpLoading, isDailyAchieved, onHabitCompleted, onDailyOpen, checkMilestones, dismissLevelUp } = useXP();
   const { openUpgradeModal } = useUpgrade();
   const { openAIInsight } = useAIInsight();
   const { showModal: showPushModal, allow: allowPush, dismiss: dismissPush } = usePushNotifications();
@@ -457,6 +500,7 @@ export default function DashboardPage() {
   const prevHabitsLenRef     = useRef<number>(-1);
   const prevBestStreakRef    = useRef<number>(0);
   const prevXPRef            = useRef<number>(0);
+  const loginBonusGivenRef   = useRef(false);
 
   const [showFirstCompletion,   setShowFirstCompletion]   = useState(false);
   const [firstHabitWowName,     setFirstHabitWowName]     = useState<string | null>(null);
@@ -534,6 +578,15 @@ export default function DashboardPage() {
       if (prev < habits.length && completedCount === habits.length) {
         setShowCelebration(true);
         setTimeout(() => setShowCelebration(false), 5200);
+        // Speed Runner: all habits done before noon
+        const nowH = new Date().getHours();
+        if (nowH < 12) {
+          const todayKey = new Date().toISOString().split("T")[0];
+          if (!localStorage.getItem(`habitai_speed_runner_${todayKey}`)) {
+            localStorage.setItem(`habitai_speed_runner_${todayKey}`, "1");
+            setTimeout(() => toast("⚡ Speed Runner! All habits crushed before noon!", "success", undefined, 3500), 1500);
+          }
+        }
       }
     }
     prevCompletedRef.current = completedCount;
@@ -613,6 +666,16 @@ export default function DashboardPage() {
     prevXPRef.current = xp;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [xp]);
+
+  // Daily login bonus (+5 XP once per day)
+  useEffect(() => {
+    if (xpLoading || loading || loginBonusGivenRef.current) return;
+    loginBonusGivenRef.current = true;
+    onDailyOpen().then((got) => {
+      if (got) toast("☀️ Daily login! +5 XP bonus", "success", undefined, 2500);
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [xpLoading, loading]);
 
   // Monthly Wrapped — auto-show on 1st of month for Pro users
   useEffect(() => {
@@ -859,6 +922,9 @@ export default function DashboardPage() {
               />
             </div>
           )}
+
+          {/* Weekly progress bar */}
+          {!loading && habits.length > 0 && <WeeklyProgressBar logs={historicalLogs} />}
         </div>
 
         {/* Mood check-in */}
@@ -1084,7 +1150,34 @@ export default function DashboardPage() {
                 onCompleted={() => {
                   const validity = habit.validity_score ?? "valid";
                   playSound("complete");
-                  onHabitCompleted(validity, habit.how_long);
+
+                  // Time-based micro-achievements (once per day each)
+                  const nowH = new Date().getHours();
+                  const todayKey = new Date().toISOString().split("T")[0];
+                  if (nowH < 8 && !localStorage.getItem(`habitai_early_bird_${todayKey}`)) {
+                    localStorage.setItem(`habitai_early_bird_${todayKey}`, "1");
+                    setTimeout(() => toast("🐦 Early Bird! First habit before 8am!", "success", undefined, 3000), 500);
+                  } else if (nowH >= 22 && !localStorage.getItem(`habitai_night_owl_${todayKey}`)) {
+                    localStorage.setItem(`habitai_night_owl_${todayKey}`, "1");
+                    setTimeout(() => toast("🦉 Night Owl! Grinding past 10pm!", "success", undefined, 3000), 500);
+                  }
+                  // Comeback Kid: first completion today after 3+ day break
+                  if (completedCount === 0 && totalCompletions > 0 && !localStorage.getItem(`habitai_comeback_kid_${todayKey}`)) {
+                    const threeDaysAgo = new Date(Date.now() - 3 * 86400000).toISOString().split("T")[0];
+                    const hadRecent = historicalLogs.some((l) => {
+                      const d = l.completed_at.split("T")[0];
+                      return d >= threeDaysAgo && d < todayKey;
+                    });
+                    if (!hadRecent) {
+                      localStorage.setItem(`habitai_comeback_kid_${todayKey}`, "1");
+                      setTimeout(() => toast("🦅 Comeback Kid! Back after a break — let's go!", "success", undefined, 3500), 600);
+                    }
+                  }
+
+                  onHabitCompleted(validity, habit.how_long).then(({ luckyBonus }) => {
+                    if (luckyBonus) setTimeout(() => toast("🎰 Lucky bonus! +20 XP", "success", undefined, 2500), 300);
+                  }).catch(() => {});
+
                   if (validity === "valid") {
                     toast(`✅ ${habit.name} — +10 XP`, "success", undefined, 2000);
                   } else if (validity === "partial") {
@@ -1444,7 +1537,9 @@ export default function DashboardPage() {
           onXP={() => {
             const validity = focusHabit.validity_score ?? "valid";
             playSound("complete");
-            onHabitCompleted(validity, focusHabit.how_long);
+            onHabitCompleted(validity, focusHabit.how_long).then(({ luckyBonus }) => {
+              if (luckyBonus) toast("🎰 Lucky bonus! +20 XP", "success", undefined, 2500);
+            }).catch(() => {});
           }}
           onClose={() => setFocusHabit(null)}
         />

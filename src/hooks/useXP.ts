@@ -126,9 +126,9 @@ export function useXP() {
   const onHabitCompleted = useCallback(async (
     validityScore?: "valid" | "partial" | "invalid",
     howLong?: string | null,
-  ) => {
+  ): Promise<{ luckyBonus: boolean }> => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) return { luckyBonus: false };
 
     const newTotal = totalRef.current + 1;
     totalRef.current = newTotal;
@@ -145,6 +145,24 @@ export function useXP() {
     const durationBonus = baseXP > 0 && howLong ? (DURATION_BONUS_XP[howLong] ?? 0) : 0;
     const xpToAward = baseXP + durationBonus;
     if (xpToAward > 0) await awardXP(xpToAward);
+
+    // ~12% chance lucky bonus
+    const lucky = baseXP > 0 && Math.random() < 0.12;
+    if (lucky) await awardXP(20);
+
+    return { luckyBonus: lucky };
+  }, [supabase, awardXP]);
+
+  // Award +5 XP once per calendar day on first app open
+  const onDailyOpen = useCallback(async (): Promise<boolean> => {
+    if (typeof window === "undefined") return false;
+    const today = new Date().toISOString().split("T")[0];
+    if (localStorage.getItem("habitai_last_login_xp") === today) return false;
+    localStorage.setItem("habitai_last_login_xp", today);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+    await awardXP(5);
+    return true;
   }, [supabase, awardXP]);
 
   // Check daily + streak milestones; award XP for newly unlocked ones.
@@ -252,6 +270,7 @@ export function useXP() {
     xpLoading,
     isDailyAchieved,
     onHabitCompleted,
+    onDailyOpen,
     checkMilestones,
     dismissLevelUp,
   };
