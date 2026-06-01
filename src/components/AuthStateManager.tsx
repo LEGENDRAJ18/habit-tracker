@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { clearUserLocalData } from "@/lib/clearUserData";
+import { clearUserLocalData, clearIndexedDB } from "@/lib/clearUserData";
 
 // Stored under an sb- prefix so clearUserLocalData preserves it across user switches.
 const LAST_USER_KEY = "sb-last-user-id";
@@ -29,6 +29,7 @@ export default function AuthStateManager() {
           // Supabase has already stored the new session (sb-* keys) before this
           // callback fires, so clearUserLocalData() preserves the new session.
           clearUserLocalData();
+          void clearIndexedDB();
         }
         localStorage.setItem(LAST_USER_KEY, newUserId);
       }

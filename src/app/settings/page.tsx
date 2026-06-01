@@ -659,6 +659,29 @@ function HelpTab() {
         <p className="text-sm text-slate-500">Find answers, contact support, or browse the FAQ.</p>
       </div>
 
+      {/* How to use guide */}
+      <div className={cardCls} style={{ padding: "1.25rem" }}>
+        <div className="flex items-start gap-4">
+          <div className="w-10 h-10 rounded-xl bg-violet-600/20 border border-violet-600/30 flex items-center justify-center flex-shrink-0 text-xl">
+            📖
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-white mb-0.5">How to use HabitAI</p>
+            <p className="text-xs text-slate-500 leading-relaxed mb-4">
+              Complete interactive guide: every feature, every page, every button explained — Getting Started, Dashboard, AI Coach, Battles, Plans and more.
+            </p>
+            <Link
+              href="/guide"
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white rounded-xl transition-all"
+              style={{ backgroundColor: "var(--a-600, #7c3aed)" }}
+            >
+              Open Full Guide 📖
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+      </div>
+
       <div className={cardCls} style={{ padding: "1.25rem" }}>
         <div className="flex items-start gap-4">
           <div className="w-10 h-10 rounded-xl bg-violet-900/30 border border-violet-700/30 flex items-center justify-center flex-shrink-0">

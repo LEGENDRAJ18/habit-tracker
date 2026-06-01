@@ -803,25 +803,6 @@ export default function DashboardPage() {
           ) : formatGoalsLine(goals) ? (
             <p className="text-sm text-violet-300/80 font-medium mb-1">{formatGoalsLine(goals)}</p>
           ) : null}
-          <p className="text-sm text-slate-500 italic mb-5">&ldquo;{getDailyQuote()}&rdquo;</p>
-
-          {/* XP Level Bar + Quick stats — only when habits exist */}
-          {!loading && habits.length > 0 && (
-            <>
-              {!xpLoading && <XPLevelBar xp={xp} level={level} onClick={() => setShowXPSheet(true)} />}
-              {userMode === "student" && (
-                <p className="text-[10px] text-indigo-400/70 uppercase tracking-wider font-semibold mb-1">📚 Academic Performance Score</p>
-              )}
-              <QuickStats
-                completedCount={completedCount}
-                totalHabits={habits.length}
-                bestStreak={bestStreak}
-                totalXP={xp}
-                onOpenXP={() => setShowXPSheet(true)}
-              />
-            </>
-          )}
-
           {/* Row 1: heading + action buttons */}
           <div className="flex items-center gap-2 mb-1">
             <h2 className="text-lg font-semibold text-white">Today&apos;s Habits</h2>
@@ -1190,6 +1171,23 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* XP Level Bar + Quick stats — shown below habits so they're not the first thing seen */}
+        {!loading && habits.length > 0 && (
+          <div className="mt-5">
+            {!xpLoading && <XPLevelBar xp={xp} level={level} onClick={() => setShowXPSheet(true)} />}
+            {userMode === "student" && (
+              <p className="text-[10px] text-indigo-400/70 uppercase tracking-wider font-semibold mb-1">📚 Academic Performance Score</p>
+            )}
+            <QuickStats
+              completedCount={completedCount}
+              totalHabits={habits.length}
+              bestStreak={bestStreak}
+              totalXP={xp}
+              onOpenXP={() => setShowXPSheet(true)}
+            />
+          </div>
+        )}
+
         {/* Daily milestones — hidden on xl+ (right sidebar handles it) */}
         <div className="xl:hidden">
           {!loading && habits.length > 0 && (
@@ -1205,17 +1203,37 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Recommended habits */}
-        {!loading && !profileLoading && onboardingCompleted && (
+        {/* Recommended habits — PRO only */}
+        {!loading && !profileLoading && onboardingCompleted && tier === "pro" && (
           <HabitRecommendations
             goals={goals}
             existingHabits={habits}
-            canAddMore={isPaid || habits.length < FREE_HABIT_LIMIT}
-            isPro={tier === "pro"}
+            canAddMore={true}
+            isPro={true}
             onAdd={(name, desc) => addHabit(name, desc, "daily")}
             onSetGoal={() => setShowReOnboard(true)}
-            onUpgrade={() => openUpgradeModal("pro_feature", tier === "plus")}
+            onUpgrade={() => openUpgradeModal("pro_feature", true)}
           />
+        )}
+        {!loading && !profileLoading && onboardingCompleted && tier !== "pro" && habits.length >= 1 && (
+          <div className="mt-4 flex items-center gap-3 p-4 bg-[#0c0c18] border border-amber-800/20 rounded-2xl">
+            <span className="text-xl flex-shrink-0">✨</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-sm font-bold text-white">AI Habit Recommendations</p>
+                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-300 bg-amber-900/25 border border-amber-600/25 px-1.5 py-0.5 rounded-full">
+                  <Crown className="w-2.5 h-2.5" />PRO
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">AI-suggested habits tailored to your goals and completion patterns.</p>
+            </div>
+            <button
+              onClick={() => openUpgradeModal("pro_feature", tier === "plus")}
+              className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold text-amber-300 border border-amber-700/40 hover:border-amber-500/60 hover:bg-amber-950/20 rounded-xl transition-all whitespace-nowrap"
+            >
+              Unlock →
+            </button>
+          </div>
         )}
 
         </div>{/* end left column */}

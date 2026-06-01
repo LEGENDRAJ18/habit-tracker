@@ -140,7 +140,7 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
         </div>
 
         {/* Scrollable content */}
-        <div className="overflow-y-auto px-5 pb-10 space-y-5" style={{ maxHeight: "70vh" }}>
+        <div className="overflow-y-auto px-5 pb-10 space-y-5" style={{ maxHeight: "82vh" }}>
 
           {/* Ring + stats */}
           <div className="flex items-center gap-5 pt-2">

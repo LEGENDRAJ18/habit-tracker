@@ -149,27 +149,55 @@ export function useHabits() {
     } = await supabase.auth.getUser();
     if (!user) return { error: "Not authenticated" };
 
+    // Optimistic: add to state immediately so the card appears at once
+    const tempId = `opt-${Date.now()}`;
+    const now    = new Date().toISOString();
+    const tempHabit: Habit = {
+      id:                      tempId,
+      user_id:                 user.id,
+      name,
+      description:             description || null,
+      frequency,
+      created_at:              now,
+      stack_after_id:          stackAfterId    ?? null,
+      habit_strength:          10,
+      when_time:               whenTime        ?? null,
+      where_location:          whereLocation   ?? null,
+      how_long:                howLong         ?? null,
+      validity_score:          validityScore   ?? "valid",
+      preferred_reminder_time: reminderTime    ?? null,
+      duration_minutes:        durationMinutes ?? null,
+      is_public:               false,
+      commitment_text:         null,
+    };
+    setHabits((prev) => [...prev, tempHabit]);
+
     const { data, error } = await supabase
       .from("habits")
       .insert({
-        user_id:                user.id,
+        user_id:                 user.id,
         name,
-        description:            description || null,
+        description:             description || null,
         frequency,
-        stack_after_id:         stackAfterId    ?? null,
-        when_time:              whenTime        ?? null,
-        where_location:         whereLocation   ?? null,
-        how_long:               howLong         ?? null,
-        validity_score:         validityScore   ?? "valid",
-        preferred_reminder_time: reminderTime   ?? null,
-        duration_minutes:       durationMinutes ?? null,
+        stack_after_id:          stackAfterId    ?? null,
+        when_time:               whenTime        ?? null,
+        where_location:          whereLocation   ?? null,
+        how_long:                howLong         ?? null,
+        validity_score:          validityScore   ?? "valid",
+        preferred_reminder_time: reminderTime    ?? null,
+        duration_minutes:        durationMinutes ?? null,
       })
       .select()
       .single();
 
-    if (error) return { error: error.message };
+    if (error) {
+      // Revert the optimistic add
+      setHabits((prev) => prev.filter((h) => h.id !== tempId));
+      return { error: error.message };
+    }
     if (data) {
-      setHabits((prev) => [...prev, data]);
+      // Swap temp placeholder with the real DB record
+      setHabits((prev) => prev.map((h) => (h.id === tempId ? data : h)));
       posthog.capture("habit_created", {
         habit_name:     name,
         frequency,
