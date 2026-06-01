@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { Plus, Loader2, AlertCircle, CheckCircle2, Shield, Share2, Sparkles, Search, X, ClipboardList, Crown, Flame, Brain, Calendar } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Plus, Loader2, AlertCircle, CheckCircle2, Shield, Share2, Sparkles, Search, X, ClipboardList, Crown, Flame, Brain, Calendar, ChevronUp } from "lucide-react";
 import type { Plan } from "@/types";
 import { useHabits } from "@/hooks/useHabits";
 import { useProfile } from "@/hooks/useProfile";
@@ -16,7 +17,8 @@ import LevelUpModal from "@/components/dashboard/LevelUpModal";
 import ShareAchievement from "@/components/dashboard/ShareAchievement";
 import { useXP } from "@/hooks/useXP";
 import { playSound } from "@/lib/sounds";
-import { levelName, levelEmoji } from "@/lib/xp";
+import { levelName, levelEmoji, xpIntoLevel, xpSpanOfLevel } from "@/lib/xp";
+import XPDetailSheet from "@/components/dashboard/XPDetailSheet";
 import AICheckinCard from "@/components/dashboard/AICheckinCard";
 import SmartNotification from "@/components/ui/SmartNotification";
 import { toast } from "@/components/ui/Toast";
@@ -113,99 +115,65 @@ function SkeletonCard() {
 // ─── Quick stats row ──────────────────────────────────────────────────────────
 
 function QuickStats({
-  completedCount, totalHabits, bestStreak, totalXP,
+  completedCount, totalHabits, bestStreak, totalXP, onOpenXP,
 }: {
   completedCount: number;
   totalHabits: number;
   bestStreak: number;
   totalXP: number;
+  onOpenXP: () => void;
 }) {
-  const [showXPInfo, setShowXPInfo] = useState(false);
   const pct = totalHabits > 0 ? Math.round((completedCount / totalHabits) * 100) : 0;
 
   return (
-    <>
-      <div className="grid grid-cols-3 gap-2 mb-6">
-        <div className="bg-[#0c0c18] border border-violet-900/20 rounded-xl px-3 py-2.5 text-center">
-          <p className="text-lg font-bold leading-none text-violet-400" style={{ animation: "countUp 0.5s ease-out both" }}>{pct}%</p>
-          <p className="text-[10px] text-slate-600 mt-1 uppercase tracking-wider font-medium">Today · done</p>
-        </div>
-
-        <div className="bg-[#0c0c18] border border-violet-900/20 rounded-xl px-3 py-2.5 text-center">
-          <p className="text-lg font-bold leading-none text-orange-400" style={{ animation: "countUp 0.5s ease-out both" }}>{bestStreak}d</p>
-          <p className="text-[10px] text-slate-600 mt-1 uppercase tracking-wider font-medium">Streak · best</p>
-        </div>
-
-        <div className="bg-[#0c0c18] border border-violet-900/20 rounded-xl px-3 py-2.5 text-center">
-          <div className="flex items-center justify-center gap-1">
-            <p className="text-lg font-bold leading-none text-amber-400" style={{ animation: "countUp 0.5s ease-out both" }}>
-              {totalXP.toLocaleString()}
-            </p>
-            <button
-              onClick={() => setShowXPInfo(true)}
-              className="w-3.5 h-3.5 rounded-full bg-slate-700/60 text-slate-500 hover:text-white hover:bg-slate-600 text-[9px] font-bold flex items-center justify-center flex-shrink-0 transition-colors leading-none"
-              title="How XP works"
-            >
-              ?
-            </button>
-          </div>
-          <p className="text-[10px] text-slate-600 mt-1 uppercase tracking-wider font-medium">XP · earned</p>
-        </div>
+    <div className="grid grid-cols-3 gap-2 mb-4">
+      <div className="bg-[#0c0c18] border border-violet-900/20 rounded-xl px-3 py-2.5 text-center">
+        <p className="text-lg font-bold leading-none text-violet-400" style={{ animation: "countUp 0.5s ease-out both" }}>{pct}%</p>
+        <p className="text-[10px] text-slate-600 mt-1 uppercase tracking-wider font-medium">Today · done</p>
       </div>
 
-      {showXPInfo && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          onClick={() => setShowXPInfo(false)}
-        >
-          <div
-            className="w-full max-w-sm bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl shadow-violet-950/50 p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-base font-bold text-white mb-5">How XP works 💡</h3>
-            <div className="space-y-3 mb-5">
-              {([
-                {
-                  icon: "✅", label: "Valid habit completed",   xp: "10 XP",
-                  desc: "Specific, actionable habits",
-                  color: "text-emerald-300", border: "border-emerald-800/30", bg: "bg-emerald-950/20",
-                },
-                {
-                  icon: "⚠️", label: "Partial habit completed", xp: "5 XP",
-                  desc: 'Vague habits like "be healthy"',
-                  color: "text-amber-300",  border: "border-amber-800/30",  bg: "bg-amber-950/20",
-                },
-                {
-                  icon: "❌", label: "Invalid habit completed", xp: "0 XP",
-                  desc: "Nonsense or inappropriate habits",
-                  color: "text-red-300",    border: "border-red-800/30",    bg: "bg-red-950/20",
-                },
-              ] as const).map(({ icon, label, xp, desc, color, border, bg }) => (
-                <div key={label} className={`flex items-start gap-3 ${bg} border ${border} rounded-xl px-4 py-3`}>
-                  <span className="text-lg leading-none flex-shrink-0">{icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs font-semibold text-white leading-snug">{label}</p>
-                      <span className={`text-xs font-bold ${color} flex-shrink-0`}>{xp}</span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 mt-0.5">{desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-violet-300 font-medium text-center mb-5">
-              Make your habits specific to earn maximum XP!
-            </p>
-            <button
-              onClick={() => setShowXPInfo(false)}
-              className="w-full py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl text-sm transition-all"
-            >
-              Got it
-            </button>
-          </div>
+      <div className="bg-[#0c0c18] border border-violet-900/20 rounded-xl px-3 py-2.5 text-center">
+        <p className="text-lg font-bold leading-none text-orange-400" style={{ animation: "countUp 0.5s ease-out both" }}>{bestStreak}d</p>
+        <p className="text-[10px] text-slate-600 mt-1 uppercase tracking-wider font-medium">Streak · best</p>
+      </div>
+
+      <button
+        onClick={onOpenXP}
+        className="bg-[#0c0c18] border border-violet-900/20 hover:border-violet-600/40 rounded-xl px-3 py-2.5 text-center transition-all active:scale-95 group"
+      >
+        <p className="text-lg font-bold leading-none text-amber-400 tabular-nums" style={{ animation: "countUp 0.5s ease-out both" }}>{totalXP.toLocaleString()}</p>
+        <p className="text-[10px] text-slate-600 group-hover:text-violet-500 mt-1 uppercase tracking-wider font-medium transition-colors">XP · tap ›</p>
+      </button>
+    </div>
+  );
+}
+
+// ─── XP Level Bar (tappable) ─────────────────────────────────────────────────
+
+function XPLevelBar({ xp, level, onClick }: { xp: number; level: number; onClick: () => void }) {
+  const xpInto = xpIntoLevel(xp);
+  const xpSpan = xpSpanOfLevel(xp);
+  const pct    = xpSpan > 0 ? Math.min(100, Math.round((xpInto / xpSpan) * 100)) : 100;
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-3 bg-[#0c0c18] border border-violet-900/25 hover:border-violet-600/45 rounded-xl px-3 py-2.5 mb-4 transition-all group active:scale-[0.99]"
+    >
+      <span className="text-xl leading-none flex-shrink-0">{levelEmoji(level)}</span>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-xs font-bold text-white">Lv.{level} · {levelName(level)}</p>
+          <p className="text-[10px] text-violet-400 font-medium tabular-nums">{xpInto.toLocaleString()} / {xpSpan.toLocaleString()} XP</p>
         </div>
-      )}
-    </>
+        <div className="h-1.5 bg-violet-950/60 rounded-full overflow-hidden">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500 transition-all duration-700"
+            style={{ width: `${pct}%`, boxShadow: "0 0 6px rgba(139,92,246,0.5)" }}
+          />
+        </div>
+      </div>
+      <span className="text-[13px] text-slate-600 group-hover:text-violet-400 transition-colors flex-shrink-0 leading-none">›</span>
+    </button>
   );
 }
 
@@ -444,6 +412,7 @@ function getEmptyStateRecs(goals: string[]) {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { habits, loading, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength, refetch, historicalLogs } =
     useHabits();
   const { tier, profileLoading, onboardingCompleted, goals, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt, dreamUniversity, userMode } = useProfile();
@@ -509,8 +478,17 @@ export default function DashboardPage() {
   const [showHabitDNA,          setShowHabitDNA]          = useState(false);
   const [commitmentHabit, setCommitmentHabit] = useState<{ id: string; name: string; isPublic: boolean; commitmentText: string | null } | null>(null);
   const [focusHabit, setFocusHabit] = useState<Habit | null>(null);
+  const [showXPSheet, setShowXPSheet] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   const isPaid = tier === "plus" || tier === "pro";
+
+  // Back-to-top scroll detection
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 300);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   // First habit wow moment — fires when habits transitions 0→1 (or on page load if within 15 min of signup)
   useEffect(() => {
@@ -777,25 +755,33 @@ export default function DashboardPage() {
         {/* ── Center column ─────────────────────────────────────────────── */}
         <div className="min-w-0">
 
-        {/* Header — sticky so greeting stays visible while habits scroll */}
-        <div className="mb-4 sticky top-14 z-10 bg-[#09090f] pt-6 pb-4">
+        {/* Header */}
+        <div className="mb-4 pt-6 pb-4">
           {/* Greeting */}
           <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">{today}</p>
           <div className="flex items-center gap-2 flex-wrap mb-1">
             <h1 className="text-2xl font-bold text-white">{getGreeting()} 👋</h1>
             {!loading && (
               <>
-                <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
-                  bestStreak > 0
-                    ? "text-orange-300 bg-orange-950/40 border border-orange-700/30"
-                    : "text-slate-500 bg-slate-900/40 border border-slate-700/30"
-                }`}>
+                <button
+                  onClick={() => router.push("/calendar")}
+                  title="View habit calendar"
+                  className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full transition-opacity hover:opacity-75 ${
+                    bestStreak > 0
+                      ? "text-orange-300 bg-orange-950/40 border border-orange-700/30"
+                      : "text-slate-500 bg-slate-900/40 border border-slate-700/30"
+                  }`}
+                >
                   <Flame className={`w-3 h-3 flex-shrink-0 ${bestStreak > 0 ? "text-orange-400" : "text-slate-600"}`} />
                   {bestStreak}d streak
-                </span>
-                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full text-violet-300 bg-violet-950/40 border border-violet-700/30">
+                </button>
+                <button
+                  onClick={() => setShowXPSheet(true)}
+                  title="View XP & level details"
+                  className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full text-violet-300 bg-violet-950/40 border border-violet-700/30 hover:opacity-75 transition-opacity"
+                >
                   {levelEmoji(level)} Lv.{level} {levelName(level)}
-                </span>
+                </button>
               </>
             )}
           </div>
@@ -819,9 +805,10 @@ export default function DashboardPage() {
           ) : null}
           <p className="text-sm text-slate-500 italic mb-5">&ldquo;{getDailyQuote()}&rdquo;</p>
 
-          {/* Quick stats — only when habits exist */}
+          {/* XP Level Bar + Quick stats — only when habits exist */}
           {!loading && habits.length > 0 && (
             <>
+              {!xpLoading && <XPLevelBar xp={xp} level={level} onClick={() => setShowXPSheet(true)} />}
               {userMode === "student" && (
                 <p className="text-[10px] text-indigo-400/70 uppercase tracking-wider font-semibold mb-1">📚 Academic Performance Score</p>
               )}
@@ -830,6 +817,7 @@ export default function DashboardPage() {
                 totalHabits={habits.length}
                 bestStreak={bestStreak}
                 totalXP={xp}
+                onOpenXP={() => setShowXPSheet(true)}
               />
             </>
           )}
@@ -1250,6 +1238,8 @@ export default function DashboardPage() {
               <p className="text-[11px] text-slate-400 mb-4 leading-relaxed">
                 {userMode === "student"
                   ? `Focus on your study habits${dreamUniversity ? ` — ${dreamUniversity} applications take consistency, not cramming.` : " — build the academic discipline that top universities look for."}`
+                  : !xpLoading && (bestStreak > 0 || xp > 0)
+                  ? `${bestStreak > 0 ? `${bestStreak}-day streak` : "Starting fresh"} · ${xp.toLocaleString()} XP earned. Your coach spots patterns across your habits and streaks to help you level up faster.`
                   : "Get personalised insights on your habits, streaks, and patterns — tailored to your goals."}
               </p>
               <button
@@ -1539,11 +1529,39 @@ export default function DashboardPage() {
             playSound("complete");
             onHabitCompleted(validity, focusHabit.how_long).then(({ luckyBonus }) => {
               if (luckyBonus) toast("🎰 Lucky bonus! +20 XP", "success", undefined, 2500);
+              toast("⚡ XP earned! Tap your level to see progress.", "success", undefined, 2000);
             }).catch(() => {});
           }}
           onClose={() => setFocusHabit(null)}
         />
       )}
+
+      {/* XP Detail Sheet */}
+      {showXPSheet && (
+        <XPDetailSheet
+          xp={xp}
+          level={level}
+          achievements={achievements}
+          bestStreak={bestStreak}
+          historicalLogs={historicalLogs}
+          totalCompletions={totalCompletions}
+          onClose={() => setShowXPSheet(false)}
+        />
+      )}
+
+      {/* Back to top */}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        aria-label="Back to top"
+        className="fixed bottom-20 sm:bottom-8 right-4 z-40 w-11 h-11 rounded-full bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white shadow-lg shadow-violet-900/40 flex items-center justify-center transition-all duration-200"
+        style={{
+          opacity: showBackToTop ? 1 : 0,
+          transform: showBackToTop ? "scale(1) translateY(0)" : "scale(0.8) translateY(8px)",
+          pointerEvents: showBackToTop ? "auto" : "none",
+        }}
+      >
+        <ChevronUp className="w-5 h-5" />
+      </button>
     </div>
   );
 }
