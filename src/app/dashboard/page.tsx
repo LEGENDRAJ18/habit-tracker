@@ -156,6 +156,7 @@ function XPLevelBar({ xp, level, onClick }: { xp: number; level: number; onClick
   const pct    = xpSpan > 0 ? Math.min(100, Math.round((xpInto / xpSpan) * 100)) : 100;
   return (
     <button
+      data-tour="xp-bar"
       onClick={onClick}
       className="w-full flex items-center gap-3 bg-[#0c0c18] border border-violet-900/25 hover:border-violet-600/45 rounded-xl px-3 py-2.5 mb-4 transition-all group active:scale-[0.99]"
     >
@@ -884,7 +885,7 @@ export default function DashboardPage() {
 
           {/* Progress bar */}
           {habits.length > 0 && (
-            <div className="mt-4 w-full h-1.5 bg-violet-950/60 rounded-full overflow-hidden">
+            <div data-tour="progress-bar" className="mt-4 w-full h-1.5 bg-violet-950/60 rounded-full overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-500 rounded-full transition-all duration-700"
                 style={{ width: habits.length > 0 ? `${Math.round((completedCount / habits.length) * 100)}%` : "0%" }}
@@ -1189,7 +1190,7 @@ export default function DashboardPage() {
         )}
 
         {/* Daily milestones — hidden on xl+ (right sidebar handles it) */}
-        <div className="xl:hidden">
+        <div data-tour="daily-milestones" className="xl:hidden">
           {!loading && habits.length > 0 && (
             <MilestoneCards
               completedCount={completedCount}

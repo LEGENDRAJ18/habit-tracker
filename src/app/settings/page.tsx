@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/client";
 import { friendlyError } from "@/lib/friendlyError";
 import { useProfile } from "@/hooks/useProfile";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
-import { TOUR_STORAGE_KEY, TOUR_SESSION_KEY } from "@/components/ui/OnboardingTour";
+import { TOUR_DONE_KEY, TOUR_FORCE_KEY } from "@/components/ui/OnboardingTour";
 import ReminderSettings from "@/components/dashboard/ReminderSettings";
 import {
   useAppearance, ACCENT_PALETTE,
@@ -448,7 +448,7 @@ function AccountTab({
               <p className="text-sm font-medium text-white">Retake the getting started tour</p>
               <p className="text-[11px] text-slate-500 mt-0.5">See the guided walkthrough of the app again</p>
             </div>
-            <button onClick={() => { localStorage.removeItem(TOUR_STORAGE_KEY); sessionStorage.removeItem(TOUR_SESSION_KEY); localStorage.removeItem("habitai-tour-p1"); localStorage.removeItem("habitai-tour-p2-step"); router.push("/dashboard"); }}
+            <button onClick={() => { localStorage.setItem(TOUR_FORCE_KEY, "1"); localStorage.removeItem(TOUR_DONE_KEY); router.push("/dashboard"); }}
               className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-violet-400 hover:text-violet-300 px-3 py-1.5 border border-violet-800/40 hover:border-violet-600/50 rounded-xl transition-all bg-violet-950/30 hover:bg-violet-950/50">
               <RotateCcw className="w-3 h-3" />Restart tour
             </button>

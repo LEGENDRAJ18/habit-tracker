@@ -1,25 +1,19 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X } from "lucide-react";
+import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
 // ─── Storage keys ─────────────────────────────────────────────────────────────
-export const TOUR_DONE_KEY    = "habitai-tour-done";
-// Legacy aliases kept for settings page reset button
+export const TOUR_DONE_KEY  = "habitai-tour-done";
+export const TOUR_FORCE_KEY = "habitai-tour-force";
+
+// Legacy aliases kept for any existing imports that reference these
 export const TOUR_STORAGE_KEY = TOUR_DONE_KEY;
-export const TOUR_SESSION_KEY = "habitai-tour-session-legacy";
-const TOUR_P1_KEY             = "habitai-tour-p1";      // step 0 was shown
-const TOUR_P2_KEY             = "habitai-tour-p2-step"; // "0"|"1"|"2" for steps 1-3
+export const TOUR_SESSION_KEY = "habitai-tour-session-legacy"; // no longer used
+
 const MS_48H = 48 * 60 * 60 * 1000;
 
 // ─── Step definitions ─────────────────────────────────────────────────────────
-const STEP_0 = {
-  emoji:      "✨",
-  title:      "Add your first habit",
-  body:       "Tap Add Habit to get started. Be specific — \"Walk 20 min\" sticks better than \"Exercise\".",
-  target:     "add-habit",
-  arrowSide:  "bottom" as Side,
-};
 
 type Side = "top" | "bottom" | "left" | "right";
 
@@ -27,42 +21,89 @@ interface Step {
   emoji:     string;
   title:     string;
   body:      string;
-  target:    string;
+  /** data-tour attribute to spotlight. null = centered card with no spotlight. */
+  target:    string | null;
   arrowSide: Side;
 }
 
-const PHASE2_STEPS: Step[] = [
+const STEPS: Step[] = [
   {
-    emoji:      "⭕",
-    title:      "Check this circle when done",
-    body:       "Tap the circle to complete the habit and earn XP. You'll see a satisfying pop and particles.",
-    target:     "first-habit-checkbox",
-    arrowSide:  "bottom",
+    emoji:     "👋",
+    title:     "Welcome to your dashboard",
+    body:      "Here's a quick 60-second tour. Use Next and Back to navigate, or tap Skip to close anytime.",
+    target:    null,
+    arrowSide: "bottom",
   },
   {
-    emoji:      "🔥",
-    title:      "Build a streak by completing daily",
-    body:       "Come back every day and check off your habits. The streak number grows the more consistent you are.",
-    target:     "first-habit-streak",
-    arrowSide:  "bottom",
+    emoji:     "⚡",
+    title:     "Your XP & Level",
+    body:      "This bar tracks your level and XP progress. Tap it anytime to see full stats, achievements, and your weekly XP breakdown.",
+    target:    "xp-bar",
+    arrowSide: "bottom",
   },
   {
-    emoji:      "⚡",
-    title:      "Level up to unlock rewards",
-    body:       "Each completion earns XP. Hit new levels to unlock badges and premium rewards.",
-    target:     "xp-level",
-    arrowSide:  "bottom",
+    emoji:     "➕",
+    title:     "Add a habit",
+    body:      "Tap here to create a new habit. Be specific — \"Walk 20 min\" earns full XP. Vague names earn partial XP.",
+    target:    "add-habit",
+    arrowSide: "bottom",
+  },
+  {
+    emoji:     "✅",
+    title:     "Complete a habit",
+    body:      "Tap the circle to mark a habit done. XP is awarded instantly — no sync delay, no waiting.",
+    target:    "first-habit-checkbox",
+    arrowSide: "bottom",
+  },
+  {
+    emoji:     "📊",
+    title:     "Today's progress",
+    body:      "This bar fills as you tick off habits. Hit 100% to unlock the daily completion bonus XP and trigger a confetti celebration.",
+    target:    "progress-bar",
+    arrowSide: "top",
+  },
+  {
+    emoji:     "🥇",
+    title:     "Daily milestones",
+    body:      "Earn bonus XP by hitting these targets: first habit today, all habits done, 7-day streak and more. Each can be shared.",
+    target:    "daily-milestones",
+    arrowSide: "top",
+  },
+  {
+    emoji:     "🤖",
+    title:     "AI Coaching",
+    body:      "Get personalised insights on your habits, patterns and streaks. The AI reads your actual history — not generic advice.",
+    target:    "ai-insight",
+    arrowSide: "left",
+  },
+  {
+    emoji:     "🧭",
+    title:     "Explore the app",
+    body:      "Analytics, Calendar, Friends and Profile are all here. Check your streak heatmap, challenge friends, and track your growth.",
+    target:    "analytics-nav",
+    arrowSide: "right",
+  },
+  {
+    emoji:     "🎉",
+    title:     "You're all set!",
+    body:      "You know everything you need to build winning habits. Let's go — your future self will thank you.",
+    target:    null,
+    arrowSide: "bottom",
   },
 ];
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-interface Rect { top: number; left: number; width: number; height: number; bottom: number; right: number }
+const TOTAL = STEPS.length;
+
+// ─── Geometry ─────────────────────────────────────────────────────────────────
+
+interface Rect { top: number; left: number; width: number; height: number }
 
 function getRect(target: string): Rect | null {
   const el = document.querySelector(`[data-tour="${target}"]`);
   if (!el) return null;
   const r = el.getBoundingClientRect();
-  return { top: r.top, left: r.left, width: r.width, height: r.height, bottom: r.bottom, right: r.right };
+  if (r.width === 0 && r.height === 0) return null;
+  return { top: r.top, left: r.left, width: r.width, height: r.height };
 }
 
 function scrollToTarget(target: string) {
@@ -70,263 +111,188 @@ function scrollToTarget(target: string) {
   el?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
-const CARD_W = 288;
-const CARD_H = 168;
-const PAD    = 10;
+const CARD_W = 300;
+const CARD_H = 200;
+const PAD    = 12;
 
-function calcTooltipPos(rect: Rect, preferSide: Side): React.CSSProperties {
+function calcTipPos(rect: Rect, preferSide: Side): React.CSSProperties {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-
-  const clampX = (left: number) =>
-    Math.min(Math.max(left, 12), vw - CARD_W - 12);
-
-  const centeredX = clampX(rect.left + rect.width / 2 - CARD_W / 2);
+  const clampX = (x: number) => Math.min(Math.max(x, 12), vw - CARD_W - 12);
+  const cx = clampX(rect.left + rect.width / 2 - CARD_W / 2);
 
   if (preferSide === "bottom") {
-    const spaceBelow = vh - rect.bottom - PAD;
-    if (spaceBelow >= CARD_H + 16) {
-      return { position: "fixed", top: rect.bottom + PAD + 8, left: centeredX };
-    }
-    // Not enough below — go above
-    const top = rect.top - PAD - CARD_H - 8;
-    if (top > 0) return { position: "fixed", top, left: centeredX };
+    if (vh - rect.top - rect.height - PAD >= CARD_H + 16)
+      return { position: "fixed", top: rect.top + rect.height + PAD + 8, left: cx };
+    if (rect.top - PAD - CARD_H - 8 > 0)
+      return { position: "fixed", top: rect.top - PAD - CARD_H - 8, left: cx };
   }
-
+  if (preferSide === "top") {
+    if (rect.top - PAD - CARD_H - 8 > 0)
+      return { position: "fixed", top: rect.top - PAD - CARD_H - 8, left: cx };
+    if (vh - rect.top - rect.height - PAD >= CARD_H + 16)
+      return { position: "fixed", top: rect.top + rect.height + PAD + 8, left: cx };
+  }
   if (preferSide === "right") {
-    const spaceRight = vw - rect.right - PAD;
-    if (spaceRight >= CARD_W + 12) {
-      return { position: "fixed", top: rect.top, left: rect.right + PAD + 8 };
-    }
+    if (vw - rect.left - rect.width - PAD >= CARD_W + 12)
+      return { position: "fixed", top: Math.max(12, rect.top - 8), left: rect.left + rect.width + PAD + 8 };
   }
-
   if (preferSide === "left") {
-    const spaceLeft = rect.left - PAD;
-    if (spaceLeft >= CARD_W + 12) {
-      return { position: "fixed", top: rect.top, left: rect.left - PAD - CARD_W - 8 };
-    }
+    if (rect.left - PAD >= CARD_W + 12)
+      return { position: "fixed", top: Math.max(12, rect.top - 8), left: rect.left - PAD - CARD_W - 8 };
   }
-
-  // Fallback: below
-  const top = Math.min(rect.bottom + PAD + 8, vh - CARD_H - 16);
-  return { position: "fixed", top, left: centeredX };
+  // Fallback: center
+  return { position: "fixed", top: Math.max(12, vh / 2 - CARD_H / 2), left: vw / 2 - CARD_W / 2 };
 }
 
-// Which edge of the TOOLTIP card the arrow sits on (pointing toward the target)
-function arrowEdge(tooltipStyle: React.CSSProperties, targetRect: Rect): Side {
-  const tTop  = (tooltipStyle.top  as number) ?? 0;
-  const tLeft = (tooltipStyle.left as number) ?? 0;
-  const tooltipMidY = tTop  + CARD_H / 2;
-  const tooltipMidX = tLeft + CARD_W / 2;
-  const targetMidY  = targetRect.top  + targetRect.height / 2;
-  const targetMidX  = targetRect.left + targetRect.width  / 2;
-
-  const dy = targetMidY - tooltipMidY;
-  const dx = targetMidX - tooltipMidX;
-
+function arrowEdge(tipStyle: React.CSSProperties, rect: Rect): Side {
+  const dy = (rect.top + rect.height / 2) - ((tipStyle.top as number ?? 0) + CARD_H / 2);
+  const dx = (rect.left + rect.width / 2) - ((tipStyle.left as number ?? 0) + CARD_W / 2);
   if (Math.abs(dy) >= Math.abs(dx)) return dy > 0 ? "bottom" : "top";
   return dx > 0 ? "right" : "left";
 }
 
-interface ArrowProps {
-  edge: Side;
-  targetMidX: number;
-  targetMidY: number;
-  tooltipLeft: number;
-  tooltipTop: number;
-}
-
-function Arrow({ edge, targetMidX, targetMidY, tooltipLeft, tooltipTop }: ArrowProps) {
+function Arrow({ edge, tgtMX, tgtMY, tipL, tipT }: {
+  edge: Side; tgtMX: number; tgtMY: number; tipL: number; tipT: number;
+}) {
   const S = 12;
   const base: React.CSSProperties = {
-    position:  "absolute",
-    width:     S,
-    height:    S,
-    background: "#0f0f1a",
-    transform: "rotate(45deg)",
+    position: "absolute", width: S, height: S,
+    background: "#0f0f1a", transform: "rotate(45deg)",
   };
-
+  const bdr = "1px solid rgba(124,58,237,0.45)";
   if (edge === "top") {
-    const offset = Math.min(Math.max(targetMidX - tooltipLeft - S / 2, 16), CARD_W - 32);
-    return (
-      <div style={{
-        ...base,
-        top:    -S / 2 - 1,
-        left:   offset,
-        borderTop:  "1px solid rgba(124,58,237,0.4)",
-        borderLeft: "1px solid rgba(124,58,237,0.4)",
-      }} />
-    );
+    const off = Math.min(Math.max(tgtMX - tipL - S / 2, 16), CARD_W - 32);
+    return <div style={{ ...base, top: -S/2-1, left: off, borderTop: bdr, borderLeft: bdr }} />;
   }
   if (edge === "bottom") {
-    const offset = Math.min(Math.max(targetMidX - tooltipLeft - S / 2, 16), CARD_W - 32);
-    return (
-      <div style={{
-        ...base,
-        bottom:       -S / 2 - 1,
-        left:         offset,
-        borderBottom: "1px solid rgba(124,58,237,0.4)",
-        borderRight:  "1px solid rgba(124,58,237,0.4)",
-      }} />
-    );
+    const off = Math.min(Math.max(tgtMX - tipL - S / 2, 16), CARD_W - 32);
+    return <div style={{ ...base, bottom: -S/2-1, left: off, borderBottom: bdr, borderRight: bdr }} />;
   }
   if (edge === "left") {
-    const offset = Math.min(Math.max(targetMidY - tooltipTop - S / 2, 16), CARD_H - 32);
-    return (
-      <div style={{
-        ...base,
-        left:       -S / 2 - 1,
-        top:        offset,
-        borderLeft:   "1px solid rgba(124,58,237,0.4)",
-        borderBottom: "1px solid rgba(124,58,237,0.4)",
-      }} />
-    );
+    const off = Math.min(Math.max(tgtMY - tipT - S / 2, 16), CARD_H - 32);
+    return <div style={{ ...base, left: -S/2-1, top: off, borderLeft: bdr, borderBottom: bdr }} />;
   }
-  // right
-  const offset = Math.min(Math.max(targetMidY - tooltipTop - S / 2, 16), CARD_H - 32);
-  return (
-    <div style={{
-      ...base,
-      right:      -S / 2 - 1,
-      top:        offset,
-      borderRight: "1px solid rgba(124,58,237,0.4)",
-      borderTop:   "1px solid rgba(124,58,237,0.4)",
-    }} />
-  );
+  const off = Math.min(Math.max(tgtMY - tipT - S / 2, 16), CARD_H - 32);
+  return <div style={{ ...base, right: -S/2-1, top: off, borderRight: bdr, borderTop: bdr }} />;
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
-interface Props {
-  habitCount: number;
-  signedUpAt: string | null;
-}
+// ─── Main component ───────────────────────────────────────────────────────────
 
-type Phase = "idle" | "phase1" | "waiting" | "phase2" | "done";
+export default function OnboardingTour({ habitCount, signedUpAt }: { habitCount: number; signedUpAt: string | null }) {
+  const [active,   setActive]   = useState(false);
+  const [step,     setStep]     = useState(0);
+  const [rect,     setRect]     = useState<Rect | null>(null);
+  const [tipStyle, setTipStyle] = useState<React.CSSProperties>({});
+  const pendingRef = useRef(false);
 
-export default function OnboardingTour({ habitCount, signedUpAt }: Props) {
-  const [phase,   setPhase]   = useState<Phase>("idle");
-  const [p2Step,  setP2Step]  = useState(0); // 0-2 within PHASE2_STEPS
-  const [rect,    setRect]    = useState<Rect | null>(null);
-  const [tipPos,  setTipPos]  = useState<React.CSSProperties>({});
-  const prevCountRef = useRef(habitCount);
-
-  // ── Decide initial phase once at mount ──────────────────────────────────────
+  // ── Decide whether to start ──────────────────────────────────────────────────
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (localStorage.getItem(TOUR_DONE_KEY)) return;
 
-    // If we're in the middle of phase 2 (user refreshed after adding first habit)
-    const p2Stored = localStorage.getItem(TOUR_P2_KEY);
-    if (p2Stored !== null && habitCount > 0) {
-      const stored = parseInt(p2Stored, 10);
-      setP2Step(isNaN(stored) ? 0 : stored);
-      const t = setTimeout(() => setPhase("phase2"), 800);
-      return () => clearTimeout(t);
-    }
-
-    // Phase 1: new user, no habits
-    const p1Done = !!localStorage.getItem(TOUR_P1_KEY);
-    if (!p1Done && habitCount === 0) {
-      if (!signedUpAt || Date.now() - new Date(signedUpAt).getTime() > MS_48H) return;
-      const t = setTimeout(() => setPhase("phase1"), 1200);
-      return () => clearTimeout(t);
-    }
-
-    // Phase 1 done, still 0 habits — waiting for user to add one
-    if (p1Done && habitCount === 0) {
-      setPhase("waiting");
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // intentionally empty — data is final when parent renders this component
-
-  // ── Detect habit count 0 → 1 to auto-trigger phase 2 ───────────────────────
-  useEffect(() => {
-    if (phase !== "waiting" && phase !== "phase1") {
-      prevCountRef.current = habitCount;
+    // Settings "Restart tour" button sets this key then navigates here
+    if (localStorage.getItem(TOUR_FORCE_KEY)) {
+      localStorage.removeItem(TOUR_FORCE_KEY);
+      setTimeout(() => { setStep(0); setActive(true); }, 500);
       return;
     }
-    if (prevCountRef.current === 0 && habitCount > 0) {
-      localStorage.setItem(TOUR_P2_KEY, "0");
-      setP2Step(0);
-      // Small delay so the habit card has time to render
-      setTimeout(() => setPhase("phase2"), 600);
+
+    // Already completed — don't auto-show again
+    if (localStorage.getItem(TOUR_DONE_KEY)) return;
+
+    // Auto-trigger for new users only
+    if (!signedUpAt) return;
+    if (Date.now() - new Date(signedUpAt).getTime() > MS_48H) return;
+
+    if (habitCount > 0) {
+      setTimeout(() => { setStep(0); setActive(true); }, 1500);
+    } else {
+      // Wait until they add their first habit
+      pendingRef.current = true;
     }
-    prevCountRef.current = habitCount;
-  }, [habitCount, phase]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // ── Update rect whenever phase/step changes ──────────────────────────────────
-  const target = phase === "phase1"
-    ? STEP_0.target
-    : PHASE2_STEPS[p2Step]?.target ?? "";
+  // Watch for first habit added (new users who land with 0 habits)
+  useEffect(() => {
+    if (!pendingRef.current) return;
+    if (habitCount > 0) {
+      pendingRef.current = false;
+      setTimeout(() => { setStep(0); setActive(true); }, 700);
+    }
+  }, [habitCount]);
 
-  const updateRect = useCallback(() => {
-    const r = getRect(target);
+  // ── Update spotlight rect when step changes ───────────────────────────────────
+  const cur = STEPS[step];
+
+  const measure = useCallback(() => {
+    if (!cur?.target) { setRect(null); return; }
+    const r = getRect(cur.target);
     setRect(r);
-    if (r) setTipPos(calcTooltipPos(r, phase === "phase1" ? STEP_0.arrowSide : (PHASE2_STEPS[p2Step]?.arrowSide ?? "bottom")));
-  }, [target, phase, p2Step]);
+    if (r) setTipStyle(calcTipPos(r, cur.arrowSide));
+  }, [cur]);
 
   useEffect(() => {
-    if (phase !== "phase1" && phase !== "phase2") return;
-    // Scroll then measure (give the scroll time to finish)
-    scrollToTarget(target);
-    const t = setTimeout(updateRect, 350);
-    const onResize = () => updateRect();
-    window.addEventListener("resize", onResize);
-    return () => { clearTimeout(t); window.removeEventListener("resize", onResize); };
-  }, [phase, target, updateRect]);
+    if (!active) return;
+    if (cur?.target) scrollToTarget(cur.target);
+    const t = setTimeout(measure, 360);
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, { passive: true });
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure);
+    };
+  }, [active, step, measure, cur]);
 
-  // ── Actions ──────────────────────────────────────────────────────────────────
-  const done = useCallback(() => {
+  // ── Actions ───────────────────────────────────────────────────────────────────
+  const finish = useCallback(() => {
     localStorage.setItem(TOUR_DONE_KEY, "true");
-    localStorage.removeItem(TOUR_P2_KEY);
-    setPhase("done");
+    setActive(false);
   }, []);
 
   const next = useCallback(() => {
-    if (phase === "phase1") {
-      // Mark phase 1 done and wait for habit
-      localStorage.setItem(TOUR_P1_KEY, "1");
-      setPhase("waiting");
-      return;
-    }
-    if (phase === "phase2") {
-      if (p2Step >= PHASE2_STEPS.length - 1) { done(); return; }
-      const next = p2Step + 1;
-      localStorage.setItem(TOUR_P2_KEY, String(next));
-      setP2Step(next);
-    }
-  }, [phase, p2Step, done]);
+    if (step >= TOTAL - 1) { finish(); return; }
+    setStep((s) => s + 1);
+  }, [step, finish]);
 
-  if (phase !== "phase1" && phase !== "phase2") return null;
+  const back = useCallback(() => {
+    if (step > 0) setStep((s) => s - 1);
+  }, [step]);
 
-  const isPhase1  = phase === "phase1";
-  const totalSteps = 1 + PHASE2_STEPS.length; // 4 total
-  const stepIndex  = isPhase1 ? 0 : 1 + p2Step;
-  const current    = isPhase1 ? STEP_0 : PHASE2_STEPS[p2Step];
-  const hasRect    = rect && rect.width > 0;
+  if (!active || !cur) return null;
 
-  const spotStyle = hasRect
+  // ── Rendering ─────────────────────────────────────────────────────────────────
+  const hasSpot  = !!rect;
+  const centered = !cur.target || !hasSpot;
+  const spot     = hasSpot
     ? { top: rect.top - PAD, left: rect.left - PAD, width: rect.width + PAD * 2, height: rect.height + PAD * 2 }
     : null;
-
-  const edge = hasRect ? arrowEdge(tipPos, rect) : "top";
+  const tipPos   = centered
+    ? {
+        position: "fixed" as const,
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%,-50%)",
+      }
+    : tipStyle;
+  const edge = hasSpot ? arrowEdge(tipStyle, rect) : "top";
 
   return (
-    <div className="fixed inset-0 z-[80]" aria-live="polite">
-      {/* Dimmed backdrop */}
-      <div className="absolute inset-0 bg-black/65 backdrop-blur-[2px]" onClick={done} />
+    <div className="fixed inset-0 z-[80]" aria-live="polite" aria-modal="true">
+      {/* Dim overlay — clicking it dismisses */}
+      <div className="absolute inset-0 bg-black/72 backdrop-blur-[2px]" onClick={finish} />
 
-      {/* Spotlight cutout */}
-      {spotStyle && (
+      {/* Spotlight ring around target element */}
+      {spot && (
         <div
-          className="absolute pointer-events-none rounded-xl ring-2 ring-violet-400/80"
+          className="absolute rounded-xl pointer-events-none"
           style={{
-            top:    spotStyle.top,
-            left:   spotStyle.left,
-            width:  spotStyle.width,
-            height: spotStyle.height,
-            boxShadow: "0 0 0 9999px rgba(0,0,0,0.0)",
-            background: "transparent",
+            top:    spot.top,
+            left:   spot.left,
+            width:  spot.width,
+            height: spot.height,
+            boxShadow: "0 0 0 3px rgba(139,92,246,0.95), 0 0 24px 6px rgba(139,92,246,0.35)",
             zIndex: 1,
           }}
         />
@@ -334,34 +300,39 @@ export default function OnboardingTour({ habitCount, signedUpAt }: Props) {
 
       {/* Tooltip card */}
       <div
-        className="absolute z-10 bg-[#0f0f1a] border border-violet-600/40 rounded-2xl shadow-2xl shadow-violet-950/70 p-5 select-none"
-        style={{ ...tipPos, width: CARD_W, animation: "toastSlideUp 0.35s cubic-bezier(0.34,1.56,0.64,1) both" }}
+        className="absolute z-10 bg-[#0f0f1a] border border-violet-600/45 rounded-2xl shadow-2xl shadow-violet-950/70 p-5 select-none"
+        style={{
+          ...tipPos,
+          width: CARD_W,
+          animation: "toastSlideUp 0.3s cubic-bezier(0.34,1.56,0.64,1) both",
+        }}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Arrow caret */}
-        {hasRect && (
+        {hasSpot && !centered && (
           <Arrow
             edge={edge}
-            targetMidX={rect.left + rect.width / 2}
-            targetMidY={rect.top  + rect.height / 2}
-            tooltipLeft={(tipPos.left as number) ?? 0}
-            tooltipTop={(tipPos.top  as number) ?? 0}
+            tgtMX={rect.left + rect.width  / 2}
+            tgtMY={rect.top  + rect.height / 2}
+            tipL={(tipStyle.left as number) ?? 0}
+            tipT={(tipStyle.top  as number) ?? 0}
           />
         )}
 
-        {/* Header: progress dots + close */}
+        {/* Progress bar */}
         <div className="flex items-center gap-1.5 mb-4">
-          {Array.from({ length: totalSteps }).map((_, i) => (
+          {STEPS.map((_, i) => (
             <div
               key={i}
               className="h-1 rounded-full transition-all duration-300"
               style={{
-                width:      i === stepIndex ? 20 : 8,
-                background: i < stepIndex ? "#6d28d9" : i === stepIndex ? "#8b5cf6" : "#1e1b4b",
+                width:      i === step ? 22 : 7,
+                background: i < step ? "#6d28d9" : i === step ? "#8b5cf6" : "#1e1b4b",
               }}
             />
           ))}
           <button
-            onClick={done}
+            onClick={finish}
             aria-label="Skip tour"
             className="ml-auto text-slate-700 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50"
           >
@@ -369,31 +340,33 @@ export default function OnboardingTour({ habitCount, signedUpAt }: Props) {
           </button>
         </div>
 
-        <p className="text-2xl leading-none mb-2">{current.emoji}</p>
-        <h3 className="text-sm font-bold text-white mb-1.5 leading-snug">{current.title}</h3>
-        <p className="text-xs text-slate-400 leading-relaxed mb-4">{current.body}</p>
+        <p className="text-2xl leading-none mb-2">{cur.emoji}</p>
+        <h3 className="text-sm font-bold text-white mb-1.5 leading-snug">{cur.title}</h3>
+        <p className="text-xs text-slate-400 leading-relaxed mb-4">{cur.body}</p>
 
-        {/* Step counter + actions */}
+        {/* Navigation row */}
         <div className="flex items-center justify-between">
-          <span className="text-[10px] text-slate-700 tabular-nums">
-            {stepIndex + 1} of {totalSteps}
-          </span>
+          <span className="text-[10px] text-slate-700 tabular-nums">{step + 1} / {TOTAL}</span>
           <div className="flex items-center gap-2">
+            {step > 0 && (
+              <button
+                onClick={back}
+                className="flex items-center gap-0.5 px-2.5 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-300 rounded-lg border border-violet-900/30 hover:border-violet-700/50 transition-all"
+              >
+                <ChevronLeft className="w-3 h-3" />Back
+              </button>
+            )}
             <button
-              onClick={done}
+              onClick={finish}
               className="text-xs text-slate-600 hover:text-slate-400 transition-colors px-2 py-1"
             >
               Skip
             </button>
             <button
               onClick={next}
-              className="px-4 py-1.5 bg-violet-600 hover:bg-violet-500 active:scale-95 text-white text-xs font-semibold rounded-lg transition-all shadow-md shadow-violet-900/30"
+              className="flex items-center gap-0.5 px-4 py-1.5 bg-violet-600 hover:bg-violet-500 active:scale-95 text-white text-xs font-semibold rounded-lg transition-all shadow-md shadow-violet-900/30"
             >
-              {isPhase1
-                ? "Got it →"
-                : p2Step < PHASE2_STEPS.length - 1
-                  ? "Next →"
-                  : "Done ✓"}
+              {step >= TOTAL - 1 ? "Done ✓" : "Next"}<ChevronRight className="w-3 h-3" />
             </button>
           </div>
         </div>
