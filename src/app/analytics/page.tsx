@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import {
   Flame, Zap, CheckCircle2, TrendingUp,
-  Calendar, BarChart2, Loader2, Lock, BarChart as BarChartIcon, Crown, Download,
+  Calendar, BarChart2, Loader2, Lock, BarChart as BarChartIcon, Crown, Download, Timer,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -445,6 +445,49 @@ function HabitCorrelationCard({ habits, logs }: { habits: Habit[]; logs: Pick<Ha
   );
 }
 
+// ─── focus week chart ─────────────────────────────────────────────────────────
+
+function fmtMin(min: number): string {
+  if (min < 60) return `${min}m`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
+function FocusWeekChart({ weeklyData }: { weeklyData: number[] }) {
+  const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const data = weeklyData.map((v, i) => ({ label: DAY_LABELS[i] ?? `D${i}`, minutes: v }));
+  const maxVal = Math.max(1, ...data.map((d) => d.minutes));
+
+  return (
+    <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-5">
+      <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+        <Timer className="w-4 h-4 text-violet-400" />
+        Focus time this week
+      </h3>
+      <ResponsiveContainer width="100%" height={140}>
+        <BarChart data={data} margin={{ top: 4, right: 0, left: -28, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(109,40,217,0.1)" vertical={false} />
+          <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#475569" }} axisLine={false} tickLine={false} />
+          <YAxis tick={{ fontSize: 9, fill: "#475569" }} axisLine={false} tickLine={false} allowDecimals={false} />
+          <Tooltip
+            contentStyle={{ background: "#0f0f1a", border: "1px solid rgba(109,40,217,0.3)", borderRadius: "10px", fontSize: "12px" }}
+            labelStyle={{ color: "#94a3b8" }}
+            itemStyle={{ color: "#a78bfa" }}
+            cursor={{ fill: "rgba(109,40,217,0.08)" }}
+            formatter={(v) => [fmtMin(Number(v ?? 0)), "Focus"]}
+          />
+          <Bar dataKey="minutes" name="Focus" radius={[4, 4, 0, 0]}>
+            {data.map((entry, i) => (
+              <Cell key={i} fill={entry.minutes === maxVal && entry.minutes > 0 ? "#8b5cf6" : "rgba(109,40,217,0.45)"} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 // ─── blur gate for free users ─────────────────────────────────────────────────
 
 function BlurGate({ children }: { children: React.ReactNode }) {
@@ -521,6 +564,7 @@ export default function AnalyticsPage() {
   const [tier, setTier]             = useState<Plan>("free");
   const [userId, setUserId]         = useState<string | null>(null);
   const [exporting, setExporting]   = useState(false);
+  const [focusStats, setFocusStats] = useState<{ dailyTotal: number; weeklyData: number[]; personalBest: number; totalSessions: number } | null>(null);
 
   const downloadCSV = useCallback(async () => {
     if (!userId) return;
@@ -577,6 +621,11 @@ export default function AnalyticsPage() {
       setLogs(l ?? []);
       setTier((p?.subscription_tier as Plan) ?? "free");
       setLoading(false);
+      // Fetch focus stats in the background
+      fetch("/api/focus")
+        .then((r) => r.ok ? r.json() : null)
+        .then((d) => { if (d) setFocusStats(d); })
+        .catch(() => {});
     })();
   }, []);
 
@@ -711,6 +760,48 @@ export default function AnalyticsPage() {
                 color="emerald"
               />
             </div>
+
+            {/* Focus stats — shown when user has logged focus sessions */}
+            {focusStats && (focusStats.dailyTotal > 0 || focusStats.totalSessions > 0) && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <Timer className="w-4 h-4 text-violet-400" />
+                    Focus Sessions
+                  </h2>
+                </div>
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                  <StatCard
+                    icon={<Timer className="w-4 h-4" />}
+                    label="Today"
+                    value={focusStats.dailyTotal > 0 ? fmtMin(focusStats.dailyTotal) : "—"}
+                    sub="focused today"
+                    color="violet"
+                  />
+                  <StatCard
+                    icon={<Zap className="w-4 h-4" />}
+                    label="This week"
+                    value={fmtMin(focusStats.weeklyData.reduce((s, v) => s + v, 0))}
+                    sub="total focus time"
+                    color="blue"
+                  />
+                  <StatCard
+                    icon={<TrendingUp className="w-4 h-4" />}
+                    label="Best day"
+                    value={focusStats.personalBest > 0 ? fmtMin(focusStats.personalBest) : "—"}
+                    sub={`${focusStats.totalSessions} sessions completed`}
+                    color="emerald"
+                  />
+                </div>
+                {isPaid ? (
+                  <FocusWeekChart weeklyData={focusStats.weeklyData} />
+                ) : (
+                  <BlurGate>
+                    <FocusWeekChart weeklyData={focusStats.weeklyData} />
+                  </BlurGate>
+                )}
+              </div>
+            )}
 
             {/* Most consistent habit — always visible */}
             {mostConsistentHabit && (

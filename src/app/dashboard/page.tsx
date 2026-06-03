@@ -39,6 +39,7 @@ import MoodCheckin from "@/components/dashboard/MoodCheckin";
 import ParentDashboard from "@/components/dashboard/ParentDashboard";
 import TeacherDashboard from "@/components/dashboard/TeacherDashboard";
 import FocusTimer from "@/components/dashboard/FocusTimer";
+import FocusStatsWidget from "@/components/dashboard/FocusStatsWidget";
 import FirstCompletionModal from "@/components/dashboard/FirstCompletionModal";
 import type { Habit } from "@/types";
 
@@ -1186,6 +1187,7 @@ export default function DashboardPage() {
               totalXP={xp}
               onOpenXP={() => setShowXPSheet(true)}
             />
+            {habits.some((h) => h.duration_minutes) && <FocusStatsWidget />}
           </div>
         )}
 
