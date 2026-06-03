@@ -60,39 +60,44 @@ export function useXP() {
   const supabase = useRef(createClient()).current;
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) { setXPLoading(false); return; }
-      supabase
-        .from("profiles")
-        .select("xp, level, achievements, daily_milestones, total_completions")
-        .eq("id", user.id)
-        .single()
-        .then(({ data }) => {
-          const loadedXP    = data?.xp ?? 0;
-          const loadedLevel = data?.level ?? 1;
-          const loadedAch   = (data?.achievements as AchievementId[]) ?? [];
-          const loadedTotal = data?.total_completions ?? 0;
-          const today       = new Date().toISOString().split("T")[0];
-          const rawDM       = data?.daily_milestones as DailyMilestoneState | null;
-          const loadedDM: DailyMilestoneState =
-            rawDM?.date === today
-              ? rawDM
-              : { date: today, achieved: [] };
+    void (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { setXPLoading(false); return; }
+        const { data } = await supabase
+          .from("profiles")
+          .select("xp, level, achievements, daily_milestones, total_completions")
+          .eq("id", user.id)
+          .single();
 
-          xpRef.current           = loadedXP;
-          levelRef.current        = loadedLevel;
-          achievementsRef.current = loadedAch;
-          dailyRef.current        = loadedDM;
-          totalRef.current        = loadedTotal;
+        const loadedXP    = data?.xp ?? 0;
+        const loadedLevel = data?.level ?? 1;
+        const loadedAch   = (data?.achievements as AchievementId[]) ?? [];
+        const loadedTotal = data?.total_completions ?? 0;
+        const today       = new Date().toISOString().split("T")[0];
+        const rawDM       = data?.daily_milestones as DailyMilestoneState | null;
+        const loadedDM: DailyMilestoneState =
+          rawDM?.date === today
+            ? rawDM
+            : { date: today, achieved: [] };
 
-          setXP(loadedXP);
-          setLevel(loadedLevel);
-          setAchievements(loadedAch);
-          setDailyMilestones(loadedDM);
-          setTotalCompletions(loadedTotal);
-          setXPLoading(false);
-        });
-    });
+        xpRef.current           = loadedXP;
+        levelRef.current        = loadedLevel;
+        achievementsRef.current = loadedAch;
+        dailyRef.current        = loadedDM;
+        totalRef.current        = loadedTotal;
+
+        setXP(loadedXP);
+        setLevel(loadedLevel);
+        setAchievements(loadedAch);
+        setDailyMilestones(loadedDM);
+        setTotalCompletions(loadedTotal);
+      } catch {
+        // ignore — loading state cleaned up below
+      } finally {
+        setXPLoading(false);
+      }
+    })();
   }, [supabase]);
 
   // Core: award XP and detect level-up

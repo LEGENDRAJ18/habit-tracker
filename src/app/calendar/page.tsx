@@ -26,7 +26,7 @@ function fmtShort(ds: string) {
   const tomorrow = toDateStr(new Date(Date.now() + 86400000));
   if (ds === today)    return "Today";
   if (ds === tomorrow) return "Tomorrow";
-  return new Date(ds + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  return new Date(ds + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 }
 function computeBestStreak(logs: { completed_at: string }[]): number {
   if (!logs.length) return 0;
@@ -542,7 +542,7 @@ function MonthInsights({ logs, habits, year, month }: {
       if (c > bestDayCount) { bestDayCount = c; bestDay = d; }
     }
     const bestDayLabel = bestDay
-      ? new Date(bestDay + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", day: "numeric" })
+      ? new Date(bestDay + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", day: "numeric" })
       : "—";
 
     return { total, completionRate, bestDayLabel };
@@ -615,11 +615,11 @@ function MonthInsights({ logs, habits, year, month }: {
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
               <div className="bg-amber-950/25 border border-amber-800/20 rounded-xl p-3">
-                <p className="text-xl font-black text-amber-300 leading-none">{insights.bestDow.slice(0, 3)}</p>
+                <p className="text-sm font-black text-amber-300 leading-none">{insights.bestDow}</p>
                 <p className="text-[9px] text-slate-500 mt-1.5 uppercase tracking-wider">best day</p>
               </div>
               <div className="bg-blue-950/25 border border-blue-800/20 rounded-xl p-3">
-                <p className="text-xl font-black text-blue-300 leading-none capitalize">{insights.bestTime.slice(0, 4)}</p>
+                <p className="text-sm font-black text-blue-300 leading-none capitalize">{insights.bestTime}</p>
                 <p className="text-[9px] text-slate-500 mt-1.5 uppercase tracking-wider">peak time</p>
               </div>
             </div>

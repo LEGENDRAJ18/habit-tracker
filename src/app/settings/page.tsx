@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyError } from "@/lib/friendlyError";
+import { xpForLevel, levelName, levelEmoji, levelFromXP, xpIntoLevel, xpSpanOfLevel } from "@/lib/xp";
 import { useProfile } from "@/hooks/useProfile";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { TOUR_DONE_KEY, TOUR_FORCE_KEY } from "@/components/ui/OnboardingTour";
@@ -721,6 +722,159 @@ function HelpTab() {
   );
 }
 
+// ─── Level Guide ──────────────────────────────────────────────────────────────
+
+function LevelGuideSection() {
+  const supabase = createClient();
+  const [xp, setXp] = useState(0);
+  const [level, setLevel] = useState(1);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoaded(true); return; }
+      const { data } = await supabase.from("profiles").select("xp, level").eq("id", user.id).single();
+      if (data) { setXp(data.xp ?? 0); setLevel(data.level ?? 1); }
+      setLoaded(true);
+    })();
+  }, [supabase]);
+
+  const curLevel = levelFromXP(xp);
+  const intoLevel = xpIntoLevel(xp);
+  const span = xpSpanOfLevel(xp);
+  const pct = span > 0 ? Math.round((intoLevel / span) * 100) : 100;
+
+  const LEVEL_TABLE = [
+    { lvl: 1, xp: 0,     name: "Beginner",   emoji: "🌱" },
+    { lvl: 2, xp: 100,   name: "Beginner",   emoji: "🌱" },
+    { lvl: 3, xp: 250,   name: "Rising",     emoji: "🌿" },
+    { lvl: 4, xp: 500,   name: "Rising",     emoji: "🌿" },
+    { lvl: 5, xp: 1000,  name: "Committed",  emoji: "💪" },
+    { lvl: 6, xp: 2000,  name: "Committed",  emoji: "💪" },
+    { lvl: 7, xp: 3500,  name: "Dedicated",  emoji: "🔥" },
+    { lvl: 8, xp: 5000,  name: "Dedicated",  emoji: "🔥" },
+    { lvl: 9, xp: 7500,  name: "Elite",      emoji: "⚡" },
+    { lvl: 10, xp: 10000, name: "Elite",     emoji: "⚡" },
+    { lvl: 11, xp: 13000, name: "Legend",    emoji: "👑" },
+  ];
+
+  return (
+    <div className={cardCls}>
+      <div className="flex items-center gap-2 mb-2">
+        <Zap className="w-4 h-4 text-violet-400" />
+        <p className="text-sm font-semibold text-white">Level Guide</p>
+      </div>
+      <p className="text-xs text-slate-500 leading-relaxed">
+        Earn XP by completing habits every day. Level up to unlock identity titles and show off your consistency.
+      </p>
+
+      {/* Current level progress */}
+      {loaded && (
+        <div className="bg-violet-950/40 border border-violet-800/25 rounded-xl p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xl leading-none">{levelEmoji(curLevel)}</span>
+              <div>
+                <p className="text-sm font-bold text-white">Level {curLevel} · {levelName(curLevel)}</p>
+                <p className="text-[11px] text-slate-500">{xp.toLocaleString()} XP total</p>
+              </div>
+            </div>
+            {curLevel < 11 && (
+              <p className="text-xs text-slate-500 text-right">
+                <span className="text-violet-300 font-semibold">{intoLevel}</span> / {span} XP<br />
+                <span className="text-[10px]">to level {curLevel + 1}</span>
+              </p>
+            )}
+          </div>
+          {curLevel < 11 && (
+            <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all"
+                style={{ width: `${pct}%`, backgroundColor: "var(--a-500, #8b5cf6)" }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* XP sources */}
+      <div className="space-y-1.5">
+        <p className="text-xs font-semibold text-slate-400 mt-1">How to earn XP</p>
+        {[
+          { label: "Complete a habit",        xp: "+10 XP" },
+          { label: "Complete all habits today", xp: "+25 XP bonus" },
+          { label: "Daily login",             xp: "+5 XP" },
+          { label: "7-day streak",            xp: "+50 XP bonus" },
+          { label: "30-day streak",           xp: "+200 XP bonus" },
+          { label: "Lucky bonus (12% chance)", xp: "+20 XP" },
+        ].map(({ label, xp: xpVal }) => (
+          <div key={label} className="flex items-center justify-between py-1.5 border-b border-violet-900/15 last:border-0">
+            <span className="text-xs text-slate-400">{label}</span>
+            <span className="text-xs font-bold text-violet-300">{xpVal}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Level table */}
+      <div className="space-y-1">
+        <p className="text-xs font-semibold text-slate-400 mt-1">Level thresholds</p>
+        <div className="overflow-hidden rounded-xl border border-violet-900/20">
+          {LEVEL_TABLE.map((row, i) => {
+            const isCurrentLevel = row.lvl === curLevel;
+            return (
+              <div
+                key={row.lvl}
+                className={`flex items-center gap-3 px-3 py-2 text-xs ${
+                  isCurrentLevel
+                    ? "bg-violet-900/40 border-l-2 border-violet-500"
+                    : i % 2 === 0 ? "bg-violet-950/20" : "bg-transparent"
+                }`}
+              >
+                <span className="text-sm leading-none w-5 flex-shrink-0">{row.emoji}</span>
+                <span className={`font-bold w-14 flex-shrink-0 ${isCurrentLevel ? "text-violet-300" : "text-slate-400"}`}>
+                  Level {row.lvl}
+                </span>
+                <span className={`flex-1 ${isCurrentLevel ? "text-white font-medium" : "text-slate-500"}`}>{row.name}</span>
+                <span className={`font-semibold text-right ${isCurrentLevel ? "text-violet-300" : "text-slate-600"}`}>
+                  {row.xp.toLocaleString()} XP
+                </span>
+                {isCurrentLevel && (
+                  <span className="text-[9px] font-bold text-violet-400 bg-violet-900/50 px-1.5 py-0.5 rounded-full flex-shrink-0">YOU</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-[10px] text-slate-600 text-center mt-1">Level 11+ costs 3,000 XP per level</p>
+      </div>
+
+      {/* Identity Score */}
+      <div className="bg-slate-900/40 border border-slate-700/30 rounded-xl p-3 space-y-1">
+        <p className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+          <Target className="w-3.5 h-3.5" /> Identity Score
+        </p>
+        <p className="text-[11px] text-slate-500 leading-relaxed">
+          Your Identity Score (shown on Analytics) measures how consistently you show up across all your habits.
+          100% means you completed every habit every possible day. It weighs recent days more than older ones.
+        </p>
+      </div>
+
+      {/* Streak explanation */}
+      <div className="bg-orange-950/25 border border-orange-800/20 rounded-xl p-3 space-y-1">
+        <p className="text-xs font-semibold text-orange-300 flex items-center gap-1.5">
+          🔥 Streak System
+        </p>
+        <p className="text-[11px] text-slate-500 leading-relaxed">
+          Your streak counts consecutive days where you completed at least one habit.
+          Missing a day resets it to zero — but you get one streak freeze per week to protect it.
+          Streaks above 7 and 30 days award bonus XP.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function PlanTab({
   tier, reminderLoading, reminderEnabled, reminderHour, reminderMinute, saveReminderPrefs,
 }: {
@@ -901,6 +1055,9 @@ function PlanTab({
           </div>
         </div>
       )}
+
+      {/* Level Guide */}
+      <LevelGuideSection />
     </div>
   );
 }
@@ -1232,30 +1389,72 @@ function NotificationsTab() {
 
       {/* Push permission status */}
       {!pushEnabled && (
-        <div className="flex items-start gap-3 bg-violet-950/40 border border-violet-700/30 rounded-2xl p-4">
-          <Bell className="w-5 h-5 text-violet-400 flex-shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white">Push notifications are off</p>
-            <p className="text-xs text-slate-500 mt-0.5">Enable to receive reminders, streak alerts, and weekly motivation directly to your device.</p>
+        <div className="space-y-3">
+          <div className="flex items-start gap-3 bg-violet-950/40 border border-violet-700/30 rounded-2xl p-4">
+            <Bell className="w-5 h-5 text-violet-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-white">Push notifications are off</p>
+              <p className="text-xs text-slate-500 mt-0.5">Enable to receive reminders, streak alerts, and weekly motivation directly to your device.</p>
+              {typeof window !== "undefined" && "Notification" in window && Notification.permission === "denied" && (
+                <p className="text-[11px] text-amber-400 mt-2 leading-relaxed">
+                  Notifications were blocked. Go to your browser settings → Site Settings → Notifications → find this site and allow it.
+                </p>
+              )}
+            </div>
+            {typeof window !== "undefined" && "Notification" in window && Notification.permission !== "denied" && (
+              <button
+                onClick={() => void enablePush()}
+                className="flex-shrink-0 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold rounded-xl transition-all"
+              >
+                Enable
+              </button>
+            )}
           </div>
-          <button
-            onClick={() => void enablePush()}
-            className="flex-shrink-0 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold rounded-xl transition-all"
-          >
-            Enable
-          </button>
+          {/* iPhone PWA instructions */}
+          <div className="bg-slate-900/40 border border-slate-700/30 rounded-xl p-3">
+            <p className="text-[11px] font-semibold text-slate-400 mb-2">On iPhone? Install the app first:</p>
+            <div className="space-y-1.5">
+              {[
+                "Open this page in Safari (not Chrome)",
+                "Tap the Share button at the bottom of the screen",
+                "Scroll down and tap Add to Home Screen",
+                "Once installed, open from home screen and enable notifications here",
+              ].map((step, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <span className="w-4 h-4 rounded-full bg-violet-900/50 text-violet-400 text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">{step}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
       {pushEnabled && (
-        <div className="flex items-center gap-2 bg-emerald-950/30 border border-emerald-800/30 rounded-xl px-3 py-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-          <p className="text-xs text-emerald-300 font-medium">Push notifications are enabled on this device</p>
-          {(saving || saved) && (
-            <span className="ml-auto text-[10px] text-slate-500">
-              {saving ? "Saving…" : "✓ Saved"}
-            </span>
-          )}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 bg-emerald-950/30 border border-emerald-800/30 rounded-xl px-3 py-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+            <p className="text-xs text-emerald-300 font-medium">Push notifications are enabled on this device</p>
+            {(saving || saved) && (
+              <span className="ml-auto text-[10px] text-slate-500">
+                {saving ? "Saving…" : "✓ Saved"}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => {
+              if ("Notification" in window && Notification.permission === "granted") {
+                new Notification("HabitAI Test Notification", {
+                  body: "Push notifications are working! You will receive reminders here.",
+                  icon: "/icon-192.png",
+                });
+              }
+            }}
+            className="w-full flex items-center justify-center gap-2 py-2 border border-violet-800/40 hover:border-violet-600/50 text-violet-400 hover:text-violet-300 text-xs font-semibold rounded-xl transition-all hover:bg-violet-950/30"
+          >
+            <Bell className="w-3.5 h-3.5" />
+            Send test notification
+          </button>
         </div>
       )}
 
