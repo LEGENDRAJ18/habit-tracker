@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, X, Check, Clock,
-  Sparkles, CalendarDays, Flame, Brain, Plus, Trash2,
+  Sparkles, Flame, Brain, Plus, Trash2,
   Trophy, Target,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -398,6 +398,182 @@ function DayDetailPanel({ detail, logs, onClose }: {
   );
 }
 
+// ─── AIOverviewWidget ─────────────────────────────────────────────────────────
+
+function AIOverviewWidget({ habits, logs, currentStreak }: {
+  habits: Habit[];
+  logs: { completed_at: string; habit_id: string }[];
+  currentStreak: number;
+}) {
+  const [analysing, setAnalysing] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setAnalysing(false), 900);
+    return () => clearTimeout(t);
+  }, []);
+
+  const insights = useMemo(() => {
+    if (habits.length === 0 || logs.length < 2) return null;
+
+    // This week completion rate
+    const todayStr = toDateStr(new Date());
+    const now = new Date();
+    const weekStart = new Date(now.getTime() - now.getDay() * 86400000);
+    const weekDays = Array.from({ length: 7 }, (_, i) =>
+      toDateStr(new Date(weekStart.getTime() + i * 86400000))
+    ).filter(d => d <= todayStr);
+    const weekLogs = logs.filter(l => weekDays.includes(l.completed_at.split("T")[0]));
+    const possibleThisWeek = weekDays.reduce((sum, d) =>
+      sum + habits.filter(h => h.created_at.split("T")[0] <= d).length, 0
+    );
+    const weekRate = possibleThisWeek > 0
+      ? Math.round((weekLogs.length / possibleThisWeek) * 100)
+      : 0;
+
+    // Best/worst day of week by completion rate per occurrence
+    const DOW_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const dowCount = Array(7).fill(0) as number[];
+    const dowOccurrences = Array(7).fill(0) as number[];
+    const dateSet = new Set(logs.map(l => l.completed_at.split("T")[0]));
+    for (const d of dateSet) dowOccurrences[new Date(d + "T12:00:00").getDay()]++;
+    for (const l of logs) dowCount[new Date(l.completed_at).getDay()]++;
+    const dowRates = dowCount.map((c, i) => dowOccurrences[i] > 0 ? c / dowOccurrences[i] : -1);
+    const validRates = dowRates.filter(r => r >= 0);
+    const maxRate = Math.max(...validRates);
+    const minRate = Math.min(...validRates);
+    const bestDayIdx  = dowRates.indexOf(maxRate);
+    const worstDayIdx = dowRates.indexOf(minRate);
+
+    // Best time of day
+    let morning = 0, afternoon = 0, evening = 0;
+    for (const l of logs) {
+      const h = new Date(l.completed_at).getHours();
+      if (h >= 5 && h < 12) morning++;
+      else if (h >= 12 && h < 17) afternoon++;
+      else evening++;
+    }
+    const bestTime = morning >= afternoon && morning >= evening ? "morning"
+      : afternoon >= evening ? "afternoon" : "evening";
+
+    // Best/weakest habits by total completions
+    const habitComps: Record<string, number> = {};
+    for (const l of logs) habitComps[l.habit_id] = (habitComps[l.habit_id] ?? 0) + 1;
+    const sortedHabits = [...habits].sort((a, b) => (habitComps[b.id] ?? 0) - (habitComps[a.id] ?? 0));
+
+    const tipHour = bestTime === "morning" ? "9am" : bestTime === "afternoon" ? "2pm" : "7pm";
+
+    return {
+      weekRate,
+      bestDay: DOW_FULL[bestDayIdx],
+      worstDay: DOW_FULL[worstDayIdx],
+      bestTime,
+      bestHabit: sortedHabits[0]?.name ?? null,
+      weakestHabit: sortedHabits.length > 1 ? sortedHabits[sortedHabits.length - 1]?.name ?? null : null,
+      tipHour,
+    };
+  }, [habits, logs]);
+
+  const headerJSX = (
+    <div className="flex items-center gap-2 mb-4">
+      <div className="w-7 h-7 rounded-lg bg-violet-600/30 border border-violet-600/20 flex items-center justify-center flex-shrink-0">
+        <Brain className="w-3.5 h-3.5 text-violet-300" />
+      </div>
+      <p className="text-sm font-bold text-white">AI Overview</p>
+      <span className="ml-auto text-[10px] text-violet-400 bg-violet-900/40 px-2 py-0.5 rounded-full border border-violet-700/30">Live</span>
+    </div>
+  );
+
+  if (analysing) {
+    return (
+      <div className="bg-gradient-to-br from-violet-950/60 to-purple-950/40 border border-violet-600/25 rounded-2xl p-5">
+        {headerJSX}
+        <div className="space-y-2.5">
+          {[3/4, 1, 5/6, 2/3].map((w, i) => (
+            <div key={i} className="h-3 bg-violet-900/30 rounded-full animate-pulse" style={{ width: `${w * 100}%` }} />
+          ))}
+        </div>
+        <p className="text-[11px] text-violet-400 mt-4 flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse inline-block" />
+          Analysing your patterns...
+        </p>
+      </div>
+    );
+  }
+
+  if (!insights) {
+    return (
+      <div className="bg-gradient-to-br from-violet-950/60 to-purple-950/40 border border-violet-600/25 rounded-2xl p-5">
+        {headerJSX}
+        <p className="text-xs text-slate-400 leading-relaxed">Complete a few habits to unlock personalised insights here.</p>
+      </div>
+    );
+  }
+
+  const { weekRate, bestDay, worstDay, bestTime, bestHabit, weakestHabit, tipHour } = insights;
+  const onTrack = weekRate >= 60;
+
+  return (
+    <div className="bg-gradient-to-br from-violet-950/60 to-purple-950/40 border border-violet-600/25 rounded-2xl p-5 space-y-4">
+      {headerJSX}
+
+      {/* Status */}
+      <div className={`rounded-xl px-3.5 py-3 ${onTrack ? "bg-emerald-950/40 border border-emerald-700/30" : "bg-amber-950/30 border border-amber-700/25"}`}>
+        <p className={`text-sm font-bold leading-snug ${onTrack ? "text-emerald-300" : "text-amber-300"}`}>
+          {onTrack ? "You are on track" : weekRate >= 30 ? "Making progress" : "Room to improve"} — {weekRate}% this week
+        </p>
+        {currentStreak > 0 && (
+          <p className="text-[11px] text-slate-400 mt-0.5">{currentStreak}-day streak active 🔥</p>
+        )}
+      </div>
+
+      {/* Pattern insights */}
+      <div className="space-y-3">
+        {bestHabit && (
+          <div className="flex items-start gap-2.5">
+            <span className="text-sm mt-0.5">🏆</span>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              <span className="text-white font-semibold">Best habit:</span> {bestHabit}
+            </p>
+          </div>
+        )}
+        <div className="flex items-start gap-2.5">
+          <span className="text-sm mt-0.5">📅</span>
+          <p className="text-xs text-slate-300 leading-relaxed">
+            Your best day is <span className="text-white font-semibold">{bestDay} {bestTime}s</span>
+          </p>
+        </div>
+        {worstDay !== bestDay && (
+          <div className="flex items-start gap-2.5">
+            <span className="text-sm mt-0.5">⚠️</span>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              You tend to miss habits on <span className="text-amber-300 font-semibold">{worstDay}s</span>
+            </p>
+          </div>
+        )}
+        {weakestHabit && weakestHabit !== bestHabit && (
+          <div className="flex items-start gap-2.5">
+            <span className="text-sm mt-0.5">💡</span>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              <span className="text-white font-semibold">Needs attention:</span> {weakestHabit}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Actionable tip */}
+      <div className="bg-violet-900/30 border border-violet-700/25 rounded-xl px-3.5 py-3">
+        <p className="text-[10px] font-bold text-violet-400 uppercase tracking-wider mb-1.5">Personalised Tip</p>
+        <p className="text-xs text-slate-300 leading-relaxed">
+          {worstDay !== bestDay
+            ? `Try setting a ${worstDay} reminder at ${tipHour} — that is your weakest day and a ${bestTime} push could turn it around.`
+            : `You are remarkably consistent. Keep showing up at the same time every day to lock in the habit identity.`
+          }
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ─── PlanAheadSection ─────────────────────────────────────────────────────────
 
 function PlanAheadSection({ habits, goals, tier, scheduled, onAdd, onRemove, onComplete }: {
@@ -451,17 +627,9 @@ function PlanAheadSection({ habits, goals, tier, scheduled, onAdd, onRemove, onC
 
       <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-3">
-          <CalendarDays className="w-4 h-4 text-violet-400" />
-          <p className="text-sm font-semibold text-white">Plan Ahead 📅</p>
+          <Target className="w-4 h-4 text-violet-400" />
+          <p className="text-sm font-semibold text-white">Upcoming 📅</p>
         </div>
-
-        <button
-          onClick={() => setShowModal(true)}
-          className="w-full flex items-center justify-center gap-2 py-2.5 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-600/30 text-violet-300 text-sm font-semibold rounded-xl transition-all mb-4"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Plan a new habit
-        </button>
 
         {upcoming.length > 0 ? (
           <div className="space-y-1.5">
@@ -1104,28 +1272,16 @@ export default function CalendarPage() {
             {/* Heatmap */}
             <ContributionHeatmap logs={logs} habits={habits} />
 
-            {/* Mobile-only: right sidebar content */}
+            {/* Mobile-only: AI Overview + Month Insights */}
             <div className="xl:hidden space-y-4">
-              <PlanAheadSection
-                habits={habits} goals={goals} tier={tier}
-                scheduled={scheduled}
-                onAdd={addScheduled}
-                onRemove={removeScheduled}
-                onComplete={handleCompleteScheduled}
-              />
+              <AIOverviewWidget habits={habits} logs={logs} currentStreak={currentStreak} />
               <MonthInsights logs={logs} habits={habits} year={year} month={month} />
             </div>
           </div>
 
           {/* ── Right sidebar (xl+) ────────────────────────────────────────── */}
           <div className="hidden xl:flex xl:flex-col gap-4 sticky top-20 overflow-hidden pb-4">
-            <PlanAheadSection
-              habits={habits} goals={goals} tier={tier}
-              scheduled={scheduled}
-              onAdd={addScheduled}
-              onRemove={removeScheduled}
-              onComplete={handleCompleteScheduled}
-            />
+            <AIOverviewWidget habits={habits} logs={logs} currentStreak={currentStreak} />
             <MonthInsights logs={logs} habits={habits} year={year} month={month} />
           </div>
 

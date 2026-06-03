@@ -74,7 +74,7 @@ function SevenDayHeatmap({ logs, habitCount }: { logs: Pick<HabitLog, "habit_id"
     const d     = daysAgo(6 - i);
     const count = logs.filter((l) => l.completed_at.startsWith(d)).length;
     const pct   = habitCount > 0 ? count / habitCount : 0;
-    const label = new Date(d + "T12:00:00").toLocaleDateString("en-US", { weekday: "short" });
+    const label = new Date(d + "T12:00:00").toLocaleDateString("en-US", { weekday: "narrow" });
     return { d, count, pct, label };
   });
 
@@ -272,7 +272,7 @@ function HabitRow({ habit, dates }: { habit: Habit; dates: Set<string> }) {
 // ─── best day of the week chart (Pro) ────────────────────────────────────────
 
 function BestDayChart({ logs }: { logs: Pick<HabitLog, "habit_id" | "completed_at">[] }) {
-  const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const DAY_NAMES = ["S", "M", "T", "W", "T", "F", "S"];
   const counts = Array(7).fill(0) as number[];
   for (const log of logs) {
     const d = new Date(log.completed_at + (log.completed_at.includes("T") ? "" : "T12:00:00"));
@@ -317,7 +317,7 @@ function MonthlyTrendChart({ logs }: { logs: Pick<HabitLog, "habit_id" | "comple
     d.setMonth(d.getMonth() - (2 - i));
     const year  = d.getFullYear();
     const month = d.getMonth();
-    const label = d.toLocaleDateString("en-US", { month: "short" });
+    const label = d.toLocaleDateString("en-US", { month: "long" });
     const count = logs.filter((l) => {
       const ld = new Date(l.completed_at);
       return ld.getFullYear() === year && ld.getMonth() === month;
@@ -455,7 +455,7 @@ function fmtMin(min: number): string {
 }
 
 function FocusWeekChart({ weeklyData }: { weeklyData: number[] }) {
-  const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
   const data = weeklyData.map((v, i) => ({ label: DAY_LABELS[i] ?? `D${i}`, minutes: v }));
   const maxVal = Math.max(1, ...data.map((d) => d.minutes));
 

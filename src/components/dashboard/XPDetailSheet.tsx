@@ -83,7 +83,7 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
     const key      = d.toISOString().split("T")[0];
     const isFuture = key > todayKey;
     const comps    = isFuture ? 0 : historicalLogs.filter((l) => l.completed_at.split("T")[0] === key).length;
-    return { label: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"][i], isFuture, xp: comps * 10 };
+    return { label: ["M","T","W","T","F","S","S"][i], isFuture, xp: comps * 10 };
   });
 
   const maxDayXP    = Math.max(...weekDays.map((d) => d.xp), 1);

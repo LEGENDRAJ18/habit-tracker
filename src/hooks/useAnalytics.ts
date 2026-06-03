@@ -140,7 +140,7 @@ export function useAnalytics(): AnalyticsData {
       const heatmapDays: HeatmapDay[] = Array.from({ length: 7 }, (_, i) => {
         const d       = new Date(Date.now() - (6 - i) * 86400000);
         const dateStr = d.toISOString().split("T")[0];
-        const label   = d.toLocaleDateString("en-US", { weekday: "short" });
+        const label   = d.toLocaleDateString("en-US", { weekday: "narrow" });
         const done    = new Set(
           logs.filter((l) => l.completed_at.split("T")[0] === dateStr).map((l) => l.habit_id)
         ).size;
