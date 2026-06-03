@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Lock, Flame, Zap, Trophy, CalendarDays, Gift, CheckCircle2, User, Share2 } from "lucide-react";
+import { Lock, Flame, Zap, Trophy, CalendarDays, Gift, CheckCircle2, User, Share2, Star, Headphones } from "lucide-react";
 import { useXP, ACHIEVEMENT_META, type AchievementId } from "@/hooks/useXP";
 import { levelName, levelColorKey, xpProgressPct, xpIntoLevel, xpSpanOfLevel, type LevelColorKey } from "@/lib/xp";
 import { LEVEL_REWARDS } from "@/lib/rewards";
 import { createClient } from "@/lib/supabase/client";
 import AvatarDisplay from "@/components/ui/AvatarDisplay";
+import type { Plan } from "@/types";
 
 const ALL_ACHIEVEMENTS: AchievementId[] = [
   "first_habit",
@@ -46,14 +47,21 @@ const MODE_BADGE: Record<UserMode, { emoji: string; label: string; color: string
   personal: { emoji: "🙋", label: "Personal",        color: "text-violet-300",  bg: "bg-violet-950/40",  border: "border-violet-700/40"  },
 };
 
+const PLAN_BADGE: Record<Plan, { label: string; color: string; bg: string; border: string } | null> = {
+  free:  null,
+  plus:  { label: "Plus",  color: "text-violet-300",  bg: "bg-violet-950/50",  border: "border-violet-600/40" },
+  pro:   { label: "Pro",   color: "text-amber-300",   bg: "bg-amber-950/40",   border: "border-amber-500/50"  },
+};
+
 export default function ProfilePage() {
   const { xp, level, achievements, totalCompletions, xpLoading } = useXP();
-  const [joinedDate, setJoinedDate] = useState<string | null>(null);
-  const [bestStreak, setBestStreak] = useState(0);
-  const [username, setUsername]     = useState<string | null>(null);
-  const [avatarId, setAvatarId]     = useState<string | null>(null);
-  const [userMode, setUserMode]     = useState<UserMode>("personal");
-  const [shared,   setShared]       = useState(false);
+  const [joinedDate,       setJoinedDate]       = useState<string | null>(null);
+  const [bestStreak,       setBestStreak]       = useState(0);
+  const [username,         setUsername]         = useState<string | null>(null);
+  const [avatarId,         setAvatarId]         = useState<string | null>(null);
+  const [userMode,         setUserMode]         = useState<UserMode>("personal");
+  const [subscriptionTier, setSubscriptionTier] = useState<Plan>("free");
+  const [shared,           setShared]           = useState(false);
   const supabase = useRef(createClient()).current;
 
   const handleShare = async () => {
@@ -74,12 +82,13 @@ export default function ProfilePage() {
       const d = new Date(user.created_at);
       setJoinedDate(d.toLocaleDateString("en-US", { month: "long", year: "numeric" }));
       // Profile data
-      supabase.from("profiles").select("username, avatar_id, user_mode").eq("id", user.id).single()
+      supabase.from("profiles").select("username, avatar_id, user_mode, subscription_tier").eq("id", user.id).single()
         .then(({ data }) => {
           if (data) {
             setUsername(data.username ?? null);
             setAvatarId(data.avatar_id ?? null);
             setUserMode((data.user_mode as UserMode) ?? "personal");
+            setSubscriptionTier((data.subscription_tier as Plan) ?? "free");
           }
         });
       // Best streak from logs
@@ -90,15 +99,15 @@ export default function ProfilePage() {
         .order("completed_at", { ascending: false })
         .then(({ data: logs }) => {
           if (!logs || logs.length === 0) return;
-          // Group by date
-          const dates = new Set(logs.map((l) => l.completed_at.split("T")[0]));
-          let streak = 0; let best = 0; let offset = 0;
-          const today = new Date().toISOString().split("T")[0];
-          const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString().split("T")[0];
-          if (!dates.has(today) && !dates.has(daysAgo(1))) { setBestStreak(0); return; }
-          while (dates.has(daysAgo(offset))) { streak++; offset++; }
-          best = streak;
-          setBestStreak(best);
+          // All-time best consecutive-day streak across all habits
+          const sortedDates = Array.from(new Set(logs.map((l) => l.completed_at.split("T")[0]))).sort();
+          let maxStreak = 1; let cur = 1;
+          for (let i = 1; i < sortedDates.length; i++) {
+            const diff = (new Date(sortedDates[i] + "T00:00:00Z").getTime() - new Date(sortedDates[i - 1] + "T00:00:00Z").getTime()) / 86400000;
+            cur = diff === 1 ? cur + 1 : 1;
+            if (cur > maxStreak) maxStreak = cur;
+          }
+          setBestStreak(sortedDates.length === 0 ? 0 : maxStreak);
         });
     });
   }, [supabase]);
@@ -148,6 +157,7 @@ export default function ProfilePage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                     {username && <p className="text-base font-bold text-violet-300">@{username}</p>}
+                    {/* Mode badge */}
                     {(() => {
                       const badge = MODE_BADGE[userMode];
                       return (
@@ -157,6 +167,28 @@ export default function ProfilePage() {
                         </span>
                       );
                     })()}
+                    {/* Plan badge */}
+                    {PLAN_BADGE[subscriptionTier] && (() => {
+                      const pb = PLAN_BADGE[subscriptionTier]!;
+                      return (
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${pb.color} ${pb.bg} ${pb.border}`}>
+                          {subscriptionTier === "pro" ? "⚡" : "✦"} {pb.label}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                  {/* Feature badges */}
+                  <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                    {(subscriptionTier === "plus" || subscriptionTier === "pro") && (
+                      <span className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-violet-950/60 border border-violet-800/30 text-violet-400">
+                        <Headphones className="w-2.5 h-2.5" />Priority Support
+                      </span>
+                    )}
+                    {subscriptionTier === "pro" && (
+                      <span className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-amber-950/40 border border-amber-700/30 text-amber-400">
+                        <Star className="w-2.5 h-2.5" />Early Access
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Level {level} · {name}</p>
                   <h1 className="text-xl font-bold text-white mb-0.5 hidden sm:block">{name}</h1>
