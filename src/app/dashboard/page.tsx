@@ -1145,14 +1145,19 @@ export default function DashboardPage() {
                     }
                   }
 
-                  onHabitCompleted(validity, habit.how_long).then(({ luckyBonus }) => {
+                  const habitXP = habit.xp_value ?? 10;
+                  const habitStreak = getStreak(habit.id);
+                  onHabitCompleted(validity, habit.how_long, habitXP, habitStreak).then(({ luckyBonus }) => {
                     if (luckyBonus) setTimeout(() => toast("🎰 Lucky bonus! +20 XP", "success", undefined, 2500), 300);
                   }).catch(() => {});
 
                   if (validity === "valid") {
-                    toast(`✅ ${habit.name} — +10 XP`, "success", undefined, 2000);
+                    const mult = habitStreak >= 30 ? 2 : habitStreak >= 7 ? 1.5 : 1;
+                    const earned = Math.round(habitXP * mult);
+                    const multStr = mult > 1 ? ` (${mult}x streak!)` : "";
+                    toast(`✅ ${habit.name} — +${earned} XP${multStr}`, "success", undefined, 2000);
                   } else if (validity === "partial") {
-                    toast(`⚠️ ${habit.name} — +5 XP (make it more specific for full XP)`, "warning", undefined, 2500);
+                    toast(`⚠️ ${habit.name} — +${Math.round((habit.xp_value ?? 10) * 0.5)} XP (make it more specific for full XP)`, "warning", undefined, 2500);
                   } else if (validity === "invalid") {
                     toast(
                       `"${habit.name}" earns no XP — edit the name to earn points`,
@@ -1548,7 +1553,7 @@ export default function DashboardPage() {
           onXP={() => {
             const validity = focusHabit.validity_score ?? "valid";
             playSound("complete");
-            onHabitCompleted(validity, focusHabit.how_long).then(({ luckyBonus }) => {
+            onHabitCompleted(validity, focusHabit.how_long, focusHabit.xp_value ?? 10, getStreak(focusHabit.id)).then(({ luckyBonus }) => {
               if (luckyBonus) toast("🎰 Lucky bonus! +20 XP", "success", undefined, 2500);
               toast("⚡ XP earned! Tap your level to see progress.", "success", undefined, 2000);
             }).catch(() => {});

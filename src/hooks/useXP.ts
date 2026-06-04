@@ -131,6 +131,8 @@ export function useXP() {
   const onHabitCompleted = useCallback(async (
     validityScore?: "valid" | "partial" | "invalid",
     howLong?: string | null,
+    xpValue?: number | null,
+    currentStreak?: number,
   ): Promise<{ luckyBonus: boolean }> => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { luckyBonus: false };
@@ -143,10 +145,12 @@ export function useXP() {
       .update({ total_completions: newTotal })
       .eq("id", user.id);
 
+    const habitXP = xpValue ?? XP_PER_HABIT;
+    const streakMult = (currentStreak ?? 0) >= 30 ? 2 : (currentStreak ?? 0) >= 7 ? 1.5 : 1;
     const baseXP =
       validityScore === "invalid" ? 0
-      : validityScore === "partial" ? 5
-      : XP_PER_HABIT;
+      : validityScore === "partial" ? Math.round(habitXP * 0.5 * streakMult)
+      : Math.round(habitXP * streakMult);
     const durationBonus = baseXP > 0 && howLong ? (DURATION_BONUS_XP[howLong] ?? 0) : 0;
     const xpToAward = baseXP + durationBonus;
     if (xpToAward > 0) await awardXP(xpToAward);

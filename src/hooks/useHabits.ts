@@ -143,6 +143,8 @@ export function useHabits() {
     validityScore?: "valid" | "partial" | "invalid",
     reminderTime?: string | null,
     durationMinutes?: number | null,
+    xpValue?: number | null,
+    difficulty?: number | null,
   ): Promise<{ error: string | null }> => {
     const {
       data: { user },
@@ -167,6 +169,8 @@ export function useHabits() {
       validity_score:          validityScore   ?? "valid",
       preferred_reminder_time: reminderTime    ?? null,
       duration_minutes:        durationMinutes ?? null,
+      xp_value:                xpValue         ?? 10,
+      difficulty:              difficulty      ?? 1,
       is_public:               false,
       commitment_text:         null,
     };
@@ -186,6 +190,8 @@ export function useHabits() {
         validity_score:          validityScore   ?? "valid",
         preferred_reminder_time: reminderTime    ?? null,
         duration_minutes:        durationMinutes ?? null,
+        xp_value:                xpValue         ?? 10,
+        difficulty:              difficulty      ?? 1,
       })
       .select()
       .single();

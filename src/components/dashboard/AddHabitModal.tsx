@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import {
   X, Loader2, Plus, ArrowRight,
   CheckCircle2, AlertTriangle, XCircle, Sparkles,
@@ -54,6 +54,51 @@ const DOW_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
 
 function isDuplicate(name: string, existingHabits: Habit[]): boolean {
   return existingHabits.some((h) => h.name.trim().toLowerCase() === name.trim().toLowerCase());
+}
+
+// Returns a TIME_PERIODS value string if a time keyword is found in the name, else null
+function detectTimeFromName(name: string): string | null {
+  const lower = name.toLowerCase();
+  // Specific time patterns: "at 7am", "9:30pm", "6pm", "at 6:30"
+  const specific = lower.match(/\b(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i);
+  if (specific) {
+    let h = parseInt(specific[1]);
+    const m = specific[2] ? parseInt(specific[2]) : 0;
+    const mer = specific[3].toLowerCase();
+    if (mer === "pm" && h !== 12) h += 12;
+    if (mer === "am" && h === 12) h = 0;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  }
+  if (/\b(morning|dawn|sunrise|wake\s*up|wakeup|breakfast|a\.m\.)\b/.test(lower)) return "07:30";
+  if (/\b(afternoon|midday|noon|lunchtime?|lunch)\b/.test(lower)) return "14:00";
+  if (/\b(evening|sunset|dusk|after\s*work)\b/.test(lower)) return "18:00";
+  if (/\b(night|midnight|bedtime|before\s*bed|p\.m\.|nighttime|sleep)\b/.test(lower)) return "21:00";
+  return null;
+}
+
+const DIFFICULTY_LEVELS = [
+  { level: 1, label: "Easy",      emoji: "🟢", xp: 10,  color: "text-emerald-400", bg: "bg-emerald-950/30 border-emerald-800/30" },
+  { level: 2, label: "Light",     emoji: "🟡", xp: 15,  color: "text-yellow-400",  bg: "bg-yellow-950/30 border-yellow-800/30"  },
+  { level: 3, label: "Medium",    emoji: "🟠", xp: 25,  color: "text-orange-400",  bg: "bg-orange-950/30 border-orange-800/30"  },
+  { level: 4, label: "Hard",      emoji: "🔴", xp: 40,  color: "text-red-400",     bg: "bg-red-950/30 border-red-800/30"        },
+  { level: 5, label: "Very Hard", emoji: "🔥", xp: 60,  color: "text-fuchsia-400", bg: "bg-fuchsia-950/30 border-fuchsia-800/30"},
+] as const;
+
+function detectDifficulty(name: string): typeof DIFFICULTY_LEVELS[number] {
+  const lower = name.toLowerCase();
+  if (/\b(marathon|ultra|extreme|2\s*hour|two\s*hour|100\s*(push|pull)|cold\s*(plunge|shower|ice)|4\s*am|4am|5am|fasting|intermittent\s*fast)\b/.test(lower)) {
+    return DIFFICULTY_LEVELS[4];
+  }
+  if (/\b(5k|10k|run\s*5|deadlift|heavy\s*lift|hiit|intense|hard|difficult|challenge|sprint|plank\s*(60|90|120))\b/.test(lower)) {
+    return DIFFICULTY_LEVELS[3];
+  }
+  if (/\b(run|jog|gym|workout|exercise|swim|cycle|bike|study\s+for|practice|learn|yoga|meditation\s*(20|30)|30\s*min|45\s*min|1\s*hour|pushup|pull.?up|squat)\b/.test(lower)) {
+    return DIFFICULTY_LEVELS[2];
+  }
+  if (/\b(walk|stretch|meditate|journal|read|flashcard|podcast|vitamin|supplement|hydrat|breathe|gratitude|affirmation)\b/.test(lower)) {
+    return DIFFICULTY_LEVELS[1];
+  }
+  return DIFFICULTY_LEVELS[0];
 }
 
 function toDateStr(d: Date) { return d.toISOString().split("T")[0]; }
@@ -180,6 +225,8 @@ interface Props {
     validityScore?: "valid" | "partial" | "invalid",
     reminderTime?: string | null,
     durationMinutes?: number | null,
+    xpValue?: number | null,
+    difficulty?: number | null,
   ) => Promise<{ error: string | null }>;
   onSchedule?: (
     name: string, description: string, frequency: "daily" | "weekly",
@@ -210,6 +257,11 @@ export default function AddHabitModal({
   const [loading, setLoading]             = useState(false);
   const [error, setError]                 = useState<string | null>(null);
   const [suggestionOffset, setSuggestionOffset] = useState(0);
+
+  // Smart time detection
+  const [timeDetectedFromName, setTimeDetectedFromName] = useState<string | null>(null);
+  const [timeOverridden, setTimeOverridden]             = useState(false);
+  const prevDetectedTimeRef                             = useRef<string | null>(null);
 
   // Single-date mode — one date picker replaces Step 2
   const [scheduledDate, setScheduledDate] = useState(() => toDateStr(new Date()));
@@ -242,6 +294,21 @@ export default function AddHabitModal({
   const isSchedulingMode = !!(withScheduling && onSchedule);
   const aiValidation = useHabitValidation(name, goals, 400, isSchedulingMode);
   const duplicate    = name.trim().length > 2 && isDuplicate(name, existingHabits);
+
+  // Difficulty derived from current name
+  const difficulty = useMemo(() => detectDifficulty(name), [name]);
+
+  const handleNameChange = useCallback((newName: string) => {
+    setName(newName);
+    setError(null);
+    const detected = detectTimeFromName(newName);
+    if (detected !== prevDetectedTimeRef.current) {
+      prevDetectedTimeRef.current = detected;
+      setTimeDetectedFromName(detected);
+      setTimeOverridden(false);
+      if (detected) setWhenTime(detected);
+    }
+  }, []);
 
   // Suggestion chips
   const allSuggestions: string[] = goals
@@ -283,6 +350,7 @@ export default function AddHabitModal({
       name.trim(), description.trim(), frequency,
       null, whenTime || null, whereLocation || null, howLong || null, getValidity(),
       reminderTime || null, durationMinutes,
+      difficulty.xp, difficulty.level,
     );
     if (error) { setError(error); setLoading(false); }
     else onClose();
@@ -385,7 +453,7 @@ export default function AddHabitModal({
                 </label>
                 <input
                   type="text" value={name}
-                  onChange={(e) => { setName(e.target.value); setError(null); }}
+                  onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="e.g. Meditate for 10 minutes"
                   required maxLength={100} autoFocus
                   className={`${inputCls} ${
@@ -450,6 +518,19 @@ export default function AddHabitModal({
                     )}
                   </div>
                 )}
+
+                {/* Difficulty XP badge */}
+                {name.trim().length > 2 && !duplicate && aiValidation.status !== "blocked" && (
+                  <div className={`mt-1.5 flex items-center gap-2 rounded-lg px-3 py-2 border ${difficulty.bg}`}>
+                    <span className="text-sm leading-none">{difficulty.emoji}</span>
+                    <p className="text-[11px] flex-1">
+                      <span className={`font-bold ${difficulty.color}`}>{difficulty.label}</span>
+                      <span className="text-slate-500"> habit · earns </span>
+                      <span className={`font-bold ${difficulty.color}`}>{difficulty.xp} XP</span>
+                      <span className="text-slate-500"> per completion</span>
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* ── 2-column details grid ──────────────────────────────────── */}
@@ -459,7 +540,24 @@ export default function AddHabitModal({
                 <div className="space-y-3">
                   <div>
                     <label className={labelCls}>⏰ When?</label>
-                    <TimePicker value={whenTime} onChange={setWhenTime} />
+                    {timeDetectedFromName && !timeOverridden ? (
+                      <div className="flex items-center gap-2 bg-violet-950/40 border border-violet-700/35 rounded-xl px-3 py-2.5">
+                        <span className="text-base leading-none flex-shrink-0">
+                          {TIME_PERIODS.find((p) => p.value === timeDetectedFromName)?.emoji ?? "⏰"}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-violet-300 leading-tight">
+                            {TIME_PERIODS.find((p) => p.value === timeDetectedFromName)?.label ?? timeDetectedFromName}
+                          </p>
+                          <p className="text-[10px] text-slate-500 mt-0.5">detected from your habit name</p>
+                        </div>
+                        <button type="button" onClick={() => setTimeOverridden(true)}
+                          className="text-[10px] text-violet-400 hover:text-violet-300 flex-shrink-0 underline underline-offset-2 transition-colors"
+                        >change</button>
+                      </div>
+                    ) : (
+                      <TimePicker value={whenTime} onChange={(v) => { setWhenTime(v); if (timeDetectedFromName) setTimeOverridden(true); }} />
+                    )}
                   </div>
                   <div>
                     <label className={labelCls}>📍 Where?</label>

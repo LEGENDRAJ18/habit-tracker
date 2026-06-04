@@ -16,6 +16,8 @@ export interface Habit {
   is_public?: boolean;
   commitment_text?: string | null;
   duration_minutes?: number | null;
+  difficulty?: number | null;
+  xp_value?: number | null;
 }
 
 export interface FocusSession {

@@ -1410,21 +1410,56 @@ function NotificationsTab() {
               </button>
             )}
           </div>
-          {/* iPhone PWA instructions */}
-          <div className="bg-slate-900/40 border border-slate-700/30 rounded-xl p-3">
-            <p className="text-[11px] font-semibold text-slate-400 mb-2">On iPhone? Install the app first:</p>
-            <div className="space-y-1.5">
-              {[
-                "Open this page in Safari (not Chrome)",
-                "Tap the Share button at the bottom of the screen",
-                "Scroll down and tap Add to Home Screen",
-                "Once installed, open from home screen and enable notifications here",
-              ].map((step, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <span className="w-4 h-4 rounded-full bg-violet-900/50 text-violet-400 text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
-                  <p className="text-[11px] text-slate-500 leading-relaxed">{step}</p>
-                </div>
-              ))}
+          {/* Device-specific PWA instructions */}
+          <div className="space-y-2">
+            {/* iPhone */}
+            <div className="bg-slate-900/40 border border-slate-700/30 rounded-xl p-3">
+              <p className="text-[11px] font-semibold text-slate-400 mb-2">📱 On iPhone? Install the app first:</p>
+              <div className="space-y-1.5">
+                {[
+                  "Open this page in Safari (not Chrome)",
+                  "Tap the Share button at the bottom of the screen",
+                  "Scroll down and tap Add to Home Screen",
+                  "Once installed, open from home screen and enable notifications here",
+                ].map((step, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="w-4 h-4 rounded-full bg-violet-900/50 text-violet-400 text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">{step}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Android */}
+            <div className="bg-slate-900/40 border border-slate-700/30 rounded-xl p-3">
+              <p className="text-[11px] font-semibold text-slate-400 mb-2">🤖 On Android? Two options:</p>
+              <p className="text-[10px] text-violet-400 font-semibold mb-1.5">Option A — Browser notifications (fastest):</p>
+              <div className="space-y-1.5 mb-3">
+                {[
+                  "Open HabitAI in Chrome on Android",
+                  'Tap the lock icon (🔒) in the address bar',
+                  'Tap "Site settings" → "Notifications" → "Allow"',
+                  "Tap Enable above and you\'re set",
+                ].map((step, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="w-4 h-4 rounded-full bg-emerald-900/50 text-emerald-400 text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">{step}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-violet-400 font-semibold mb-1.5">Option B — Install as app (recommended):</p>
+              <div className="space-y-1.5">
+                {[
+                  "Open HabitAI in Chrome on Android",
+                  'Tap the 3-dot menu (⋮) in the top-right corner',
+                  'Tap "Add to Home screen" and confirm',
+                  "Open from your home screen — notifications work automatically",
+                ].map((step, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="w-4 h-4 rounded-full bg-violet-900/50 text-violet-400 text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">{step}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
