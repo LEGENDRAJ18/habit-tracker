@@ -446,8 +446,6 @@ async function runReminders(): Promise<{ sent: number; skipped: number; hour: nu
     sent++;
   }
 
-  // Weekly AI report — only fires on Sundays, doesn't block daily reminders
-  const weekly = await runWeeklyReport(supabase).catch(() => ({ sent: 0, skipped: 0 }));
   // Trial reminders — fires whenever a trial ends in ~48 h
   const trial = await runTrialReminders(supabase).catch(() => ({ sent: 0 }));
   // Weekly game plan auto-generation — only fires on Mondays
@@ -455,7 +453,7 @@ async function runReminders(): Promise<{ sent: number; skipped: number; hour: nu
   // Smart timing reminders — fires for Pro users whose preferred hour matches
   const smartTiming = await runSmartTimingReminders(supabase).catch(() => ({ sent: 0 }));
 
-  return { sent, skipped, hour: nowHour, timestamp: now.toISOString(), weeklySent: weekly.sent, trialRemindersSent: trial.sent, weeklyPlansGenerated: weeklyPlan.generated, smartTimingSent: smartTiming.sent };
+  return { sent, skipped, hour: nowHour, timestamp: now.toISOString(), trialRemindersSent: trial.sent, weeklyPlansGenerated: weeklyPlan.generated, smartTimingSent: smartTiming.sent };
 }
 
 function buildTrialReminderHtml(firstName: string, trialEnd: string, unsubscribeUrl: string): string {

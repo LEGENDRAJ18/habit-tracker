@@ -38,15 +38,32 @@ export async function POST(request: NextRequest) {
         .update({ voice_transcription: transcript.trim(), has_voice_note: true })
         .eq("id", habitLogId);
     } else if (habitId) {
-      // Log if no habitLogId provided
-      await admin
+      // Find today's existing log before creating a new one to avoid duplicates
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const { data: existingLog } = await admin
         .from("habit_logs")
-        .insert({
-          habit_id: habitId,
-          user_id: user.id,
-          voice_transcription: transcript.trim(),
-          has_voice_note: true,
-        });
+        .select("id")
+        .eq("habit_id", habitId)
+        .eq("user_id", user.id)
+        .gte("completed_at", todayStart.toISOString())
+        .maybeSingle();
+
+      if (existingLog) {
+        await admin
+          .from("habit_logs")
+          .update({ voice_transcription: transcript.trim(), has_voice_note: true })
+          .eq("id", existingLog.id);
+      } else {
+        await admin
+          .from("habit_logs")
+          .insert({
+            habit_id: habitId,
+            user_id: user.id,
+            voice_transcription: transcript.trim(),
+            has_voice_note: true,
+          });
+      }
     }
 
     // Get AI coaching from transcript

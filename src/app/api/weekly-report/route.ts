@@ -79,11 +79,13 @@ export async function POST(request: NextRequest) {
     const admin = createAdminClient();
 
     if (isCron) {
-      // Send to all users with weekly_email_enabled = true
+      const thisWeekSunday = new Date().toISOString().split("T")[0];
+      // Send to all users with weekly_email_enabled = true who haven't received it this Sunday
       const { data: users } = await admin
         .from("profiles")
         .select("id, full_name, username, subscription_tier")
-        .eq("weekly_email_enabled", true);
+        .eq("weekly_email_enabled", true)
+        .or(`weekly_report_sent_date.is.null,weekly_report_sent_date.lt.${thisWeekSunday}`);
 
       let sent = 0;
       for (const profile of users ?? []) {
@@ -101,6 +103,10 @@ export async function POST(request: NextRequest) {
           subject: `Your weekly habit report 📊`,
           html:    buildWeeklyHtml(name, stats.consistency, stats.bestHabit, stats.weakHabit, report.tip, stats.completions),
         });
+        // Mark sent so we don't double-send this Sunday
+        await admin.from("profiles")
+          .update({ weekly_report_sent_date: thisWeekSunday })
+          .eq("id", profile.id);
         sent++;
       }
       return NextResponse.json({ sent });

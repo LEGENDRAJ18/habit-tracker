@@ -344,6 +344,7 @@ export function useHabits() {
       );
 
       posthog.capture("habit_completed", { habit_name: habit?.name, frequency: habit?.frequency });
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(10);
 
       if (offline) {
         enqueue({ type: "toggle_complete", habitId, userId: user.id, completed_at: now, tempLogId: tempId });

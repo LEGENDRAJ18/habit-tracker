@@ -17,6 +17,7 @@ interface Props {
   stackAfterName?: string;
   isEditing?: boolean;
   tier?: Plan;
+  logId?: string | null;
   allLogs?: Array<{ habit_id: string; completed_at: string }>;
   onToggle: () => void;
   onDelete: () => void;
@@ -76,7 +77,7 @@ function getTimeEmoji(whenTime: string | null): string | null {
 
 export default function HabitCard({
   habit, completed, streak, strength, isProtected, stackAfterName, isEditing,
-  tier, allLogs = [], onToggle, onDelete, onCompleted, onRename, onSmartTimingToggle, onUpgradePro,
+  tier, logId = null, allLogs = [], onToggle, onDelete, onCompleted, onRename, onSmartTimingToggle, onUpgradePro,
   onCommitment, onStartTimer, isTourTarget,
 }: Props) {
   const { score: identityScore, phrase: identityPhrase } = useIdentityScore(habit, allLogs);
@@ -513,7 +514,7 @@ export default function HabitCard({
         <VoiceCheckin
           habitId={habit.id}
           habitName={habit.name}
-          habitLogId={null}
+          habitLogId={logId}
           tier={tier ?? "free"}
         />
       </div>

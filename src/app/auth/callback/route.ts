@@ -49,9 +49,42 @@ export async function GET(request: NextRequest) {
       // Check if the user has completed onboarding
       const { data: profile } = await supabase
         .from("profiles")
-        .select("onboarding_completed")
+        .select("onboarding_completed, referred_by")
         .eq("id", data.user.id)
         .single();
+
+      // Apply referral code if passed in URL and not already applied
+      const refCode = searchParams.get("ref")?.trim().toUpperCase();
+      if (refCode && !profile?.referred_by) {
+        try {
+          const admin = createAdminClient();
+          const { data: referrer } = await admin
+            .from("profiles")
+            .select("id, referral_count")
+            .eq("referral_code", refCode)
+            .single();
+
+          if (referrer && referrer.id !== data.user.id) {
+            const trialEnd = new Date(Date.now() + 14 * 86400000).toISOString();
+            await Promise.all([
+              admin.from("profiles").update({
+                referred_by:         referrer.id,
+                subscription_tier:   "plus",
+                trial_end_date:      trialEnd,
+                subscription_status: "trialing",
+              }).eq("id", data.user.id),
+              admin.from("referrals").upsert({
+                referrer_id: referrer.id,
+                referred_id: data.user.id,
+                status:      "pending",
+              }, { onConflict: "referred_id", ignoreDuplicates: true }),
+              admin.from("profiles").update({
+                referral_count: (referrer.referral_count ?? 0) + 1,
+              }).eq("id", referrer.id),
+            ]);
+          }
+        } catch { /* non-blocking */ }
+      }
 
       // New users → onboarding; returning users → their intended destination
       const destination = profile?.onboarding_completed ? next : "/onboarding";

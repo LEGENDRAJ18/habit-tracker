@@ -415,7 +415,7 @@ function getEmptyStateRecs(goals: string[]) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { habits, loading, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength, refetch, historicalLogs } =
+  const { habits, todayLogs, loading, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength, refetch, historicalLogs } =
     useHabits();
   const { tier, profileLoading, onboardingCompleted, goals, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt, dreamUniversity, userMode } = useProfile();
   const { xp, level, achievements, totalCompletions, justLeveledUp, xpLoading, isDailyAchieved, onHabitCompleted, onDailyOpen, checkMilestones, dismissLevelUp } = useXP();
@@ -1072,6 +1072,7 @@ export default function DashboardPage() {
                 isProtected={info.freezeApplied}
                 stackAfterName={stackParent?.name}
                 tier={tier}
+                logId={todayLogs.find((l) => l.habit_id === habit.id)?.id ?? null}
                 allLogs={historicalLogs}
                 onCommitment={() => setCommitmentHabit({
                   id: habit.id,

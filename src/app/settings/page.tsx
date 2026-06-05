@@ -7,7 +7,7 @@ import {
   User, Mail, Lock, Trash2, AlertCircle, CheckCircle2,
   Loader2, Eye, EyeOff, X, Bell, Download, Crown, Zap, Palette,
   Check, RotateCcw, Target, SlidersHorizontal, CreditCard, Sparkles,
-  HelpCircle, ArrowRight, Smile,
+  HelpCircle, ArrowRight, Smile, Gift, Copy, Share2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyError } from "@/lib/friendlyError";
@@ -583,6 +583,115 @@ function AccessibilityTab() {
             onChange={setHighContrast}
           />
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Referral Section ─────────────────────────────────────────────────────────
+
+function ReferralSection() {
+  const [data, setData]       = useState<{ code: string; link: string; total: number; rewarded: number; pending: number; earnedDays: number } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied]   = useState(false);
+
+  useEffect(() => {
+    fetch("/api/referral")
+      .then((r) => r.json())
+      .then((d) => setData(d))
+      .catch(() => null)
+      .finally(() => setLoading(false));
+  }, []);
+
+  function copyLink() {
+    if (!data?.link) return;
+    navigator.clipboard.writeText(data.link).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  function shareLink() {
+    if (!data?.link) return;
+    if (navigator.share) {
+      void navigator.share({ title: "Join me on HabitAI", text: "Build better habits with AI coaching — use my link for a free 14-day Plus trial!", url: data.link });
+    } else {
+      copyLink();
+    }
+  }
+
+  return (
+    <div className="mb-8">
+      <h2 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
+        <Gift className="w-4 h-4 text-violet-400" />
+        Refer a Friend
+      </h2>
+      <div style={{ background: "#0f0f1a", border: "1px solid rgba(109,40,217,0.2)", borderRadius: "1rem", padding: "1.25rem" }}>
+        <p className="text-sm text-slate-400 mb-4 leading-relaxed">
+          Share your link and your friend gets <strong className="text-violet-300">14 days of Plus free</strong>. You earn rewards for every successful referral.
+        </p>
+
+        {loading ? (
+          <div className="flex items-center gap-2 py-2">
+            <Loader2 className="w-4 h-4 text-violet-500 animate-spin" />
+            <span className="text-sm text-slate-500">Loading your link…</span>
+          </div>
+        ) : data?.link ? (
+          <div className="space-y-3">
+            {/* Referral link box */}
+            <div className="flex items-center gap-2 bg-violet-950/40 border border-violet-800/30 rounded-xl px-3 py-2.5">
+              <span className="text-xs text-slate-400 truncate flex-1 font-mono">{data.link}</span>
+              <button
+                onClick={copyLink}
+                className="flex items-center gap-1.5 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors flex-shrink-0 touch-manipulation min-h-[36px] px-2"
+              >
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? "Copied!" : "Copy"}
+              </button>
+            </div>
+
+            {/* Share button */}
+            <button
+              onClick={shareLink}
+              className="w-full py-2.5 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-700/40 text-violet-300 text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-2 touch-manipulation min-h-[44px] active:scale-[0.98]"
+            >
+              <Share2 className="w-4 h-4" />
+              Share my referral link
+            </button>
+
+            {/* Earned days banner */}
+            {(data.earnedDays > 0) && (
+              <div className="flex items-center gap-2.5 bg-emerald-950/40 border border-emerald-800/30 rounded-xl px-3.5 py-2.5">
+                <span className="text-lg leading-none">🎉</span>
+                <p className="text-sm text-emerald-300 font-semibold">
+                  You've earned <span className="text-emerald-200">{data.earnedDays} days</span> of free Plus from {data.rewarded} referral{data.rewarded !== 1 ? "s" : ""}!
+                </p>
+              </div>
+            )}
+
+            {/* Stats */}
+            {(data.total > 0) && (
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                {[
+                  { label: "Total", value: data.total, color: "#a78bfa" },
+                  { label: "Pending", value: data.pending, color: "#94a3b8" },
+                  { label: "Rewarded", value: data.rewarded, color: "#34d399" },
+                ].map(({ label, value, color }) => (
+                  <div key={label} className="bg-violet-950/30 border border-violet-900/20 rounded-xl p-2.5 text-center">
+                    <p style={{ color }} className="text-lg font-bold">{value}</p>
+                    <p className="text-[10px] text-slate-600 mt-0.5">{label}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <p className="text-[10px] text-slate-600 leading-relaxed">
+              Referral code: <span className="font-mono text-violet-600">{data.code}</span>
+            </p>
+          </div>
+        ) : (
+          <p className="text-xs text-slate-600">Could not load referral link — try refreshing.</p>
+        )}
       </div>
     </div>
   );
@@ -1829,6 +1938,7 @@ export default function SettingsPage() {
                 handleSaveName={handleSaveName} handleSaveEmail={handleSaveEmail} handleSavePw={handleSavePw}
                 onDeleteClick={() => setShowDelete(true)} router={router}
               />
+              <ReferralSection />
               <InstallAppSection />
             </>
           )}

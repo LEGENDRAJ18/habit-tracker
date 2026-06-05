@@ -2,21 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-// Per-instance in-memory rate limit (resets on cold start; good enough for MVP)
-const rateLimitMap = new Map<string, { date: string; count: number }>();
-const DAILY_LIMIT = 5;
-
-function checkRateLimit(userId: string): { allowed: boolean; remaining: number } {
-  const today = new Date().toISOString().split("T")[0];
-  const entry = rateLimitMap.get(userId);
-  if (!entry || entry.date !== today) {
-    rateLimitMap.set(userId, { date: today, count: 1 });
-    return { allowed: true, remaining: DAILY_LIMIT - 1 };
-  }
-  if (entry.count >= DAILY_LIMIT) return { allowed: false, remaining: 0 };
-  entry.count++;
-  return { allowed: true, remaining: DAILY_LIMIT - entry.count };
-}
+const DAILY_LIMIT_PLUS = 5;
+const DAILY_LIMIT_FREE = 1;
 
 async function callOpenAI(systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -95,31 +82,34 @@ export async function POST(request: NextRequest) {
     const [{ data: habits }, { data: rawLogs }, { data: profile }] = await Promise.all([
       admin.from("habits").select("id, name, habit_strength, created_at").eq("user_id", user.id).order("created_at"),
       admin.from("habit_logs").select("habit_id, completed_at").eq("user_id", user.id).gte("completed_at", daysAgo(90)),
-      admin.from("profiles").select("goal, goals, subscription_tier, ai_memory").eq("id", user.id).single(),
+      admin.from("profiles").select("goal, goals, subscription_tier, ai_memory, ai_insight_count, ai_insight_date").eq("id", user.id).single(),
     ]);
 
     const userTier = (profile?.subscription_tier ?? "free") as "free" | "plus" | "pro";
 
-    // Rate limit — Free: 1/day, Plus: 5/day, Pro: unlimited
+    // DB-backed rate limit — survives serverless cold starts
     let remaining = 9999;
-    if (userTier === "pro") {
-      remaining = 9999;
-    } else {
-      const dailyLimit = userTier === "plus" ? DAILY_LIMIT : 1;
-      const entry = rateLimitMap.get(user.id);
+    if (userTier !== "pro") {
+      const dailyLimit = userTier === "plus" ? DAILY_LIMIT_PLUS : DAILY_LIMIT_FREE;
       const today = new Date().toISOString().split("T")[0];
-      if (!entry || entry.date !== today) {
-        rateLimitMap.set(user.id, { date: today, count: 1 });
-        remaining = dailyLimit - 1;
-      } else if (entry.count >= dailyLimit) {
+      const currentCount  = profile?.ai_insight_count  ?? 0;
+      const currentDate   = profile?.ai_insight_date   ?? null;
+      const todayCount    = currentDate === today ? currentCount : 0;
+
+      if (todayCount >= dailyLimit) {
         const limitMsg = userTier === "plus"
           ? "You've used all 5 AI insights for today. Come back tomorrow, or upgrade to Pro for unlimited insights!"
           : "You've used your free AI insight for today. Upgrade to Plus for 5 insights per day, or Pro for unlimited!";
         return NextResponse.json({ error: limitMsg }, { status: 429 });
-      } else {
-        entry.count++;
-        remaining = dailyLimit - entry.count;
       }
+
+      // Increment atomically in DB
+      await admin.from("profiles").update({
+        ai_insight_count: todayCount + 1,
+        ai_insight_date:  today,
+      }).eq("id", user.id);
+
+      remaining = dailyLimit - (todayCount + 1);
     }
 
     if (!habits || habits.length === 0) {

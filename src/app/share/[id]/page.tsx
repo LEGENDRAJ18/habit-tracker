@@ -55,7 +55,7 @@ export async function generateMetadata({
       title,
       description: data.achievement_description,
       url:         `${APP_URL}/share/${id}`,
-      images:      [{ url: "/opengraph-image", width: 1200, height: 630 }],
+      images:      [{ url: `${APP_URL}/api/og/share/${id}`, width: 1200, height: 630 }],
     },
     twitter: {
       card:        "summary_large_image",

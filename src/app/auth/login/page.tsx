@@ -210,6 +210,7 @@ function AuthForm() {
   const supabase = createClient();
 
   const plan           = params.get("plan");
+  const refCode        = params.get("ref");
   const successMessage =
     params.get("message") === "password_updated"
       ? "Password updated — sign in with your new password."
@@ -260,9 +261,12 @@ function AuthForm() {
   const handleGoogle = async () => {
     setGoogleLoading(true);
     setError(null);
+    const callbackUrl = new URL(`${window.location.origin}/auth/callback`);
+    callbackUrl.searchParams.set("next", nextUrl);
+    if (refCode) callbackUrl.searchParams.set("ref", refCode);
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextUrl)}` },
+      options: { redirectTo: callbackUrl.toString() },
     });
     setGoogleLoading(false);
   };
@@ -295,14 +299,14 @@ function AuthForm() {
     setLoading(true);
     setError(null);
 
+    const callbackUrl = new URL(`${window.location.origin}/auth/callback`);
+    callbackUrl.searchParams.set("next", nextUrl);
+    if (refCode) callbackUrl.searchParams.set("ref", refCode);
+
     const res = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email,
-        password,
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`,
-      }),
+      body: JSON.stringify({ email, password, emailRedirectTo: callbackUrl.toString() }),
     });
 
     const data = await res.json() as {
