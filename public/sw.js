@@ -1,9 +1,14 @@
 // HabitAI Service Worker — app shell caching + push notifications
-const CACHE = "habitai-v3";
+const CACHE = "habitai-v5";
 
 const PRECACHE = [
   "/",
   "/dashboard",
+  "/analytics",
+  "/calendar",
+  "/profile",
+  "/settings",
+  "/friends",
   "/manifest.json",
   "/icons/icon-192.png",
   "/icons/icon-512.png",

@@ -391,6 +391,11 @@ export default function FriendsPage() {
       setInviteMsg("Please enter a username or email.");
       return;
     }
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setInviteStatus("error");
+      setInviteMsg("This needs internet — we'll do it when you're back online 🌐");
+      return;
+    }
     setInviting(true);
     setInviteStatus("idle");
     const res = await fetch("/api/friends/invite", {

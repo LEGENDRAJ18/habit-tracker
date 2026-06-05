@@ -32,6 +32,10 @@ export default function AIInsightModal({ onClose, onUpgrade, tier }: Props) {
   useEffect(() => { void fetchInsight(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchInsight() {
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setError("This needs internet — AI coaching will be available when you reconnect 🌐");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {

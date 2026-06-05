@@ -13,6 +13,7 @@ import ConditionalAppShell from "@/components/layout/ConditionalAppShell";
 import PostHogProvider from "@/components/PostHogProvider";
 import SplashScreen from "@/components/ui/SplashScreen";
 import AuthStateManager from "@/components/AuthStateManager";
+import OfflineIndicator from "@/components/ui/OfflineIndicator";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -72,6 +73,7 @@ export const metadata: Metadata = {
   other: {
     "google-site-verification": "gdTxKTDXWn4xAj3jfGDDJI8_ahrxOf_zxwD_FixLGQQ",
     "mobile-web-app-capable": "yes",
+    "google": "notranslate",
   },
 };
 
@@ -97,6 +99,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </AppearanceProvider>
         </PostHogProvider>
         <AuthStateManager />
+        <OfflineIndicator />
         <SplashScreen />
         <Analytics />
         <ServiceWorkerRegistration />
