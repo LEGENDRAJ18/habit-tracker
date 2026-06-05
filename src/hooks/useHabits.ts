@@ -65,11 +65,14 @@ export function useHabits() {
     const thirtyOneDaysAgo = new Date(Date.now() - 31 * 86400000).toISOString().split("T")[0];
     const ninetyDaysAgo    = new Date(Date.now() - 90 * 86400000).toISOString().split("T")[0];
 
-    const [
-      { data: habitsData, error: hErr },
-      { data: logsData,   error: lErr },
-      { data: histData },
-    ] = await Promise.all([
+    // Hard 5-second timeout: if Supabase is slow/down, stop the spinner and
+    // keep whatever is already in state (from the localStorage cache).
+    const TIMEOUT_MS = 5000;
+    const timeout = new Promise<"timeout">((resolve) =>
+      setTimeout(() => resolve("timeout"), TIMEOUT_MS)
+    );
+
+    const fetchAll = Promise.all([
       supabase
         .from("habits")
         .select("*")
@@ -88,6 +91,20 @@ export function useHabits() {
         .gte("completed_at", ninetyDaysAgo)
         .order("completed_at", { ascending: false }),
     ]);
+
+    const result = await Promise.race([fetchAll, timeout]);
+
+    // Timed out — stop showing spinner, keep cached data already in state.
+    if (result === "timeout") {
+      setLoading(false);
+      return;
+    }
+
+    const [
+      { data: habitsData, error: hErr },
+      { data: logsData,   error: lErr },
+      { data: histData },
+    ] = result;
 
     if (hErr) setError(hErr.message);
     if (lErr) setError(lErr.message);

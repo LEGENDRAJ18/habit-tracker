@@ -1,5 +1,5 @@
 // HabitAI Service Worker — app shell caching + push notifications
-const CACHE = "habitai-v5";
+const CACHE = "habitai-v6";
 
 const PRECACHE = [
   "/",
@@ -105,23 +105,37 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 5. HTML navigation — network-first, fall back to cache then offline page.
+  // 5. HTML navigation — stale-while-revalidate.
+  //    Serve cached HTML instantly on return visits; update cache in background.
+  //    First visit (no cache) waits for network with a 6-second hard timeout.
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request)
-        .then((res) => {
-          if (res.ok) {
-            caches.open(CACHE).then((cache) => cache.put(request, res.clone()));
-          }
-          return res;
-        })
-        .catch(async () => {
-          const cached = await caches.match(request) || await caches.match("/dashboard");
-          if (cached) return cached;
-          return new Response(OFFLINE_HTML, {
-            headers: { "Content-Type": "text/html; charset=utf-8" },
-          });
-        })
+      caches.open(CACHE).then(async (cache) => {
+        const cached = await cache.match(request);
+
+        // Start network fetch regardless — keeps cache fresh silently.
+        const networkFetch = fetch(request)
+          .then((res) => {
+            if (res.ok) cache.put(request, res.clone());
+            return res;
+          })
+          .catch(() => null);
+
+        // Return cache immediately if available (stale-while-revalidate).
+        if (cached) return cached;
+
+        // No cache yet (first visit) — wait for network with a 6-second timeout.
+        const timeout = new Promise((resolve) =>
+          setTimeout(() => resolve(null), 6000)
+        );
+        const res = await Promise.race([networkFetch, timeout]);
+        if (res) return res;
+
+        // Network too slow / offline — serve offline page.
+        return new Response(OFFLINE_HTML, {
+          headers: { "Content-Type": "text/html; charset=utf-8" },
+        });
+      })
     );
   }
 });

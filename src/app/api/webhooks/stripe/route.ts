@@ -142,6 +142,42 @@ export async function POST(request: NextRequest) {
       }).eq('id', userId);
       break;
     }
+
+    case 'invoice.payment_failed': {
+      // Payment failed — user is already downgraded via subscription.updated (past_due).
+      // Send a notification email so they know to update their card.
+      const invoice = event.data.object as Stripe.Invoice;
+      const customerId = invoice.customer as string | null;
+      if (!customerId) break;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, email, display_name')
+        .eq('stripe_customer_id', customerId)
+        .maybeSingle();
+
+      if (!profile?.email) break;
+
+      const name = (profile.display_name as string | null) ?? 'there';
+      const manageUrl = 'https://habitaiapp.com/billing';
+
+      const { Resend } = await import('resend');
+      const resendClient = new Resend(process.env.RESEND_API_KEY);
+      await resendClient.emails.send({
+        from: 'HabitAI <noreply@habitaiapp.com>',
+        to: profile.email as string,
+        subject: 'Payment failed — update your card to keep Plus access',
+        html: `
+          <div style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#09090f;color:#e2e8f0;border-radius:16px">
+            <h2 style="color:#fff;font-size:20px;margin-bottom:8px">Payment failed 💳</h2>
+            <p style="color:#94a3b8;margin-bottom:16px">Hey ${name}, we couldn't process your payment for HabitAI.</p>
+            <p style="color:#94a3b8;margin-bottom:24px">Your Plus access has been paused. Update your payment method to restore it — your streaks and data are safe.</p>
+            <a href="${manageUrl}" style="display:inline-block;padding:12px 24px;background:#7c3aed;color:#fff;border-radius:10px;text-decoration:none;font-weight:600">Update payment method →</a>
+            <p style="color:#475569;font-size:12px;margin-top:24px">You're receiving this because you have a HabitAI subscription. <a href="https://habitaiapp.com/settings" style="color:#6d28d9">Manage subscription</a></p>
+          </div>`,
+      }).catch(() => { /* non-blocking */ });
+      break;
+    }
   }
 
   return NextResponse.json({ received: true });

@@ -1,28 +1,22 @@
 {
-  "crons": [
+  "headers": [
     {
-      "path": "/api/send-reminder",
-      "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/push/send",
-      "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/cron/midnight",
-      "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/weekly-reset",
-      "schedule": "0 0 * * 1"
-    },
-    {
-      "path": "/api/cron/monthly-wrapped",
-      "schedule": "0 0 1 * *"
-    },
-    {
-      "path": "/api/weekly-report",
-      "schedule": "0 9 * * 0"
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options",           "value": "SAMEORIGIN" },
+        { "key": "X-Content-Type-Options",     "value": "nosniff" },
+        { "key": "Referrer-Policy",            "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy",         "value": "camera=(), microphone=(self), geolocation=()" },
+        { "key": "Strict-Transport-Security",  "value": "max-age=63072000; includeSubDomains; preload" }
+      ]
     }
+  ],
+  "crons": [
+    { "path": "/api/send-reminder",      "schedule": "0 8 * * *" },
+    { "path": "/api/push/send",          "schedule": "0 8 * * *" },
+    { "path": "/api/cron/midnight",      "schedule": "0 0 * * *" },
+    { "path": "/api/cron/weekly-reset",  "schedule": "0 0 * * 1" },
+    { "path": "/api/cron/monthly-wrapped","schedule": "0 0 1 * *" },
+    { "path": "/api/weekly-report",      "schedule": "0 9 * * 0" }
   ]
 }

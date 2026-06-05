@@ -4,24 +4,71 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Plan } from "@/types";
 
+// ─── Profile localStorage cache ───────────────────────────────────────────────
+
+const CACHE_KEY = "habitai_profile_v2";
+
+interface ProfileSnapshot {
+  tier: string;
+  onboardingCompleted: boolean;
+  goal: string | null;
+  goals: string[];
+  dreamUniversity: string | null;
+  userMode: string;
+  subscriptionStatus: string | null;
+  trialEndDate: string | null;
+  cancelAtPeriodEnd: boolean;
+  currentPeriodEnd: string | null;
+  reminderEnabled: boolean;
+  reminderHour: number;
+  reminderMinute: number;
+  lastFreezeUsed: string | null;
+  freezeProtectedDate: string | null;
+}
+
+function readCache(): ProfileSnapshot | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    return raw ? (JSON.parse(raw) as ProfileSnapshot) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(s: ProfileSnapshot) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(s));
+  } catch {}
+}
+
+// ─── Hook ─────────────────────────────────────────────────────────────────────
+
 export function useProfile() {
-  const [tier, setTier]                               = useState<Plan>("free");
-  const [onboardingCompleted, setOnboardingCompleted] = useState(true);
-  const [goal, setGoal]                               = useState<string | null>(null);
-  const [goals, setGoals]                             = useState<string[]>([]);
-  const [profileLoading, setProfileLoading]           = useState(true);
-  const [lastFreezeUsed, setLastFreezeUsed]           = useState<string | null>(null);
-  const [freezeProtectedDate, setFreezeProtectedDate] = useState<string | null>(null);
-  const [reminderEnabled, setReminderEnabled]               = useState(false);
-  const [reminderHour, setReminderHour]                     = useState(8);
-  const [reminderMinute, setReminderMinute]                 = useState(0);
-  const [signedUpAt, setSignedUpAt]                         = useState<string | null>(null);
-  const [cancelAtPeriodEnd, setCancelAtPeriodEnd]           = useState(false);
-  const [currentPeriodEnd, setCurrentPeriodEnd]             = useState<string | null>(null);
-  const [subscriptionStatus, setSubscriptionStatus]         = useState<string | null>(null);
-  const [trialEndDate, setTrialEndDate]                     = useState<string | null>(null);
-  const [dreamUniversity, setDreamUniversity]               = useState<string | null>(null);
-  const [userMode, setUserMode]                             = useState<"student" | "parent" | "teacher" | "personal">("personal");
+  // Seed synchronously from localStorage so the dashboard renders instantly
+  // on return visits without waiting for any network call.
+  const cached = useRef(readCache()).current;
+
+  const [tier, setTier]                               = useState<Plan>((cached?.tier as Plan) ?? "free");
+  const [onboardingCompleted, setOnboardingCompleted] = useState(cached?.onboardingCompleted ?? true);
+  const [goal, setGoal]                               = useState<string | null>(cached?.goal ?? null);
+  const [goals, setGoals]                             = useState<string[]>(cached?.goals ?? []);
+  const [profileLoading, setProfileLoading]           = useState(!cached);   // false immediately if cached
+  const [lastFreezeUsed, setLastFreezeUsed]           = useState<string | null>(cached?.lastFreezeUsed ?? null);
+  const [freezeProtectedDate, setFreezeProtectedDate] = useState<string | null>(cached?.freezeProtectedDate ?? null);
+  const [reminderEnabled, setReminderEnabled]         = useState(cached?.reminderEnabled ?? false);
+  const [reminderHour, setReminderHour]               = useState(cached?.reminderHour ?? 8);
+  const [reminderMinute, setReminderMinute]           = useState(cached?.reminderMinute ?? 0);
+  const [signedUpAt, setSignedUpAt]                   = useState<string | null>(null);
+  const [cancelAtPeriodEnd, setCancelAtPeriodEnd]     = useState(cached?.cancelAtPeriodEnd ?? false);
+  const [currentPeriodEnd, setCurrentPeriodEnd]       = useState<string | null>(cached?.currentPeriodEnd ?? null);
+  const [subscriptionStatus, setSubscriptionStatus]   = useState<string | null>(cached?.subscriptionStatus ?? null);
+  const [trialEndDate, setTrialEndDate]               = useState<string | null>(cached?.trialEndDate ?? null);
+  const [dreamUniversity, setDreamUniversity]         = useState<string | null>(cached?.dreamUniversity ?? null);
+  const [userMode, setUserMode]                       = useState<"student" | "parent" | "teacher" | "personal">(
+    (cached?.userMode as "student" | "parent" | "teacher" | "personal") ?? "personal"
+  );
+
   const supabase = useRef(createClient()).current;
 
   useEffect(() => {
@@ -44,29 +91,65 @@ export function useProfile() {
       dream_university?: string | null;
       user_mode?: string | null;
     }) {
-      if (d.subscription_tier) setTier(d.subscription_tier as Plan);
-      setOnboardingCompleted(d.onboarding_completed ?? false);
-      setGoal(d.goal ?? null);
-      setGoals(Array.isArray(d.goals) && d.goals.length > 0
+      const newTier                = (d.subscription_tier as Plan | null) ?? "free";
+      const newOnboarding          = d.onboarding_completed ?? false;
+      const newGoal                = d.goal ?? null;
+      const newGoals               = Array.isArray(d.goals) && d.goals.length > 0
         ? d.goals
-        : d.goal ? [d.goal] : []);
-      setLastFreezeUsed(d.last_freeze_used ?? null);
-      setFreezeProtectedDate(d.freeze_protected_date ?? null);
-      setReminderEnabled(d.reminder_enabled ?? false);
-      setReminderHour(d.reminder_hour ?? 8);
-      setReminderMinute(d.reminder_minute ?? 0);
-      setCancelAtPeriodEnd(d.subscription_cancel_at_period_end ?? false);
-      setCurrentPeriodEnd(d.subscription_current_period_end ?? null);
-      setSubscriptionStatus(d.subscription_status ?? null);
-      setTrialEndDate(d.trial_end_date ?? null);
-      setDreamUniversity(d.dream_university ?? null);
-      setUserMode((d.user_mode as "student" | "parent" | "teacher" | "personal") ?? "personal");
+        : d.goal ? [d.goal] : [];
+      const newLastFreeze          = d.last_freeze_used ?? null;
+      const newFreezeDate          = d.freeze_protected_date ?? null;
+      const newReminderEnabled     = d.reminder_enabled ?? false;
+      const newReminderHour        = d.reminder_hour ?? 8;
+      const newReminderMinute      = d.reminder_minute ?? 0;
+      const newCancelAtPeriodEnd   = d.subscription_cancel_at_period_end ?? false;
+      const newCurrentPeriodEnd    = d.subscription_current_period_end ?? null;
+      const newSubStatus           = d.subscription_status ?? null;
+      const newTrialEnd            = d.trial_end_date ?? null;
+      const newDreamUniversity     = d.dream_university ?? null;
+      const newUserMode            = (d.user_mode as "student" | "parent" | "teacher" | "personal") ?? "personal";
+
+      setTier(newTier);
+      setOnboardingCompleted(newOnboarding);
+      setGoal(newGoal);
+      setGoals(newGoals);
+      setLastFreezeUsed(newLastFreeze);
+      setFreezeProtectedDate(newFreezeDate);
+      setReminderEnabled(newReminderEnabled);
+      setReminderHour(newReminderHour);
+      setReminderMinute(newReminderMinute);
+      setCancelAtPeriodEnd(newCancelAtPeriodEnd);
+      setCurrentPeriodEnd(newCurrentPeriodEnd);
+      setSubscriptionStatus(newSubStatus);
+      setTrialEndDate(newTrialEnd);
+      setDreamUniversity(newDreamUniversity);
+      setUserMode(newUserMode);
+
+      // Persist to localStorage so next visit is instant
+      writeCache({
+        tier: newTier,
+        onboardingCompleted: newOnboarding,
+        goal: newGoal,
+        goals: newGoals,
+        dreamUniversity: newDreamUniversity,
+        userMode: newUserMode,
+        subscriptionStatus: newSubStatus,
+        trialEndDate: newTrialEnd,
+        cancelAtPeriodEnd: newCancelAtPeriodEnd,
+        currentPeriodEnd: newCurrentPeriodEnd,
+        reminderEnabled: newReminderEnabled,
+        reminderHour: newReminderHour,
+        reminderMinute: newReminderMinute,
+        lastFreezeUsed: newLastFreeze,
+        freezeProtectedDate: newFreezeDate,
+      });
     }
 
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setProfileLoading(false); return; }
       setSignedUpAt(user.created_at ?? null);
+
       const { data } = await supabase
         .from("profiles")
         .select(
@@ -74,6 +157,7 @@ export function useProfile() {
         )
         .eq("id", user.id)
         .single();
+
       if (data) applyData(data);
       setProfileLoading(false);
 
@@ -92,7 +176,6 @@ export function useProfile() {
     };
   }, [supabase]);
 
-  // Freeze resets every 7 days
   const today = new Date().toISOString().split("T")[0];
   const freezeAvailable =
     !lastFreezeUsed ||
@@ -102,18 +185,12 @@ export function useProfile() {
 
   const applyFreeze = useCallback(
     async (protectedDate: string) => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const todayStr = new Date().toISOString().split("T")[0];
       await supabase
         .from("profiles")
-        .update({
-          last_freeze_used:      todayStr,
-          freeze_protected_date: protectedDate,
-          streak_freezes:        0,
-        })
+        .update({ last_freeze_used: todayStr, freeze_protected_date: protectedDate, streak_freezes: 0 })
         .eq("id", user.id);
       setLastFreezeUsed(todayStr);
       setFreezeProtectedDate(protectedDate);
@@ -123,9 +200,7 @@ export function useProfile() {
 
   const saveReminderPrefs = useCallback(
     async (enabled: boolean, hour: number, minute = 0) => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       await supabase
         .from("profiles")
