@@ -1483,7 +1483,8 @@ export default function DashboardPage() {
           onClose={() => setShowTemplates(false)}
           existingHabits={habits}
           canAddMore={isPaid || habits.length < FREE_HABIT_LIMIT}
-          onAdd={addHabit}
+          goals={goals}
+          onAdd={(name, desc, freq) => addHabit(name, desc, freq)}
           onHitLimit={() => { setShowTemplates(false); openUpgradeModal("habits"); }}
         />
       )}

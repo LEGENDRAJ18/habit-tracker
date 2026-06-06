@@ -19,7 +19,7 @@ const WHERE_OPTIONS = [
 ];
 
 const HOW_LONG_OPTIONS = [
-  "5 min", "10 min", "20 min", "30 min", "45 min", "1 hour", "2+ hours",
+  "5 min", "10 min", "15 min", "20 min", "30 min", "45 min", "1 hour", "2+ hours",
 ];
 
 const TIME_PERIODS = [
@@ -74,6 +74,40 @@ function detectTimeFromName(name: string): string | null {
   if (/\b(evening|sunset|dusk|after\s*work)\b/.test(lower)) return "18:00";
   if (/\b(night|midnight|bedtime|before\s*bed|p\.m\.|nighttime|sleep)\b/.test(lower)) return "21:00";
   return null;
+}
+
+// Returns { howLong, durationMinutes } if a duration is found in the habit name, else nulls.
+function detectDurationFromName(name: string): { howLong: string | null; durationMinutes: number | null } {
+  const lower = name.toLowerCase();
+  const minMatch = lower.match(/\b(\d+)\s*(?:minutes?|mins?)\b/);
+  const hourMatch = lower.match(/\b(\d+(?:\.\d+)?)\s*(?:hours?|hrs?)\b/);
+
+  if (minMatch) {
+    const m = parseInt(minMatch[1]);
+    if (m <= 0 || m > 180) return { howLong: null, durationMinutes: null };
+    const howLong =
+      m <= 7   ? "5 min" :
+      m <= 12  ? "10 min" :
+      m <= 17  ? "15 min" :
+      m <= 25  ? "20 min" :
+      m <= 37  ? "30 min" :
+      m <= 52  ? "45 min" :
+      m <= 75  ? "1 hour" : "2+ hours";
+    const presets = [5, 10, 15, 20, 25, 30, 45, 60];
+    const closest = presets.reduce((a, b) => (Math.abs(b - m) < Math.abs(a - m) ? b : a));
+    return { howLong, durationMinutes: closest };
+  }
+
+  if (hourMatch) {
+    const h = parseFloat(hourMatch[1]);
+    if (h <= 0) return { howLong: null, durationMinutes: null };
+    if (h >= 2) return { howLong: "2+ hours", durationMinutes: null };
+    const m = Math.round(h * 60);
+    const howLong = m >= 55 ? "1 hour" : `${m} min`;
+    return { howLong, durationMinutes: m <= 60 ? m : null };
+  }
+
+  return { howLong: null, durationMinutes: null };
 }
 
 const DIFFICULTY_LEVELS = [
@@ -263,6 +297,11 @@ export default function AddHabitModal({
   const [timeOverridden, setTimeOverridden]             = useState(false);
   const prevDetectedTimeRef                             = useRef<string | null>(null);
 
+  // Smart duration detection
+  const [durationDetectedFromName, setDurationDetectedFromName] = useState<string | null>(null);
+  const [durationOverridden, setDurationOverridden]             = useState(false);
+  const prevDetectedDurRef                                      = useRef<string | null>(null);
+
   // Single-date mode — one date picker replaces Step 2
   const [scheduledDate, setScheduledDate] = useState(() => toDateStr(new Date()));
 
@@ -301,12 +340,26 @@ export default function AddHabitModal({
   const handleNameChange = useCallback((newName: string) => {
     setName(newName);
     setError(null);
-    const detected = detectTimeFromName(newName);
-    if (detected !== prevDetectedTimeRef.current) {
-      prevDetectedTimeRef.current = detected;
-      setTimeDetectedFromName(detected);
+
+    // Auto-detect time
+    const detectedTime = detectTimeFromName(newName);
+    if (detectedTime !== prevDetectedTimeRef.current) {
+      prevDetectedTimeRef.current = detectedTime;
+      setTimeDetectedFromName(detectedTime);
       setTimeOverridden(false);
-      if (detected) setWhenTime(detected);
+      if (detectedTime) setWhenTime(detectedTime);
+    }
+
+    // Auto-detect duration
+    const { howLong: detectedHowLong, durationMinutes: detectedMins } = detectDurationFromName(newName);
+    if (detectedHowLong !== prevDetectedDurRef.current) {
+      prevDetectedDurRef.current = detectedHowLong;
+      setDurationDetectedFromName(detectedHowLong);
+      setDurationOverridden(false);
+      if (detectedHowLong) {
+        setHowLong(detectedHowLong);
+        if (detectedMins !== null) setDurationMinutes(detectedMins);
+      }
     }
   }, []);
 
@@ -571,16 +624,33 @@ export default function AddHabitModal({
                       ⏱ How long?
                       {durationBonus > 0 && <span className="ml-1.5 text-emerald-400">+{durationBonus} XP</span>}
                     </label>
-                    <CustomSelect value={howLong} onChange={setHowLong}
-                      items={HOW_LONG_OPTIONS.map((o) => ({ value: o, label: o }))}
-                      placeholder="Duration…" emptyLabel="— No duration —"
-                    />
+                    {durationDetectedFromName && !durationOverridden ? (
+                      <div className="flex items-center gap-2 bg-violet-950/40 border border-violet-700/35 rounded-xl px-3 py-2.5">
+                        <span className="text-base leading-none flex-shrink-0">⏱</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-violet-300 leading-tight">{durationDetectedFromName}</p>
+                          <p className="text-[10px] text-slate-500 mt-0.5">detected from your habit name</p>
+                        </div>
+                        <button type="button" onClick={() => setDurationOverridden(true)}
+                          className="text-[10px] text-violet-400 hover:text-violet-300 flex-shrink-0 underline underline-offset-2 transition-colors"
+                        >change</button>
+                      </div>
+                    ) : (
+                      <CustomSelect value={howLong} onChange={(v) => { setHowLong(v); if (durationDetectedFromName) setDurationOverridden(true); }}
+                        items={HOW_LONG_OPTIONS.map((o) => ({ value: o, label: o }))}
+                        placeholder="Duration…" emptyLabel="— No duration —"
+                      />
+                    )}
                   </div>
 
                   {/* ── Focus Timer Duration ──────────────────────────────── */}
                   <div>
                     <label className={labelCls}>
-                      ⏳ Focus timer <span className="text-slate-600 font-normal">(optional)</span>
+                      ⏳ Focus timer
+                      {durationDetectedFromName && !durationOverridden && durationMinutes && (
+                        <span className="ml-1.5 text-violet-400 font-normal normal-case tracking-normal">auto-set</span>
+                      )}
+                      {(!durationDetectedFromName || durationOverridden) && <span className="text-slate-600 font-normal"> (optional)</span>}
                     </label>
                     <div className="flex flex-wrap gap-1">
                       {DURATION_PRESETS.map((min) => {
@@ -594,6 +664,7 @@ export default function AddHabitModal({
                             onClick={() => {
                               if (isLocked) { onUpgradePro?.(); return; }
                               setDurationMinutes(isSelected ? null : min);
+                              if (durationDetectedFromName) setDurationOverridden(true);
                             }}
                             title={isLocked ? `Plus/Pro required for ${min}+ min` : undefined}
                             className={`px-2 py-1 rounded-lg text-[10px] font-semibold border transition-all flex items-center gap-0.5 ${
@@ -612,7 +683,9 @@ export default function AddHabitModal({
                     </div>
                     {durationMinutes && (
                       <p className="mt-1 text-[10px] text-violet-400">
-                        ▶ Start a {durationMinutes}-min focus session right from the habit card.
+                        {durationDetectedFromName && !durationOverridden
+                          ? `▶ ${durationMinutes}-min timer auto-set from your habit name.`
+                          : `▶ Start a ${durationMinutes}-min focus session right from the habit card.`}
                         {tier === "pro" && " Pomodoro mode included!"}
                       </p>
                     )}

@@ -173,13 +173,22 @@ Always respond with valid JSON matching this exact schema:
   "helpResources": []`}
 }`;
 
+      const dayOfWeek = new Date().toLocaleDateString("en-US", { weekday: "long" });
+      const bestHabit = habitSummaries.reduce((a, b) => (b.rate7d > a.rate7d ? b : a), habitSummaries[0]);
+      const worstHabit = habitSummaries.reduce((a, b) => (b.rate7d < a.rate7d ? b : a), habitSummaries[0]);
+      const avgCompletion = Math.round(habitSummaries.reduce((s, h) => s + h.rate7d, 0) / habitSummaries.length);
+
       const userPrompt = `User's goals: ${goalsText}
+Today: ${dayOfWeek}
 Total habit completions (30 days): ${totalCompletions}
+Average weekly completion rate: ${avgCompletion}%
+Best performing habit: "${bestHabit.name}" (${bestHabit.rate7d}% this week)
+${habitSummaries.length > 1 ? `Most struggling habit: "${worstHabit.name}" (${worstHabit.rate7d}% this week)` : ""}
 
-Their habits:
-${habitSummaries.map((h) => `- "${h.name}": ${h.rate7d}% completion this week, ${h.streak}-day streak, strength ${h.strength}/100`).join("\n")}
+All habits:
+${habitSummaries.map((h) => `- "${h.name}": ${h.rate7d}% this week, ${h.streak}-day streak, strength ${h.strength}/100`).join("\n")}
 
-Build a realistic 7-day recovery/improvement plan starting from where they are now. Each day should build on the previous one.`;
+Build a realistic 7-day plan. Reference specific habits by name. Build on their strengths and address their weakest areas first.`;
 
       const result = await callOpenAI(systemPrompt, userPrompt);
       return NextResponse.json({ mode: "coaching", remaining, ...result });

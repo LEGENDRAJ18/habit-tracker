@@ -40,6 +40,18 @@ function containsInappropriateContent(name: string): boolean {
   return INAPPROPRIATE_PATTERNS.some((re) => re.test(name));
 }
 
+// ─── Context detection ────────────────────────────────────────────────────────
+
+function detectTimeContext(name: string): boolean {
+  const lower = name.toLowerCase();
+  return /\b(?:morning|evening|night|afternoon|dawn|noon|\d{1,2}(?::\d{2})?\s*(?:am|pm)|before\s+(?:bed|noon|work|sleep)|after\s+(?:waking|work|dinner|eating)|every\s+(?:morning|evening|night|afternoon))\b/.test(lower);
+}
+
+function detectDurationContext(name: string): boolean {
+  const lower = name.toLowerCase();
+  return /\b\d+\s*(?:minutes?|mins?|hours?|hrs?)\b/.test(lower);
+}
+
 // ─── AI system prompt ─────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `You are a content-moderated habit coach reviewing a habit name for a general-audience app used by people aged 7–60. Reply with ONLY valid JSON, no extra keys:
@@ -130,19 +142,35 @@ function ruleBasedValidation(name: string): ValidationResponse {
   }
 
   // Multi-word habit — check if it has some specificity
-  const hasNumber = /\d/.test(lower);
-  const hasFrequency = /\b(daily|every|each|per|weekly|morning|evening|night|before|after)\b/.test(lower);
+  const hasTimeLoc  = detectTimeContext(name);
+  const hasDurLoc   = detectDurationContext(name);
+  const hasNumber   = /\d/.test(lower);
+  const hasFreq     = /\b(daily|every|each|per|weekly|morning|evening|night|before|after)\b/.test(lower);
 
-  if (hasNumber || hasFrequency) {
+  // If the habit already contains time and duration info, it's strong enough
+  if (hasTimeLoc && hasDurLoc) {
+    return {
+      status:  "good",
+      message: `'${cap}' is specific and measurable — you have a clear time, duration, and action to track. Great habit! 🎯`,
+    };
+  }
+
+  if (hasNumber || hasFreq || hasTimeLoc || hasDurLoc) {
     return {
       status:  "good",
       message: `'${cap}' is specific and measurable — you have a clear target to hit and track. Great habit! 🎯`,
     };
   }
 
+  // Generate warning that doesn't contradict what's already there
+  const missing: string[] = [];
+  if (!hasDurLoc && !hasNumber) missing.push("a duration");
+  if (!hasTimeLoc && !hasFreq) missing.push("a frequency");
+  const missingText = missing.length > 0 ? `adding ${missing.join(" and ")} makes it fully trackable.` : "more specifics would make it even stronger.";
+
   return {
     status:  "warning",
-    message: `'${cap}' could be stronger with a frequency or amount — adding "every morning" or a number makes it fully trackable.`,
+    message: `'${cap}' could be stronger — ${missingText}`,
     suggestion: `${cap} for 20 minutes every morning`,
   };
 }
@@ -166,6 +194,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json<ValidationResponse>(INAPPROPRIATE_RESPONSE);
     }
 
+    const hasTime     = detectTimeContext(habitName);
+    const hasDuration = detectDurationContext(habitName);
+
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return NextResponse.json<ValidationResponse>(ruleBasedValidation(habitName));
@@ -175,6 +206,11 @@ export async function POST(request: NextRequest) {
     if (!checkRateLimit(user.id)) {
       return NextResponse.json<ValidationResponse>(ruleBasedValidation(habitName));
     }
+
+    // Build context notes so AI doesn't contradict already-specified info
+    const contextNotes: string[] = [];
+    if (hasTime)     contextNotes.push("The habit name already specifies a time of day. Do NOT suggest adding 'when' as something missing.");
+    if (hasDuration) contextNotes.push("The habit name already specifies a duration. Do NOT suggest adding duration or time commitment.");
 
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -190,9 +226,11 @@ export async function POST(request: NextRequest) {
               const base = goals
                 ? `Habit name: "${habitName}". User's goals: ${goals.join(", ")}.`
                 : `Habit name: "${habitName}"`;
-              return calendarContext
-                ? `${base} Context: This habit is being scheduled for specific days on a calendar — validate whether it makes sense as a schedulable, time-based habit.`
-                : base;
+              const ctxParts = [
+                calendarContext ? "Context: This habit is being scheduled for specific days on a calendar." : "",
+                ...contextNotes,
+              ].filter(Boolean);
+              return ctxParts.length > 0 ? `${base} ${ctxParts.join(" ")}` : base;
             })() },
         ],
         max_tokens: 150,
