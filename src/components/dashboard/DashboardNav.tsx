@@ -201,7 +201,7 @@ export default function DashboardNav() {
   );
 
   return (
-    <nav className="sticky top-0 z-40 bg-[#09090f]/95 backdrop-blur-xl border-b border-violet-900/25"
+    <nav className="sticky top-0 z-40 bg-[#09090f]/95 backdrop-blur-xl border-b border-violet-900/25 pt-safe-nav"
       style={{ boxShadow: "0 1px 0 rgba(109,40,217,0.10), 0 2px 16px rgba(0,0,0,0.35)" }}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6">

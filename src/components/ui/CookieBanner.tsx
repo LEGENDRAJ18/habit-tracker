@@ -1,25 +1,62 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Cookie, X } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 const STORAGE_KEY = "habitai_cookie_consent";
 
 export default function CookieBanner() {
   const [visible, setVisible] = useState(false);
+  const supabase = useRef(createClient()).current;
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!localStorage.getItem(STORAGE_KEY)) {
-      // Small delay so it doesn't flash during hydration
-      const t = setTimeout(() => setVisible(true), 600);
-      return () => clearTimeout(t);
-    }
+    // Fast local check — if already accepted on this device, never show
+    if (localStorage.getItem(STORAGE_KEY)) return;
+
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          // Check if this user already accepted on any device
+          const { data } = await supabase
+            .from("profiles")
+            .select("cookie_consent")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          if (data?.cookie_consent) {
+            // Accepted elsewhere — sync locally and stay hidden
+            localStorage.setItem(STORAGE_KEY, "accepted");
+            return;
+          }
+        }
+      } catch { /* non-blocking */ }
+
+      // Not accepted yet — show after a small delay to avoid hydration flash
+      timerRef.current = setTimeout(() => setVisible(true), 700);
+    })();
+
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const accept = () => {
+  const accept = async () => {
     localStorage.setItem(STORAGE_KEY, "accepted");
     setVisible(false);
+
+    // Persist to profile so the banner never shows on any device for this user
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from("profiles")
+          .update({ cookie_consent: true })
+          .eq("id", user.id);
+      }
+    } catch { /* non-blocking */ }
   };
 
   if (!visible) return null;

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -22,39 +22,35 @@ interface Feature {
 }
 
 const FREE_FEATURES: Feature[] = [
-  { text: "Unlimited habits — no limits" },
-  { text: "Full AI coach from day one" },
-  { text: "Identity Score" },
-  { text: "Mood tracking" },
-  { text: "Friends and leaderboard" },
-  { text: "Habit Battles (2 per month)" },
-  { text: "Basic Habit DNA" },
-  { text: "Student Success Pack" },
+  { text: "Unlimited habits — no cap, ever" },
+  { text: "Basic AI coach — 1 insight per day" },
+  { text: "Identity Score & mood tracking" },
+  { text: "Streaks & XP level system" },
+  { text: "Friends & leaderboard" },
+  { text: "Habit Battles — 2 per month" },
   { text: "PWA — install on your phone" },
 ];
 
 const PLUS_FEATURES: Feature[] = [
   { text: "Everything in Free", isEverything: true },
-  { text: "Streak freeze (1 per week)" },
+  { text: "Streak freeze — never lose a streak" },
   { text: "Unlimited Habit Battles" },
   { text: "Full Habit DNA shareable card" },
   { text: "Public Commitment Contracts", isNew: true },
   { text: "Group habits", isNew: true },
   { text: "Weekly AI email report" },
-  { text: "Advanced analytics and insights" },
   { text: "Priority support" },
 ];
 
 const PRO_FEATURES: Feature[] = [
   { text: "Everything in Plus", isEverything: true },
-  { text: "Deep AI Memory" },
+  { text: "Unlimited AI coaching — no daily cap", isNew: true },
+  { text: "Deep AI Memory — AI learns your patterns & excuses", isNew: true },
   { text: "Voice check-ins" },
-  { text: "CSV export — download all your habit data" },
   { text: "Monthly Wrapped shareable report", isNew: true },
-  { text: "Organisation and School mode" },
-  { text: "AI remembers and calls out your excuses", isNew: true },
-  { text: "University Goal Mode", isNew: true },
-  { text: "Parent visibility dashboard", isNew: true },
+  { text: "CSV export — own your data" },
+  { text: "Organisation & school mode" },
+  { text: "Parent visibility dashboard" },
   { text: "Early access to new features" },
 ];
 
@@ -197,8 +193,11 @@ function PricingCard({ plan, currentTier, annual, checkoutLoading, portalLoading
             <p className={`text-lg font-extrabold leading-none ${isPro ? "text-amber-200" : isPlus ? "text-violet-200" : "text-slate-200"}`}>
               {isFree ? "Free" : isPlus ? "Plus" : "Pro"}
             </p>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              {isFree ? "Everything to start" : isPlus ? "For staying consistent" : "For serious transformation"}
+            </p>
             {isCurrent && (
-              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/50 border border-emerald-800/40 px-2 py-0.5 rounded-full mt-0.5 inline-block">
+              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/50 border border-emerald-800/40 px-2 py-0.5 rounded-full mt-1 inline-block">
                 Your plan
               </span>
             )}
@@ -418,7 +417,7 @@ export default function BillingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#09090f] pb-24 sm:pb-12">
+    <div className="min-h-screen bg-[#09090f] pb-nav">
 
       {/* Ambient glows */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden>
@@ -457,8 +456,8 @@ export default function BillingPage() {
             Upgrade for the features that compound your results.
           </p>
 
-          {/* Annual / Monthly toggle */}
-          <div className="flex items-center justify-center gap-3 mt-8">
+          {/* Annual / Monthly toggle — only shown when annual price IDs are configured */}
+          {(process.env.NEXT_PUBLIC_STRIPE_PLUS_ANNUAL_PRICE_ID || process.env.NEXT_PUBLIC_STRIPE_PRO_ANNUAL_PRICE_ID) && <div className="flex items-center justify-center gap-3 mt-8">
             <span className={`text-sm font-semibold transition-colors ${!annual ? "text-white" : "text-slate-500"}`}>Monthly</span>
             <button
               onClick={() => setAnnual((v) => !v)}
@@ -495,7 +494,7 @@ export default function BillingPage() {
                 Save 2 months →
               </span>
             )}
-          </div>
+          </div>}
         </div>
 
         {/* ── Status messages ──────────────────────────────────────────────── */}

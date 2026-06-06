@@ -65,7 +65,7 @@ export default function StatsBar({ xp, level, bestStreak, totalCompletions, side
           </div>
           <div>
             <p className={`text-sm font-bold ${style.text}`}>{name}</p>
-            <p className="text-[11px] text-slate-600">Level {level}</p>
+            <p className="text-[11px] text-slate-600">Lv {level}</p>
           </div>
         </div>
 
@@ -82,7 +82,7 @@ export default function StatsBar({ xp, level, bestStreak, totalCompletions, side
             />
           </div>
           <p className="text-[10px] text-slate-600 mt-1.5">
-            Level {level + 1} — {(span - displayInto).toLocaleString()} XP to next level
+            Lv {level + 1} — {(span - displayInto).toLocaleString()} XP to next level
           </p>
         </div>
 
@@ -116,7 +116,7 @@ export default function StatsBar({ xp, level, bestStreak, totalCompletions, side
             style={{ width: `${pct}%` }}
           />
         </div>
-        <p className="text-[10px] text-slate-600 mt-0.5">Level {level + 1} — {(span - displayInto).toLocaleString()} XP to next level</p>
+        <p className="text-[10px] text-slate-600 mt-0.5">Lv {level + 1} — {(span - displayInto).toLocaleString()} XP to next level</p>
       </div>
       <div className="flex items-center gap-4 flex-shrink-0">
         <div className="flex items-center gap-1.5 text-xs text-slate-500">

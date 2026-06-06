@@ -143,7 +143,7 @@ function EncourageModal({ child, onClose }: { child: LinkedChild; onClose: () =>
           <div className="text-center py-4">
             <div className="text-3xl mb-2">✅</div>
             <p className="text-sm text-emerald-300 font-semibold">Message noted!</p>
-            <p className="text-xs text-slate-500 mt-1">Push notifications coming soon</p>
+            <p className="text-xs text-slate-500 mt-1">Your child will see this on their next app visit</p>
           </div>
         ) : (
           <div className="space-y-3">

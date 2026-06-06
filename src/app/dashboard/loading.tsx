@@ -1,4 +1,4 @@
-// Shown by Next.js App Router while the dashboard JS chunk is loading.
+﻿// Shown by Next.js App Router while the dashboard JS chunk is loading.
 // Matches the dashboard's own skeleton so there's zero visual jump.
 function SkeletonCard() {
   return (
@@ -20,7 +20,7 @@ function SkeletonCard() {
 
 export default function DashboardLoading() {
   return (
-    <div className="bg-[#09090f] min-h-screen pb-20 sm:pb-8">
+    <div className="bg-[#09090f] min-h-screen pb-nav">
       <main className="max-w-[1340px] mx-auto px-4 sm:px-6 py-8">
 
         {/* Header skeleton */}

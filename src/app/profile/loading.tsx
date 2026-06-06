@@ -1,6 +1,6 @@
-export default function ProfileLoading() {
+﻿export default function ProfileLoading() {
   return (
-    <div className="bg-[#09090f] min-h-screen pb-20 sm:pb-8">
+    <div className="bg-[#09090f] min-h-screen pb-nav">
       <div className="sticky top-0 z-40 h-14 bg-[#09090f]/90 border-b border-violet-900/20" />
       <main className="max-w-xl mx-auto px-4 sm:px-6 py-8">
         {/* Avatar skeleton */}

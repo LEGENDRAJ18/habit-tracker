@@ -8,7 +8,8 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-const ADMIN_EMAILS  = ["mannrajsj@gmail.com", "surjeetsj@gmail.com"];
+const ADMIN_EMAILS  = (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "mannrajsj@gmail.com,surjeetsj@gmail.com")
+  .split(",").map((e) => e.trim()).filter(Boolean);
 const REFRESH_MS    = 10_000;
 
 interface Stats {

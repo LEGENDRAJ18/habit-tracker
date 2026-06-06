@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
@@ -273,7 +273,7 @@ export default function HelpPage() {
   const isSearching = query.trim().length > 0;
 
   return (
-    <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
+    <div className="min-h-screen bg-[#09090f] pb-nav">
 
       {/* Hero */}
       <div className="relative overflow-hidden border-b border-violet-900/20">

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -164,7 +164,7 @@ function XPLevelBar({ xp, level, onClick }: { xp: number; level: number; onClick
       <span className="text-xl leading-none flex-shrink-0">{levelEmoji(level)}</span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1.5">
-          <p className="text-xs font-bold text-white">Lv.{level} · {levelName(level)}</p>
+          <p className="text-xs font-bold text-white">Lv {level} · {levelName(level)}</p>
           <p className="text-[10px] text-violet-400 font-medium tabular-nums">{xpInto.toLocaleString()} / {xpSpan.toLocaleString()} XP</p>
         </div>
         <div className="h-1.5 bg-violet-950/60 rounded-full overflow-hidden">
@@ -732,7 +732,7 @@ export default function DashboardPage() {
         <NotificationPermissionModal onAllow={allowPush} onDismiss={dismissPush} />
       )}
 
-      <main className="max-w-[1340px] mx-auto px-4 sm:px-6 py-8 pb-20 sm:pb-8 page-fade">
+      <main className="max-w-[1340px] mx-auto px-4 sm:px-6 py-8 pb-nav page-fade">
         {/* ── Inline contextual banners ── */}
         <SmartNotification
           tier={tier}
@@ -782,7 +782,7 @@ export default function DashboardPage() {
                   title="View XP & level details"
                   className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full text-violet-300 bg-violet-950/40 border border-violet-700/30 hover:opacity-75 transition-opacity"
                 >
-                  {levelEmoji(level)} Lv.{level} {levelName(level)}
+                  {levelEmoji(level)} Lv {level} {levelName(level)}
                 </button>
               </>
             )}

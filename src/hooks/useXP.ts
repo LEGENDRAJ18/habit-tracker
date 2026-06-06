@@ -58,6 +58,8 @@ export function useXP() {
   const totalRef        = useRef(0);
 
   const supabase = useRef(createClient()).current;
+  // Prevents XP-awarding callbacks from running before the initial DB fetch completes
+  const initialLoadDone = useRef(false);
 
   useEffect(() => {
     void (async () => {
@@ -71,7 +73,9 @@ export function useXP() {
           .single();
 
         const loadedXP    = data?.xp ?? 0;
-        const loadedLevel = data?.level ?? 1;
+        // Always recompute level from XP — never trust the stored level value,
+        // which can drift if writes race during onboarding or first login.
+        const loadedLevel = levelFromXP(loadedXP);
         const loadedAch   = (data?.achievements as AchievementId[]) ?? [];
         const loadedTotal = data?.total_completions ?? 0;
         const today       = new Date().toISOString().split("T")[0];
@@ -92,9 +96,15 @@ export function useXP() {
         setAchievements(loadedAch);
         setDailyMilestones(loadedDM);
         setTotalCompletions(loadedTotal);
+
+        // Sync the corrected level back to DB if it differs from what was stored
+        if (data?.level !== undefined && data.level !== loadedLevel) {
+          await supabase.from("profiles").update({ level: loadedLevel }).eq("id", user.id);
+        }
       } catch {
         // ignore — loading state cleaned up below
       } finally {
+        initialLoadDone.current = true;
         setXPLoading(false);
       }
     })();
@@ -162,9 +172,11 @@ export function useXP() {
     return { luckyBonus: lucky };
   }, [supabase, awardXP]);
 
-  // Award +5 XP once per calendar day on first app open
+  // Award +5 XP once per calendar day on first app open.
+  // Guard: must wait until the initial DB fetch is done so xpRef has the real value.
   const onDailyOpen = useCallback(async (): Promise<boolean> => {
     if (typeof window === "undefined") return false;
+    if (!initialLoadDone.current) return false; // race-condition guard
     const today = new Date().toISOString().split("T")[0];
     if (localStorage.getItem("habitai_last_login_xp") === today) return false;
     localStorage.setItem("habitai_last_login_xp", today);

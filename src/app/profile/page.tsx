@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -121,7 +121,7 @@ export default function ProfilePage() {
   const isGold   = colorKey === "gold";
 
   return (
-    <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
+    <div className="min-h-screen bg-[#09090f] pb-nav">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-8 pb-3">
         <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">👤 Profile</h1>
         <p className="text-sm text-slate-500 mt-1.5">Your journey so far — levels, achievements, and stats</p>

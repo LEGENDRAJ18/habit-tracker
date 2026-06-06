@@ -25,6 +25,8 @@ export default function MoodCheckin() {
   const [correlations, setCorrelations] = useState<Correlation[]>([]);
   const [daysLogged,   setDaysLogged]   = useState(0);
   const [loaded,       setLoaded]       = useState(false);
+  // Dismissed: hide the whole widget immediately after submitting (or if already logged today)
+  const [dismissed,    setDismissed]    = useState(false);
 
   useEffect(() => {
     void load();
@@ -44,7 +46,8 @@ export default function MoodCheckin() {
       supabase.from("mood_logs").select("mood, logged_at").eq("user_id", user.id).order("logged_at", { ascending: false }).limit(90),
     ]);
 
-    if (todayLog) { setTodayMood(todayLog.mood); setSelected(todayLog.mood); }
+    // Already logged today — dismiss silently, no need to show the widget
+    if (todayLog) { setDismissed(true); setLoaded(true); return; }
 
     const logs = allLogs ?? [];
     setDaysLogged(logs.length);
@@ -101,8 +104,11 @@ export default function MoodCheckin() {
       if (!user) return;
       await supabase.from("mood_logs").insert({ user_id: user.id, mood: value });
       setTodayMood(value);
+      setDismissed(true); // instant dismiss — same feel as deleting a habit
     } finally { setSaving(false); }
   }
+
+  if (dismissed) return null;
 
   if (!loaded) return (
     <div className="bg-[#0f0f1a] border border-violet-900/20 rounded-2xl px-4 py-4 mb-4 animate-pulse">

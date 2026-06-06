@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -1907,7 +1907,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-8">
+    <div className="min-h-screen bg-[#09090f] pb-nav">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-6">
         {/* Tab bar */}
         <div className="flex overflow-x-auto gap-1 bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-1.5 mb-6 scrollbar-none">

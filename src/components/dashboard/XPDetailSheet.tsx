@@ -129,7 +129,7 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
         <div className="flex items-start justify-between px-5 pt-3 pb-1">
           <div>
             <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">XP & Level</p>
-            <h2 className="text-xl font-black text-white mt-0.5">{levelEmoji(level)} Level {level} · {levelName(level)}</h2>
+            <h2 className="text-xl font-black text-white mt-0.5">{levelEmoji(level)} Lv {level} · {levelName(level)}</h2>
           </div>
           <button
             onClick={dismiss}
@@ -169,7 +169,7 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                 <span className="text-2xl font-black text-white leading-none">{pct}%</span>
-                <span className="text-[10px] text-slate-500 mt-0.5">to Lv.{nextLv}</span>
+                <span className="text-[10px] text-slate-500 mt-0.5">to Lv {nextLv}</span>
               </div>
             </div>
 
@@ -177,7 +177,7 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
               <div>
                 <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">XP Progress</p>
                 <p className="text-base font-bold text-white mt-0.5 tabular-nums">{xpInto.toLocaleString()} / {xpSpan.toLocaleString()} XP</p>
-                <p className="text-xs text-violet-400">{xpToNext.toLocaleString()} XP to Level {nextLv}</p>
+                <p className="text-xs text-violet-400">{xpToNext.toLocaleString()} XP to Lv {nextLv}</p>
               </div>
               <div>
                 <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">All-Time XP</p>
@@ -186,7 +186,7 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
               {daysToUp !== null && daysToUp < 365 && (
                 <div className="flex items-center gap-1.5 text-xs text-slate-400">
                   <Target className="w-3 h-3 text-violet-400 flex-shrink-0" />
-                  ~{daysToUp} day{daysToUp !== 1 ? "s" : ""} to Level {nextLv}
+                  ~{daysToUp} day{daysToUp !== 1 ? "s" : ""} to Lv {nextLv}
                 </div>
               )}
             </div>

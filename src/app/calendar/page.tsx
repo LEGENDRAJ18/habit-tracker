@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
@@ -1102,7 +1102,7 @@ export default function CalendarPage() {
 
   if (habits.length === 0) {
     return (
-      <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
+      <div className="min-h-screen bg-[#09090f] pb-nav">
         <main className="max-w-[1340px] mx-auto px-4 sm:px-6 py-8">
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="w-16 h-16 rounded-2xl bg-violet-900/20 border border-violet-800/25 flex items-center justify-center mx-auto mb-5">
@@ -1126,7 +1126,7 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
+    <div className="min-h-screen bg-[#09090f] pb-nav">
       {showPlanModal && (
         <AddHabitModal
           onClose={() => setShowPlanModal(false)}

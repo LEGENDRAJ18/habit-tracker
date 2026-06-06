@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Users, Flame, Zap, Send, Check, X, Loader2, UserPlus, Trophy, UserSearch, ChevronDown, Share2, Copy, Mail, Swords } from "lucide-react";
@@ -90,11 +90,12 @@ function FriendProfileModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-16 p-4 overflow-y-auto bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end sm:items-start justify-center sm:pt-16 sm:p-4 overflow-y-auto bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="bg-[#0f0f1a] border border-violet-800/30 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+        className="mobile-sheet-enter bg-[#0f0f1a] border border-violet-800/30 rounded-t-2xl sm:rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+        style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
         onClick={(e) => e.stopPropagation()}
       >
         {loading ? (
@@ -243,9 +244,10 @@ function ShareModal({ onClose }: { onClose: () => void }) {
   const canNativeShare = typeof navigator !== "undefined" && !!navigator.share;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 p-4 overflow-y-auto bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center sm:pt-16 sm:p-4 overflow-y-auto bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="bg-[#0f0f1a] border border-violet-800/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl"
+        className="mobile-sheet-enter bg-[#0f0f1a] border border-violet-800/30 rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-sm shadow-2xl"
+        style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
@@ -469,7 +471,7 @@ export default function FriendsPage() {
         />
       )}
 
-      <div className="min-h-screen bg-[#09090f] pb-20 sm:pb-0">
+      <div className="min-h-screen bg-[#09090f] pb-nav">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-8 pb-3 flex items-start justify-between">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">👥 Friends</h1>

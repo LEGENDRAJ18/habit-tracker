@@ -1,6 +1,6 @@
-export default function BillingLoading() {
+﻿export default function BillingLoading() {
   return (
-    <div className="bg-[#09090f] min-h-screen pb-20 sm:pb-8">
+    <div className="bg-[#09090f] min-h-screen pb-nav">
       <div className="sticky top-0 z-40 h-14 bg-[#09090f]/90 border-b border-violet-900/20" />
       <main className="max-w-xl mx-auto px-4 sm:px-6 py-8 space-y-4">
         <div className="h-6 bg-violet-900/40 animate-pulse rounded-full w-40 mb-6" />

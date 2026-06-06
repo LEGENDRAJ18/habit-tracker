@@ -238,7 +238,7 @@ export default function LevelUpModal({ newLevel, onDismiss, onShare }: Props) {
         <p className="text-xs font-bold text-violet-400 uppercase tracking-widest mb-1">
           Level Up! 🎉
         </p>
-        <h2 className="text-2xl font-extrabold text-white mb-0.5">You are now Level {newLevel}</h2>
+        <h2 className="text-2xl font-extrabold text-white mb-0.5">You are now Lv {newLevel}</h2>
         <p className={`text-base font-bold ${style.text} mb-1`}>{name}</p>
         <p className="text-xs text-slate-500 mb-3">Keep going. Every level is proof you showed up.</p>
 
@@ -268,7 +268,7 @@ export default function LevelUpModal({ newLevel, onDismiss, onShare }: Props) {
         {/* Next reward teaser */}
         {nextReward && (
           <p className="text-[10px] text-slate-600 mb-4">
-            Next reward: {nextReward.icon} Level {nextReward.level} — {nextReward.name}
+            Next reward: {nextReward.icon} Lv {nextReward.level} — {nextReward.name}
           </p>
         )}
         {!nextReward && <div className="mb-4" />}

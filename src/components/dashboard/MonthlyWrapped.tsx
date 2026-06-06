@@ -115,15 +115,16 @@ export default function MonthlyWrapped({ tier, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-16 p-4 overflow-y-auto bg-black/85 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end sm:items-start justify-center sm:pt-16 sm:p-4 overflow-y-auto bg-black/85 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
-        className="w-full max-w-sm bg-[#09090f] border border-violet-700/25 rounded-3xl shadow-2xl overflow-hidden"
+        className="w-full sm:max-w-sm bg-[#09090f] border border-violet-700/25 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
         style={{
           height: "min(620px, 90vh)",
           animation: "wrappedIn 0.4s cubic-bezier(0.16,1,0.3,1) both",
           boxShadow: "0 0 0 1px rgba(139,92,246,0.06), 0 32px 64px rgba(0,0,0,0.7)",
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
