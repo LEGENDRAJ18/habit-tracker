@@ -415,7 +415,7 @@ function getEmptyStateRecs(goals: string[]) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { habits, todayLogs, loading, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength, refetch, historicalLogs } =
+  const { habits, todayLogs, loading, isSyncing, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength, refetch, historicalLogs } =
     useHabits();
   const { tier, profileLoading, onboardingCompleted, goals, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt, dreamUniversity, userMode } = useProfile();
   const { xp, level, achievements, totalCompletions, justLeveledUp, xpLoading, isDailyAchieved, onHabitCompleted, onDailyOpen, checkMilestones, dismissLevelUp } = useXP();
@@ -446,7 +446,17 @@ export default function DashboardPage() {
   });
 
   const MS_1H = 60 * 60 * 1000;
-  const isNewUser = !signedUpAt || (Date.now() - new Date(signedUpAt).getTime()) < MS_1H;
+  const isNewUser = useMemo(
+    // eslint-disable-next-line react-hooks/purity
+    () => !signedUpAt || (Date.now() - new Date(signedUpAt).getTime()) < MS_1H,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [signedUpAt]
+  );
+  const journeyDay = useMemo(
+    // eslint-disable-next-line react-hooks/purity
+    () => signedUpAt ? Math.max(1, Math.round((Date.now() - new Date(signedUpAt).getTime()) / 86400000)) : 1,
+    [signedUpAt]
+  );
   const showOnboarding =
     !profileLoading &&
     !loading &&
@@ -480,6 +490,7 @@ export default function DashboardPage() {
   const [showHabitDNA,          setShowHabitDNA]          = useState(false);
   const [commitmentHabit, setCommitmentHabit] = useState<{ id: string; name: string; isPublic: boolean; commitmentText: string | null } | null>(null);
   const [focusHabit, setFocusHabit] = useState<Habit | null>(null);
+  const [timerMinimized, setTimerMinimized] = useState(false);
   const [showXPSheet, setShowXPSheet] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
@@ -506,6 +517,7 @@ export default function DashboardPage() {
     const ageMs = Date.now() - new Date(signedUpAt).getTime();
     if (ageMs > 15 * 60 * 1000) return; // only within first 15 min
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFirstHabitWowName(habits[0]?.name ?? null);
   }, [habits, loading, profileLoading, signedUpAt]);
 
@@ -517,6 +529,7 @@ export default function DashboardPage() {
     const ageMs = Date.now() - new Date(signedUpAt).getTime();
     const MS_3D = 3 * 24 * 60 * 60 * 1000;
     const MS_8D = 8 * 24 * 60 * 60 * 1000;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (ageMs >= MS_3D && ageMs < MS_8D) setShowFirstWeekCheckin(true);
   }, [loading, profileLoading, signedUpAt, totalCompletions]);
 
@@ -524,6 +537,7 @@ export default function DashboardPage() {
     const params = new URLSearchParams(window.location.search);
     const upgrade = params.get("upgrade");
     const checkout = params.get("checkout");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (upgrade === "success") setUpgradeSuccess(true);
     if (checkout === "plus" || checkout === "pro") {
       const priceId =
@@ -550,6 +564,7 @@ export default function DashboardPage() {
       if (prev === 0 && completedCount === 1) {
         if (!localStorage.getItem("habitai_first_ever_completion")) {
           localStorage.setItem("habitai_first_ever_completion", "1");
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           setShowFirstCompletion(true);
         } else {
           toast("💪 First habit of the day done! Keep the momentum!", "success", undefined, 3000);
@@ -602,6 +617,7 @@ export default function DashboardPage() {
     if (loading || isPaid || seenBreakModalRef.current) return;
     if (habits.some((h) => hasBrokenStreak(h.id))) {
       seenBreakModalRef.current = true;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowStreakBroken(true);
     }
   }, [loading, isPaid, habits, hasBrokenStreak]);
@@ -665,6 +681,7 @@ export default function DashboardPage() {
     const key = `monthly_wrapped_shown_${today.getFullYear()}_${today.getMonth()}`;
     if (localStorage.getItem(key)) return;
     localStorage.setItem(key, "1");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setShowMonthlyWrapped(true);
   }, [tier, loading]);
 
@@ -676,6 +693,7 @@ export default function DashboardPage() {
     if (localStorage.getItem(lsKey)) return;
     const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
     const missedYesterday = habits.find((h) => !getStreak(h.id) && h.created_at.split("T")[0] < yesterday);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (missedYesterday) setCheckinHabit(missedYesterday.name);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, habits.length]);
@@ -800,14 +818,19 @@ export default function DashboardPage() {
           })()}
           {userMode === "student" && dreamUniversity && signedUpAt ? (
             <p className="text-sm text-indigo-300/90 font-semibold mb-1">
-              🎓 Your {dreamUniversity} journey — Day {Math.max(1, Math.round((Date.now() - new Date(signedUpAt).getTime()) / 86400000))}
+              🎓 Your {dreamUniversity} journey — Day {journeyDay}
             </p>
           ) : formatGoalsLine(goals) ? (
             <p className="text-sm text-violet-300/80 font-medium mb-1">{formatGoalsLine(goals)}</p>
           ) : null}
           {/* Row 1: heading + action buttons */}
           <div className="flex items-center gap-2 mb-1">
-            <h2 className="text-lg font-semibold text-white">Today&apos;s Habits</h2>
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+              Today&apos;s Habits
+              {isSyncing && (
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" title="Syncing…" />
+              )}
+            </h2>
             <div className="ml-auto flex items-center gap-2">
               {isPaid && habits.length > 0 && (
                 <button
@@ -1081,7 +1104,7 @@ export default function DashboardPage() {
                   commitmentText: habit.commitment_text ?? null,
                 })}
                 onUpgradePro={() => openUpgradeModal("pro_feature", tier === "plus")}
-                onStartTimer={habit.duration_minutes ? () => setFocusHabit(habit) : undefined}
+                onStartTimer={habit.duration_minutes ? () => { setFocusHabit(habit); setTimerMinimized(false); } : undefined}
                 onSmartTimingToggle={async (enabled) => {
                   const res = await fetch(`/api/habits/${habit.id}/smart-timing`, {
                     method: "POST",
@@ -1248,7 +1271,7 @@ export default function DashboardPage() {
         </div>{/* end left column */}
 
         {/* ── Right sidebar (xl only) ────────────────────────────────────── */}
-        <div className="hidden xl:flex xl:flex-col gap-4 sticky top-20 h-[calc(100vh-5rem)] overflow-hidden pb-4">
+        <div className="hidden xl:flex xl:flex-col gap-4 sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto scrollbar-none pb-4">
 
           {/* AI Insight — available to all users */}
           <div data-tour="ai-insight" className="relative overflow-hidden rounded-2xl bg-[#0c0c18] border border-violet-600/30">
@@ -1541,12 +1564,15 @@ export default function DashboardPage() {
         <FirstCompletionModal onDismiss={() => setShowFirstCompletion(false)} />
       )}
 
-      {/* Focus Timer */}
+      {/* Focus Timer — stays mounted while minimized so the timer keeps running */}
       {focusHabit && (
         <FocusTimer
           habit={focusHabit}
           tier={tier}
           isCompleted={isCompletedToday(focusHabit.id)}
+          minimized={timerMinimized}
+          onMinimize={() => setTimerMinimized(true)}
+          onMaximize={() => setTimerMinimized(false)}
           onComplete={() => {
             if (!isCompletedToday(focusHabit.id)) {
               void toggleHabit(focusHabit.id);
@@ -1560,7 +1586,7 @@ export default function DashboardPage() {
               toast("⚡ XP earned! Tap your level to see progress.", "success", undefined, 2000);
             }).catch(() => {});
           }}
-          onClose={() => setFocusHabit(null)}
+          onClose={() => { setFocusHabit(null); setTimerMinimized(false); }}
         />
       )}
 

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import posthog from "posthog-js";
 import { createClient } from "@/lib/supabase/client";
 import type { Habit, HabitLog } from "@/types";
 import {
   saveHabitsCache, loadHabitsCache,
-  loadQueue, clearQueue, enqueue, type OfflineOp,
+  loadQueue, clearQueue, enqueue, type OfflineOp, type AddHabitPayload,
 } from "@/lib/habitsCache";
 
 // Computes habit strength from historical logs using the canonical formula:
@@ -42,21 +42,24 @@ function computeStrengthFromLogs(
 
 export function useHabits() {
   // ── Seed state from localStorage cache for instant display ──
-  const cacheRef = useRef(loadHabitsCache());
-  const [habits, setHabits]                 = useState<Habit[]>(cacheRef.current?.habits ?? []);
-  const [todayLogs, setTodayLogs]           = useState<HabitLog[]>(cacheRef.current?.todayLogs ?? []);
-  const [historicalLogs, setHistoricalLogs] = useState<Pick<HabitLog, "habit_id" | "completed_at">[]>(cacheRef.current?.historicalLogs ?? []);
-  const [loading, setLoading]               = useState(!cacheRef.current); // skip spinner if cache hit
+  const [habits, setHabits]                 = useState<Habit[]>(() => loadHabitsCache()?.habits ?? []);
+  const [todayLogs, setTodayLogs]           = useState<HabitLog[]>(() => loadHabitsCache()?.todayLogs ?? []);
+  const [historicalLogs, setHistoricalLogs] = useState<Pick<HabitLog, "habit_id" | "completed_at">[]>(() => loadHabitsCache()?.historicalLogs ?? []);
+  const [loading, setLoading]               = useState(() => !loadHabitsCache()); // skip spinner if cache hit
+  // isSyncing: true while a background network fetch is in progress (cache was stale or outdated)
+  const [isSyncing, setIsSyncing]           = useState(() => loadHabitsCache()?.stale ?? false);
   const [error, setError]                   = useState<string | null>(null);
-  const supabase = useRef(createClient()).current;
+  const [supabase] = useState(() => createClient());
 
   const fetchData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
+    setIsSyncing(true);
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
       if (!silent) setLoading(false);
+      setIsSyncing(false);
       return;
     }
 
@@ -65,9 +68,16 @@ export function useHabits() {
     const thirtyOneDaysAgo = new Date(Date.now() - 31 * 86400000).toISOString().split("T")[0];
     const ninetyDaysAgo    = new Date(Date.now() - 90 * 86400000).toISOString().split("T")[0];
 
-    // Hard 5-second timeout: if Supabase is slow/down, stop the spinner and
+    // If offline, skip the network entirely — cache is already in state.
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      if (!silent) setLoading(false);
+      setIsSyncing(false);
+      return;
+    }
+
+    // Hard 2.5-second timeout: if Supabase is slow/down, stop the spinner and
     // keep whatever is already in state (from the localStorage cache).
-    const TIMEOUT_MS = 5000;
+    const TIMEOUT_MS = 2500;
     const timeout = new Promise<"timeout">((resolve) =>
       setTimeout(() => resolve("timeout"), TIMEOUT_MS)
     );
@@ -97,6 +107,7 @@ export function useHabits() {
     // Timed out — stop showing spinner, keep cached data already in state.
     if (result === "timeout") {
       setLoading(false);
+      setIsSyncing(false);
       return;
     }
 
@@ -149,12 +160,14 @@ export function useHabits() {
     setTodayLogs(logsData || []);
     setHistoricalLogs(loadedHist);
     if (!silent) setLoading(false);
+    setIsSyncing(false);
 
     // Persist to cache for instant load next visit
     saveHabitsCache(loadedHabits, logsData || [], loadedHist);
   }, [supabase]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
   }, [fetchData]);
 
@@ -180,6 +193,8 @@ export function useHabits() {
             await supabase.from("habit_logs").delete().eq("id", op.logId);
           } else if (op.type === "delete_habit") {
             await supabase.from("habits").delete().eq("id", op.habitId);
+          } else if (op.type === "add_habit") {
+            await supabase.from("habits").insert(op.payload).select().single();
           }
         } catch {
           // If an op fails after reconnect, skip it — state already reflects the intent
@@ -213,6 +228,8 @@ export function useHabits() {
     } = await supabase.auth.getUser();
     if (!user) return { error: "Not authenticated" };
 
+    const offline = typeof navigator !== "undefined" && !navigator.onLine;
+
     // Optimistic: add to state immediately so the card appears at once
     const tempId = `opt-${Date.now()}`;
     const now    = new Date().toISOString();
@@ -237,6 +254,27 @@ export function useHabits() {
       commitment_text:         null,
     };
     setHabits((prev) => [...prev, tempHabit]);
+
+    if (offline) {
+      const payload: AddHabitPayload = {
+        user_id:                 user.id,
+        name,
+        description:             description || null,
+        frequency,
+        stack_after_id:          stackAfterId    ?? null,
+        when_time:               whenTime        ?? null,
+        where_location:          whereLocation   ?? null,
+        how_long:                howLong         ?? null,
+        validity_score:          validityScore   ?? "valid",
+        preferred_reminder_time: reminderTime    ?? null,
+        duration_minutes:        durationMinutes ?? null,
+        xp_value:                xpValue         ?? 10,
+        difficulty:              difficulty      ?? 1,
+      };
+      enqueue({ type: "add_habit", tempId, payload });
+      posthog.capture("habit_created", { habit_name: name, frequency, validity_score: validityScore ?? "valid" });
+      return { error: null };
+    }
 
     const { data, error } = await supabase
       .from("habits")
@@ -292,18 +330,13 @@ export function useHabits() {
   };
 
   const toggleHabit = async (habitId: string): Promise<void> => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
     const offline         = typeof navigator !== "undefined" && !navigator.onLine;
     const habit           = habits.find((h) => h.id === habitId);
     const currentStrength = habit?.habit_strength ?? 10;
     const existing        = todayLogs.find((l) => l.habit_id === habitId);
 
     if (existing) {
-      // ── Optimistic uncomplete ──
+      // ── Optimistic uncomplete — fires INSTANTLY before any await ──
       const newStrength = Math.max(5, currentStrength - 5);
       setTodayLogs((prev) => prev.filter((l) => l.id !== existing.id));
       setHistoricalLogs((prev) => {
@@ -316,8 +349,21 @@ export function useHabits() {
         prev.map((h) => (h.id === habitId ? { ...h, habit_strength: newStrength } : h)),
       );
 
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        // Revert — not authenticated
+        setTodayLogs((prev) => [...prev, existing]);
+        setHistoricalLogs((prev) => [
+          { habit_id: existing.habit_id, completed_at: existing.completed_at },
+          ...prev,
+        ]);
+        setHabits((prev) =>
+          prev.map((h) => (h.id === habitId ? { ...h, habit_strength: currentStrength } : h)),
+        );
+        return;
+      }
+
       if (offline) {
-        // Queue for later; optimistic state already applied
         enqueue({ type: "toggle_uncomplete", habitId, logId: existing.id });
         return;
       }
@@ -337,17 +383,19 @@ export function useHabits() {
       void supabase.from("habits").update({ habit_strength: newStrength }).eq("id", habitId);
 
     } else {
-      // ── Optimistic complete ──
+      // ── Optimistic complete — fires INSTANTLY before any await ──
       const now    = new Date().toISOString();
       const tempId = `opt-${habitId}-${Date.now()}`;
+      const newStrength = Math.min(100, currentStrength + 5);
+
+      // user_id is empty placeholder until auth resolves — only local state uses it
       const tempLog: HabitLog = {
         id:           tempId,
         habit_id:     habitId,
-        user_id:      user.id,
+        user_id:      "",
         completed_at: now,
         notes:        null,
       };
-      const newStrength = Math.min(100, currentStrength + 5);
 
       setTodayLogs((prev) => [...prev, tempLog]);
       setHistoricalLogs((prev) => {
@@ -362,6 +410,22 @@ export function useHabits() {
 
       posthog.capture("habit_completed", { habit_name: habit?.name, frequency: habit?.frequency });
       if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(10);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        // Revert
+        setTodayLogs((prev) => prev.filter((l) => l.id !== tempId));
+        setHistoricalLogs((prev) => {
+          const dateStr = now.split("T")[0];
+          return prev.filter(
+            (l) => !(l.habit_id === habitId && l.completed_at.split("T")[0] === dateStr),
+          );
+        });
+        setHabits((prev) =>
+          prev.map((h) => (h.id === habitId ? { ...h, habit_strength: currentStrength } : h)),
+        );
+        return;
+      }
 
       if (offline) {
         enqueue({ type: "toggle_complete", habitId, userId: user.id, completed_at: now, tempLogId: tempId });
@@ -572,6 +636,7 @@ export function useHabits() {
     todayLogs,
     historicalLogs,
     loading,
+    isSyncing,
     error,
     completedCount,
     addHabit,

@@ -184,14 +184,17 @@ interface Props {
   habit: Habit;
   tier: Plan;
   isCompleted: boolean;
-  onComplete: () => void;         // marks habit done
-  onXP: () => void;               // fires XP event
+  minimized: boolean;
+  onMinimize: () => void;
+  onMaximize: () => void;
+  onComplete: () => void;
+  onXP: () => void;
   onClose: () => void;
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function FocusTimer({ habit, tier, isCompleted, onComplete, onXP, onClose }: Props) {
+export default function FocusTimer({ habit, tier, isCompleted, minimized, onMinimize, onMaximize, onComplete, onXP, onClose }: Props) {
   const durationMinutes = habit.duration_minutes ?? 25;
   const isPro           = tier === "pro";
   const isPlus          = tier === "plus" || isPro;
@@ -221,7 +224,9 @@ export default function FocusTimer({ habit, tier, isCompleted, onComplete, onXP,
   // Handle completion
   useEffect(() => {
     if (!state.isComplete || sessionLogged) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSessionLogged(true);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCelebrating(true);
     playSound("levelup");
 
@@ -250,6 +255,7 @@ export default function FocusTimer({ habit, tier, isCompleted, onComplete, onXP,
   // Handle give-up log
   useEffect(() => {
     if (!state.isGivenUp || sessionLogged) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSessionLogged(true);
     const actualMin = Math.max(1, Math.floor(elapsedAtGiveUp / 60));
     void fetch("/api/focus", {
@@ -266,12 +272,14 @@ export default function FocusTimer({ habit, tier, isCompleted, onComplete, onXP,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.isGivenUp]);
 
-  // Lock background scroll
+  // Lock background scroll — use touch-action on overlay instead of body overflow,
+  // because overflow:hidden on body freezes touch events inside fixed elements on iOS Safari.
   useEffect(() => {
+    if (minimized) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = prev; };
-  }, []);
+  }, [minimized]);
 
   const handleGiveUp = () => {
     setElapsedAtGiveUp(state.elapsed);
@@ -291,6 +299,33 @@ export default function FocusTimer({ habit, tier, isCompleted, onComplete, onXP,
     : "text-emerald-300 bg-emerald-900/25 border-emerald-600/30";
 
   const xpEarned = (habit.validity_score === "invalid" ? 0 : habit.validity_score === "partial" ? 5 : 10);
+
+  // ── Minimized mini-bar ───────────────────────────────────────────────────
+  if (minimized) {
+    if (!state.isRunning || state.isComplete || state.isGivenUp) return null;
+    const elapsed = state.total - state.remaining;
+    const pct = state.total > 0 ? (elapsed / state.total) * 100 : 0;
+    const barColor = state.phase !== "focus" ? "bg-emerald-500" : isPro ? "bg-amber-500" : "bg-violet-500";
+    return (
+      <button
+        onClick={onMaximize}
+        className="fixed top-0 inset-x-0 z-[90] flex items-center gap-2.5 px-4 bg-[#0d0d1a]/95 border-b border-violet-800/30 backdrop-blur-sm"
+        style={{ height: "calc(env(safe-area-inset-top, 0px) + 36px)", paddingTop: "env(safe-area-inset-top, 0px)" }}
+      >
+        <svg className="w-3 h-3 text-violet-400 flex-shrink-0 fill-current" viewBox="0 0 20 20">
+          <path d="M6.3 2.84A1.5 1.5 0 0 0 4 4.11v11.78a1.5 1.5 0 0 0 2.3 1.27l9.344-5.891a1.5 1.5 0 0 0 0-2.538L6.3 2.841Z" />
+        </svg>
+        <span className="text-xs text-slate-400 truncate flex-1 min-w-0 text-left">{habit.name}</span>
+        <span className="font-mono text-xs font-bold text-white tabular-nums flex-shrink-0">{fmt(state.remaining)}</span>
+        <div className="w-20 h-1 bg-violet-950/60 rounded-full overflow-hidden flex-shrink-0">
+          <div
+            className={`h-full rounded-full transition-all duration-1000 ${barColor}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </button>
+    );
+  }
 
   // ── Celebration screen ────────────────────────────────────────────────────
   if (celebrating) {
@@ -471,9 +506,9 @@ export default function FocusTimer({ habit, tier, isCompleted, onComplete, onXP,
               )}
             </div>
             <button
-              onClick={onClose}
+              onClick={state.isRunning || state.isPaused ? onMinimize : onClose}
               className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 hover:text-white hover:bg-violet-950/60 transition-all flex-shrink-0"
-              aria-label="Close timer"
+              aria-label={state.isRunning || state.isPaused ? "Minimize timer" : "Close timer"}
             >
               <X className="w-4.5 h-4.5" />
             </button>
@@ -549,7 +584,7 @@ export default function FocusTimer({ habit, tier, isCompleted, onComplete, onXP,
             <button
               onClick={start}
               className="w-full py-4 text-white font-bold rounded-2xl text-base transition-all flex items-center justify-center gap-2.5 shadow-lg active:scale-[0.98]"
-              style={{
+              style={{ touchAction: "manipulation",
                 background: isPro
                   ? "linear-gradient(135deg,#b45309 0%,#d97706 50%,#fbbf24 100%)"
                   : "linear-gradient(135deg,#6d28d9 0%,#8b5cf6 50%,#7c3aed 100%)",

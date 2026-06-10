@@ -1,24 +1,13 @@
-// HabitAI Service Worker — app shell caching + push notifications
-const CACHE = "habitai-v6";
-
-const PRECACHE = [
-  "/",
-  "/dashboard",
-  "/analytics",
-  "/calendar",
-  "/profile",
-  "/settings",
-  "/friends",
-  "/manifest.json",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-];
+// HabitAI Service Worker — static asset caching + push notifications
+// v10: navigation requests pass straight through to the network.
+// Safari hard-rejects any SW response with redirected:true on navigations —
+// the safest fix is to never intercept navigations at all.
+const CACHE = "habitai-v10";
 
 // ─── Install ──────────────────────────────────────────────────────────────────
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting())
-  );
+  // Skip waiting immediately so this worker takes control right away.
+  event.waitUntil(self.skipWaiting());
 });
 
 // ─── Activate ────────────────────────────────────────────────────────────────
@@ -33,45 +22,24 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// ─── Offline fallback HTML ────────────────────────────────────────────────────
-const OFFLINE_HTML = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#7C3AED">
-  <title>HabitAI — Offline</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{min-height:100dvh;background:#09090f;color:#fff;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;gap:1.5rem}
-    .icon{width:72px;height:72px;border-radius:18px;background:linear-gradient(135deg,#6d28d9,#9333ea);display:flex;align-items:center;justify-content:center;font-size:2.4rem;box-shadow:0 0 40px rgba(124,58,237,.45)}
-    h1{font-size:1.5rem;font-weight:800;letter-spacing:-.02em}
-    h1 span{color:#a78bfa}
-    p{color:#64748b;font-size:.95rem;max-width:320px;line-height:1.6}
-    button{margin-top:.5rem;padding:.75rem 2rem;background:#7c3aed;color:#fff;border:none;border-radius:12px;font-size:.95rem;font-weight:600;cursor:pointer;transition:background .2s}
-    button:hover{background:#6d28d9}
-  </style>
-</head>
-<body>
-  <div class="icon">✨</div>
-  <h1>habit<span>AI</span></h1>
-  <p>You're offline. Connect to the internet and try again — your habits and streaks are safely stored.</p>
-  <button onclick="location.reload()">Try again</button>
-</body>
-</html>`;
-
 // ─── Fetch ────────────────────────────────────────────────────────────────────
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // 1. Skip cross-origin requests (Supabase, Stripe, fonts, etc.)
+  // 1. Cross-origin (Supabase, Stripe, fonts, analytics) — never intercept.
   if (url.origin !== self.location.origin) return;
 
-  // 2. Skip API and auth routes — never cache dynamic/personal data.
+  // 2. Navigation requests — pass straight to network, no caching.
+  //    Safari throws "Response served by service worker has redirections"
+  //    whenever the SW returns a response whose URL differs from the request.
+  //    Avoiding SW intervention on navigations eliminates this entirely.
+  if (request.mode === "navigate") return;
+
+  // 3. API and auth — always network, never cached.
   if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/auth/")) return;
 
-  // 3. Next.js immutable static assets — cache-first (content-hashed filenames).
+  // 4. Next.js immutable static assets — cache-first (content-hashed filenames).
   if (url.pathname.startsWith("/_next/static/")) {
     event.respondWith(
       caches.open(CACHE).then((cache) =>
@@ -88,7 +56,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 4. Static icons and manifest — cache-first.
+  // 5. Icons and manifest — cache-first.
   if (url.pathname.startsWith("/icons/") || url.pathname === "/manifest.json") {
     event.respondWith(
       caches.open(CACHE).then((cache) =>
@@ -105,39 +73,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 5. HTML navigation — stale-while-revalidate.
-  //    Serve cached HTML instantly on return visits; update cache in background.
-  //    First visit (no cache) waits for network with a 6-second hard timeout.
-  if (request.mode === "navigate") {
-    event.respondWith(
-      caches.open(CACHE).then(async (cache) => {
-        const cached = await cache.match(request);
-
-        // Start network fetch regardless — keeps cache fresh silently.
-        const networkFetch = fetch(request)
-          .then((res) => {
-            if (res.ok) cache.put(request, res.clone());
-            return res;
-          })
-          .catch(() => null);
-
-        // Return cache immediately if available (stale-while-revalidate).
-        if (cached) return cached;
-
-        // No cache yet (first visit) — wait for network with a 6-second timeout.
-        const timeout = new Promise((resolve) =>
-          setTimeout(() => resolve(null), 6000)
-        );
-        const res = await Promise.race([networkFetch, timeout]);
-        if (res) return res;
-
-        // Network too slow / offline — serve offline page.
-        return new Response(OFFLINE_HTML, {
-          headers: { "Content-Type": "text/html; charset=utf-8" },
-        });
-      })
-    );
-  }
+  // Everything else — network only.
 });
 
 // ─── Push notifications ───────────────────────────────────────────────────────
@@ -145,11 +81,9 @@ self.addEventListener("push", (event) => {
   const data = event.data?.json() ?? {};
   const tag  = data.tag ?? "habitai";
 
-  // Choose action buttons based on notification type
   const actions = [];
   if (tag === "streak-risk" || tag.startsWith("habit-") || tag === "habits-reminder" || tag === "final-nudge") {
     actions.push({ action: "open", title: "✅ Open app" });
-    actions.push({ action: "snooze", title: "⏰ Snooze 1h" });
   } else if (tag === "morning-alarm") {
     actions.push({ action: "open", title: "📋 See today's habits" });
   } else if (tag === "weekly-monday" || tag === "weekly-sunday") {
@@ -173,34 +107,9 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  const action = event.action;
   const notifData = event.notification.data ?? {};
   const target = notifData.url ?? "/dashboard";
 
-  if (action === "snooze") {
-    // Re-show notification after 1 hour (client-side via setTimeout in SW)
-    const title = event.notification.title;
-    const body  = event.notification.body;
-    const tag   = notifData.tag ?? "habitai";
-
-    event.waitUntil(
-      new Promise((resolve) => {
-        setTimeout(async () => {
-          await self.registration.showNotification(title, {
-            body,
-            icon:  "/icons/icon-192.png",
-            badge: "/icons/icon-96.png",
-            tag:   `${tag}-snoozed`,
-            data:  notifData,
-          });
-          resolve(undefined);
-        }, 3600000); // 1 hour
-      })
-    );
-    return;
-  }
-
-  // Default: open / focus the app
   event.waitUntil(
     clients
       .matchAll({ type: "window", includeUncontrolled: true })
