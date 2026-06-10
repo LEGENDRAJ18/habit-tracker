@@ -36,6 +36,7 @@ export default function SmartNotification({ tier, habitCount, onUpgradeClick, on
 
     if (notifType) {
       sessionStorage.setItem(SHOWN_KEY, "1");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setType(notifType);
       const t = setTimeout(() => setVisible(true), 900);
       return () => clearTimeout(t);

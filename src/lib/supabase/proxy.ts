@@ -11,6 +11,8 @@ const PROTECTED = [
   "/calendar",
   "/onboarding",
   "/admin",
+  "/groups",
+  "/organisations",
 ];
 
 const AUTH_ROUTES = ["/auth/login", "/auth/signup"];

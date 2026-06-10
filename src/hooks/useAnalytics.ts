@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Habit } from "@/types";
 
@@ -79,7 +79,7 @@ const EMPTY: AnalyticsData = {
 };
 
 export function useAnalytics(): AnalyticsData {
-  const supabase = useRef(createClient()).current;
+  const [supabase] = useState(() => createClient());
   const [data, setData] = useState<AnalyticsData>(EMPTY);
 
   useEffect(() => {

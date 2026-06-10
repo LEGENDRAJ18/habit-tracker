@@ -232,7 +232,10 @@ function AuthForm() {
   const emailRef    = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
 
-  const nextUrl = plan ? `/dashboard?checkout=${plan}` : "/dashboard";
+  const rawNext = params.get("next");
+  // Only allow same-origin relative paths to prevent open-redirect
+  const safeNext = rawNext?.startsWith("/") && !rawNext.startsWith("//") ? rawNext : null;
+  const nextUrl = plan ? `/dashboard?checkout=${plan}` : (safeNext ?? "/dashboard");
 
   // Check auth state before showing any form — prevents flash of login page
   useEffect(() => {

@@ -70,7 +70,9 @@ function FriendProfileModal({
 
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setError(null);
     fetch(`/api/friends/profile/${friendId}`)
       .then((r) => r.json())
@@ -373,7 +375,10 @@ export default function FriendsPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { loadFriends(); }, [loadFriends]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadFriends();
+  }, [loadFriends]);
 
   useEffect(() => {
     fetch("/api/battles")

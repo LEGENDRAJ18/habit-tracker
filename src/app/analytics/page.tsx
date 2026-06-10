@@ -16,7 +16,11 @@ import type { Habit, HabitLog, Plan } from "@/types";
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 function toDateStr(d: Date) {
-  return d.toISOString().split("T")[0];
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function logDate(iso: string) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function daysAgo(n: number) {
@@ -72,7 +76,7 @@ function StatCard({
 function SevenDayHeatmap({ logs, habitCount }: { logs: Pick<HabitLog, "habit_id" | "completed_at">[]; habitCount: number }) {
   const days = Array.from({ length: 7 }, (_, i) => {
     const d     = daysAgo(6 - i);
-    const count = logs.filter((l) => l.completed_at.startsWith(d)).length;
+    const count = logs.filter((l) => logDate(l.completed_at) === d).length;
     const pct   = habitCount > 0 ? count / habitCount : 0;
     const label = new Date(d + "T12:00:00").toLocaleDateString("en-US", { weekday: "narrow" });
     return { d, count, pct, label };
@@ -118,7 +122,7 @@ function WeeklyChart({ logs }: { logs: Pick<HabitLog, "habit_id" | "completed_at
   const data = Array.from({ length: 8 }, (_, i) => {
     const offset    = (7 - i) * 7;
     const days      = Array.from({ length: 7 }, (_, d) => daysAgo(offset + d));
-    const count     = logs.filter((l) => days.some((d) => l.completed_at.startsWith(d))).length;
+    const count     = logs.filter((l) => days.some((d) => logDate(l.completed_at) === d)).length;
     const labelDate = new Date(daysAgo(offset));
     const label     = labelDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     return { label, count };
@@ -408,8 +412,8 @@ function HabitCorrelationCard({ habits, logs }: { habits: Habit[]; logs: Pick<Ha
 
   for (let i = 0; i < habits.length; i++) {
     for (let j = i + 1; j < habits.length; j++) {
-      const datesA = new Set(logs.filter((l) => l.habit_id === habits[i].id).map((l) => l.completed_at.split("T")[0]));
-      const datesB = new Set(logs.filter((l) => l.habit_id === habits[j].id).map((l) => l.completed_at.split("T")[0]));
+      const datesA = new Set(logs.filter((l) => l.habit_id === habits[i].id).map((l) => logDate(l.completed_at)));
+      const datesB = new Set(logs.filter((l) => l.habit_id === habits[j].id).map((l) => logDate(l.completed_at)));
       let coCount = 0;
       for (const d of datesA) { if (datesB.has(d)) coCount++; }
       if (coCount >= 3) {
@@ -580,7 +584,7 @@ export default function AnalyticsPage() {
       const habitMap = new Map(habits.map((h) => [h.id, h.name]));
       const rows: string[][] = [["Date", "Habit Name"]];
       for (const log of allLogs ?? []) {
-        const date = log.completed_at.split("T")[0];
+        const date = logDate(log.completed_at);
         const name = habitMap.get(log.habit_id) ?? "Deleted Habit";
         rows.push([date, `"${name.replace(/"/g, '""')}"`]);
       }
@@ -632,7 +636,7 @@ export default function AnalyticsPage() {
   const habitDateSets = useMemo(() => {
     const map = new Map<string, Set<string>>();
     for (const log of logs) {
-      const d = log.completed_at.split("T")[0];
+      const d = logDate(log.completed_at);
       if (!map.has(log.habit_id)) map.set(log.habit_id, new Set());
       map.get(log.habit_id)!.add(d);
     }
@@ -643,10 +647,10 @@ export default function AnalyticsPage() {
   const totalCompletions = logs.length;
   const bestStreak       = Math.max(0, ...habits.map((h) => getStreak(habitDateSets.get(h.id) ?? new Set())));
   const completedToday   = new Set(
-    logs.filter((l) => l.completed_at.startsWith(today)).map((l) => l.habit_id),
+    logs.filter((l) => logDate(l.completed_at) === today).map((l) => l.habit_id),
   ).size;
   const activeDaysSet    = new Set(
-    logs.filter((l) => l.completed_at.split("T")[0] >= daysAgo(29)).map((l) => l.completed_at.split("T")[0]),
+    logs.filter((l) => logDate(l.completed_at) >= daysAgo(29)).map((l) => logDate(l.completed_at)),
   );
 
   const mostConsistentHabit = useMemo(() => {

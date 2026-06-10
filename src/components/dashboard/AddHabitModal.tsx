@@ -120,19 +120,28 @@ const DIFFICULTY_LEVELS = [
 
 function detectDifficulty(name: string): typeof DIFFICULTY_LEVELS[number] {
   const lower = name.toLowerCase();
-  if (/\b(marathon|ultra|extreme|2\s*hour|two\s*hour|100\s*(push|pull)|cold\s*(plunge|shower|ice)|4\s*am|4am|5am|fasting|intermittent\s*fast)\b/.test(lower)) {
+  const words = lower.split(/\s+/);
+
+  // Require at least one specific physical/action word to qualify for harder tiers.
+  // This prevents "find the meaning of life" from matching "Medium" via a coincidental word.
+  const hasSpecificActivity = /\b(run|jog|gym|workout|exercise|swim|cycle|bike|pushup|push.?up|pull.?up|squat|plank|lift|sprint|deadlift|hiit|yoga|dance|climb|row|skate|hike|ski|surf)\b/.test(lower);
+
+  if (/\b(marathon|ultra|extreme|2\s*hour|two\s*hour|100\s*(push|pull)|cold\s*(plunge|shower|ice)|4\s*am|4am|5am|fasting|intermittent\s*fast)\b/.test(lower) && hasSpecificActivity) {
     return DIFFICULTY_LEVELS[4];
   }
-  if (/\b(5k|10k|run\s*5|deadlift|heavy\s*lift|hiit|intense|hard|difficult|challenge|sprint|plank\s*(60|90|120))\b/.test(lower)) {
+  if (/\b(5k|10k|run\s*5|deadlift|heavy\s*lift|hiit|intense|hard\s+workout|challenging|sprint|plank\s*(60|90|120))\b/.test(lower) && hasSpecificActivity) {
     return DIFFICULTY_LEVELS[3];
   }
-  if (/\b(run|jog|gym|workout|exercise|swim|cycle|bike|study\s+for|practice|learn|yoga|meditation\s*(20|30)|30\s*min|45\s*min|1\s*hour|pushup|pull.?up|squat)\b/.test(lower)) {
+  if (hasSpecificActivity || /\b(study\s+for|practice\s+\w+\s+for|30\s*min\w*\s*(workout|session)|45\s*min|1\s*hour\s+(workout|session|gym))\b/.test(lower)) {
     return DIFFICULTY_LEVELS[2];
   }
-  if (/\b(walk|stretch|meditate|journal|read|flashcard|podcast|vitamin|supplement|hydrat|breathe|gratitude|affirmation)\b/.test(lower)) {
+  if (/\b(walk|stretch|meditat|journal|read\s|\breadings?\b|flashcard|podcast|vitamin|supplement|hydrat|breathe|gratitude|affirmation|nap|sleep\s+by)\b/.test(lower)) {
     return DIFFICULTY_LEVELS[1];
   }
-  return DIFFICULTY_LEVELS[0];
+  // Only count short, simple habits (< 4 words with no activity context) as Easy
+  if (words.length <= 3) return DIFFICULTY_LEVELS[0];
+  // Multi-word habits with no recognizable activity pattern default to Light
+  return DIFFICULTY_LEVELS[1];
 }
 
 function toDateStr(d: Date) { return d.toISOString().split("T")[0]; }
@@ -241,7 +250,7 @@ function TimePicker({ value, onChange }: { value: string; onChange: (v: string) 
 // ─── props ────────────────────────────────────────────────────────────────────
 
 const DURATION_PRESETS = [5, 10, 15, 20, 25, 30, 45, 60];
-const FREE_MAX_DURATION = 25; // minutes, free plan cap
+const FREE_MAX_DURATION = 30; // minutes, free plan cap
 
 interface Props {
   onClose: () => void;
@@ -310,6 +319,7 @@ export default function AddHabitModal({
   const [pickedDows, setPickedDows]         = useState<Set<number>>(new Set());
 
   const next21 = useMemo(() => Array.from({ length: 21 }, (_, i) => {
+    // eslint-disable-next-line react-hooks/purity
     const d = new Date(Date.now() + i * 86400000);
     return { dateStr: toDateStr(d), dayNum: d.getDate() };
   }), []);
@@ -399,14 +409,23 @@ export default function AddHabitModal({
     if (isSchedulingMode) { goToStep2(); return; }
     setLoading(true);
     setError(null);
-    const { error } = await onAdd(
-      name.trim(), description.trim(), frequency,
-      null, whenTime || null, whereLocation || null, howLong || null, getValidity(),
-      reminderTime || null, durationMinutes,
-      difficulty.xp, difficulty.level,
-    );
-    if (error) { setError(error); setLoading(false); }
-    else onClose();
+    try {
+      const addPromise = onAdd(
+        name.trim(), description.trim(), frequency,
+        null, whenTime || null, whereLocation || null, howLong || null, getValidity(),
+        reminderTime || null, durationMinutes,
+        difficulty.xp, difficulty.level,
+      );
+      const timeoutPromise = new Promise<{ error: string }>((resolve) =>
+        setTimeout(() => resolve({ error: "Request timed out — please try again." }), 5000)
+      );
+      const { error } = await Promise.race([addPromise, timeoutPromise]);
+      if (error) { setError(error); setLoading(false); }
+      else onClose();
+    } catch {
+      setError("Couldn't save habit — please try again.");
+      setLoading(false);
+    }
   };
 
   // Step 2 confirm
@@ -690,7 +709,7 @@ export default function AddHabitModal({
                       </p>
                     )}
                     {!tier || tier === "free" ? (
-                      <p className="mt-1 text-[10px] text-slate-600">Free: up to 25 min. <span className="text-violet-400 cursor-pointer hover:text-violet-300" onClick={onUpgradePro}>Plus/Pro for longer →</span></p>
+                      <p className="mt-1 text-[10px] text-slate-600">Free: up to 30 min. <span className="text-violet-400 cursor-pointer hover:text-violet-300" onClick={onUpgradePro}>Plus/Pro for longer →</span></p>
                     ) : null}
                   </div>
                 </div>

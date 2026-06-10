@@ -13,7 +13,9 @@ function ResetPasswordForm() {
   const code   = params.get("code");
 
   const [ready, setReady]               = useState(false);
-  const [exchangeError, setExchangeError] = useState<string | null>(null);
+  const [exchangeError, setExchangeError] = useState<string | null>(
+    !code ? "Invalid or missing reset link. Please request a new one." : null
+  );
   const [password, setPassword]         = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading]           = useState(false);
@@ -21,10 +23,7 @@ function ResetPasswordForm() {
 
   // Exchange the one-time code for an active session as soon as the page mounts.
   useEffect(() => {
-    if (!code) {
-      setExchangeError("Invalid or missing reset link. Please request a new one.");
-      return;
-    }
+    if (!code) return;
     createClient()
       .auth.exchangeCodeForSession(code)
       .then(({ error }) => {

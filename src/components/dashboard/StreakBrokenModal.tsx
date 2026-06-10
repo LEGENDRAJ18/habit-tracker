@@ -21,6 +21,7 @@ export default function StreakBrokenModal({ onUpgrade, onDismiss, brokenHabitNam
 
   useEffect(() => {
     if (!isPaid || !brokenHabitName) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAILoading(true);
     fetch("/api/ai-insight", {
       method: "POST",

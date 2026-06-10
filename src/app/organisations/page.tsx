@@ -53,11 +53,6 @@ export default function OrganisationsPage() {
   const [kicking,     setKicking]     = useState<string | null>(null);
   const [error,       setError]       = useState<string | null>(null);
 
-  useEffect(() => {
-    void init();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   async function init() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push("/auth/login"); return; }
@@ -76,6 +71,12 @@ export default function OrganisationsPage() {
     }
     setLoading(false);
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void init();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function createOrg() {
     if (!name.trim()) return;

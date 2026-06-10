@@ -8,11 +8,18 @@ export default function OfflineIndicator() {
 
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-[200] flex items-center justify-center gap-2 py-1.5 text-xs font-semibold text-slate-300"
-      style={{ background: "rgba(15,15,26,0.92)", backdropFilter: "blur(8px)", borderBottom: "1px solid rgba(100,116,139,0.2)" }}
+      className="fixed bottom-24 left-1/2 z-[200] flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold text-slate-200 shadow-lg"
+      style={{
+        transform: "translateX(-50%)",
+        background: "rgba(15,15,26,0.9)",
+        backdropFilter: "blur(12px)",
+        border: "1px solid rgba(100,116,139,0.25)",
+        animation: "toastSlideUp 0.25s cubic-bezier(0.34,1.56,0.64,1) both",
+        bottom: "calc(5rem + env(safe-area-inset-bottom, 0px))",
+      }}
     >
-      <span className="w-2 h-2 rounded-full bg-slate-500 flex-shrink-0" />
-      Offline — habits sync automatically when you reconnect
+      <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" style={{ boxShadow: "0 0 6px #f59e0b" }} />
+      Offline — showing cached habits
     </div>
   );
 }

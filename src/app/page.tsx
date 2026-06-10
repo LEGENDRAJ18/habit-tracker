@@ -143,7 +143,7 @@ function Hero() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 bg-violet-950/60 border border-violet-700/30 rounded-full px-4 py-1.5 text-sm text-violet-300 mb-6">
               <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse flex-shrink-0" />
-              Free forever · 30-day Plus trial included
+              Free forever · 7-day Plus trial included
             </div>
 
             {/* Headline */}
@@ -190,7 +190,7 @@ function Hero() {
 
             {/* Trust line */}
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2 text-sm text-slate-600">
-              {["Free forever", "30-day Plus trial", "Takes 60 seconds"].map((t) => (
+              {["Free forever", "7-day Plus trial", "Takes 60 seconds"].map((t) => (
                 <span key={t} className="flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5 text-violet-600 flex-shrink-0" />{t}
                 </span>

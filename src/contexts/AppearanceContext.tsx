@@ -100,7 +100,7 @@ const Ctx = createContext<AppearanceCtx>({
 
 export function AppearanceProvider({ children }: { children: React.ReactNode }) {
   const [prefs, setPrefs] = useState<AppearancePrefs>(DEFAULTS);
-  const supabase = useRef(createClient()).current;
+  const [supabase] = useState(() => createClient());
   const ready    = useRef(false);
 
   useEffect(() => {

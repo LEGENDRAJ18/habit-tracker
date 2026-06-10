@@ -24,11 +24,15 @@ function OnboardingForm() {
 
   useEffect(() => {
     if (!username || !USERNAME_RE.test(username)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAvailable(null);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setChecking(false);
       return;
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setChecking(true);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAvailable(null);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {

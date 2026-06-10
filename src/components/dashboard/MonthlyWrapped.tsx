@@ -96,6 +96,7 @@ export default function MonthlyWrapped({ tier, onClose }: Props) {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!isPro) { setLoading(false); return; }
     fetch("/api/monthly-wrap", { method: "POST" })
       .then((r) => r.json())

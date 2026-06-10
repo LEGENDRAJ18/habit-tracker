@@ -16,21 +16,20 @@ export interface PWAInstallState {
 
 export function usePWAInstall(): PWAInstallState {
   const [prompt, setPrompt]       = useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstalled, setInstalled] = useState(false);
-  const [isIOS, setIsIOS]         = useState(false);
+  const [isInstalled, setInstalled] = useState(
+    () => typeof window !== "undefined" && (
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true
+    )
+  );
+  const [isIOS]                   = useState(
+    () => typeof navigator !== "undefined" &&
+      /iPhone|iPad|iPod/.test(navigator.userAgent) &&
+      !("MSStream" in window)
+  );
 
   useEffect(() => {
-    // Detect iOS (no beforeinstallprompt — user must tap Share → Add to Home Screen)
-    const ios =
-      /iPhone|iPad|iPod/.test(navigator.userAgent) &&
-      !("MSStream" in window);
-    setIsIOS(ios);
-
-    // Detect already-installed standalone mode
-    const standalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (navigator as Navigator & { standalone?: boolean }).standalone === true;
-    if (standalone) { setInstalled(true); return; }
+    if (isInstalled) return;
 
     const onBeforeInstall = (e: Event) => {
       e.preventDefault();
@@ -44,6 +43,7 @@ export function usePWAInstall(): PWAInstallState {
       window.removeEventListener("beforeinstallprompt", onBeforeInstall);
       window.removeEventListener("appinstalled", onInstalled);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const promptInstall = useCallback(async () => {

@@ -82,7 +82,7 @@ export default function TermsPage() {
             </p>
             <p>
               Prices are listed in USD and may be subject to applicable taxes. We reserve the right to
-              change pricing with at least 30 days' notice. Continued use of a paid plan after a price
+              change pricing with at least 30 days&apos; notice. Continued use of a paid plan after a price
               change constitutes acceptance of the new pricing.
             </p>
             <p>
@@ -108,7 +108,7 @@ export default function TermsPage() {
             <ul className="list-disc pl-5 space-y-1.5 text-slate-400">
               <li>Use the Service for any unlawful purpose or in violation of any applicable regulations.</li>
               <li>Attempt to gain unauthorised access to any part of the Service or its infrastructure.</li>
-              <li>Scrape, reverse-engineer, or reproduce the Service's content or functionality.</li>
+              <li>Scrape, reverse-engineer, or reproduce the Service&apos;s content or functionality.</li>
               <li>Upload or transmit malicious code, viruses, or harmful content.</li>
               <li>Impersonate another person or entity.</li>
               <li>Use the Service in a way that disrupts or degrades performance for other users.</li>

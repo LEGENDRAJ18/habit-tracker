@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 
   // ── Prefix search mode (autocomplete) ───────────────────────────────────────
   if (isPrefix) {
-    let query = admin
+    const query = admin
       .from("profiles")
       .select("id, username, xp")
       .ilike("username", `${username}%`)

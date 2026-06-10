@@ -482,9 +482,9 @@ function buildTrialReminderHtml(firstName: string, trialEnd: string, unsubscribe
 
   <!-- Body -->
   <tr><td style="padding:32px 36px 28px;">
-    <h1 style="margin:0 0 10px;font-size:22px;font-weight:700;color:#ffffff;">Your Plus trial ends in 5 days, ${firstName} ⏰</h1>
+    <h1 style="margin:0 0 10px;font-size:22px;font-weight:700;color:#ffffff;">Your Plus trial ends in 2 days, ${firstName} ⏰</h1>
     <p style="margin:0 0 20px;font-size:14px;color:#8b8fa8;line-height:1.65;">
-      Your 30-day Plus trial of <strong style="color:#c4b5fd;">HabitAI</strong> ends on
+      Your 7-day Plus trial of <strong style="color:#c4b5fd;">HabitAI</strong> ends on
       <strong style="color:#ffffff;">${trialEnd}</strong>.
       Cancel before then and you won't be charged a thing.
     </p>
@@ -529,9 +529,9 @@ function buildTrialReminderHtml(firstName: string, trialEnd: string, unsubscribe
 
 async function runTrialReminders(supabase: ReturnType<typeof createAdminClient>): Promise<{ sent: number }> {
   const now = new Date();
-  // Window: trials ending in 5 days ± 1 h (day 25 of 30-day trial)
-  const windowStart = new Date(now.getTime() + 119 * 3600000).toISOString();
-  const windowEnd   = new Date(now.getTime() + 121 * 3600000).toISOString();
+  // Window: trials ending in ~2 days ± 12 h — wide enough for a daily cron to catch every user
+  const windowStart = new Date(now.getTime() + 36 * 3600000).toISOString();
+  const windowEnd   = new Date(now.getTime() + 60 * 3600000).toISOString();
 
   const { data: profiles } = await supabase
     .from("profiles")

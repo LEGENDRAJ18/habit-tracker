@@ -1,22 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-// In-memory rate limit — resets on cold start, good enough for cost control
-const rateLimitMap = new Map<string, { date: string; count: number }>();
-const DAILY_LIMIT = 10;
-
-function checkRateLimit(userId: string): boolean {
-  const today = new Date().toISOString().split("T")[0];
-  const entry = rateLimitMap.get(userId);
-  if (!entry || entry.date !== today) {
-    rateLimitMap.set(userId, { date: today, count: 1 });
-    return true;
-  }
-  if (entry.count >= DAILY_LIMIT) return false;
-  entry.count++;
-  return true;
-}
-
 // ─── Content moderation ───────────────────────────────────────────────────────
 
 // Regex patterns for categories that are always inappropriate.
@@ -111,6 +95,57 @@ const GENERIC_WORDS = new Set([
   "stretch", "stretching", "swim", "swimming", "clean", "cleaning",
 ]);
 
+// Contextual suggestions per generic single word — avoids the generic "X for 20 minutes every morning" fallback
+const GENERIC_SUGGESTIONS: Record<string, string> = {
+  run:          "Run 3km every morning",
+  running:      "Run 3km every morning",
+  jog:          "Jog for 20 minutes every morning",
+  jogging:      "Jog for 20 minutes every morning",
+  gym:          "Go to the gym for 1 hour every weekday",
+  exercise:     "Exercise for 30 minutes every day",
+  workout:      "Do a 30-minute workout every day",
+  meditate:     "Meditate for 10 minutes every morning",
+  meditation:   "Meditate for 10 minutes every morning",
+  sleep:        "Be in bed by 10:30 PM every night",
+  rest:         "Go to bed at the same time every night",
+  relax:        "Spend 20 minutes reading before bed",
+  relaxation:   "Spend 20 minutes reading before bed",
+  study:        "Study for 45 minutes every evening",
+  learn:        "Spend 30 minutes learning something new every day",
+  learning:     "Spend 30 minutes learning something new every day",
+  read:         "Read 20 pages every evening",
+  reading:      "Read 20 pages every evening",
+  eat:          "Eat a balanced meal with vegetables every day",
+  eating:       "Eat a balanced meal with vegetables every day",
+  drink:        "Drink 8 glasses of water every day",
+  drinking:     "Drink 8 glasses of water every day",
+  diet:         "Track my meals every day",
+  work:         "Do 1 focused deep-work block every morning",
+  code:         "Code for 1 hour every day",
+  coding:       "Code for 1 hour every day",
+  program:      "Program for 1 hour every day",
+  programming:  "Program for 1 hour every day",
+  journal:      "Write a 5-minute journal entry every evening",
+  journaling:   "Write a 5-minute journal entry every evening",
+  yoga:         "Do 20 minutes of yoga every morning",
+  walk:         "Walk for 30 minutes every afternoon",
+  walking:      "Walk for 30 minutes every afternoon",
+  write:        "Write for 20 minutes every morning",
+  writing:      "Write for 20 minutes every morning",
+  practice:     "Practice for 30 minutes every day",
+  train:        "Train for 45 minutes every day",
+  training:     "Train for 45 minutes every day",
+  stretch:      "Stretch for 10 minutes every morning",
+  stretching:   "Stretch for 10 minutes every morning",
+  swim:         "Swim for 30 minutes three times a week",
+  swimming:     "Swim for 30 minutes three times a week",
+  clean:        "Spend 15 minutes cleaning every evening",
+  cleaning:     "Spend 15 minutes cleaning every evening",
+};
+
+// Abstract/philosophical inputs that can never be daily habits
+const ABSTRACT_RE = /\b(meaning\s+of\s+life|universe|consciousness|enlightenment|nirvana|transcend|existential|philosophy|metaphysics|soul\s+of|spirit\s+of|wisdom\s+of|the\s+truth|inner\s+peace\s+of|infinite\s+wisdom)\b/i;
+
 const BLOCKED_RE = /^\d+$|^(.)\1{3,}$|^[^a-zA-Z]{2,}$/;
 
 function ruleBasedValidation(name: string): ValidationResponse {
@@ -126,11 +161,20 @@ function ruleBasedValidation(name: string): ValidationResponse {
     };
   }
 
+  // Abstract/philosophical inputs cannot be daily trackable habits
+  if (ABSTRACT_RE.test(lower)) {
+    return {
+      status:     "blocked",
+      message:    `'${cap}' is too abstract to be a trackable habit — habits need to be concrete daily actions you can check off.`,
+      suggestion: "Meditate for 10 minutes every morning",
+    };
+  }
+
   if (words.length === 1 && GENERIC_WORDS.has(words[0])) {
     return {
       status:     "warning",
       message:    `'${cap}' is too vague — there's no frequency, duration, or specifics to track. Add how long or how often.`,
-      suggestion: `${cap} for 20 minutes every morning`,
+      suggestion: GENERIC_SUGGESTIONS[words[0]] ?? `${cap} for 20 minutes every day`,
     };
   }
 
@@ -151,14 +195,14 @@ function ruleBasedValidation(name: string): ValidationResponse {
   if (hasTimeLoc && hasDurLoc) {
     return {
       status:  "good",
-      message: `'${cap}' is specific and measurable — you have a clear time, duration, and action to track. Great habit! 🎯`,
+      message: `'${cap}' is specific and measurable — clear time, duration, and action to track.`,
     };
   }
 
   if (hasNumber || hasFreq || hasTimeLoc || hasDurLoc) {
     return {
       status:  "good",
-      message: `'${cap}' is specific and measurable — you have a clear target to hit and track. Great habit! 🎯`,
+      message: `'${cap}' is specific and measurable — you have a clear target to track.`,
     };
   }
 
@@ -168,10 +212,15 @@ function ruleBasedValidation(name: string): ValidationResponse {
   if (!hasTimeLoc && !hasFreq) missing.push("a frequency");
   const missingText = missing.length > 0 ? `adding ${missing.join(" and ")} makes it fully trackable.` : "more specifics would make it even stronger.";
 
+  // Only suggest if we can generate a sensible sentence.
+  // Never blindly append "for 20 minutes every morning" to arbitrary multi-word phrases.
+  const firstGeneric = words.find((w) => GENERIC_WORDS.has(w));
+  const suggestion   = firstGeneric ? (GENERIC_SUGGESTIONS[firstGeneric] ?? undefined) : undefined;
+
   return {
     status:  "warning",
     message: `'${cap}' could be stronger — ${missingText}`,
-    suggestion: `${cap} for 20 minutes every morning`,
+    suggestion,
   };
 }
 
@@ -199,11 +248,6 @@ export async function POST(request: NextRequest) {
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json<ValidationResponse>(ruleBasedValidation(habitName));
-    }
-
-    // Silently fall back to rule-based when rate-limited — never block UX on cost controls
-    if (!checkRateLimit(user.id)) {
       return NextResponse.json<ValidationResponse>(ruleBasedValidation(habitName));
     }
 

@@ -1,13 +1,19 @@
 "use client";
 
 import { Sparkles, X, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useProfile } from "@/hooks/useProfile";
 
 export default function TrialBanner() {
   const { subscriptionStatus, trialEndDate, profileLoading } = useProfile();
   const [dismissed, setDismissed] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+
+  const daysLeft = useMemo(() => {
+    if (!trialEndDate) return 0;
+    // eslint-disable-next-line react-hooks/purity
+    return Math.max(0, Math.ceil((new Date(trialEndDate).getTime() - Date.now()) / 86400000));
+  }, [trialEndDate]);
 
   if (profileLoading || dismissed) return null;
   if (subscriptionStatus !== "trialing" || !trialEndDate) return null;
@@ -18,11 +24,6 @@ export default function TrialBanner() {
     month: "long",
     year: "numeric",
   });
-
-  const daysLeft = Math.max(
-    0,
-    Math.ceil((new Date(trialEndDate).getTime() - Date.now()) / 86400000),
-  );
 
   const handleManage = async () => {
     setRedirecting(true);

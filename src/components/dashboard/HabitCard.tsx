@@ -97,6 +97,7 @@ export default function HabitCard({
   const touchRef    = useRef({ startX: 0, startY: 0, locked: false });
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (isEditing) { setEditName(habit.name); setEditMode(true); }
   }, [isEditing, habit.name]);
 

@@ -28,11 +28,6 @@ export default function MoodCheckin() {
   // Dismissed: hide the whole widget immediately after submitting (or if already logged today)
   const [dismissed,    setDismissed]    = useState(false);
 
-  useEffect(() => {
-    void load();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   async function load() {
     try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -94,6 +89,12 @@ export default function MoodCheckin() {
     setLoaded(true);
     } catch { setLoaded(true); }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function saveMood(value: number) {
     if (saving) return;

@@ -126,7 +126,7 @@ function InviteSection({ parentId }: { parentId: string }) {
 
 function EncourageModal({ child, onClose }: { child: LinkedChild; onClose: () => void }) {
   const [sent, setSent] = useState(false);
-  const msg = ENCOURAGEMENTS[Math.floor(Math.random() * ENCOURAGEMENTS.length)];
+  const [msg] = useState(() => ENCOURAGEMENTS[Math.floor(Math.random() * ENCOURAGEMENTS.length)]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>

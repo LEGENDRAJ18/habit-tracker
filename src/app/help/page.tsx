@@ -122,7 +122,7 @@ const SECTIONS: Section[] = [
         q: "Is there a free trial?",
         a: (
           <>
-            Yes — <strong className="text-white">Plus</strong> comes with a <strong className="text-white">30-day free trial</strong>. No credit card required. Cancel any time before it ends and you won&apos;t be charged. Pro is charged immediately but includes a 7-day money-back guarantee.
+            Yes — <strong className="text-white">Plus</strong> comes with a <strong className="text-white">7-day free trial</strong>. No credit card required. Cancel any time before it ends and you won&apos;t be charged. Pro is charged immediately but includes a 7-day money-back guarantee.
           </>
         ),
       },
@@ -409,7 +409,7 @@ export default function HelpPage() {
                 <p className="text-xs font-bold text-violet-400 uppercase tracking-wider">Plus</p>
               </div>
               <p className="text-lg font-bold text-white mb-0.5">$4.99 <span className="text-xs font-normal text-slate-600">USD / mo</span></p>
-              <p className="text-[10px] text-violet-400 font-semibold mb-1">30-day free trial</p>
+              <p className="text-[10px] text-violet-400 font-semibold mb-1">7-day free trial</p>
               <p className="text-xs text-slate-600 leading-relaxed">Unlimited Battles, group habits, weekly email</p>
             </div>
             <div className="bg-[#0c0c18] border border-amber-600/40 rounded-xl p-4">

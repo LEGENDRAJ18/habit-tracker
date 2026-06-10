@@ -57,7 +57,7 @@ export function useXP() {
   const dailyRef        = useRef<DailyMilestoneState>({ date: "", achieved: [] });
   const totalRef        = useRef(0);
 
-  const supabase = useRef(createClient()).current;
+  const [supabase] = useState(() => createClient());
   // Prevents XP-awarding callbacks from running before the initial DB fetch completes
   const initialLoadDone = useRef(false);
 

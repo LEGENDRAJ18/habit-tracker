@@ -22,6 +22,7 @@ export function useHabitValidation(habitName: string, goals?: string[], debounce
     const trimmed = habitName.trim();
 
     if (trimmed.length < 4) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResult(IDLE);
       lastQueried.current = "";
       return;
@@ -34,6 +35,7 @@ export function useHabitValidation(habitName: string, goals?: string[], debounce
     if (timerRef.current) clearTimeout(timerRef.current);
     abortRef.current?.abort();
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setResult({ status: "validating", message: "" });
 
     timerRef.current = setTimeout(async () => {

@@ -110,6 +110,7 @@ export default function AdminPage() {
   // ── Auto-refresh + countdown ─────────────────────────────────────────────
   useEffect(() => {
     if (!ready) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchStats();
     const refreshId  = setInterval(fetchStats, REFRESH_MS);
     const countdownId = setInterval(

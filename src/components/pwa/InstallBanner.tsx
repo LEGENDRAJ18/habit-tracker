@@ -10,17 +10,14 @@ const DISMISS_KEY = "habitai-install-dismissed-v2";
 export default function InstallBanner() {
   const { canInstall, isInstalled, isIOS, promptInstall } = usePWAInstall();
 
-  // Start hidden to prevent SSR flash; read localStorage after mount.
-  const [dismissed, setDismissed] = useState(true);
+  const [dismissed, setDismissed] = useState(
+    () => typeof window !== "undefined" ? localStorage.getItem(DISMISS_KEY) === "1" : true
+  );
   const [visible, setVisible]     = useState(false);
 
   useEffect(() => {
-    const wasDismissed = localStorage.getItem(DISMISS_KEY) === "1";
-    setDismissed(wasDismissed);
-  }, []);
-
-  useEffect(() => {
     const shouldShow = (canInstall || isIOS) && !isInstalled && !dismissed;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!shouldShow) { setVisible(false); return; }
     // Brief delay so the page settles before the banner slides in.
     const t = setTimeout(() => setVisible(true), 1500);

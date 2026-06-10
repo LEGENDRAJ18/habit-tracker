@@ -49,7 +49,7 @@ const ROWS: ComparisonRow[] = [
 ];
 
 const REASON_COPY: Record<UpgradeReason, { title: string; sub: string }> = {
-  habits:      { title: "Unlock the full HabitAI experience",             sub: "Start your 30-day Plus trial — no credit card needed." },
+  habits:      { title: "Unlock the full HabitAI experience",             sub: "Start your 7-day Plus trial — no credit card needed." },
   ai:          { title: "Unlock advanced AI coaching",                    sub: "Get personalised weekly game plans, deep memory, and voice check-ins." },
   reminders:   { title: "Email reminders are a Plus feature",             sub: "Upgrade to Plus to set daily reminder emails for your habits." },
   export:      { title: "Data export is a Pro feature",                   sub: "Upgrade to Pro to download your full habit history as CSV." },
@@ -89,10 +89,10 @@ function ProBadge() {
 
 function consentBullets(plan: "plus" | "pro", plusPrice: string, proPrice: string): string[] {
   if (plan === "plus") return [
-    "Free for 30 days — no charge today",
+    "Free for 7 days — no charge today",
     `Then ${plusPrice}/month, billed monthly`,
     "Cancel anytime before trial ends — no charge",
-    "30-day Plus trial, no credit card required",
+    "7-day Plus trial, no credit card required",
   ];
   return [
     `Billed ${proPrice}/month immediately`,
@@ -355,7 +355,7 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
                 <p className="text-[10px] text-violet-400/70 mb-2 font-medium">The Optimizer</p>
                 <div className="mb-1">
                   <span className="text-2xl font-extrabold text-white">Free</span>
-                  <span className="text-violet-300 text-xs ml-1 font-semibold">30-day trial</span>
+                  <span className="text-violet-300 text-xs ml-1 font-semibold">7-day trial</span>
                 </div>
                 <p className="text-[10px] text-slate-500 mb-1">then {plusPrice} / mo</p>
                 <p className="text-[9px] text-slate-700 mb-3">Prices shown in {currency} · Charged in USD</p>
@@ -394,7 +394,7 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
                       className="w-full py-2 border border-violet-500/60 hover:border-violet-400 text-violet-300 hover:text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       {loading === "plus" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                      Start 30-day free trial
+                      Start 7-day free trial
                     </button>
                   )}
                 </div>
@@ -480,7 +480,7 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
           )}
 
           <p className="text-center text-xs text-slate-600 mt-4">
-            Plus: 30-day free trial · No credit card needed
+            Plus: 7-day free trial · No credit card needed
           </p>
 
           <p className="text-center text-[11px] text-slate-700 mt-3">
@@ -488,7 +488,7 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
             <Link href="/payment-policy" className="text-slate-600 hover:text-slate-400 underline underline-offset-2 transition-colors" target="_blank">
               Payment Policy
             </Link>
-            {" "}· Plus: free for 30 days, then billed monthly · Pro: billed immediately
+            {" "}· Plus: free for 7 days, then billed monthly · Pro: billed immediately
           </p>
 
           <button

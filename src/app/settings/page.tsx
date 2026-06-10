@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -191,9 +191,12 @@ function GoalsTab({ initialGoals }: { initialGoals: string[] }) {
     const hasCustom = initialGoals.some((g) => !GOAL_OPTIONS.some((o) => o.label === g));
     if (hasCustom) {
       knownIds.push("custom");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCustomGoal(initialGoals.find((g) => !GOAL_OPTIONS.some((o) => o.label === g)) ?? "");
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelected(knownIds);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoaded(true);
   }, [initialGoals, loaded]);
 
@@ -664,7 +667,7 @@ function ReferralSection() {
               <div className="flex items-center gap-2.5 bg-emerald-950/40 border border-emerald-800/30 rounded-xl px-3.5 py-2.5">
                 <span className="text-lg leading-none">🎉</span>
                 <p className="text-sm text-emerald-300 font-semibold">
-                  You've earned <span className="text-emerald-200">{data.earnedDays} days</span> of free Plus from {data.rewarded} referral{data.rewarded !== 1 ? "s" : ""}!
+                  You&apos;ve earned <span className="text-emerald-200">{data.earnedDays} days</span> of free Plus from {data.rewarded} referral{data.rewarded !== 1 ? "s" : ""}!
                 </p>
               </div>
             )}
@@ -1079,7 +1082,7 @@ function PlanTab({
                 <span className="text-sm font-bold text-amber-300 mt-1">{proPrice}/mo</span>
               </Link>
             </div>
-            <p className="text-[11px] text-slate-600 text-center">Plus: 30-day free trial · Cancel anytime · Pro: no trial period</p>
+            <p className="text-[11px] text-slate-600 text-center">Plus: 7-day free trial · Cancel anytime · Pro: no trial period</p>
             <p className="text-[10px] text-slate-700 text-center">Prices shown in {currency} · Charged in USD by Stripe</p>
           </div>
         )}
@@ -1394,6 +1397,7 @@ function NotificationsTab() {
   useEffect(() => {
     // Check push permission state
     if (typeof window !== "undefined" && "Notification" in window) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPushEnabled(Notification.permission === "granted");
     }
     // Load prefs from DB
@@ -1819,7 +1823,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 
 export default function SettingsPage() {
   const router = useRouter();
-  const supabase = useRef(createClient()).current;
+  const [supabase] = useState(() => createClient());
   const { reminderEnabled, reminderHour, reminderMinute, saveReminderPrefs, profileLoading: reminderLoading, tier, goals } = useProfile();
 
   const [activeTab, setActiveTab] = useState<Tab>("account");

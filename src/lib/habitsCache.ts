@@ -13,7 +13,11 @@ const KEY_QUEUE    = "habitai_offline_queue";
 const KEY_DATE     = "habitai_cache_date";
 
 function today() {
-  return new Date().toISOString().split("T")[0];
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 // ─── Read/write habits cache ──────────────────────────────────────────────────
@@ -38,19 +42,25 @@ export function loadHabitsCache(): {
   habits: Habit[];
   todayLogs: HabitLog[];
   historicalLogs: Pick<HabitLog, "habit_id" | "completed_at">[];
+  stale: boolean;
 } | null {
   if (typeof window === "undefined") return null;
   try {
-    const cacheDate = localStorage.getItem(KEY_DATE);
-    if (cacheDate !== today()) return null; // stale — ignore
     const h = localStorage.getItem(KEY_HABITS);
-    const l = localStorage.getItem(KEY_LOGS);
     const s = localStorage.getItem(KEY_HIST);
-    if (!h || !l || !s) return null;
+    if (!h || !s) return null; // no habit data at all
+
+    const cacheDate = localStorage.getItem(KEY_DATE);
+    const isStale   = cacheDate !== today();
+
+    // Always return habits + history — they're valid across days.
+    // todayLogs only apply to the same calendar day.
+    const l = localStorage.getItem(KEY_LOGS);
     return {
-      habits:        JSON.parse(h) as Habit[],
-      todayLogs:     JSON.parse(l) as HabitLog[],
+      habits:         JSON.parse(h) as Habit[],
+      todayLogs:      isStale || !l ? [] : (JSON.parse(l) as HabitLog[]),
       historicalLogs: JSON.parse(s) as Pick<HabitLog, "habit_id" | "completed_at">[],
+      stale:          isStale,
     };
   } catch {
     return null;
@@ -59,10 +69,27 @@ export function loadHabitsCache(): {
 
 // ─── Offline queue ────────────────────────────────────────────────────────────
 
+export type AddHabitPayload = {
+  user_id:                 string;
+  name:                    string;
+  description:             string | null;
+  frequency:               "daily" | "weekly";
+  stack_after_id:          string | null;
+  when_time:               string | null;
+  where_location:          string | null;
+  how_long:                string | null;
+  validity_score:          "valid" | "partial" | "invalid";
+  preferred_reminder_time: string | null;
+  duration_minutes:        number | null;
+  xp_value:                number;
+  difficulty:              number;
+};
+
 export type OfflineOp =
   | { type: "toggle_complete";   habitId: string; userId: string; completed_at: string; tempLogId: string }
   | { type: "toggle_uncomplete"; habitId: string; logId: string }
-  | { type: "delete_habit";      habitId: string };
+  | { type: "delete_habit";      habitId: string }
+  | { type: "add_habit";         tempId: string; payload: AddHabitPayload };
 
 export function loadQueue(): OfflineOp[] {
   if (typeof window === "undefined") return [];

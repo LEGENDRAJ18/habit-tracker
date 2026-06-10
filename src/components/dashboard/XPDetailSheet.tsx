@@ -35,6 +35,11 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
   const [dragY, setDragY] = useState(0);
   const dragStartY = useRef<number | null>(null);
 
+  const dismiss = () => {
+    setVisible(false);
+    setTimeout(onClose, 320);
+  };
+
   useEffect(() => {
     const raf = requestAnimationFrame(() => setVisible(true));
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") dismiss(); };
@@ -42,11 +47,6 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
     return () => { cancelAnimationFrame(raf); window.removeEventListener("keydown", onKey); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const dismiss = () => {
-    setVisible(false);
-    setTimeout(onClose, 320);
-  };
 
   const onTouchStart = (e: React.TouchEvent) => { dragStartY.current = e.touches[0].clientY; };
   const onTouchMove  = (e: React.TouchEvent) => {

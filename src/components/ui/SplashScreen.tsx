@@ -4,14 +4,12 @@ import { useRouter } from "next/navigation";
 
 export default function SplashScreen() {
   const router = useRouter();
-  const [phase, setPhase] = useState<"pre" | "in" | "pulse" | "out" | "gone">("pre");
+  const [phase, setPhase] = useState<"pre" | "in" | "pulse" | "out" | "gone">(
+    () => typeof window !== "undefined" && sessionStorage.getItem("habitai_splash") ? "gone" : "pre"
+  );
 
   useEffect(() => {
-    // sessionStorage is empty on every cold PWA launch and new browser tab
-    if (sessionStorage.getItem("habitai_splash")) {
-      setPhase("gone");
-      return;
-    }
+    if (phase === "gone") return;
     sessionStorage.setItem("habitai_splash", "1");
 
     // Prefetch dashboard so it's instant when splash finishes

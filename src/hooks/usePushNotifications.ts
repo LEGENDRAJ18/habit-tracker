@@ -16,16 +16,14 @@ function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
 
 export function usePushNotifications() {
   const [showModal, setShowModal] = useState(false);
-  const [isSubscribed, setSubscribed] = useState(false);
+  const [isSubscribed, setSubscribed] = useState(
+    () => typeof window !== "undefined" && Notification.permission === "granted"
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
-
-    if (Notification.permission === "granted") {
-      setSubscribed(true);
-      return;
-    }
+    if (Notification.permission === "granted") return;
     if (Notification.permission === "denied") return;
     if (localStorage.getItem(DISMISSED_KEY)) return;
     if (localStorage.getItem(SUBSCRIBED_KEY)) return;

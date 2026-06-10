@@ -83,7 +83,7 @@ function PaidPlanButton({ plan, priceId, primary }: { plan: string; priceId: str
       }`}
     >
       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-      {plan === "Plus" ? "Start 30-day free trial" : "Upgrade to Pro"}
+      {plan === "Plus" ? "Start 7-day free trial" : "Upgrade to Pro"}
     </button>
   );
 }
@@ -220,7 +220,7 @@ export default function Pricing() {
 
         {/* Footer note */}
         <p className="text-center text-sm text-slate-500 mt-10">
-          30-day Plus trial included · No credit card needed · Pro charged immediately
+          7-day Plus trial included · No credit card needed · Pro charged immediately
         </p>
       </div>
     </section>

@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Lock, Flame, Zap, Trophy, CalendarDays, Gift, CheckCircle2, User, Share2, Star, Headphones } from "lucide-react";
 import { useXP, ACHIEVEMENT_META, type AchievementId } from "@/hooks/useXP";
@@ -62,7 +62,7 @@ export default function ProfilePage() {
   const [userMode,         setUserMode]         = useState<UserMode>("personal");
   const [subscriptionTier, setSubscriptionTier] = useState<Plan>("free");
   const [shared,           setShared]           = useState(false);
-  const supabase = useRef(createClient()).current;
+  const [supabase] = useState(() => createClient());
 
   const handleShare = async () => {
     const text = `I'm Level ${level} on HabitAI with ${xp.toLocaleString()} XP and a ${bestStreak}-day streak! 🔥\nJoin me and build habits that actually stick: https://habitaiapp.com`;

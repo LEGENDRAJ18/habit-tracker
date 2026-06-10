@@ -105,7 +105,7 @@ function BattleCard({ battle, onAction, actioning }: { battle: BattleWithNames; 
           disabled={!!actioning}
           className="w-full py-2.5 min-h-[44px] bg-violet-600/20 hover:bg-violet-600/30 disabled:opacity-60 border border-violet-600/30 text-violet-300 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5"
         >
-          {isActioning("log_completion") ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><CheckCircle2 className="w-3.5 h-3.5" /> Log today's completion</>}
+          {isActioning("log_completion") ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><CheckCircle2 className="w-3.5 h-3.5" /> Log today&apos;s completion</>}
         </button>
       )}
     </div>
@@ -129,6 +129,7 @@ export default function HabitBattleModal({ tier, friends, onClose, onUpgrade }: 
   const handleUpgrade = () => { onClose(); router.push("/billing"); };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!isPaid) { setLoading(false); return; }
     fetch("/api/battles")
       .then((r) => r.json())

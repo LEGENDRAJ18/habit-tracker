@@ -936,7 +936,7 @@ export default function OnboardingModal({ onComplete }: Props) {
                 <div className="mt-3 flex items-center gap-2.5 bg-emerald-950/30 border border-emerald-700/25 rounded-xl px-4 py-2.5">
                   <span className="text-lg leading-none">🎉</span>
                   <p className="text-[11px] text-slate-400 leading-snug">
-                    You&apos;ve unlocked a <span className="text-emerald-300 font-semibold">30-day Plus trial</span> — experience all Plus features free. No credit card needed.
+                    You&apos;ve unlocked a <span className="text-emerald-300 font-semibold">7-day Plus trial</span> — experience all Plus features free. No credit card needed.
                   </p>
                 </div>
               </div>
@@ -1008,7 +1008,7 @@ export default function OnboardingModal({ onComplete }: Props) {
                 <div className="mt-3 flex items-center gap-2.5 bg-emerald-950/30 border border-emerald-700/25 rounded-xl px-4 py-2.5">
                   <span className="text-lg leading-none">🎉</span>
                   <p className="text-[11px] text-slate-400 leading-snug">
-                    You&apos;ve unlocked a <span className="text-emerald-300 font-semibold">30-day Plus trial</span> — experience all Plus features free. No credit card needed.
+                    You&apos;ve unlocked a <span className="text-emerald-300 font-semibold">7-day Plus trial</span> — experience all Plus features free. No credit card needed.
                   </p>
                 </div>
               </div>

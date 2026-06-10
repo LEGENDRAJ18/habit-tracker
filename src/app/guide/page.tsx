@@ -182,7 +182,7 @@ export default function GuidePage() {
           </div>
           <h1 className="text-3xl font-black text-white mb-2">How to use HabitAI</h1>
           <p className="text-slate-400 text-base leading-relaxed">
-            Everything you need to know to build life-changing habits with AI. Start here if you're new, or jump to any section below.
+            Everything you need to know to build life-changing habits with AI. Start here if you&apos;re new, or jump to any section below.
           </p>
         </div>
 

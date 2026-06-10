@@ -14,8 +14,6 @@ export default function WeeklyPlanCard() {
   const [generating, setGenerating] = useState(false);
   const [error, setError]     = useState<string | null>(null);
 
-  useEffect(() => { fetchPlan(); }, []);
-
   async function fetchPlan() {
     setLoading(true);
     setError(null);
@@ -29,6 +27,12 @@ export default function WeeklyPlanCard() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchPlan();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function generatePlan() {
     setGenerating(true);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Plan } from "@/types";
 
@@ -47,7 +47,7 @@ function writeCache(s: ProfileSnapshot) {
 export function useProfile() {
   // Seed synchronously from localStorage so the dashboard renders instantly
   // on return visits without waiting for any network call.
-  const cached = useRef(readCache()).current;
+  const [cached] = useState(() => readCache());
 
   const [tier, setTier]                               = useState<Plan>((cached?.tier as Plan) ?? "free");
   const [onboardingCompleted, setOnboardingCompleted] = useState(cached?.onboardingCompleted ?? true);
@@ -69,7 +69,7 @@ export function useProfile() {
     (cached?.userMode as "student" | "parent" | "teacher" | "personal") ?? "personal"
   );
 
-  const supabase = useRef(createClient()).current;
+  const [supabase] = useState(() => createClient());
 
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null;

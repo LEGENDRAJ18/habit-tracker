@@ -46,8 +46,6 @@ export function useFocusTimer(durationMinutes: number, isPomodoroMode: boolean) 
   });
 
   const intervalRef  = useRef<ReturnType<typeof setInterval> | null>(null);
-  const stateRef     = useRef(state);
-  stateRef.current   = state;
 
   const clearTimer = useCallback(() => {
     if (intervalRef.current) {

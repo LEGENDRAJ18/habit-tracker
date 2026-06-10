@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, X, Check, Clock,
   Sparkles, Flame, Brain, Plus, Trash2,
@@ -13,7 +13,13 @@ import Link from "next/link";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-function toDateStr(d: Date) { return d.toISOString().split("T")[0]; }
+function toDateStr(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function logDate(iso: string) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 function daysAgo(n: number) { return toDateStr(new Date(Date.now() - n * 86400000)); }
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
@@ -30,7 +36,7 @@ function fmtShort(ds: string) {
 }
 function computeBestStreak(logs: { completed_at: string }[]): number {
   if (!logs.length) return 0;
-  const days = [...new Set(logs.map(l => l.completed_at.split("T")[0]))].sort();
+  const days = [...new Set(logs.map(l => logDate(l.completed_at)))].sort();
   let best = 1, cur = 1;
   for (let i = 1; i < days.length; i++) {
     const diff = (new Date(days[i]).getTime() - new Date(days[i - 1]).getTime()) / 86400000;
@@ -40,7 +46,7 @@ function computeBestStreak(logs: { completed_at: string }[]): number {
 }
 function computeCurrentStreak(logs: { completed_at: string }[]): number {
   if (!logs.length) return 0;
-  const days = new Set(logs.map(l => l.completed_at.split("T")[0]));
+  const days = new Set(logs.map(l => logDate(l.completed_at)));
   const today = toDateStr(new Date());
   const start = days.has(today) ? new Date() : new Date(Date.now() - 86400000);
   let streak = 0;
@@ -297,7 +303,7 @@ function DayDetailPanel({ detail, logs, onClose }: {
   logs: (Pick<HabitLog, "habit_id" | "completed_at"> & { id: string })[];
   onClose: () => void;
 }) {
-  const dayLogs = logs.filter(l => l.completed_at.startsWith(detail.date));
+  const dayLogs = logs.filter(l => logDate(l.completed_at) === detail.date);
   const allDone  = detail.missed.length === 0 && detail.completed.length > 0;
   const noneDone = detail.completed.length === 0 && detail.missed.length > 0;
 
@@ -422,7 +428,7 @@ function AIOverviewWidget({ habits, logs, currentStreak }: {
     const weekDays = Array.from({ length: 7 }, (_, i) =>
       toDateStr(new Date(weekStart.getTime() + i * 86400000))
     ).filter(d => d <= todayStr);
-    const weekLogs = logs.filter(l => weekDays.includes(l.completed_at.split("T")[0]));
+    const weekLogs = logs.filter(l => weekDays.includes(logDate(l.completed_at)));
     const possibleThisWeek = weekDays.reduce((sum, d) =>
       sum + habits.filter(h => h.created_at.split("T")[0] <= d).length, 0
     );
@@ -434,7 +440,7 @@ function AIOverviewWidget({ habits, logs, currentStreak }: {
     const DOW_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const dowCount = Array(7).fill(0) as number[];
     const dowOccurrences = Array(7).fill(0) as number[];
-    const dateSet = new Set(logs.map(l => l.completed_at.split("T")[0]));
+    const dateSet = new Set(logs.map(l => logDate(l.completed_at)));
     for (const d of dateSet) dowOccurrences[new Date(d + "T12:00:00").getDay()]++;
     for (const l of logs) dowCount[new Date(l.completed_at).getDay()]++;
     const dowRates = dowCount.map((c, i) => dowOccurrences[i] > 0 ? c / dowOccurrences[i] : -1);
@@ -586,6 +592,7 @@ function PlanAheadSection({ habits, goals, tier, scheduled, onAdd, onRemove, onC
   const [showModal, setShowModal] = useState(false);
 
   const upcoming = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity
     const next7 = Array.from({ length: 7 }, (_, i) => toDateStr(new Date(Date.now() + i * 86400000)));
     return scheduled.filter(s => next7.includes(s.date)).sort((a, b) => a.date.localeCompare(b.date));
   }, [scheduled]);
@@ -685,7 +692,7 @@ function MonthInsights({ logs, habits, year, month }: {
 
   const stats = useMemo(() => {
     const prefix    = `${year}-${String(month + 1).padStart(2, "0")}`;
-    const monthLogs = logs.filter(l => l.completed_at.startsWith(prefix));
+    const monthLogs = logs.filter(l => logDate(l.completed_at).startsWith(prefix));
     const total     = monthLogs.length;
     const today     = toDateStr(new Date());
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -702,7 +709,7 @@ function MonthInsights({ logs, habits, year, month }: {
 
     const dayMap = new Map<string, number>();
     for (const l of monthLogs) {
-      const d = l.completed_at.split("T")[0];
+      const d = logDate(l.completed_at);
       dayMap.set(d, (dayMap.get(d) ?? 0) + 1);
     }
     let bestDay = "", bestDayCount = 0;
@@ -824,7 +831,7 @@ function ContributionHeatmap({ logs, habits }: {
 
   const cells = Array.from({ length: DAYS }, (_, i) => {
     const d    = daysAgo(DAYS - 1 - i);
-    const count = logs.filter(l => l.completed_at.startsWith(d)).length;
+    const count = logs.filter(l => logDate(l.completed_at) === d).length;
     const pct  = Math.round((count / habitCount) * 100);
     return { date: d, count, pct };
   });
@@ -883,7 +890,7 @@ function ContributionHeatmap({ logs, habits }: {
 // ─── page ─────────────────────────────────────────────────────────────────────
 
 export default function CalendarPage() {
-  const supabase  = useRef(createClient()).current;
+  const [supabase] = useState(() => createClient());
 
   const [habits,      setHabits]      = useState<Habit[]>([]);
   const [logs,        setLogs]        = useState<(Pick<HabitLog, "habit_id" | "completed_at"> & { id: string })[]>([]);
@@ -931,6 +938,7 @@ export default function CalendarPage() {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(SCHED_KEY);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (raw) setScheduled(JSON.parse(raw));
     } catch { /* ignore */ }
   }, []);
@@ -1013,7 +1021,7 @@ export default function CalendarPage() {
   const dayCompletionMap = useMemo(() => {
     const map = new Map<string, Set<string>>();
     for (const log of logs) {
-      const d = log.completed_at.split("T")[0];
+      const d = logDate(log.completed_at);
       if (!map.has(d)) map.set(d, new Set());
       map.get(d)!.add(log.habit_id);
     }
@@ -1026,7 +1034,7 @@ export default function CalendarPage() {
   // This month totals for HeroStats
   const thisMonthTotal = useMemo(() => {
     const prefix = `${today.slice(0, 7)}`;
-    return logs.filter(l => l.completed_at.startsWith(prefix)).length;
+    return logs.filter(l => logDate(l.completed_at).startsWith(prefix)).length;
   }, [logs, today]);
 
   const currentStreak = useMemo(() => computeCurrentStreak(logs), [logs]);
@@ -1078,7 +1086,11 @@ export default function CalendarPage() {
     setSelectedDay(null);
   };
   // Allow up to 2 months ahead for planning
-  const canGoNext = new Date(year, month + 1, 1) > new Date(Date.now() + 62 * 86400000);
+  const canGoNext = useMemo(
+    // eslint-disable-next-line react-hooks/purity
+    () => new Date(year, month + 1, 1) > new Date(Date.now() + 62 * 86400000),
+    [year, month]
+  );
   const monthLabel = new Date(year, month, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
   const selectedDetail = useMemo((): DayDetail | null => {
