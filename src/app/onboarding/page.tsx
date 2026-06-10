@@ -355,21 +355,26 @@ function OnboardingFlow() {
   // Step 3
   const [chosenHabit, setChosenHabit] = useState<string | null>(null);
 
-  // ── Auth: getUser() uses the cached localStorage session — near-instant ──
+  // ── Auth: getSession() reads from cached storage — no network round-trip ──
   useEffect(() => {
     (async () => {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.replace("/auth/login"); return; }
 
-      setUserId(user.id);
+      // getSession() reads from cookies/localStorage — instant, unlike getUser() which
+      // makes a network call to verify the JWT. Critical for new users landing here
+      // immediately after the email-verification redirect.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { router.replace("/auth/login"); return; }
+
+      const uid = session.user.id;
+      setUserId(uid);
       setLoadingAuth(false); // show step 1 NOW — don't wait for profile query
 
       // Profile check in background: redirect if already onboarded, pre-fill if partial
       const { data: profile } = await supabase
         .from("profiles")
         .select("onboarding_completed, username, avatar_id")
-        .eq("id", user.id)
+        .eq("id", uid)
         .single();
 
       if (profile?.onboarding_completed) { router.replace("/dashboard"); return; }

@@ -9,8 +9,12 @@ export default function SplashScreen() {
   );
 
   useEffect(() => {
-    if (phase === "gone") return;
     sessionStorage.setItem("habitai_splash", "1");
+    // Skip on onboarding — new users must see content immediately, not a 2-second splash.
+    if (phase === "gone" || window.location.pathname.startsWith("/onboarding")) {
+      setPhase("gone");
+      return;
+    }
 
     // Prefetch dashboard so it's instant when splash finishes
     router.prefetch("/dashboard");

@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
           setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
             cookiesToSet.forEach((c) =>
-              cookieJar.push({ name: c.name, value: c.value, options: (c as Record<string, unknown>) })
+              cookieJar.push({ name: c.name, value: c.value, options: c.options ?? {} })
             );
           },
         },
