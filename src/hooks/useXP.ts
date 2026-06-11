@@ -64,7 +64,8 @@ export function useXP() {
   useEffect(() => {
     void (async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user ?? null;
         if (!user) { setXPLoading(false); return; }
         const { data } = await supabase
           .from("profiles")
@@ -113,7 +114,8 @@ export function useXP() {
   // Core: award XP and detect level-up
   const awardXP = useCallback(
     async (amount: number) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
       if (!user) return false;
 
       const newXP    = xpRef.current + amount;
@@ -144,7 +146,8 @@ export function useXP() {
     xpValue?: number | null,
     currentStreak?: number,
   ): Promise<{ luckyBonus: boolean }> => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
     if (!user) return { luckyBonus: false };
 
     const newTotal = totalRef.current + 1;
@@ -180,7 +183,8 @@ export function useXP() {
     const today = new Date().toISOString().split("T")[0];
     if (localStorage.getItem("habitai_last_login_xp") === today) return false;
     localStorage.setItem("habitai_last_login_xp", today);
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
     if (!user) return false;
     await awardXP(5);
     return true;
@@ -190,7 +194,8 @@ export function useXP() {
   // Returns a Set of newly achieved milestone IDs so the caller can animate/play sounds.
   const checkMilestones = useCallback(
     async (completedCount: number, totalHabits: number, maxStreak: number): Promise<Set<string>> => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
       if (!user) return new Set();
 
       const newly = new Set<string>();

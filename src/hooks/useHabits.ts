@@ -40,6 +40,10 @@ function computeStrengthFromLogs(
   return Math.max(5, Math.min(100, 10 + completions * 5 - missed * 3));
 }
 
+// Unique seq counter prevents "cannot add callbacks after subscribe" errors
+// when the component remounts before async removeChannel() completes.
+let _habitsRTSeq = 0;
+
 export function useHabits() {
   // ── Seed state from localStorage cache for instant display ──
   const [habits, setHabits]                 = useState<Habit[]>(() => loadHabitsCache()?.habits ?? []);
@@ -54,9 +58,9 @@ export function useHabits() {
   const fetchData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     setIsSyncing(true);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // getSession() reads JWT from localStorage — instant, no network round-trip
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
     if (!user) {
       if (!silent) setLoading(false);
       setIsSyncing(false);
@@ -609,25 +613,40 @@ export function useHabits() {
   useEffect(() => {
     let habitsChannel: ReturnType<typeof supabase.channel> | null = null;
     let logsChannel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
 
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
+      if (!user || cancelled) return;
 
-      habitsChannel = supabase
-        .channel(`habits-rt-${user.id}`)
-        .on("postgres_changes", { event: "*", schema: "public", table: "habits", filter: `user_id=eq.${user.id}` }, () => fetchData(true))
-        .subscribe();
+      const seq = ++_habitsRTSeq;
 
-      logsChannel = supabase
-        .channel(`logs-rt-${user.id}`)
-        .on("postgres_changes", { event: "*", schema: "public", table: "habit_logs", filter: `user_id=eq.${user.id}` }, () => fetchData(true))
-        .subscribe();
+      // Unique names prevent "cannot add callbacks after subscribe" errors if
+      // the component re-mounts before the previous async removeChannel() finishes.
+      try {
+        habitsChannel = supabase
+          .channel(`habits-rt-${user.id}-${seq}`)
+          .on("postgres_changes", { event: "*", schema: "public", table: "habits", filter: `user_id=eq.${user.id}` }, () => { if (!cancelled) fetchData(true); })
+          .subscribe();
+      } catch (err) {
+        console.warn("[useHabits] habits realtime skipped:", err);
+      }
+
+      try {
+        logsChannel = supabase
+          .channel(`logs-rt-${user.id}-${seq}`)
+          .on("postgres_changes", { event: "*", schema: "public", table: "habit_logs", filter: `user_id=eq.${user.id}` }, () => { if (!cancelled) fetchData(true); })
+          .subscribe();
+      } catch (err) {
+        console.warn("[useHabits] logs realtime skipped:", err);
+      }
     })();
 
     return () => {
-      if (habitsChannel) supabase.removeChannel(habitsChannel);
-      if (logsChannel) supabase.removeChannel(logsChannel);
+      cancelled = true;
+      if (habitsChannel) { try { supabase.removeChannel(habitsChannel).catch(() => {}); } catch {} }
+      if (logsChannel)   { try { supabase.removeChannel(logsChannel).catch(() => {}); }   catch {} }
     };
   }, [supabase, fetchData]);
 

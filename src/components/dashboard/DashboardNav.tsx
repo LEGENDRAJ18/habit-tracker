@@ -125,7 +125,7 @@ function NavXP() {
 export default function DashboardNav() {
   const router   = useRouter();
   const pathname = usePathname();
-  const { tier } = useProfile();
+  const { tier, username: profileUsername, avatarId: profileAvatarId } = useProfile();
   const { openUpgradeModal } = useUpgrade();
   const { openAIInsight } = useAIInsight();
   const { canInstall, isInstalled, promptInstall } = usePWAInstall();
@@ -133,9 +133,11 @@ export default function DashboardNav() {
   const [menuOpen, setMenuOpen]     = useState(false);
   const [initials, setInitials]     = useState("··");
   const [userEmail, setUserEmail]   = useState("");
-  const [avatarId, setAvatarId]     = useState<string | null>(null);
-  const [username, setUsername]     = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // username and avatarId come from useProfile (single shared fetch — no extra round-trip)
+  const avatarId = profileAvatarId;
+  const username = profileUsername;
 
   const isFree = tier === "free";
 
@@ -152,19 +154,12 @@ export default function DashboardNav() {
   };
   const pageMeta = PAGE_META[pathname];
 
+  // Email/initials: getSession() reads from localStorage — instant, no network round-trip
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return;
-      if (user.email) {
-        setUserEmail(user.email);
-        setInitials(getInitials(user.email));
-      }
-      supabase.from("profiles").select("avatar_id, username").eq("id", user.id).single()
-        .then(({ data }) => {
-          if (data?.avatar_id) setAvatarId(data.avatar_id);
-          if (data?.username) setUsername(data.username);
-        });
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const email = session?.user?.email;
+      if (email) { setUserEmail(email); setInitials(getInitials(email)); }
     });
   }, []);
 

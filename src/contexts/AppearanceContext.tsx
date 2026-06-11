@@ -107,28 +107,41 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
     if (ready.current) return;
     ready.current = true;
 
-    const merged: AppearancePrefs = { ...DEFAULTS, ...readLS() };
+    // Read appearance prefs from localStorage (instant, no network)
+    const lsPrefs = readLS();
+
+    // If accent not in appearance cache, check the profile cache written by useProfile
+    let accent = lsPrefs.accent;
+    if (!accent) {
+      try {
+        const profileCache = JSON.parse(localStorage.getItem("habitai_profile_v2") || "null");
+        if (profileCache?.accentColor && ACCENT_PALETTE[profileCache.accentColor as AccentColor]) {
+          accent = profileCache.accentColor as AccentColor;
+        }
+      } catch {}
+    }
+
+    const merged: AppearancePrefs = { ...DEFAULTS, ...lsPrefs, ...(accent ? { accent } : {}) };
     setPrefs(merged);
     applyAccentCSSVars(merged.accent);
     applyReduceMotion(merged.reduceMotion);
     applyHighContrast(merged.highContrast);
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return;
-      supabase.from("profiles").select("accent_color").eq("id", user.id).single()
-        .then(({ data }) => {
-          const remote = data?.accent_color as AccentColor | undefined;
-          if (remote && remote !== merged.accent && ACCENT_PALETTE[remote]) {
-            applyAccentCSSVars(remote);
-            setPrefs((p) => {
-              const n = { ...p, accent: remote };
-              try { localStorage.setItem(LS_KEY, JSON.stringify(n)); } catch {}
-              return n;
-            });
-          }
+    // useProfile fetches accent_color from DB and dispatches this event when it differs
+    const onAccent = (e: Event) => {
+      const remote = (e as CustomEvent).detail as AccentColor;
+      if (remote && ACCENT_PALETTE[remote]) {
+        setPrefs((p) => {
+          if (p.accent === remote) return p;
+          const n = { ...p, accent: remote };
+          try { localStorage.setItem(LS_KEY, JSON.stringify(n)); } catch {}
+          return n;
         });
-    });
-  }, [supabase]);
+      }
+    };
+    window.addEventListener("habitai:accent", onAccent);
+    return () => window.removeEventListener("habitai:accent", onAccent);
+  }, []);
 
   const commit = useCallback((patch: Partial<AppearancePrefs>) => {
     setPrefs((prev) => {
@@ -141,8 +154,9 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
   const setAccent = useCallback((accent: AccentColor) => {
     applyAccentCSSVars(accent);
     commit({ accent });
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) supabase.from("profiles").update({ accent_color: accent }).eq("id", user.id);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const uid = session?.user?.id;
+      if (uid) supabase.from("profiles").update({ accent_color: accent }).eq("id", uid);
     });
   }, [supabase, commit]);
 

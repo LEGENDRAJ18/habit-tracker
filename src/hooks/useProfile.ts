@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Plan } from "@/types";
+import { applyAccentCSSVars, ACCENT_PALETTE, type AccentColor } from "@/contexts/AppearanceContext";
 
 // ─── Profile localStorage cache ───────────────────────────────────────────────
 
@@ -24,6 +25,9 @@ interface ProfileSnapshot {
   reminderMinute: number;
   lastFreezeUsed: string | null;
   freezeProtectedDate: string | null;
+  username: string | null;
+  avatarId: string | null;
+  accentColor: string | null;
 }
 
 function readCache(): ProfileSnapshot | null {
@@ -42,23 +46,21 @@ function writeCache(s: ProfileSnapshot) {
   } catch {}
 }
 
+// ─── Module-level fetch deduplication ────────────────────────────────────────
+// createBrowserClient is a singleton. Multiple components call useProfile() on
+// every page — AppShell, DashboardNav, TrialBanner, UpgradeModal, etc. Without
+// deduplication each instance fires its own getSession() + profiles.select().
+// These module-level vars ensure AT MOST ONE DB fetch runs at a time and all
+// concurrent callers share the same Promise.
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _fetchPromise: Promise<any | null> | null = null;
+let _fetchUserId: string | null = null;
+let _fetchedAt = 0;
+const FETCH_TTL_MS = 30_000; // reuse for 30 s, then allow a fresh fetch
+
 // ─── Module-level realtime singleton ─────────────────────────────────────────
-// createBrowserClient is a singleton — all useProfile instances share the same
-// Supabase client and therefore the same channel registry.
-//
-// Supabase throws "cannot add 'postgres_changes' callbacks after subscribe()"
-// whenever .on() is called on an already-subscribed channel. This happens when:
-//   1. Multiple useProfile instances run (AppShell + DashboardNav + etc.)
-//   2. The effect re-runs before the previous removeChannel() async round-trip
-//      completes (channel is still in the registry at the next .channel() call)
-//
-// The module-level state below outlives React's effect lifecycle, letting every
-// hook instance coordinate:
-//   • _rtUserId   — which user's channel is currently active
-//   • _rtChannel  — the active RealtimeChannel object (any type to avoid import)
-//   • _rtSb       — the Supabase client that owns it (needed for removeChannel)
-//   • _rtSeq      — monotonic counter; appended to name so each mount gets a
-//                   fresh registry entry even if the old removal is still pending
+// (same design as before — prevents "cannot add callbacks after subscribe")
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let _rtUserId: string | null = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -70,15 +72,13 @@ let _rtSeq = 0;
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useProfile() {
-  // Seed synchronously from localStorage so the dashboard renders instantly
-  // on return visits without waiting for any network call.
   const [cached] = useState(() => readCache());
 
   const [tier, setTier]                               = useState<Plan>((cached?.tier as Plan) ?? "free");
   const [onboardingCompleted, setOnboardingCompleted] = useState(cached?.onboardingCompleted ?? true);
   const [goal, setGoal]                               = useState<string | null>(cached?.goal ?? null);
   const [goals, setGoals]                             = useState<string[]>(cached?.goals ?? []);
-  const [profileLoading, setProfileLoading]           = useState(!cached);   // false immediately if cached
+  const [profileLoading, setProfileLoading]           = useState(!cached);
   const [lastFreezeUsed, setLastFreezeUsed]           = useState<string | null>(cached?.lastFreezeUsed ?? null);
   const [freezeProtectedDate, setFreezeProtectedDate] = useState<string | null>(cached?.freezeProtectedDate ?? null);
   const [reminderEnabled, setReminderEnabled]         = useState(cached?.reminderEnabled ?? false);
@@ -93,13 +93,14 @@ export function useProfile() {
   const [userMode, setUserMode]                       = useState<"student" | "parent" | "teacher" | "personal">(
     (cached?.userMode as "student" | "parent" | "teacher" | "personal") ?? "personal"
   );
+  const [username, setUsername]                       = useState<string | null>(cached?.username ?? null);
+  const [avatarId, setAvatarId]                       = useState<string | null>(cached?.avatarId ?? null);
 
   const [supabase] = useState(() => createClient());
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let channel: any = null;
-    // cancelled prevents this IIFE from touching state/channels after cleanup.
     let cancelled = false;
 
     function applyData(d: {
@@ -118,24 +119,30 @@ export function useProfile() {
       trial_end_date?: string | null;
       dream_university?: string | null;
       user_mode?: string | null;
+      username?: string | null;
+      avatar_id?: string | null;
+      accent_color?: string | null;
     }) {
-      const newTier                = (d.subscription_tier as Plan | null) ?? "free";
-      const newOnboarding          = d.onboarding_completed ?? false;
-      const newGoal                = d.goal ?? null;
-      const newGoals               = Array.isArray(d.goals) && d.goals.length > 0
+      const newTier              = (d.subscription_tier as Plan | null) ?? "free";
+      const newOnboarding        = d.onboarding_completed ?? false;
+      const newGoal              = d.goal ?? null;
+      const newGoals             = Array.isArray(d.goals) && d.goals.length > 0
         ? d.goals
         : d.goal ? [d.goal] : [];
-      const newLastFreeze          = d.last_freeze_used ?? null;
-      const newFreezeDate          = d.freeze_protected_date ?? null;
-      const newReminderEnabled     = d.reminder_enabled ?? false;
-      const newReminderHour        = d.reminder_hour ?? 8;
-      const newReminderMinute      = d.reminder_minute ?? 0;
-      const newCancelAtPeriodEnd   = d.subscription_cancel_at_period_end ?? false;
-      const newCurrentPeriodEnd    = d.subscription_current_period_end ?? null;
-      const newSubStatus           = d.subscription_status ?? null;
-      const newTrialEnd            = d.trial_end_date ?? null;
-      const newDreamUniversity     = d.dream_university ?? null;
-      const newUserMode            = (d.user_mode as "student" | "parent" | "teacher" | "personal") ?? "personal";
+      const newLastFreeze        = d.last_freeze_used ?? null;
+      const newFreezeDate        = d.freeze_protected_date ?? null;
+      const newReminderEnabled   = d.reminder_enabled ?? false;
+      const newReminderHour      = d.reminder_hour ?? 8;
+      const newReminderMinute    = d.reminder_minute ?? 0;
+      const newCancelAtPeriodEnd = d.subscription_cancel_at_period_end ?? false;
+      const newCurrentPeriodEnd  = d.subscription_current_period_end ?? null;
+      const newSubStatus         = d.subscription_status ?? null;
+      const newTrialEnd          = d.trial_end_date ?? null;
+      const newDreamUniversity   = d.dream_university ?? null;
+      const newUserMode          = (d.user_mode as "student" | "parent" | "teacher" | "personal") ?? "personal";
+      const newUsername          = d.username ?? null;
+      const newAvatarId          = d.avatar_id ?? null;
+      const newAccentColor       = (d.accent_color as AccentColor | null) ?? null;
 
       setTier(newTier);
       setOnboardingCompleted(newOnboarding);
@@ -152,8 +159,25 @@ export function useProfile() {
       setTrialEndDate(newTrialEnd);
       setDreamUniversity(newDreamUniversity);
       setUserMode(newUserMode);
+      setUsername(newUsername);
+      setAvatarId(newAvatarId);
 
-      // Persist to localStorage so next visit is instant
+      // Apply accent color CSS vars immediately (no React re-render needed — it's DOM)
+      if (newAccentColor && ACCENT_PALETTE[newAccentColor]) {
+        if (typeof document !== "undefined") {
+          applyAccentCSSVars(newAccentColor);
+          // Keep AppearanceContext's own cache in sync so Settings page shows the right color
+          try {
+            const ap = JSON.parse(localStorage.getItem("habitai_appearance_v1") || "{}");
+            if (ap.accent !== newAccentColor) {
+              localStorage.setItem("habitai_appearance_v1", JSON.stringify({ ...ap, accent: newAccentColor }));
+              // Notify AppearanceContext's event listener (if mounted)
+              window.dispatchEvent(new CustomEvent("habitai:accent", { detail: newAccentColor }));
+            }
+          } catch {}
+        }
+      }
+
       writeCache({
         tier: newTier,
         onboardingCompleted: newOnboarding,
@@ -170,41 +194,67 @@ export function useProfile() {
         reminderMinute: newReminderMinute,
         lastFreezeUsed: newLastFreeze,
         freezeProtectedDate: newFreezeDate,
+        username: newUsername,
+        avatarId: newAvatarId,
+        accentColor: newAccentColor,
       });
     }
 
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      // getSession() reads JWT from localStorage — instant, no network round-trip.
+      // getUser() verifies the JWT with the server (~300-500ms) — unnecessary here.
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
       if (!user) { if (!cancelled) setProfileLoading(false); return; }
       if (cancelled) return;
 
       setSignedUpAt(user.created_at ?? null);
 
-      const { data } = await supabase
-        .from("profiles")
-        .select(
-          "subscription_tier, onboarding_completed, goal, goals, last_freeze_used, freeze_protected_date, reminder_enabled, reminder_hour, reminder_minute, subscription_cancel_at_period_end, subscription_current_period_end, subscription_status, trial_end_date, dream_university, user_mode"
-        )
-        .eq("id", user.id)
-        .single();
+      // ── Fetch deduplication ───────────────────────────────────────────────
+      // If another useProfile() instance already started a fetch for this user
+      // (within the TTL), await the same Promise instead of firing a new one.
+      // This collapses N concurrent DB round-trips into exactly 1.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let data: any | null;
+      if (
+        _fetchUserId === user.id &&
+        _fetchPromise !== null &&
+        Date.now() - _fetchedAt < FETCH_TTL_MS
+      ) {
+        data = await _fetchPromise;
+      } else {
+        _fetchUserId  = user.id;
+        _fetchedAt    = Date.now();
+        const _uid = user.id;
+        const _sb  = supabase;
+        _fetchPromise = (async () => {
+          try {
+            const { data: d } = await _sb
+              .from("profiles")
+              .select(
+                "subscription_tier, onboarding_completed, goal, goals, last_freeze_used, " +
+                "freeze_protected_date, reminder_enabled, reminder_hour, reminder_minute, " +
+                "subscription_cancel_at_period_end, subscription_current_period_end, " +
+                "subscription_status, trial_end_date, dream_university, user_mode, " +
+                "username, avatar_id, accent_color"
+              )
+              .eq("id", _uid)
+              .single();
+            return d ?? null;
+          } catch {
+            return null;
+          }
+        })();
+        data = await _fetchPromise;
+      }
 
       if (cancelled) return;
-
       if (data) applyData(data);
       setProfileLoading(false);
 
-      // ── Realtime singleton ──────────────────────────────────────────────────
-      // Everything from here to the end of the try/catch is synchronous (no
-      // await), so no other async continuation can interleave with it. This
-      // gives us atomic check-then-claim semantics without a real mutex.
-
-      // If another useProfile instance already has an active channel for this
-      // user, skip — never call .on() on an already-subscribed channel.
+      // ── Realtime singleton ────────────────────────────────────────────────
       if (_rtUserId === user.id && _rtChannel != null) return;
 
-      // Tear down any stale channel (different user or orphaned).
-      // Fire-and-forget: the unique name below makes a registry collision
-      // impossible even if the async unsubscribe hasn't flushed yet.
       if (_rtChannel != null) {
         const sb = _rtSb, ch = _rtChannel;
         _rtChannel = null; _rtSb = null; _rtUserId = null;
@@ -213,15 +263,9 @@ export function useProfile() {
 
       if (cancelled) return;
 
-      // Claim the slot synchronously before creating the channel.
       _rtUserId = user.id;
       _rtSb     = supabase;
 
-      // ALL .on() handlers are registered before .subscribe() — never after.
-      // The unique name (seq counter) means supabase.channel() always returns
-      // a brand-new object, even if the old removal is still in flight.
-      // The entire block is wrapped in try/catch: realtime is optional, and
-      // any failure here must never crash or blank the page.
       try {
         const ch = supabase
           .channel(`profile-rt-${user.id}-${++_rtSeq}`)
@@ -231,19 +275,13 @@ export function useProfile() {
             (payload) => applyData(payload.new as Parameters<typeof applyData>[0])
           )
           .subscribe();
-
         _rtChannel = ch;
         channel    = ch;
       } catch (err) {
-        // Swallow — page must render fully with or without realtime
         console.warn("[useProfile] realtime subscription skipped:", err);
         _rtChannel = null; _rtSb = null; _rtUserId = null;
       }
 
-      // Defensive: if effect was cleaned up while awaiting the profile fetch,
-      // tear down the channel we just created. (cancelled was checked just above
-      // so this path is only reached if cleanup fired between the check and here,
-      // which can't happen synchronously — kept for belt-and-suspenders safety.)
       if (cancelled && channel) {
         if (_rtChannel === channel) { _rtChannel = null; _rtSb = null; _rtUserId = null; }
         try { supabase.removeChannel(channel).catch(() => {}); } catch {}
@@ -254,8 +292,6 @@ export function useProfile() {
     return () => {
       cancelled = true;
       if (channel) {
-        // Only remove the global channel if we own it — don't tear down a
-        // channel that was already claimed by a newer effect instance.
         if (_rtChannel === channel) {
           const sb = _rtSb;
           _rtChannel = null; _rtSb = null; _rtUserId = null;
@@ -275,7 +311,8 @@ export function useProfile() {
 
   const applyFreeze = useCallback(
     async (protectedDate: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
       if (!user) return;
       const todayStr = new Date().toISOString().split("T")[0];
       await supabase
@@ -290,7 +327,8 @@ export function useProfile() {
 
   const saveReminderPrefs = useCallback(
     async (enabled: boolean, hour: number, minute = 0) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
       if (!user) return;
       await supabase
         .from("profiles")
@@ -323,5 +361,7 @@ export function useProfile() {
     trialEndDate,
     dreamUniversity,
     userMode,
+    username,
+    avatarId,
   };
 }
