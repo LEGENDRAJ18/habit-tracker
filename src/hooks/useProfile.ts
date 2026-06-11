@@ -145,9 +145,15 @@ export function useProfile() {
       });
     }
 
+    // cancelled prevents the async IIFE from touching state or channels after
+    // the effect is cleaned up (React navigation, StrictMode double-invoke, etc.)
+    let cancelled = false;
+
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setProfileLoading(false); return; }
+      if (!user) { if (!cancelled) setProfileLoading(false); return; }
+      if (cancelled) return;
+
       setSignedUpAt(user.created_at ?? null);
 
       const { data } = await supabase
@@ -158,9 +164,12 @@ export function useProfile() {
         .eq("id", user.id)
         .single();
 
+      if (cancelled) return;
+
       if (data) applyData(data);
       setProfileLoading(false);
 
+      // All .on() handlers must be registered BEFORE .subscribe() — never after.
       channel = supabase
         .channel(`profile-rt-${user.id}`)
         .on(
@@ -169,10 +178,21 @@ export function useProfile() {
           (payload) => applyData(payload.new as Parameters<typeof applyData>[0])
         )
         .subscribe();
+
+      // If the effect was cleaned up while the awaits were running, tear down
+      // the channel we just created rather than leaving it dangling.
+      if (cancelled) {
+        supabase.removeChannel(channel);
+        channel = null;
+      }
     })();
 
     return () => {
-      if (channel) supabase.removeChannel(channel);
+      cancelled = true;
+      if (channel) {
+        supabase.removeChannel(channel);
+        channel = null;
+      }
     };
   }, [supabase]);
 
