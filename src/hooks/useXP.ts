@@ -64,8 +64,7 @@ export function useXP() {
   useEffect(() => {
     void (async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const user = session?.user ?? null;
+        const { data: { user } } = await supabase.auth.getUser();
         if (!user) { setXPLoading(false); return; }
         const { data } = await supabase
           .from("profiles")

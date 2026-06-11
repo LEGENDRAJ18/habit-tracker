@@ -201,10 +201,7 @@ export function useProfile() {
     }
 
     (async () => {
-      // getSession() reads JWT from localStorage — instant, no network round-trip.
-      // getUser() verifies the JWT with the server (~300-500ms) — unnecessary here.
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user ?? null;
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) { if (!cancelled) setProfileLoading(false); return; }
       if (cancelled) return;
 
@@ -247,6 +244,10 @@ export function useProfile() {
         })();
         data = await _fetchPromise;
       }
+
+      // Don't cache a failed/empty fetch — let the next mount retry instead of
+      // serving null for up to FETCH_TTL_MS (e.g. profile row not yet created).
+      if (data === null) { _fetchPromise = null; _fetchUserId = null; }
 
       if (cancelled) return;
       if (data) applyData(data);

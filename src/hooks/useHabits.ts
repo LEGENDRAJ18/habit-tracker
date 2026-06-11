@@ -58,9 +58,7 @@ export function useHabits() {
   const fetchData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     setIsSyncing(true);
-    // getSession() reads JWT from localStorage — instant, no network round-trip
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user ?? null;
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       if (!silent) setLoading(false);
       setIsSyncing(false);
