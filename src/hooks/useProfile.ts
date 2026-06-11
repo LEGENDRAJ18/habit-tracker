@@ -42,6 +42,31 @@ function writeCache(s: ProfileSnapshot) {
   } catch {}
 }
 
+// ─── Module-level realtime singleton ─────────────────────────────────────────
+// createBrowserClient is a singleton — all useProfile instances share the same
+// Supabase client and therefore the same channel registry.
+//
+// Supabase throws "cannot add 'postgres_changes' callbacks after subscribe()"
+// whenever .on() is called on an already-subscribed channel. This happens when:
+//   1. Multiple useProfile instances run (AppShell + DashboardNav + etc.)
+//   2. The effect re-runs before the previous removeChannel() async round-trip
+//      completes (channel is still in the registry at the next .channel() call)
+//
+// The module-level state below outlives React's effect lifecycle, letting every
+// hook instance coordinate:
+//   • _rtUserId   — which user's channel is currently active
+//   • _rtChannel  — the active RealtimeChannel object (any type to avoid import)
+//   • _rtSb       — the Supabase client that owns it (needed for removeChannel)
+//   • _rtSeq      — monotonic counter; appended to name so each mount gets a
+//                   fresh registry entry even if the old removal is still pending
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _rtUserId: string | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _rtChannel: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _rtSb: any = null;
+let _rtSeq = 0;
+
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useProfile() {
@@ -72,7 +97,10 @@ export function useProfile() {
   const [supabase] = useState(() => createClient());
 
   useEffect(() => {
-    let channel: ReturnType<typeof supabase.channel> | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let channel: any = null;
+    // cancelled prevents this IIFE from touching state/channels after cleanup.
+    let cancelled = false;
 
     function applyData(d: {
       subscription_tier?: string | null;
@@ -145,10 +173,6 @@ export function useProfile() {
       });
     }
 
-    // cancelled prevents the async IIFE from touching state or channels after
-    // the effect is cleaned up (React navigation, StrictMode double-invoke, etc.)
-    let cancelled = false;
-
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { if (!cancelled) setProfileLoading(false); return; }
@@ -169,20 +193,60 @@ export function useProfile() {
       if (data) applyData(data);
       setProfileLoading(false);
 
-      // All .on() handlers must be registered BEFORE .subscribe() — never after.
-      channel = supabase
-        .channel(`profile-rt-${user.id}`)
-        .on(
-          "postgres_changes",
-          { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
-          (payload) => applyData(payload.new as Parameters<typeof applyData>[0])
-        )
-        .subscribe();
+      // ── Realtime singleton ──────────────────────────────────────────────────
+      // Everything from here to the end of the try/catch is synchronous (no
+      // await), so no other async continuation can interleave with it. This
+      // gives us atomic check-then-claim semantics without a real mutex.
 
-      // If the effect was cleaned up while the awaits were running, tear down
-      // the channel we just created rather than leaving it dangling.
-      if (cancelled) {
-        supabase.removeChannel(channel);
+      // If another useProfile instance already has an active channel for this
+      // user, skip — never call .on() on an already-subscribed channel.
+      if (_rtUserId === user.id && _rtChannel != null) return;
+
+      // Tear down any stale channel (different user or orphaned).
+      // Fire-and-forget: the unique name below makes a registry collision
+      // impossible even if the async unsubscribe hasn't flushed yet.
+      if (_rtChannel != null) {
+        const sb = _rtSb, ch = _rtChannel;
+        _rtChannel = null; _rtSb = null; _rtUserId = null;
+        try { sb?.removeChannel(ch)?.catch?.(() => {}); } catch {}
+      }
+
+      if (cancelled) return;
+
+      // Claim the slot synchronously before creating the channel.
+      _rtUserId = user.id;
+      _rtSb     = supabase;
+
+      // ALL .on() handlers are registered before .subscribe() — never after.
+      // The unique name (seq counter) means supabase.channel() always returns
+      // a brand-new object, even if the old removal is still in flight.
+      // The entire block is wrapped in try/catch: realtime is optional, and
+      // any failure here must never crash or blank the page.
+      try {
+        const ch = supabase
+          .channel(`profile-rt-${user.id}-${++_rtSeq}`)
+          .on(
+            "postgres_changes",
+            { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
+            (payload) => applyData(payload.new as Parameters<typeof applyData>[0])
+          )
+          .subscribe();
+
+        _rtChannel = ch;
+        channel    = ch;
+      } catch (err) {
+        // Swallow — page must render fully with or without realtime
+        console.warn("[useProfile] realtime subscription skipped:", err);
+        _rtChannel = null; _rtSb = null; _rtUserId = null;
+      }
+
+      // Defensive: if effect was cleaned up while awaiting the profile fetch,
+      // tear down the channel we just created. (cancelled was checked just above
+      // so this path is only reached if cleanup fired between the check and here,
+      // which can't happen synchronously — kept for belt-and-suspenders safety.)
+      if (cancelled && channel) {
+        if (_rtChannel === channel) { _rtChannel = null; _rtSb = null; _rtUserId = null; }
+        try { supabase.removeChannel(channel).catch(() => {}); } catch {}
         channel = null;
       }
     })();
@@ -190,7 +254,13 @@ export function useProfile() {
     return () => {
       cancelled = true;
       if (channel) {
-        supabase.removeChannel(channel);
+        // Only remove the global channel if we own it — don't tear down a
+        // channel that was already claimed by a newer effect instance.
+        if (_rtChannel === channel) {
+          const sb = _rtSb;
+          _rtChannel = null; _rtSb = null; _rtUserId = null;
+          try { sb?.removeChannel(channel)?.catch?.(() => {}); } catch {}
+        }
         channel = null;
       }
     };
