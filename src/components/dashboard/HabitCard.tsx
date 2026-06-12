@@ -30,6 +30,43 @@ interface Props {
   isTourTarget?: boolean;
 }
 
+// Singleton AudioContext — created once on first use, reused every tap.
+// Web Audio API: synthesised in hardware, fires in <1 ms, no file to load.
+let _audioCtx: AudioContext | null = null;
+
+function playCompletionSound() {
+  if (typeof window === "undefined") return;
+  if (localStorage.getItem("habitai_sounds") !== "on") return;
+  try {
+    if (!_audioCtx || _audioCtx.state === "closed") _audioCtx = new AudioContext();
+    const ctx = _audioCtx;
+    void ctx.resume().then(() => {
+      const now = ctx.currentTime;
+      // Soft pop: 440 Hz → 660 Hz, 150 ms
+      const o1 = ctx.createOscillator();
+      const g1 = ctx.createGain();
+      o1.connect(g1); g1.connect(ctx.destination);
+      o1.type = "sine";
+      o1.frequency.setValueAtTime(440, now);
+      o1.frequency.exponentialRampToValueAtTime(660, now + 0.08);
+      g1.gain.setValueAtTime(0, now);
+      g1.gain.linearRampToValueAtTime(0.22, now + 0.01);
+      g1.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      o1.start(now); o1.stop(now + 0.15);
+      // Bright ding: 1320 Hz, 220 ms, starts 60 ms in
+      const o2 = ctx.createOscillator();
+      const g2 = ctx.createGain();
+      o2.connect(g2); g2.connect(ctx.destination);
+      o2.type = "triangle";
+      o2.frequency.setValueAtTime(1320, now + 0.06);
+      g2.gain.setValueAtTime(0, now + 0.06);
+      g2.gain.linearRampToValueAtTime(0.15, now + 0.08);
+      g2.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+      o2.start(now + 0.06); o2.stop(now + 0.28);
+    });
+  } catch {}
+}
+
 const PARTICLE_DIRS = [
   { x:  0,   y: -30 }, { x:  21,  y: -21 }, { x:  30,  y:  0  }, { x:  21,  y:  21 },
   { x:  0,   y:  30 }, { x: -21,  y:  21 }, { x: -30,  y:  0  }, { x: -21,  y: -21 },
@@ -161,6 +198,7 @@ export default function HabitCard({
       setTimeout(() => { setShowParticles(false); setJustCompleted(false); }, 700);
       setTimeout(() => setShowXPFloat(false), 1200);
       if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(50);
+      playCompletionSound();
       onCompleted?.();
     }
     // Optimistic — fire and forget; parent handles revert on error

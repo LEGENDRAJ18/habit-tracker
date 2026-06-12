@@ -56,9 +56,21 @@ export function useHabits() {
   const [supabase] = useState(() => createClient());
 
   const fetchData = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
+    // Only show the skeleton when there is truly no data to display.
+    // If cache already seeded habits into state, keep them visible while
+    // the refresh runs in the background (no flicker, no stuck skeleton).
+    if (!silent && !loadHabitsCache()) setLoading(true);
     setIsSyncing(true);
-    const { data: { user } } = await supabase.auth.getUser();
+
+    const t0 = performance.now();
+    const { data: { user } } = await Promise.race([
+      supabase.auth.getUser(),
+      new Promise<{ data: { user: null } }>((resolve) =>
+        setTimeout(() => resolve({ data: { user: null } }), 5_000)
+      ),
+    ]);
+    console.log("[LOAD] getUser", Math.round(performance.now() - t0), "ms");
+
     if (!user) {
       if (!silent) setLoading(false);
       setIsSyncing(false);
@@ -104,14 +116,16 @@ export function useHabits() {
         .order("completed_at", { ascending: false }),
     ]);
 
+    const t1 = performance.now();
     const result = await Promise.race([fetchAll, timeout]);
 
-    // Timed out — stop showing spinner, keep cached data already in state.
     if (result === "timeout") {
+      console.log("[LOAD] habits TIMEOUT (>2500ms)");
       setLoading(false);
       setIsSyncing(false);
       return;
     }
+    console.log("[LOAD] habits+logs+history", Math.round(performance.now() - t1), "ms");
 
     const [
       { data: habitsData, error: hErr },
