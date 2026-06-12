@@ -41,9 +41,16 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  // 5-second timeout: if Supabase is slow (seen up to 87 s in prod logs),
+  // fail closed (treat as unauthenticated) rather than hanging the request.
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await Promise.race([
+    supabase.auth.getUser(),
+    new Promise<{ data: { user: null } }>((resolve) =>
+      setTimeout(() => resolve({ data: { user: null } }), 5_000)
+    ),
+  ]);
 
   const { pathname } = request.nextUrl;
 

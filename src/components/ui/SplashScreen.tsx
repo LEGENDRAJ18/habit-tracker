@@ -1,12 +1,18 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function SplashScreen() {
   const router = useRouter();
-  const [phase, setPhase] = useState<"pre" | "in" | "pulse" | "out" | "gone">(
-    () => typeof window !== "undefined" && sessionStorage.getItem("habitai_splash") ? "gone" : "pre"
-  );
+  // Always initialise as "pre" so server and client produce the same HTML
+  // (eliminates the hydration mismatch that left the purple overlay stuck).
+  // useLayoutEffect then skips to "gone" before the first paint for returning
+  // users who already have the sessionStorage token, so they never see it.
+  const [phase, setPhase] = useState<"pre" | "in" | "pulse" | "out" | "gone">("pre");
+
+  useLayoutEffect(() => {
+    if (sessionStorage.getItem("habitai_splash")) setPhase("gone");
+  }, []);
 
   useEffect(() => {
     sessionStorage.setItem("habitai_splash", "1");
