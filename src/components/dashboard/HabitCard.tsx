@@ -132,6 +132,7 @@ export default function HabitCard({
   const [swipeX, setSwipeX]         = useState(0);
   const swipeXRef   = useRef(0);
   const touchRef    = useRef({ startX: 0, startY: 0, locked: false });
+  const togglingRef = useRef(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -190,6 +191,10 @@ export default function HabitCard({
   })();
 
   const handleToggle = () => {
+    if (togglingRef.current) return;
+    togglingRef.current = true;
+    setTimeout(() => { togglingRef.current = false; }, 800);
+
     if (!completed) {
       setShowParticles(true);
       setJustCompleted(true);

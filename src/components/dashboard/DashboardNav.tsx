@@ -72,10 +72,14 @@ function PlanBadge({ tier }: { tier: Plan }) {
 
 /** Compact XP pill shown in the navbar on mobile only */
 function MobileNavXP() {
-  const { xp, level } = useXP();
+  const { xp, level, xpLoading } = useXP();
   const colorKey = levelColorKey(level);
   const s        = LEVEL_COLORS[colorKey];
   const into     = xpIntoLevel(xp);
+
+  if (xpLoading) return (
+    <div className="sm:hidden h-7 w-28 skeleton rounded-full flex-shrink-0" />
+  );
 
   return (
     <div data-tour="xp-level" className="sm:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-violet-950/40 border border-violet-800/25 flex-shrink-0">
@@ -90,12 +94,16 @@ function MobileNavXP() {
 
 /** Full XP widget shown on desktop (sm+) */
 function NavXP() {
-  const { xp, level } = useXP();
+  const { xp, level, xpLoading } = useXP();
   const colorKey   = levelColorKey(level);
   const s          = LEVEL_COLORS[colorKey];
   const pct        = xpProgressPct(xp);
   const into       = xpIntoLevel(xp);
   const nextReward = getNextReward(level);
+
+  if (xpLoading) return (
+    <div className="hidden sm:block h-9 w-40 skeleton rounded-lg flex-shrink-0" />
+  );
 
   return (
     <div data-tour="xp-level" className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-violet-950/30 border border-violet-900/25 flex-shrink-0">

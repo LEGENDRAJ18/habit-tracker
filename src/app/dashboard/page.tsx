@@ -116,12 +116,13 @@ function SkeletonCard() {
 // ─── Quick stats row ──────────────────────────────────────────────────────────
 
 function QuickStats({
-  completedCount, totalHabits, bestStreak, totalXP, onOpenXP,
+  completedCount, totalHabits, bestStreak, totalXP, xpLoading, onOpenXP,
 }: {
   completedCount: number;
   totalHabits: number;
   bestStreak: number;
   totalXP: number;
+  xpLoading: boolean;
   onOpenXP: () => void;
 }) {
   const pct = totalHabits > 0 ? Math.round((completedCount / totalHabits) * 100) : 0;
@@ -142,7 +143,11 @@ function QuickStats({
         onClick={onOpenXP}
         className="bg-[#0c0c18] border border-violet-900/20 hover:border-violet-600/40 rounded-xl px-3 py-2.5 text-center transition-all active:scale-95 group"
       >
-        <p className="text-lg font-bold leading-none text-amber-400 tabular-nums" style={{ animation: "countUp 0.5s ease-out both" }}>{totalXP.toLocaleString()}</p>
+        {xpLoading ? (
+          <div className="h-5 w-12 skeleton rounded mx-auto" />
+        ) : (
+          <p className="text-lg font-bold leading-none text-amber-400 tabular-nums" style={{ animation: "countUp 0.5s ease-out both" }}>{totalXP.toLocaleString()}</p>
+        )}
         <p className="text-[10px] text-slate-600 group-hover:text-violet-500 mt-1 uppercase tracking-wider font-medium transition-colors">XP · tap ›</p>
       </button>
     </div>
@@ -795,13 +800,17 @@ export default function DashboardPage() {
                   <Flame className={`w-3 h-3 flex-shrink-0 ${bestStreak > 0 ? "text-orange-400" : "text-slate-600"}`} />
                   {bestStreak}d streak
                 </button>
-                <button
-                  onClick={() => setShowXPSheet(true)}
-                  title="View XP & level details"
-                  className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full text-violet-300 bg-violet-950/40 border border-violet-700/30 hover:opacity-75 transition-opacity"
-                >
-                  {levelEmoji(level)} Lv {level} {levelName(level)}
-                </button>
+                {xpLoading ? (
+                  <div className="h-5 w-24 skeleton rounded-full" />
+                ) : (
+                  <button
+                    onClick={() => setShowXPSheet(true)}
+                    title="View XP & level details"
+                    className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full text-violet-300 bg-violet-950/40 border border-violet-700/30 hover:opacity-75 transition-opacity"
+                  >
+                    {levelEmoji(level)} Lv {level} {levelName(level)}
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -962,10 +971,18 @@ export default function DashboardPage() {
         )}
 
         {/* Error state */}
-        {error && (
-          <div className="flex items-center gap-3 bg-red-950/40 border border-red-800/40 rounded-xl p-4 mb-6">
-            <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-            <p className="text-sm text-red-300">{error}</p>
+        {error && !loading && (
+          <div className="flex items-center justify-between gap-3 bg-red-950/40 border border-red-800/40 rounded-xl p-4 mb-6">
+            <div className="flex items-center gap-3 min-w-0">
+              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+              <p className="text-sm text-red-300 truncate">{error}</p>
+            </div>
+            <button
+              onClick={() => refetch()}
+              className="text-xs font-semibold text-white bg-red-700/60 hover:bg-red-600/60 px-3 py-1.5 rounded-lg flex-shrink-0 transition-colors"
+            >
+              Retry
+            </button>
           </div>
         )}
 
@@ -1214,6 +1231,7 @@ export default function DashboardPage() {
               totalHabits={habits.length}
               bestStreak={bestStreak}
               totalXP={xp}
+              xpLoading={xpLoading}
               onOpenXP={() => setShowXPSheet(true)}
             />
             {habits.some((h) => h.duration_minutes) && <FocusStatsWidget />}
