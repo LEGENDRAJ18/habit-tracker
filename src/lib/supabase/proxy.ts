@@ -47,16 +47,28 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Logged-in user hitting an auth page → go straight to dashboard
+  // Logged-in user hitting an auth page → go straight to dashboard.
+  // IMPORTANT: copy supabaseResponse cookies onto the redirect so that any
+  // token refresh that happened during getUser() is not silently discarded.
+  // Without this, the browser keeps the revoked refresh token and enters an
+  // infinite /auth/login ↔ /dashboard redirect loop.
   if (user && AUTH_ROUTES.some((r) => pathname.startsWith(r))) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.url));
+    supabaseResponse.cookies.getAll().forEach(({ name, value, ...opts }) =>
+      redirectResponse.cookies.set(name, value, opts)
+    );
+    return redirectResponse;
   }
 
-  // Logged-out user hitting a protected page → send to login
+  // Logged-out user hitting a protected page → send to login (same cookie copy).
   if (!user && PROTECTED.some((p) => pathname.startsWith(p))) {
     const loginUrl = new URL("/auth/login", request.url);
     loginUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(loginUrl);
+    const redirectResponse = NextResponse.redirect(loginUrl);
+    supabaseResponse.cookies.getAll().forEach(({ name, value, ...opts }) =>
+      redirectResponse.cookies.set(name, value, opts)
+    );
+    return redirectResponse;
   }
 
   return supabaseResponse;

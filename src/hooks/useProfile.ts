@@ -224,24 +224,27 @@ export function useProfile() {
         _fetchedAt    = Date.now();
         const _uid = user.id;
         const _sb  = supabase;
-        _fetchPromise = (async () => {
-          try {
-            const { data: d } = await _sb
-              .from("profiles")
-              .select(
-                "subscription_tier, onboarding_completed, goal, goals, last_freeze_used, " +
-                "freeze_protected_date, reminder_enabled, reminder_hour, reminder_minute, " +
-                "subscription_cancel_at_period_end, subscription_current_period_end, " +
-                "subscription_status, trial_end_date, dream_university, user_mode, " +
-                "username, avatar_id, accent_color"
-              )
-              .eq("id", _uid)
-              .single();
-            return d ?? null;
-          } catch {
-            return null;
-          }
-        })();
+        _fetchPromise = Promise.race([
+          (async () => {
+            try {
+              const { data: d } = await _sb
+                .from("profiles")
+                .select(
+                  "subscription_tier, onboarding_completed, goal, goals, last_freeze_used, " +
+                  "freeze_protected_date, reminder_enabled, reminder_hour, reminder_minute, " +
+                  "subscription_cancel_at_period_end, subscription_current_period_end, " +
+                  "subscription_status, trial_end_date, dream_university, user_mode, " +
+                  "username, avatar_id, accent_color"
+                )
+                .eq("id", _uid)
+                .single();
+              return d ?? null;
+            } catch {
+              return null;
+            }
+          })(),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 5_000)),
+        ]);
         data = await _fetchPromise;
       }
 

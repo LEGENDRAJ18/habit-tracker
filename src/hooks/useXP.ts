@@ -66,11 +66,17 @@ export function useXP() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { setXPLoading(false); return; }
-        const { data } = await supabase
-          .from("profiles")
-          .select("xp, level, achievements, daily_milestones, total_completions")
-          .eq("id", user.id)
-          .single();
+        const data = await Promise.race([
+          (async () => {
+            const { data: d } = await supabase
+              .from("profiles")
+              .select("xp, level, achievements, daily_milestones, total_completions")
+              .eq("id", user.id)
+              .single();
+            return d ?? null;
+          })(),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 5_000)),
+        ]);
 
         const loadedXP    = data?.xp ?? 0;
         // Always recompute level from XP — never trust the stored level value,
