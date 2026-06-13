@@ -338,6 +338,7 @@ function OnboardingFlow() {
 
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [userId, setUserId]           = useState<string | null>(null);
+  const loadingAuthRef                = useRef(true);
 
   const [step,      setStep]      = useState(1);
   const [direction, setDirection] = useState<"fwd" | "back">("fwd");
@@ -357,30 +358,50 @@ function OnboardingFlow() {
 
   // ── Auth: getSession() reads from cached storage — no network round-trip ──
   useEffect(() => {
+    // Hard cap: if still loading after 5 s (middleware fell through + page-level
+    // check hung), redirect to login rather than spinning forever.
+    const fallback = setTimeout(() => {
+      if (loadingAuthRef.current) router.replace("/auth/login");
+    }, 5_000);
+
     (async () => {
-      const supabase = createClient();
+      try {
+        const supabase = createClient();
 
-      // getSession() reads from cookies/localStorage — instant, unlike getUser() which
-      // makes a network call to verify the JWT. Critical for new users landing here
-      // immediately after the email-verification redirect.
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { router.replace("/auth/login"); return; }
+        // Race getSession() against a 4.5 s timeout so we always resolve.
+        // getSession() reads cookies/localStorage and is normally instant, but
+        // can hang if the Supabase client is reinitialising a stale session.
+        const { data: { session } } = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise<{ data: { session: null } }>((resolve) =>
+            setTimeout(() => resolve({ data: { session: null } }), 4_500)
+          ),
+        ]);
 
-      const uid = session.user.id;
-      setUserId(uid);
-      setLoadingAuth(false); // show step 1 NOW — don't wait for profile query
+        if (!session) { router.replace("/auth/login"); return; }
 
-      // Profile check in background: redirect if already onboarded, pre-fill if partial
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("onboarding_completed, username, avatar_id")
-        .eq("id", uid)
-        .single();
+        const uid = session.user.id;
+        setUserId(uid);
+        loadingAuthRef.current = false;
+        setLoadingAuth(false); // show step 1 NOW — don't wait for profile query
 
-      if (profile?.onboarding_completed) { router.replace("/dashboard"); return; }
-      if (profile?.username)  setUsername(profile.username);
-      if (profile?.avatar_id) setAvatarId(profile.avatar_id as AvatarId);
+        // Profile check in background: redirect if already onboarded, pre-fill if partial
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("onboarding_completed, username, avatar_id")
+          .eq("id", uid)
+          .single();
+
+        if (profile?.onboarding_completed) { router.replace("/dashboard"); return; }
+        if (profile?.username)  setUsername(profile.username);
+        if (profile?.avatar_id) setAvatarId(profile.avatar_id as AvatarId);
+      } catch {
+        // Any unhandled error → fail safe to login rather than spinning forever
+        router.replace("/auth/login");
+      }
     })();
+
+    return () => clearTimeout(fallback);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

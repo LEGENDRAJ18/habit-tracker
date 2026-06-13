@@ -43,14 +43,21 @@ export async function updateSession(request: NextRequest) {
 
   // 5-second timeout: if Supabase is slow (seen up to 87 s in prod logs),
   // fail closed (treat as unauthenticated) rather than hanging the request.
-  const {
-    data: { user },
-  } = await Promise.race([
-    supabase.auth.getUser(),
-    new Promise<{ data: { user: null } }>((resolve) =>
-      setTimeout(() => resolve({ data: { user: null } }), 5_000)
-    ),
-  ]);
+  // Also wrapped in try/catch: if getUser() rejects (network error, bad config),
+  // Promise.race propagates the rejection — without the catch, Next.js would
+  // fall through to page rendering, bypassing the redirect logic below.
+  let user: Awaited<ReturnType<typeof supabase.auth.getUser>>["data"]["user"] = null;
+  try {
+    const { data } = await Promise.race([
+      supabase.auth.getUser(),
+      new Promise<{ data: { user: null } }>((resolve) =>
+        setTimeout(() => resolve({ data: { user: null } }), 5_000)
+      ),
+    ]);
+    user = data.user;
+  } catch {
+    user = null; // fail closed — treat as unauthenticated on any error
+  }
 
   const { pathname } = request.nextUrl;
 
