@@ -29,6 +29,28 @@ export const ACHIEVEMENT_META: Record<
   level_10:    { emoji: "⚡", title: "Power User",     desc: "Reached level 10" },
 };
 
+// ─── XP localStorage cache ────────────────────────────────────────────────────
+// Mirrors the profile/habits pattern: instant display from cache on every load,
+// then a background fetch reconciles with the DB.
+
+const XP_CACHE_KEY = "habitai_xp_v1";
+interface XPCache {
+  xp: number;
+  level: number;
+  achievements: AchievementId[];
+  totalCompletions: number;
+  dailyMilestones: DailyMilestoneState;
+}
+function readXPCache(): XPCache | null {
+  try {
+    const raw = typeof window !== "undefined" ? localStorage.getItem(XP_CACHE_KEY) : null;
+    return raw ? (JSON.parse(raw) as XPCache) : null;
+  } catch { return null; }
+}
+function writeXPCache(c: XPCache) {
+  try { localStorage.setItem(XP_CACHE_KEY, JSON.stringify(c)); } catch {}
+}
+
 // IDs of milestones that reset daily vs. are one-time achievements
 const DAILY_MILESTONE_IDS = ["first_habit_today", "all_habits_today"] as const;
 type DailyMilestoneId = (typeof DAILY_MILESTONE_IDS)[number];
@@ -39,16 +61,18 @@ interface DailyMilestoneState {
 }
 
 export function useXP() {
-  const [xp, setXP]                         = useState(0);
-  const [level, setLevel]                   = useState(1);
-  const [achievements, setAchievements]     = useState<AchievementId[]>([]);
-  const [dailyMilestones, setDailyMilestones] = useState<DailyMilestoneState>({
-    date: "",
-    achieved: [],
-  });
-  const [totalCompletions, setTotalCompletions] = useState(0);
+  const [cached] = useState(() => readXPCache());
+
+  const [xp, setXP]                         = useState(cached?.xp ?? 0);
+  const [level, setLevel]                   = useState(cached?.level ?? 1);
+  const [achievements, setAchievements]     = useState<AchievementId[]>(cached?.achievements ?? []);
+  const [dailyMilestones, setDailyMilestones] = useState<DailyMilestoneState>(
+    cached?.dailyMilestones ?? { date: "", achieved: [] }
+  );
+  const [totalCompletions, setTotalCompletions] = useState(cached?.totalCompletions ?? 0);
   const [justLeveledUp, setJustLeveledUp]   = useState<number | null>(null);
-  const [xpLoading, setXPLoading]           = useState(true);
+  // xpLoading is false immediately when cache exists — no skeleton flash for returning users
+  const [xpLoading, setXPLoading]           = useState(!cached);
 
   // Use refs to avoid stale closure in callbacks
   const xpRef           = useRef(0);
@@ -64,7 +88,13 @@ export function useXP() {
   useEffect(() => {
     void (async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const _t0 = performance.now();
+        const { data: { user } } = await Promise.race([
+          supabase.auth.getUser(),
+          new Promise<{ data: { user: null } }>((resolve) =>
+            setTimeout(() => resolve({ data: { user: null } }), 5_000)
+          ),
+        ]);
         if (!user) { setXPLoading(false); return; }
         const data = await Promise.race([
           (async () => {
@@ -77,6 +107,7 @@ export function useXP() {
           })(),
           new Promise<null>((resolve) => setTimeout(() => resolve(null), 5_000)),
         ]);
+        console.log("[LOAD] xp", Math.round(performance.now() - _t0), "ms");
 
         const loadedXP    = data?.xp ?? 0;
         // Always recompute level from XP — never trust the stored level value,
@@ -102,6 +133,8 @@ export function useXP() {
         setAchievements(loadedAch);
         setDailyMilestones(loadedDM);
         setTotalCompletions(loadedTotal);
+
+        writeXPCache({ xp: loadedXP, level: loadedLevel, achievements: loadedAch, totalCompletions: loadedTotal, dailyMilestones: loadedDM });
 
         // Sync the corrected level back to DB if it differs from what was stored
         if (data?.level !== undefined && data.level !== loadedLevel) {

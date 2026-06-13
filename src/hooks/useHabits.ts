@@ -62,17 +62,22 @@ export function useHabits() {
     if (!silent && !loadHabitsCache()) setLoading(true);
     setIsSyncing(true);
 
+    // getSession() reads from localStorage — instant, no network call.
+    // We only need the user ID for data queries; JWT validation happens
+    // server-side on each Supabase request automatically.
     const t0 = performance.now();
-    const { data: { user } } = await Promise.race([
-      supabase.auth.getUser(),
-      new Promise<{ data: { user: null } }>((resolve) =>
-        setTimeout(() => resolve({ data: { user: null } }), 5_000)
-      ),
-    ]);
-    console.log("[LOAD] getUser", Math.round(performance.now() - t0), "ms");
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
+    console.log("[LOAD] getSession", Math.round(performance.now() - t0), "ms");
 
     if (!user) {
-      if (!silent) setLoading(false);
+      if (!silent) {
+        if (!loadHabitsCache()) {
+          setError("Couldn't load — check your connection");
+          setTimeout(() => void fetchData(true), 3_000);
+        }
+        setLoading(false);
+      }
       setIsSyncing(false);
       return;
     }
@@ -112,6 +117,7 @@ export function useHabits() {
         .from("habit_logs")
         .select("habit_id, completed_at")
         .eq("user_id", user.id)
+        .neq("outcome", "failed")
         .gte("completed_at", ninetyDaysAgo)
         .order("completed_at", { ascending: false }),
     ]);
@@ -238,10 +244,11 @@ export function useHabits() {
     durationMinutes?: number | null,
     xpValue?: number | null,
     difficulty?: number | null,
+    habitType?: "standard" | "limit",
   ): Promise<{ error: string | null }> => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // getSession() is instant (localStorage read) — no network hang risk
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
     if (!user) return { error: "Not authenticated" };
 
     const offline = typeof navigator !== "undefined" && !navigator.onLine;
@@ -268,6 +275,7 @@ export function useHabits() {
       difficulty:              difficulty      ?? 1,
       is_public:               false,
       commitment_text:         null,
+      habit_type:              habitType       ?? "standard",
     };
     setHabits((prev) => [...prev, tempHabit]);
 
@@ -292,25 +300,37 @@ export function useHabits() {
       return { error: null };
     }
 
-    const { data, error } = await supabase
-      .from("habits")
-      .insert({
-        user_id:                 user.id,
-        name,
-        description:             description || null,
-        frequency,
-        stack_after_id:          stackAfterId    ?? null,
-        when_time:               whenTime        ?? null,
-        where_location:          whereLocation   ?? null,
-        how_long:                howLong         ?? null,
-        validity_score:          validityScore   ?? "valid",
-        preferred_reminder_time: reminderTime    ?? null,
-        duration_minutes:        durationMinutes ?? null,
-        xp_value:                xpValue         ?? 10,
-        difficulty:              difficulty      ?? 1,
-      })
-      .select()
-      .single();
+    // 5-second timeout on the insert — prevents the template modal from
+    // spinning forever if Supabase is slow.
+    type InsertResult = { data: Habit | null; error: { message: string } | null };
+    const { data, error } = await Promise.race<InsertResult>([
+      (async (): Promise<InsertResult> => {
+        const result = await supabase
+          .from("habits")
+          .insert({
+            user_id:                 user.id,
+            name,
+            description:             description || null,
+            frequency,
+            stack_after_id:          stackAfterId    ?? null,
+            when_time:               whenTime        ?? null,
+            where_location:          whereLocation   ?? null,
+            how_long:                howLong         ?? null,
+            validity_score:          validityScore   ?? "valid",
+            preferred_reminder_time: reminderTime    ?? null,
+            duration_minutes:        durationMinutes ?? null,
+            xp_value:                xpValue         ?? 10,
+            difficulty:              difficulty      ?? 1,
+            habit_type:              habitType       ?? "standard",
+          })
+          .select()
+          .single();
+        return result as InsertResult;
+      })(),
+      new Promise<InsertResult>((resolve) =>
+        setTimeout(() => resolve({ data: null, error: { message: "Couldn't add — try again" } }), 5_000)
+      ),
+    ]);
 
     if (error) {
       // Revert the optimistic add
@@ -504,10 +524,41 @@ export function useHabits() {
     setHistoricalLogs((prev) => prev.filter((l) => l.habit_id !== habitId));
   };
 
+  // A limit habit with a 'failed' log is NOT completed — only 'success' outcome counts.
   const isCompletedToday = (habitId: string) =>
-    todayLogs.some((l) => l.habit_id === habitId);
+    todayLogs.some((l) => l.habit_id === habitId && (l.outcome ?? "success") === "success");
+
+  const isFailedToday = (habitId: string) =>
+    todayLogs.some((l) => l.habit_id === habitId && l.outcome === "failed");
 
   const completedCount = habits.filter((h) => isCompletedToday(h.id)).length;
+
+  const markFailed = async (habitId: string): Promise<void> => {
+    // Idempotent — skip if already acted on today
+    if (todayLogs.some((l) => l.habit_id === habitId)) return;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
+    if (!user) return;
+
+    const now    = new Date().toISOString();
+    const tempId = `opt-fail-${habitId}-${Date.now()}`;
+    const tempLog: HabitLog = {
+      id:           tempId,
+      habit_id:     habitId,
+      user_id:      user.id,
+      completed_at: now,
+      notes:        null,
+      outcome:      "failed",
+    };
+    setTodayLogs((prev) => [...prev, tempLog]);
+
+    const { error } = await supabase
+      .from("habit_logs")
+      .insert({ habit_id: habitId, user_id: user.id, outcome: "failed" });
+
+    if (error) setTodayLogs((prev) => prev.filter((l) => l.id !== tempId));
+  };
 
   // Build per-habit date sets once so getStreak stays O(1) per call
   const habitDateSets = useMemo(() => {
@@ -678,6 +729,8 @@ export function useHabits() {
     restoreHabit,
     commitDeleteHabit,
     isCompletedToday,
+    isFailedToday,
+    markFailed,
     getStreak,
     getStreakInfo,
     getHabitStrength,

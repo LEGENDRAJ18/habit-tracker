@@ -420,7 +420,7 @@ function getEmptyStateRecs(goals: string[]) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { habits, todayLogs, loading, isSyncing, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength, refetch, historicalLogs } =
+  const { habits, todayLogs, loading, isSyncing, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, isFailedToday, markFailed, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength, refetch, historicalLogs } =
     useHabits();
   const { tier, profileLoading, onboardingCompleted, goals, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt, dreamUniversity, userMode } = useProfile();
   const { xp, level, achievements, totalCompletions, justLeveledUp, xpLoading, isDailyAchieved, onHabitCompleted, onDailyOpen, checkMilestones, dismissLevelUp } = useXP();
@@ -1107,6 +1107,7 @@ export default function DashboardPage() {
                 habit={habit}
                 isTourTarget={index === 0}
                 completed={isCompletedToday(habit.id)}
+                failed={isFailedToday(habit.id)}
                 streak={info.streak}
                 strength={getHabitStrength(habit.id)}
                 isProtected={info.freezeApplied}
@@ -1130,6 +1131,7 @@ export default function DashboardPage() {
                   });
                   if (res.ok) { refetch(); }
                 }}
+                onMarkFailed={() => void markFailed(habit.id)}
                 onToggle={async () => {
                   try {
                     await toggleHabit(habit.id);
@@ -1525,7 +1527,7 @@ export default function DashboardPage() {
           existingHabits={habits}
           canAddMore={isPaid || habits.length < FREE_HABIT_LIMIT}
           goals={goals}
-          onAdd={(name, desc, freq) => addHabit(name, desc, freq)}
+          onAdd={(name, desc, freq, habitType) => addHabit(name, desc, freq, null, null, null, null, undefined, null, null, null, null, habitType)}
           onHitLimit={() => { setShowTemplates(false); openUpgradeModal("habits"); }}
         />
       )}

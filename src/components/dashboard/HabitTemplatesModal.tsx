@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { X, Plus, Check, Loader2, Sparkles, RefreshCw } from "lucide-react";
+import { toast } from "@/components/ui/Toast";
 import type { Habit } from "@/types";
 import type { TemplateSuggestion } from "@/app/api/template-suggestions/route";
 
@@ -76,12 +77,20 @@ interface CachedSuggestions {
   suggestions: TemplateSuggestion[];
 }
 
+// Templates whose name implies self-tracking a limit rather than a positive action
+function isLimitTemplate(name: string): boolean {
+  const l = name.toLowerCase();
+  return l.startsWith("no ") || l.startsWith("max ") || l.startsWith("limit ")
+    || l.includes("no more") || l.includes("no alcohol") || l.includes("no smoking")
+    || l.includes("no gambling") || l.includes("no caffeine");
+}
+
 interface Props {
   onClose: () => void;
   existingHabits: Habit[];
   canAddMore: boolean;
   goals?: string[];
-  onAdd: (name: string, description: string, frequency: "daily" | "weekly") => Promise<{ error: string | null }>;
+  onAdd: (name: string, description: string, frequency: "daily" | "weekly", habitType?: "standard" | "limit") => Promise<{ error: string | null }>;
   onHitLimit: () => void;
 }
 
@@ -147,16 +156,18 @@ export default function HabitTemplatesModal({ onClose, existingHabits, canAddMor
     setTemplateError((s) => { const next = { ...s }; delete next[name]; return next; });
 
     try {
-      const { error } = await onAdd(name, "", "daily");
+      const habitType = isLimitTemplate(name) ? "limit" : "standard";
+      const { error } = await onAdd(name, "", "daily", habitType);
       if (error) {
         setTemplateState((s) => ({ ...s, [name]: "error" }));
-        setTemplateError((s) => ({ ...s, [name]: error }));
+        setTemplateError((s) => ({ ...s, [name]: "Couldn't add — try again" }));
       } else {
         setTemplateState((s) => ({ ...s, [name]: "done" }));
+        toast(`"${name}" added!`, "success");
       }
-    } catch (e) {
+    } catch {
       setTemplateState((s) => ({ ...s, [name]: "error" }));
-      setTemplateError((s) => ({ ...s, [name]: (e as Error).message ?? "Something went wrong" }));
+      setTemplateError((s) => ({ ...s, [name]: "Couldn't add — try again" }));
     }
   };
 

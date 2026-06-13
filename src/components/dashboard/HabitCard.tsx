@@ -19,9 +19,11 @@ interface Props {
   tier?: Plan;
   logId?: string | null;
   allLogs?: Array<{ habit_id: string; completed_at: string }>;
+  failed?: boolean;
   onToggle: () => void;
   onDelete: () => void;
   onCompleted?: () => void;
+  onMarkFailed?: () => void;
   onRename?: (newName: string, validityScore: "valid" | "partial" | "invalid") => Promise<void>;
   onSmartTimingToggle?: (enabled: boolean) => Promise<void>;
   onUpgradePro?: () => void;
@@ -113,10 +115,11 @@ function getTimeEmoji(whenTime: string | null): string | null {
 }
 
 export default function HabitCard({
-  habit, completed, streak, strength, isProtected, stackAfterName, isEditing,
-  tier, logId = null, allLogs = [], onToggle, onDelete, onCompleted, onRename, onSmartTimingToggle, onUpgradePro,
-  onCommitment, onStartTimer, isTourTarget,
+  habit, completed, failed = false, streak, strength, isProtected, stackAfterName, isEditing,
+  tier, logId = null, allLogs = [], onToggle, onDelete, onCompleted, onMarkFailed, onRename,
+  onSmartTimingToggle, onUpgradePro, onCommitment, onStartTimer, isTourTarget,
 }: Props) {
+  const isLimit = habit.habit_type === "limit";
   const { score: identityScore, phrase: identityPhrase } = useIdentityScore(habit, allLogs);
   const [deleting, setDeleting]     = useState(false);
   const [showParticles, setShowParticles] = useState(false);
@@ -264,8 +267,8 @@ export default function HabitCard({
       >
         <Trash2 className="w-5 h-5 text-red-400" />
       </div>
-      {/* Swipe-right (complete) backdrop */}
-      {!completed && (
+      {/* Swipe-right (complete) backdrop — only for standard habits */}
+      {!completed && !isLimit && (
         <div
           className="absolute inset-0 flex items-center pl-5 bg-emerald-950/90 pointer-events-none rounded-xl"
           style={{ opacity: swipeX > 15 ? Math.min(1, (swipeX - 15) / 55) : 0 }}
@@ -275,7 +278,9 @@ export default function HabitCard({
       )}
     <div
       className={`group rounded-xl border transition-all duration-200 touch-pan-y ${
-        completed
+        failed
+          ? "bg-red-950/15 border-red-800/30"
+          : completed
           ? "bg-violet-600/8 border-violet-600/20"
           : "bg-[#0f0f1a] border-violet-900/20 sm:hover:border-violet-800/30 sm:hover:-translate-y-px sm:hover:shadow-[0_4px_20px_rgba(109,40,217,0.10)]"
       }`}
@@ -296,16 +301,47 @@ export default function HabitCard({
       )}
 
       <div className="flex items-center gap-4 px-4 py-3.5">
-        {/* Checkbox + particles */}
+        {/* Checkbox / limit buttons + particles */}
         <div className="relative flex-shrink-0" {...(isTourTarget ? { "data-tour": "first-habit-checkbox" } : {})}>
-          <button onClick={handleToggle}
-            className={`w-8 h-8 sm:w-6 sm:h-6 rounded-full flex items-center justify-center border-2 transition-colors duration-200 ${
-              completed ? "bg-violet-500 border-violet-500 shadow-lg shadow-violet-500/30" : "border-violet-700/50 hover:border-violet-500"
-            }`}
-            style={justCompleted && completed ? { animation: "checkPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both" } : undefined}
-          >
-            {completed && <Check className="w-4 h-4 sm:w-3 sm:h-3 text-white" strokeWidth={3} />}
-          </button>
+          {isLimit ? (
+            /* Limit habit: show two action buttons when not yet acted on today */
+            completed ? (
+              /* Stayed under — show green tick */
+              <div className="w-8 h-8 sm:w-6 sm:h-6 rounded-full flex items-center justify-center bg-emerald-500 border-2 border-emerald-500 shadow-lg shadow-emerald-500/30"
+                style={justCompleted ? { animation: "checkPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both" } : undefined}>
+                <Check className="w-4 h-4 sm:w-3 sm:h-3 text-white" strokeWidth={3} />
+              </div>
+            ) : failed ? (
+              /* Went over — red X */
+              <div className="w-8 h-8 sm:w-6 sm:h-6 rounded-full flex items-center justify-center bg-red-600/80 border-2 border-red-500">
+                <X className="w-4 h-4 sm:w-3 sm:h-3 text-white" strokeWidth={3} />
+              </div>
+            ) : (
+              /* Neither — two micro-buttons stacked */
+              <div className="flex flex-col gap-1 flex-shrink-0">
+                <button
+                  onClick={handleToggle}
+                  title="Stayed under my limit today"
+                  className="w-8 h-4 rounded-md flex items-center justify-center bg-emerald-900/40 border border-emerald-700/50 hover:bg-emerald-800/50 transition-colors text-emerald-400 text-[9px] font-bold"
+                >✓</button>
+                <button
+                  onClick={() => onMarkFailed?.()}
+                  title="Went over my limit today"
+                  className="w-8 h-4 rounded-md flex items-center justify-center bg-red-900/30 border border-red-700/40 hover:bg-red-800/40 transition-colors text-red-400 text-[9px] font-bold"
+                >✗</button>
+              </div>
+            )
+          ) : (
+            /* Standard habit — single checkbox */
+            <button onClick={handleToggle}
+              className={`w-8 h-8 sm:w-6 sm:h-6 rounded-full flex items-center justify-center border-2 transition-colors duration-200 ${
+                completed ? "bg-violet-500 border-violet-500 shadow-lg shadow-violet-500/30" : "border-violet-700/50 hover:border-violet-500"
+              }`}
+              style={justCompleted && completed ? { animation: "checkPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both" } : undefined}
+            >
+              {completed && <Check className="w-4 h-4 sm:w-3 sm:h-3 text-white" strokeWidth={3} />}
+            </button>
+          )}
           {showParticles && PARTICLE_DIRS.map((dir, i) => (
             <div key={i} className="absolute top-1/2 left-1/2 rounded-full pointer-events-none"
               style={{
@@ -427,7 +463,15 @@ export default function HabitCard({
             </button>
           )}
 
-          {!editMode && !completed && validity && validity !== "valid" && (
+          {!editMode && isLimit && failed && (
+            <span className="inline-flex items-center gap-1 text-[10px] border px-1.5 py-0.5 rounded-full mt-0.5 bg-red-950/40 border-red-700/30 text-red-400">
+              Went over your limit
+            </span>
+          )}
+          {!editMode && isLimit && !completed && !failed && (
+            <span className="text-[10px] text-slate-600 mt-0.5 block">You track this honestly.</span>
+          )}
+          {!editMode && !completed && !failed && validity && validity !== "valid" && (
             <span className={`inline-flex items-center gap-1 text-[10px] border px-1.5 py-0.5 rounded-full mt-0.5 ${
               validity === "partial"
                 ? "bg-amber-950/40 border-amber-600/30 text-amber-400"

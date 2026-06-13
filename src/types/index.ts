@@ -18,6 +18,7 @@ export interface Habit {
   duration_minutes?: number | null;
   difficulty?: number | null;
   xp_value?: number | null;
+  habit_type?: "standard" | "limit";
 }
 
 export interface FocusSession {
@@ -38,6 +39,7 @@ export interface HabitLog {
   user_id: string;
   completed_at: string;
   notes: string | null;
+  outcome?: "success" | "failed";
 }
 
 export type Plan = "free" | "plus" | "pro";

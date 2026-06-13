@@ -270,6 +270,7 @@ interface Props {
     durationMinutes?: number | null,
     xpValue?: number | null,
     difficulty?: number | null,
+    habitType?: "standard" | "limit",
   ) => Promise<{ error: string | null }>;
   onSchedule?: (
     name: string, description: string, frequency: "daily" | "weekly",
@@ -402,6 +403,8 @@ export default function AddHabitModal({
   };
 
   // Step 1 submit (dashboard — direct add)
+  const [habitType, setHabitType] = useState<"standard" | "limit">("standard");
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || isBlocked) return;
@@ -414,7 +417,7 @@ export default function AddHabitModal({
         name.trim(), description.trim(), frequency,
         null, whenTime || null, whereLocation || null, howLong || null, getValidity(),
         reminderTime || null, durationMinutes,
-        difficulty.xp, difficulty.level,
+        difficulty.xp, difficulty.level, habitType,
       );
       const timeoutPromise = new Promise<{ error: string }>((resolve) =>
         setTimeout(() => resolve({ error: "Request timed out — please try again." }), 5000)
@@ -747,21 +750,49 @@ export default function AddHabitModal({
                     </button>
                   )
                   ) : (
-                    /* ── Dashboard: Frequency toggle ── */
-                    <div>
-                      <label className={labelCls}>Frequency</label>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        {(["daily", "weekly"] as const).map((freq) => (
-                          <button key={freq} type="button" onClick={() => setFrequency(freq)}
-                            className={`py-2 rounded-xl text-xs font-medium border transition-all capitalize ${
-                              frequency === freq
+                    /* ── Dashboard: Frequency + Habit-type toggles ── */
+                    <>
+                      <div>
+                        <label className={labelCls}>Frequency</label>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {(["daily", "weekly"] as const).map((freq) => (
+                            <button key={freq} type="button" onClick={() => setFrequency(freq)}
+                              className={`py-2 rounded-xl text-xs font-medium border transition-all capitalize ${
+                                frequency === freq
+                                  ? "bg-violet-600/20 border-violet-600/50 text-violet-300"
+                                  : "bg-violet-950/20 border-violet-900/20 text-slate-500 hover:text-slate-300"
+                              }`}
+                            >{freq}</button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Habit type — standard positive action vs. self-reported limit */}
+                      <div>
+                        <label className={labelCls}>Habit type</label>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <button type="button" onClick={() => setHabitType("standard")}
+                            className={`py-2 rounded-xl text-xs font-medium border transition-all ${
+                              habitType === "standard"
                                 ? "bg-violet-600/20 border-violet-600/50 text-violet-300"
                                 : "bg-violet-950/20 border-violet-900/20 text-slate-500 hover:text-slate-300"
                             }`}
-                          >{freq}</button>
-                        ))}
+                          >✅ Do it</button>
+                          <button type="button" onClick={() => setHabitType("limit")}
+                            className={`py-2 rounded-xl text-xs font-medium border transition-all ${
+                              habitType === "limit"
+                                ? "bg-red-900/20 border-red-700/40 text-red-300"
+                                : "bg-violet-950/20 border-violet-900/20 text-slate-500 hover:text-slate-300"
+                            }`}
+                          >🚫 Limit</button>
+                        </div>
+                        {habitType === "limit" && (
+                          <p className="text-[10px] text-slate-600 mt-1">
+                            Self-reported — each day you tap ✓ or ✗ to log honestly.
+                          </p>
+                        )}
                       </div>
-                    </div>
+                    </>
                   )}
 
                   <div>

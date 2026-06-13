@@ -201,7 +201,12 @@ export function useProfile() {
     }
 
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await Promise.race([
+        supabase.auth.getUser(),
+        new Promise<{ data: { user: null } }>((resolve) =>
+          setTimeout(() => resolve({ data: { user: null } }), 5_000)
+        ),
+      ]);
       if (!user) { if (!cancelled) setProfileLoading(false); return; }
       if (cancelled) return;
 
@@ -224,6 +229,7 @@ export function useProfile() {
         _fetchedAt    = Date.now();
         const _uid = user.id;
         const _sb  = supabase;
+        const _t1 = performance.now();
         _fetchPromise = Promise.race([
           (async () => {
             try {
@@ -246,6 +252,7 @@ export function useProfile() {
           new Promise<null>((resolve) => setTimeout(() => resolve(null), 5_000)),
         ]);
         data = await _fetchPromise;
+        console.log("[LOAD] profile", Math.round(performance.now() - _t1), "ms");
       }
 
       // Don't cache a failed/empty fetch — let the next mount retry instead of
