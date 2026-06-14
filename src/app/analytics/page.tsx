@@ -564,6 +564,8 @@ export default function AnalyticsPage() {
   const [habits, setHabits]         = useState<Habit[]>([]);
   const [logs, setLogs]             = useState<Pick<HabitLog, "habit_id" | "completed_at">[]>([]);
   const [loading, setLoading]       = useState(true);
+  const [loadError, setLoadError]   = useState(false);
+  const [retryKey, setRetryKey]     = useState(0);
   const [noHabits, setNoHabits]     = useState(false);
   const [tier, setTier]             = useState<Plan>("free");
   const [userId, setUserId]         = useState<string | null>(null);
@@ -602,36 +604,55 @@ export default function AnalyticsPage() {
   }, [userId, habits]);
 
   useEffect(() => {
+    let retries = 0;
     const supabase = createClient();
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setUserId(user.id);
-      const [{ data: h }, { data: l }, { data: p }] = await Promise.all([
-        supabase.from("habits").select("*").eq("user_id", user.id).order("created_at"),
-        supabase.from("habit_logs")
-          .select("habit_id, completed_at")
-          .eq("user_id", user.id)
-          .gte("completed_at", daysAgo(90))
-          .order("completed_at", { ascending: false }),
-        supabase.from("profiles").select("subscription_tier").eq("id", user.id).single(),
-      ]);
-      if (!h || h.length === 0) {
-        setNoHabits(true);
+
+    async function load() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user ?? null;
+        if (!user) { setLoading(false); return; }
+        setUserId(user.id);
+
+        const result = await Promise.race([
+          Promise.all([
+            supabase.from("habits").select("*").eq("user_id", user.id).order("created_at"),
+            supabase.from("habit_logs")
+              .select("habit_id, completed_at")
+              .eq("user_id", user.id)
+              .gte("completed_at", daysAgo(90))
+              .order("completed_at", { ascending: false }),
+            supabase.from("profiles").select("subscription_tier").eq("id", user.id).single(),
+          ]),
+          new Promise<"timeout">((r) => setTimeout(() => r("timeout"), 5000)),
+        ]);
+
+        if (result === "timeout") {
+          if (retries === 0) { retries++; void load(); return; }
+          setLoadError(true);
+          setLoading(false);
+          return;
+        }
+
+        const [{ data: h }, { data: l }, { data: p }] = result;
+        if (!h || h.length === 0) { setNoHabits(true); setLoading(false); return; }
+        setHabits(h);
+        setLogs(l ?? []);
+        setTier((p?.subscription_tier as Plan) ?? "free");
         setLoading(false);
-        return;
+        fetch("/api/focus")
+          .then((r) => r.ok ? r.json() : null)
+          .then((d) => { if (d) setFocusStats(d); })
+          .catch(() => {});
+      } catch {
+        if (retries === 0) { retries++; void load(); return; }
+        setLoadError(true);
+        setLoading(false);
       }
-      setHabits(h);
-      setLogs(l ?? []);
-      setTier((p?.subscription_tier as Plan) ?? "free");
-      setLoading(false);
-      // Fetch focus stats in the background
-      fetch("/api/focus")
-        .then((r) => r.ok ? r.json() : null)
-        .then((d) => { if (d) setFocusStats(d); })
-        .catch(() => {});
-    })();
-  }, []);
+    }
+
+    void load();
+  }, [retryKey]);
 
   const habitDateSets = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -669,6 +690,20 @@ export default function AnalyticsPage() {
     return (
       <div className="min-h-screen bg-[#09090f] flex items-center justify-center">
         <Loader2 className="w-6 h-6 text-violet-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-[#09090f] flex flex-col items-center justify-center gap-4">
+        <p className="text-slate-400 text-sm">Couldn&apos;t load analytics</p>
+        <button
+          onClick={() => { setLoadError(false); setLoading(true); setRetryKey((k) => k + 1); }}
+          className="px-4 py-2 text-sm font-semibold text-violet-400 border border-violet-800/40 rounded-xl hover:border-violet-600/50 transition-colors"
+        >
+          Retry
+        </button>
       </div>
     );
   }

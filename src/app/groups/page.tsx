@@ -99,22 +99,42 @@ export default function GroupsPage() {
   const [leaving,     setLeaving]     = useState(false);
   const [error,       setError]       = useState<string | null>(null);
 
-  async function init() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { router.push("/auth/login"); return; }
-    setUserId(user.id);
-
-    const res = await fetch("/api/groups");
-    if (res.ok) {
-      const data = await res.json() as { ownGroups: Group[]; memberGroup: Group | null; tier: string };
-      setOwnGroups(data.ownGroups ?? []);
-      setMemberGroup(data.memberGroup);
-      setUserTier(data.tier ?? "free");
-    }
-    setLoading(false);
-  }
-
   useEffect(() => {
+    let retries = 0;
+
+    async function init() {
+      try {
+        const result = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise<"timeout">((r) => setTimeout(() => r("timeout"), 5000)),
+        ]);
+
+        if (result === "timeout") {
+          if (retries === 0) { retries++; void init(); return; }
+          setError("Couldn't load — please retry");
+          setLoading(false);
+          return;
+        }
+
+        const user = result.data.session?.user ?? null;
+        if (!user) { router.push("/auth/login"); return; }
+        setUserId(user.id);
+
+        const res = await fetch("/api/groups");
+        if (res.ok) {
+          const data = await res.json() as { ownGroups: Group[]; memberGroup: Group | null; tier: string };
+          setOwnGroups(data.ownGroups ?? []);
+          setMemberGroup(data.memberGroup);
+          setUserTier(data.tier ?? "free");
+        }
+        setLoading(false);
+      } catch {
+        if (retries === 0) { retries++; void init(); return; }
+        setError("Couldn't load — please retry");
+        setLoading(false);
+      }
+    }
+
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void init();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -193,7 +213,19 @@ export default function GroupsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#09090f] flex items-center justify-center">
-        <Loader2 className="w-6 h-6 text-violet-500 animate-spin" />
+        {error ? (
+          <div className="flex flex-col items-center gap-4">
+            <p className="text-slate-400 text-sm">{error}</p>
+            <button
+              onClick={() => { setError(null); setLoading(true); window.location.reload(); }}
+              className="px-4 py-2 text-sm font-semibold text-violet-400 border border-violet-800/40 rounded-xl hover:border-violet-600/50 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        ) : (
+          <Loader2 className="w-6 h-6 text-violet-500 animate-spin" />
+        )}
       </div>
     );
   }

@@ -385,7 +385,8 @@ export function useHabits() {
         prev.map((h) => (h.id === habitId ? { ...h, habit_strength: newStrength } : h)),
       );
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
       if (!user) {
         // Revert — not authenticated
         setTodayLogs((prev) => [...prev, existing]);
@@ -417,6 +418,13 @@ export function useHabits() {
         throw delErr;
       }
       void supabase.from("habits").update({ habit_strength: newStrength }).eq("id", habitId);
+      saveHabitsCache(
+        habits.map((h) => (h.id === habitId ? { ...h, habit_strength: newStrength } : h)),
+        todayLogs.filter((l) => l.id !== existing.id),
+        historicalLogs.filter(
+          (l) => !(l.habit_id === habitId && l.completed_at.split("T")[0] === existing.completed_at.split("T")[0]),
+        ),
+      );
 
     } else {
       // ── Optimistic complete — fires INSTANTLY before any await ──
@@ -447,7 +455,8 @@ export function useHabits() {
       posthog.capture("habit_completed", { habit_name: habit?.name, frequency: habit?.frequency });
       if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(10);
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
       if (!user) {
         // Revert
         setTodayLogs((prev) => prev.filter((l) => l.id !== tempId));
@@ -490,6 +499,11 @@ export function useHabits() {
 
       setTodayLogs((prev) => prev.map((l) => (l.id === tempId ? data : l)));
       void supabase.from("habits").update({ habit_strength: newStrength }).eq("id", habitId);
+      saveHabitsCache(
+        habits.map((h) => (h.id === habitId ? { ...h, habit_strength: newStrength } : h)),
+        [...todayLogs.filter((l) => l.id !== tempId), data],
+        historicalLogs,
+      );
     }
   };
 

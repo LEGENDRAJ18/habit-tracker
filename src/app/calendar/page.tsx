@@ -895,6 +895,8 @@ export default function CalendarPage() {
   const [habits,      setHabits]      = useState<Habit[]>([]);
   const [logs,        setLogs]        = useState<(Pick<HabitLog, "habit_id" | "completed_at"> & { id: string })[]>([]);
   const [loading,     setLoading]     = useState(true);
+  const [loadError,   setLoadError]   = useState(false);
+  const [retryKey,    setRetryKey]    = useState(0);
   const [displayName, setDisplayName] = useState("");
   const [goals,       setGoals]       = useState<string[]>([]);
   const [tier,        setTier]        = useState<Plan>("free");
@@ -908,31 +910,54 @@ export default function CalendarPage() {
 
   // Fetch habits + logs + profile
   useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoading(false); return; }
+    let retries = 0;
 
-      const [{ data: h }, { data: l }, { data: p }] = await Promise.all([
-        supabase.from("habits").select("*").eq("user_id", user.id).order("created_at"),
-        supabase.from("habit_logs").select("id, habit_id, completed_at").eq("user_id", user.id)
-          .gte("completed_at", daysAgo(365)).order("completed_at", { ascending: true }),
-        supabase.from("profiles").select("goals, subscription_tier, username").eq("id", user.id).single(),
-      ]);
-      setHabits(h ?? []);
-      setLogs(l ?? []);
-      if (p) {
-        setGoals(Array.isArray(p.goals) && p.goals.length > 0 ? p.goals : []);
-        if (p.subscription_tier) setTier(p.subscription_tier as Plan);
-        if (p.username) setDisplayName(p.username);
-        else {
-          const raw = (user.user_metadata?.full_name as string | undefined) ?? user.email ?? "";
-          const name = raw.split(/[\s_\-+@]/)[0]?.trim();
-          if (name) setDisplayName(name);
+    async function load() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user ?? null;
+        if (!user) { setLoading(false); return; }
+
+        const result = await Promise.race([
+          Promise.all([
+            supabase.from("habits").select("*").eq("user_id", user.id).order("created_at"),
+            supabase.from("habit_logs").select("id, habit_id, completed_at").eq("user_id", user.id)
+              .gte("completed_at", daysAgo(365)).order("completed_at", { ascending: true }),
+            supabase.from("profiles").select("goals, subscription_tier, username").eq("id", user.id).single(),
+          ]),
+          new Promise<"timeout">((r) => setTimeout(() => r("timeout"), 5000)),
+        ]);
+
+        if (result === "timeout") {
+          if (retries === 0) { retries++; void load(); return; }
+          setLoadError(true);
+          setLoading(false);
+          return;
         }
+
+        const [{ data: h }, { data: l }, { data: p }] = result;
+        setHabits(h ?? []);
+        setLogs(l ?? []);
+        if (p) {
+          setGoals(Array.isArray(p.goals) && p.goals.length > 0 ? p.goals : []);
+          if (p.subscription_tier) setTier(p.subscription_tier as Plan);
+          if (p.username) setDisplayName(p.username);
+          else {
+            const raw = (user.user_metadata?.full_name as string | undefined) ?? user.email ?? "";
+            const name = raw.split(/[\s_\-+@]/)[0]?.trim();
+            if (name) setDisplayName(name);
+          }
+        }
+        setLoading(false);
+      } catch {
+        if (retries === 0) { retries++; void load(); return; }
+        setLoadError(true);
+        setLoading(false);
       }
-      setLoading(false);
-    })();
-  }, [supabase]);
+    }
+
+    void load();
+  }, [supabase, retryKey]);
 
   // Load scheduled from localStorage
   useEffect(() => {
@@ -987,7 +1012,8 @@ export default function CalendarPage() {
 
   // Complete a scheduled habit early — create in DB + log
   const handleCompleteScheduled = useCallback(async (s: ScheduledHabit) => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
     if (!user) return;
 
     let habitId = s.habitId;
@@ -1108,6 +1134,20 @@ export default function CalendarPage() {
     return (
       <div className="min-h-screen bg-[#09090f] flex items-center justify-center">
         <div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-[#09090f] flex flex-col items-center justify-center gap-4">
+        <p className="text-slate-400 text-sm">Couldn&apos;t load calendar</p>
+        <button
+          onClick={() => { setLoadError(false); setLoading(true); setRetryKey((k) => k + 1); }}
+          className="px-4 py-2 text-sm font-semibold text-violet-400 border border-violet-800/40 rounded-xl hover:border-violet-600/50 transition-colors"
+        >
+          Retry
+        </button>
       </div>
     );
   }

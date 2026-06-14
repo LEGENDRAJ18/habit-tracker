@@ -23,7 +23,7 @@ export default function LeftSidebar() {
   const proPrice = currencyLoading ? "$9.99" : formatPrice(9.99);
 
   return (
-    <aside className="hidden lg:flex flex-col w-[240px] flex-shrink-0 h-[calc(100vh-3.5rem)] sticky top-14 overflow-hidden pt-5 pb-4">
+    <aside className="hidden lg:flex flex-col w-[240px] flex-shrink-0 sticky top-14 pt-5 pb-4">
 
       {/* Discord community card */}
       <a
