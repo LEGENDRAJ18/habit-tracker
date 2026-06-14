@@ -88,7 +88,7 @@ export default function AIInsightModal({ onClose, onUpgrade, tier }: Props) {
         </div>
 
         {/* Body */}
-        <div className="p-6 overflow-y-auto flex-1">
+        <div className="p-6 overflow-y-auto flex-1 min-h-0">
           {/* Loading */}
           {loading && (
             <div className="flex flex-col items-center gap-4 py-10">

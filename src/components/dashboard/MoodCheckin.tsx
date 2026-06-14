@@ -30,7 +30,8 @@ export default function MoodCheckin() {
 
   async function load() {
     try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
     if (!user) { setLoaded(true); return; }
 
     const todayStart = new Date();
@@ -101,7 +102,8 @@ export default function MoodCheckin() {
     setSelected(value);
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user ?? null;
       if (!user) return;
       await supabase.from("mood_logs").insert({ user_id: user.id, mood: value });
       setTodayMood(value);
