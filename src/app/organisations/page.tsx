@@ -54,22 +54,28 @@ export default function OrganisationsPage() {
   const [error,       setError]       = useState<string | null>(null);
 
   async function init() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { router.push("/auth/login"); return; }
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
+      if (!user) { router.push("/auth/login"); return; }
 
-    const [profileResult, orgsResult] = await Promise.all([
-      supabase.from("profiles").select("subscription_tier").eq("id", user.id).single(),
-      fetch("/api/organisations"),
-    ]);
+      const [profileResult, orgsResult] = await Promise.all([
+        supabase.from("profiles").select("subscription_tier").eq("id", user.id).single(),
+        fetch("/api/organisations"),
+      ]);
 
-    setTier((profileResult.data?.subscription_tier as Plan) ?? "free");
+      setTier((profileResult.data?.subscription_tier as Plan) ?? "free");
 
-    if (orgsResult.ok) {
-      const data = await orgsResult.json() as { ownOrgs: Org[]; memberOrg: Org | null };
-      setOwnOrgs(data.ownOrgs ?? []);
-      setMemberOrg(data.memberOrg);
+      if (orgsResult.ok) {
+        const data = await orgsResult.json() as { ownOrgs: Org[]; memberOrg: Org | null };
+        setOwnOrgs(data.ownOrgs ?? []);
+        setMemberOrg(data.memberOrg);
+      }
+    } catch {
+      setError("Failed to load. Please refresh.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   useEffect(() => {

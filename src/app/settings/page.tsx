@@ -129,7 +129,8 @@ function CsvExportSection() {
   const handleExport = async () => {
     setExporting(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) return;
       const [{ data: habits }, { data: logs }] = await Promise.all([
         supabase.from("habits").select("id, name, description, frequency, created_at").eq("user_id", user.id).order("created_at"),
@@ -208,7 +209,8 @@ function GoalsTab({ initialGoals }: { initialGoals: string[] }) {
     if (!canSave) return;
     setSaving(true); setStatus(null);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) return;
       const goalLabels = selected.map((id) => id === "custom" ? customGoal.trim() || "Custom goal" : GOAL_OPTIONS.find((g) => g.id === id)?.label ?? id);
       const { error } = await supabase.from("profiles").update({ goals: goalLabels, goal: goalLabels[0] ?? null }).eq("id", user.id);
@@ -273,7 +275,8 @@ function UsernameSection() {
   useEffect(() => {
     if (loaded) return;
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) return;
       const { data } = await supabase.from("profiles").select("username").eq("id", user.id).single();
       const u = data?.username ?? "";
@@ -288,7 +291,8 @@ function UsernameSection() {
     e.preventDefault();
     if (!valid || unchanged) return;
     setSaving(true); setStatus(null);
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return;
     const { error } = await supabase.from("profiles").update({ username }).eq("id", user.id);
     if (error) {
@@ -844,7 +848,8 @@ function LevelGuideSection() {
 
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) { setLoaded(true); return; }
       const { data } = await supabase.from("profiles").select("xp, level").eq("id", user.id).single();
       if (data) { setXp(data.xp ?? 0); setLevel(data.level ?? 1); }
@@ -1006,7 +1011,8 @@ function PlanTab({
   const [togglesLoaded,       setTogglesLoaded]       = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const user = session?.user;
       if (!user) { setTogglesLoaded(true); return; }
       supabase.from("profiles").select("weekly_email_enabled, streak_roast_enabled, battle_notifications_enabled").eq("id", user.id).single()
         .then(({ data }) => {
@@ -1022,7 +1028,8 @@ function PlanTab({
   }, []);
 
   async function saveToggle(field: "weekly_email_enabled" | "streak_roast_enabled" | "battle_notifications_enabled", value: boolean) {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return;
     await supabase.from("profiles").update({ [field]: value }).eq("id", user.id);
   }
@@ -1184,7 +1191,8 @@ function AvatarTab() {
   useEffect(() => {
     if (loaded) return;
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) return;
       const { data } = await supabase.from("profiles").select("avatar_id").eq("id", user.id).single();
       if (data?.avatar_id) setSelected(data.avatar_id as AvatarId);
@@ -1194,7 +1202,8 @@ function AvatarTab() {
 
   const handleSave = async () => {
     setSaving(true); setStatus(null);
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) { setSaving(false); return; }
     const { error } = await supabase.from("profiles").update({ avatar_id: selected }).eq("id", user.id);
     setStatus(error ? { err: friendlyError(error.message) } : { ok: "Avatar saved!" });
@@ -1279,7 +1288,8 @@ function ModeTab() {
   useEffect(() => {
     if (loaded) return;
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) return;
       const { data } = await supabase.from("profiles").select("user_mode").eq("id", user.id).single();
       if (data?.user_mode) setCurrent(data.user_mode as UserMode);
@@ -1290,7 +1300,8 @@ function ModeTab() {
   const handleSwitch = async (mode: UserMode) => {
     if (mode === current) return;
     setSaving(true); setStatus(null);
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) { setSaving(false); return; }
     const { error } = await supabase.from("profiles").update({ user_mode: mode }).eq("id", user.id);
     if (error) {
@@ -1402,7 +1413,8 @@ function NotificationsTab() {
     }
     // Load prefs from DB
     void (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) return;
       const { data } = await supabase
         .from("profiles")
@@ -1419,7 +1431,8 @@ function NotificationsTab() {
   async function savePrefs(updated: NotifPrefs) {
     setPrefs(updated);
     setSaving(true);
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (user) {
       await supabase.from("profiles")
         .update({ notification_preferences: updated })
@@ -1848,8 +1861,9 @@ export default function SettingsPage() {
   const [pageLoading, setPageLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getUser()
-      .then(({ data: { user } }) => {
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        const user = session?.user;
         if (!user) { router.push("/auth/login"); return; }
         setEmail(user.email ?? "");
         setName(user.user_metadata?.full_name ?? user.user_metadata?.name ?? "");

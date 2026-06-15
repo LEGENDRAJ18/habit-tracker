@@ -238,9 +238,14 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
         plan === "plus"
           ? process.env.NEXT_PUBLIC_STRIPE_PLUS_PRICE_ID!
           : process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID!;
-      await startCheckout(priceId);
-    } catch {
-      setError("Something went wrong. Please try again.");
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 10_000)
+      );
+      await Promise.race([startCheckout(priceId), timeout]);
+    } catch (err) {
+      setError(err instanceof Error && err.message === "timeout"
+        ? "Payment page is taking too long. Please try again."
+        : "Something went wrong. Please try again.");
       setLoading(null);
     }
   };

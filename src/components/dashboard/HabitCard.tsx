@@ -78,6 +78,23 @@ const PARTICLE_COLORS = [
   "#8b5cf6","#a78bfa","#e879f9","#fbbf24","#60a5fa","#34d399","#fb923c","#f472b6",
 ];
 
+const HABIT_ACCENT_COLORS = [
+  "#8b5cf6", // violet
+  "#06b6d4", // cyan
+  "#f59e0b", // amber
+  "#10b981", // emerald
+  "#ec4899", // pink
+  "#f97316", // orange
+  "#3b82f6", // blue
+  "#a855f7", // purple
+];
+
+function getHabitAccentColor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  return HABIT_ACCENT_COLORS[hash % HABIT_ACCENT_COLORS.length];
+}
+
 function strengthColor(s: number): string {
   if (s > 90) return "bg-gradient-to-r from-emerald-500 to-green-400";   // Automatic
   if (s > 60) return "bg-gradient-to-r from-blue-500 to-cyan-400";       // Strong
@@ -277,7 +294,7 @@ export default function HabitCard({
         </div>
       )}
     <div
-      className={`group rounded-xl border transition-all duration-200 touch-pan-y ${
+      className={`group rounded-xl border transition-all duration-200 touch-pan-y overflow-hidden ${
         failed
           ? "bg-red-950/15 border-red-800/30"
           : completed
@@ -287,6 +304,8 @@ export default function HabitCard({
       style={{
         ...(swipeX !== 0 ? { transform: `translateX(${swipeX}px)`, transition: "none" } : { transition: "transform 0.32s cubic-bezier(0.25,0.46,0.45,0.94)" }),
         ...(justCompleted ? { animation: "cardNudge 0.35s ease-out both" } : {}),
+        borderLeftColor: failed ? undefined : getHabitAccentColor(habit.id),
+        borderLeftWidth: "3px",
       }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}

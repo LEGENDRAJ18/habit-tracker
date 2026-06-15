@@ -89,12 +89,13 @@ export function useXP() {
     void (async () => {
       try {
         const _t0 = performance.now();
-        const { data: { user } } = await Promise.race([
-          supabase.auth.getUser(),
-          new Promise<{ data: { user: null } }>((resolve) =>
-            setTimeout(() => resolve({ data: { user: null } }), 5_000)
+        const { data: { session } } = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise<{ data: { session: null } }>((resolve) =>
+            setTimeout(() => resolve({ data: { session: null } }), 5_000)
           ),
         ]);
+        const user = session?.user ?? null;
         if (!user) { setXPLoading(false); return; }
         const data = await Promise.race([
           (async () => {

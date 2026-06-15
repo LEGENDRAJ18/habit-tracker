@@ -82,8 +82,13 @@ export function useHabits() {
       return;
     }
 
-    const today            = new Date().toISOString().split("T")[0];
-    const tomorrow         = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+    // Use local midnight as the boundary so the "today" window matches the
+    // user's clock regardless of timezone (UTC-based dates diverge for
+    // users in UTC+8 after local midnight, or UTC-5 before UTC midnight).
+    const localMidnight = new Date(); localMidnight.setHours(0, 0, 0, 0);
+    const localTomorrow  = new Date(localMidnight.getTime() + 86400000);
+    const today            = localMidnight.toISOString();
+    const tomorrow         = localTomorrow.toISOString();
     const thirtyOneDaysAgo = new Date(Date.now() - 31 * 86400000).toISOString().split("T")[0];
     const ninetyDaysAgo    = new Date(Date.now() - 90 * 86400000).toISOString().split("T")[0];
 
@@ -200,7 +205,8 @@ export function useHabits() {
       if (queue.length === 0) return;
       clearQueue();
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) return;
 
       for (const op of queue as OfflineOp[]) {
@@ -691,6 +697,14 @@ export function useHabits() {
     let habitsChannel: ReturnType<typeof supabase.channel> | null = null;
     let logsChannel: ReturnType<typeof supabase.channel> | null = null;
     let cancelled = false;
+    // Debounce realtime callbacks: wait 1 s before re-fetching so the DB write
+    // from the same tab is visible before we overwrite optimistic state.
+    let rtDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleRefetch = () => {
+      if (cancelled) return;
+      if (rtDebounceTimer) clearTimeout(rtDebounceTimer);
+      rtDebounceTimer = setTimeout(() => { if (!cancelled) void fetchData(true); }, 1000);
+    };
 
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -704,7 +718,7 @@ export function useHabits() {
       try {
         habitsChannel = supabase
           .channel(`habits-rt-${user.id}-${seq}`)
-          .on("postgres_changes", { event: "*", schema: "public", table: "habits", filter: `user_id=eq.${user.id}` }, () => { if (!cancelled) fetchData(true); })
+          .on("postgres_changes", { event: "*", schema: "public", table: "habits", filter: `user_id=eq.${user.id}` }, scheduleRefetch)
           .subscribe();
       } catch (err) {
         console.warn("[useHabits] habits realtime skipped:", err);
@@ -713,7 +727,7 @@ export function useHabits() {
       try {
         logsChannel = supabase
           .channel(`logs-rt-${user.id}-${seq}`)
-          .on("postgres_changes", { event: "*", schema: "public", table: "habit_logs", filter: `user_id=eq.${user.id}` }, () => { if (!cancelled) fetchData(true); })
+          .on("postgres_changes", { event: "*", schema: "public", table: "habit_logs", filter: `user_id=eq.${user.id}` }, scheduleRefetch)
           .subscribe();
       } catch (err) {
         console.warn("[useHabits] logs realtime skipped:", err);
@@ -722,6 +736,7 @@ export function useHabits() {
 
     return () => {
       cancelled = true;
+      if (rtDebounceTimer) clearTimeout(rtDebounceTimer);
       if (habitsChannel) { try { supabase.removeChannel(habitsChannel).catch(() => {}); } catch {} }
       if (logsChannel)   { try { supabase.removeChannel(logsChannel).catch(() => {}); }   catch {} }
     };

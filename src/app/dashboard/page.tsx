@@ -431,9 +431,9 @@ export default function DashboardPage() {
   // Update last_seen_at so streak-at-risk detection works
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        void supabase.from("profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", user.id);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        void supabase.from("profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", session.user.id);
       }
     });
   }, []);
@@ -617,11 +617,14 @@ export default function DashboardPage() {
     applyFreeze(yesterday);
   }, [anyNewFreezeUsed, applyFreeze]);
 
-  // Show streak-broken modal once per session for free users
+  // Show streak-broken modal at most once per UTC day for free users
   useEffect(() => {
     if (loading || isPaid || seenBreakModalRef.current) return;
     if (habits.some((h) => hasBrokenStreak(h.id))) {
+      const today = new Date().toISOString().split("T")[0];
+      if (localStorage.getItem("habitai_break_modal_seen") === today) return;
       seenBreakModalRef.current = true;
+      localStorage.setItem("habitai_break_modal_seen", today);
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowStreakBroken(true);
     }

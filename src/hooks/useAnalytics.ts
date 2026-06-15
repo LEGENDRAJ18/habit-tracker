@@ -84,7 +84,8 @@ export function useAnalytics(): AnalyticsData {
 
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) { setData({ ...EMPTY, loading: false }); return; }
 
       const yearAgo   = new Date(Date.now() - 365 * 86400000).toISOString().split("T")[0];

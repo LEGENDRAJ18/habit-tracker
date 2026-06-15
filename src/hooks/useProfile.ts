@@ -201,12 +201,13 @@ export function useProfile() {
     }
 
     (async () => {
-      const { data: { user } } = await Promise.race([
-        supabase.auth.getUser(),
-        new Promise<{ data: { user: null } }>((resolve) =>
-          setTimeout(() => resolve({ data: { user: null } }), 5_000)
+      const { data: { session } } = await Promise.race([
+        supabase.auth.getSession(),
+        new Promise<{ data: { session: null } }>((resolve) =>
+          setTimeout(() => resolve({ data: { session: null } }), 5_000)
         ),
       ]);
+      const user = session?.user ?? null;
       if (!user) { if (!cancelled) setProfileLoading(false); return; }
       if (cancelled) return;
 

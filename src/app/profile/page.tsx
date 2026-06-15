@@ -76,39 +76,40 @@ export default function ProfilePage() {
   };
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const user = session?.user;
       if (!user) return;
       // Join date from auth
       const d = new Date(user.created_at);
       setJoinedDate(d.toLocaleDateString("en-US", { month: "long", year: "numeric" }));
-      // Profile data
-      supabase.from("profiles").select("username, avatar_id, user_mode, subscription_tier").eq("id", user.id).single()
-        .then(({ data }) => {
-          if (data) {
-            setUsername(data.username ?? null);
-            setAvatarId(data.avatar_id ?? null);
-            setUserMode((data.user_mode as UserMode) ?? "personal");
-            setSubscriptionTier((data.subscription_tier as Plan) ?? "free");
-          }
-        });
-      // Best streak from logs
-      supabase
-        .from("habit_logs")
-        .select("habit_id, completed_at")
-        .eq("user_id", user.id)
-        .order("completed_at", { ascending: false })
-        .then(({ data: logs }) => {
-          if (!logs || logs.length === 0) return;
-          // All-time best consecutive-day streak across all habits
-          const sortedDates = Array.from(new Set(logs.map((l) => l.completed_at.split("T")[0]))).sort();
-          let maxStreak = 1; let cur = 1;
-          for (let i = 1; i < sortedDates.length; i++) {
-            const diff = (new Date(sortedDates[i] + "T00:00:00Z").getTime() - new Date(sortedDates[i - 1] + "T00:00:00Z").getTime()) / 86400000;
-            cur = diff === 1 ? cur + 1 : 1;
-            if (cur > maxStreak) maxStreak = cur;
-          }
-          setBestStreak(sortedDates.length === 0 ? 0 : maxStreak);
-        });
+      // Profile data + best streak in parallel
+      void Promise.all([
+        supabase.from("profiles").select("username, avatar_id, user_mode, subscription_tier").eq("id", user.id).single()
+          .then(({ data }) => {
+            if (data) {
+              setUsername(data.username ?? null);
+              setAvatarId(data.avatar_id ?? null);
+              setUserMode((data.user_mode as UserMode) ?? "personal");
+              setSubscriptionTier((data.subscription_tier as Plan) ?? "free");
+            }
+          }),
+        supabase
+          .from("habit_logs")
+          .select("habit_id, completed_at")
+          .eq("user_id", user.id)
+          .order("completed_at", { ascending: false })
+          .then(({ data: logs }) => {
+            if (!logs || logs.length === 0) return;
+            const sortedDates = Array.from(new Set(logs.map((l) => l.completed_at.split("T")[0]))).sort();
+            let maxStreak = 1; let cur = 1;
+            for (let i = 1; i < sortedDates.length; i++) {
+              const diff = (new Date(sortedDates[i] + "T00:00:00Z").getTime() - new Date(sortedDates[i - 1] + "T00:00:00Z").getTime()) / 86400000;
+              cur = diff === 1 ? cur + 1 : 1;
+              if (cur > maxStreak) maxStreak = cur;
+            }
+            setBestStreak(sortedDates.length === 0 ? 0 : maxStreak);
+          }),
+      ]);
     });
   }, [supabase]);
 
