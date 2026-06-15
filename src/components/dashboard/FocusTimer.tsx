@@ -5,6 +5,7 @@ import { X, Pause, Play, Plus, Crown, RotateCcw } from "lucide-react";
 import type { Habit, Plan } from "@/types";
 import { useFocusTimer, type TimerPhase } from "@/hooks/useFocusTimer";
 import { playSound } from "@/lib/sounds";
+import { lockScroll, unlockScroll } from "@/lib/scroll-lock";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -272,13 +273,10 @@ export default function FocusTimer({ habit, tier, isCompleted, minimized, onMini
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.isGivenUp]);
 
-  // Lock background scroll — use touch-action on overlay instead of body overflow,
-  // because overflow:hidden on body freezes touch events inside fixed elements on iOS Safari.
   useEffect(() => {
     if (minimized) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
+    lockScroll();
+    return () => unlockScroll();
   }, [minimized]);
 
   const handleGiveUp = () => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { lockScroll, unlockScroll } from "@/lib/scroll-lock";
 
 const CONFETTI = Array.from({ length: 40 }, (_, i) => ({
   left: `${(i * 2.55) % 100}%`,
@@ -25,9 +26,8 @@ export default function FirstCompletionModal({ onDismiss }: Props) {
   }, [onDismiss]);
 
   useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
+    lockScroll();
+    return () => unlockScroll();
   }, []);
 
   return (

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Zap, Share2 } from "lucide-react";
+import { lockScroll, unlockScroll } from "@/lib/scroll-lock";
 import { levelName, levelColorKey, xpForLevel, type LevelColorKey } from "@/lib/xp";
 import { getJustUnlockedReward, getNextReward } from "@/lib/rewards";
 
@@ -61,9 +62,8 @@ export default function LevelUpModal({ newLevel, onDismiss, onShare }: Props) {
   }, [onDismiss, isGoat]);
 
   useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
+    lockScroll();
+    return () => unlockScroll();
   }, []);
 
   const colorKey     = levelColorKey(newLevel);

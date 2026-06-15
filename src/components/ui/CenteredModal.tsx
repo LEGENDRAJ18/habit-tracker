@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
+import { lockScroll, unlockScroll } from "@/lib/scroll-lock";
 
 interface Props {
   children: ReactNode;
@@ -16,11 +17,8 @@ export default function CenteredModal({
   backdrop = "bg-black/65 backdrop-blur-sm",
 }: Props) {
   useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    lockScroll();
+    return () => unlockScroll();
   }, []);
 
   return (
