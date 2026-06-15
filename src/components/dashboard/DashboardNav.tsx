@@ -7,7 +7,7 @@ import {
   Sparkles, LogOut, Zap, ChevronDown, BarChart2,
   User, Settings, CreditCard, HelpCircle,
   Keyboard, Users, Calendar, ChevronLeft, ChevronRight,
-  LayoutDashboard,
+  LayoutDashboard, MessageSquare,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import AvatarDisplay from "@/components/ui/AvatarDisplay";
@@ -409,8 +409,9 @@ export default function DashboardNav() {
                   </div>
 
                   <div className="border-t border-violet-900/20 py-1.5">
-                    <MenuItem icon={<HelpCircle className="w-3.5 h-3.5" />} label="Help & Support" href="/help" onClick={() => setMenuOpen(false)} />
-                    <MenuItem icon={<Keyboard  className="w-3.5 h-3.5" />} label="Keyboard Shortcuts" muted onClick={() => setMenuOpen(false)} />
+                    <MenuItem icon={<HelpCircle    className="w-3.5 h-3.5" />} label="Help & Support" href="/help" onClick={() => setMenuOpen(false)} />
+                    <MenuItem icon={<MessageSquare className="w-3.5 h-3.5" />} label="Give Feedback" href="https://forms.gle/AsS3J4uug48sG4EM9" external onClick={() => setMenuOpen(false)} />
+                    <MenuItem icon={<Keyboard      className="w-3.5 h-3.5" />} label="Keyboard Shortcuts" muted onClick={() => setMenuOpen(false)} />
                   </div>
 
                   <div className="border-t border-violet-900/20 py-1.5">

@@ -834,6 +834,30 @@ function HelpTab() {
           <ArrowRight className="w-3.5 h-3.5" />
         </a>
       </div>
+
+      <div className={cardCls} style={{ padding: "1.25rem" }}>
+        <div className="flex items-start gap-4">
+          <div className="w-10 h-10 rounded-xl bg-emerald-600/15 border border-emerald-600/25 flex items-center justify-center flex-shrink-0 text-xl">
+            📝
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-white mb-0.5">Give Feedback</p>
+            <p className="text-xs text-slate-500 leading-relaxed mb-4">
+              Share what you love, what&apos;s broken, or what you&apos;d like to see next. Takes 2 minutes and directly shapes the roadmap.
+            </p>
+            <a
+              href="https://forms.gle/AsS3J4uug48sG4EM9"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white rounded-xl transition-all"
+              style={{ backgroundColor: "#059669" }}
+            >
+              Open Feedback Form
+              <ArrowRight className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

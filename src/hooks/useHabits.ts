@@ -198,6 +198,17 @@ export function useHabits() {
     fetchData();
   }, [fetchData]);
 
+  // Refresh session + data when the user returns to this tab (fixes post-tab-switch timeouts).
+  // getSession() on a new request will auto-refresh an expired token, so calling fetchData(true)
+  // here primes the session before the user has a chance to submit any mutation.
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") void fetchData(true);
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [fetchData]);
+
   // Flush offline queue when network returns ────────────────────────────────
   useEffect(() => {
     const flushQueue = async () => {
@@ -334,7 +345,7 @@ export function useHabits() {
         return result as InsertResult;
       })(),
       new Promise<InsertResult>((resolve) =>
-        setTimeout(() => resolve({ data: null, error: { message: "Couldn't add — try again" } }), 5_000)
+        setTimeout(() => resolve({ data: null, error: { message: "Couldn't add — try again" } }), 15_000)
       ),
     ]);
 

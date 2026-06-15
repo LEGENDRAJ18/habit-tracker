@@ -419,7 +419,7 @@ export default function AddHabitModal({
         difficulty.xp, difficulty.level, habitType,
       );
       const timeoutPromise = new Promise<{ error: string }>((resolve) =>
-        setTimeout(() => resolve({ error: "Request timed out — please try again." }), 5000)
+        setTimeout(() => resolve({ error: "Request timed out — please try again." }), 15000)
       );
       const { error } = await Promise.race([addPromise, timeoutPromise]);
       if (error) { setError(error); setLoading(false); }
@@ -607,8 +607,8 @@ export default function AddHabitModal({
                 )}
               </div>
 
-              {/* ── 2-column details grid ──────────────────────────────────── */}
-              <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+              {/* ── Details grid — single column on mobile, 2-col on sm+ ─── */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
 
                 {/* LEFT: When / Where / Duration */}
                 <div className="space-y-3">
