@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Bell, BellOff, Clock, Flame, X, Zap, ChevronRight } from "lucide-react";
+import CenteredModal from "@/components/ui/CenteredModal";
 
 interface Props {
   onAllow: () => void;
@@ -51,26 +52,11 @@ export default function NotificationPermissionModal({ onAllow, onDismiss }: Prop
     setTimeout(onAllow, 150);
   }
 
-  return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm transition-opacity duration-300"
-        style={{ opacity: visible ? 1 : 0 }}
-        onClick={handleDismiss}
-      />
+  if (!visible) return null;
 
-      {/* Modal */}
-      <div
-        className="fixed inset-x-4 bottom-4 sm:inset-auto sm:left-1/2 sm:bottom-auto sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 z-[91] sm:w-full sm:max-w-md transition-all duration-300"
-        style={{
-          opacity: visible ? 1 : 0,
-          transform: visible
-            ? "translateY(0) translateX(0) scale(1)"
-            : "translateY(32px) scale(0.97)",
-        }}
-      >
-        <div className="bg-[#0d0d1c] border border-violet-700/40 rounded-3xl p-6 shadow-2xl shadow-violet-950/60 overflow-hidden relative">
+  return (
+    <CenteredModal onClose={handleDismiss} zIndex="z-[90]" backdrop="bg-black/70 backdrop-blur-sm">
+      <div className="modal-center-enter w-full max-w-md bg-[#0d0d1c] border border-violet-700/40 rounded-3xl p-6 shadow-2xl shadow-violet-950/60 overflow-hidden relative">
           {/* Glow accent */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-violet-600/15 blur-3xl pointer-events-none rounded-full" />
 
@@ -145,8 +131,7 @@ export default function NotificationPermissionModal({ onAllow, onDismiss }: Prop
           <p className="text-center text-[10px] text-slate-600 mt-3 leading-snug relative">
             Notifications only when it matters. No spam. Adjust anytime in Settings.
           </p>
-        </div>
       </div>
-    </>
+    </CenteredModal>
   );
 }

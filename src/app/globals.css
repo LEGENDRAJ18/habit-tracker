@@ -211,15 +211,16 @@ body {
 }
 
 /* Toast slides up from bottom-centre */
+/* Toast slides down from top */
 @keyframes toastSlideUp {
-  from { opacity: 0; transform: translateY(14px) scale(0.90); }
-  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+  from { opacity: 0; transform: translateY(-14px) scale(0.90); }
+  to   { opacity: 1; transform: translateY(0)     scale(1);    }
 }
 
-/* Toast fades out downward on dismiss */
+/* Toast fades out upward on dismiss */
 @keyframes toastFadeOut {
-  from { opacity: 1; transform: translateY(0)    scale(1);    }
-  to   { opacity: 0; transform: translateY(8px)  scale(0.95); }
+  from { opacity: 1; transform: translateY(0)     scale(1);    }
+  to   { opacity: 0; transform: translateY(-8px)  scale(0.95); }
 }
 
 /* Count-up hint — used by JS, keyframe just marks intent */
@@ -247,7 +248,7 @@ body {
   }
 }
 
-/* Mobile bottom-sheet panels slide UP from bottom */
+/* Mobile bottom-sheet panels slide UP from bottom (only used for genuine bottom-sheets like AddHabit) */
 @keyframes sheetUp {
   from { transform: translateY(100%); opacity: 0.8; }
   to   { transform: translateY(0);    opacity: 1;   }
@@ -256,6 +257,15 @@ body {
   .mobile-sheet-enter {
     animation: sheetUp 0.32s cubic-bezier(0.32,0.72,0,1) both;
   }
+}
+
+/* Centered modal pop-in — used for ALL centered overlays via CenteredModal wrapper */
+@keyframes modalCenterIn {
+  from { opacity: 0; transform: scale(0.94) translateY(10px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);    }
+}
+.modal-center-enter {
+  animation: modalCenterIn 0.24s cubic-bezier(0.34, 1.2, 0.64, 1) both;
 }
 
 /* Desktop modal slide-in from top */

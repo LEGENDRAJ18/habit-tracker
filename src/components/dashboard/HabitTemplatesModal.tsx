@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { X, Plus, Check, Loader2, Sparkles, RefreshCw } from "lucide-react";
 import { toast } from "@/components/ui/Toast";
+import CenteredModal from "@/components/ui/CenteredModal";
 import type { Habit } from "@/types";
 import type { TemplateSuggestion } from "@/app/api/template-suggestions/route";
 
@@ -213,11 +214,8 @@ export default function HabitTemplatesModal({ onClose, existingHabits, canAddMor
   );
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="mobile-sheet-enter w-full sm:max-w-lg bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl shadow-violet-950/50 flex flex-col max-h-[85vh]" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+    <CenteredModal onClose={onClose}>
+      <div className="modal-center-enter w-full max-w-lg bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl shadow-violet-950/50 flex flex-col max-h-[85vh]">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-violet-900/20 flex-shrink-0">
@@ -328,6 +326,6 @@ export default function HabitTemplatesModal({ onClose, existingHabits, canAddMor
           </p>
         </div>
       </div>
-    </div>
+    </CenteredModal>
   );
 }

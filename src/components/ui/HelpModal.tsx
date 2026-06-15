@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, HelpCircle, Plus, Flame, Zap, Sparkles, Users, CreditCard, ChevronDown } from "lucide-react";
+import CenteredModal from "@/components/ui/CenteredModal";
 
 const FAQ = [
   {
@@ -54,11 +55,8 @@ export default function HelpModal() {
       </button>
 
       {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          onClick={(e) => e.target === e.currentTarget && setOpen(false)}
-        >
-          <div className="mobile-sheet-enter w-full sm:max-w-sm bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl overflow-hidden" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+        <CenteredModal onClose={() => setOpen(false)}>
+          <div className="modal-center-enter w-full max-w-sm bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-violet-900/20">
               <div className="flex items-center gap-2.5">
@@ -116,7 +114,7 @@ export default function HelpModal() {
               </p>
             </div>
           </div>
-        </div>
+        </CenteredModal>
       )}
     </>
   );

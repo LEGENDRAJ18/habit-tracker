@@ -5,6 +5,7 @@ import {
   X, Copy, Check, Loader2, Share2,
 } from "lucide-react";
 import { toast } from "@/components/ui/Toast";
+import CenteredModal from "@/components/ui/CenteredModal";
 
 interface Props {
   type: "streak" | "level" | "daily";
@@ -217,11 +218,8 @@ export default function ShareAchievement({
     : "";
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="mobile-sheet-enter w-full sm:max-w-sm bg-[#0f0f1a] border border-violet-700/35 rounded-2xl shadow-2xl shadow-violet-950/60 overflow-hidden" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+    <CenteredModal onClose={onClose} zIndex="z-[60]" backdrop="bg-black/70 backdrop-blur-sm">
+      <div className="modal-center-enter w-full max-w-sm bg-[#0f0f1a] border border-violet-700/35 rounded-2xl shadow-2xl shadow-violet-950/60 overflow-hidden">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-violet-900/20">
@@ -329,6 +327,6 @@ export default function ShareAchievement({
           )}
         </div>
       </div>
-    </div>
+    </CenteredModal>
   );
 }

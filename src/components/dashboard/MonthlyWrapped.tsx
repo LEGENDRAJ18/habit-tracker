@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { X, Sparkles, Flame, Trophy, Zap, Share2, ChevronRight, ChevronLeft, TrendingUp } from "lucide-react";
 import type { Plan, MonthlyWrapData } from "@/types";
+import CenteredModal from "@/components/ui/CenteredModal";
 
 interface Props {
   tier: Plan;
@@ -115,15 +116,11 @@ export default function MonthlyWrapped({ tier, onClose }: Props) {
   }, [data, monthLabel]);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
+    <CenteredModal onClose={onClose} backdrop="bg-black/85 backdrop-blur-sm">
       <div
-        className="w-full sm:max-w-sm bg-[#09090f] border border-violet-700/25 rounded-3xl shadow-2xl overflow-hidden"
+        className="modal-center-enter w-full max-w-sm bg-[#09090f] border border-violet-700/25 rounded-3xl shadow-2xl overflow-hidden"
         style={{
           height: "min(620px, 90vh)",
-          animation: "wrappedIn 0.4s cubic-bezier(0.16,1,0.3,1) both",
           boxShadow: "0 0 0 1px rgba(139,92,246,0.06), 0 32px 64px rgba(0,0,0,0.7)",
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
@@ -396,6 +393,6 @@ export default function MonthlyWrapped({ tier, onClose }: Props) {
           to   { opacity: 1; transform: scale(1)   translateY(0);   }
         }
       `}</style>
-    </div>
+    </CenteredModal>
   );
 }

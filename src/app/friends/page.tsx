@@ -8,6 +8,7 @@ import { useProfile } from "@/hooks/useProfile";
 import HabitBattleModal from "@/components/dashboard/HabitBattleModal";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/components/ui/Toast";
+import CenteredModal from "@/components/ui/CenteredModal";
 
 interface FriendStat {
   id: string;
@@ -129,12 +130,9 @@ function FriendCompareModal({
   const theirPalette = avatarPalette(friend.name);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm"
-      onClick={onClose}
-    >
+    <CenteredModal onClose={onClose} backdrop="bg-black/65 backdrop-blur-sm">
       <div
-        className="w-full max-w-sm bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
+        className="modal-center-enter w-full max-w-sm bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -191,7 +189,7 @@ function FriendCompareModal({
           </div>
         )}
       </div>
-    </div>
+    </CenteredModal>
   );
 }
 
@@ -231,13 +229,9 @@ function FriendProfileModal({
   const palette = profile ? avatarPalette(profile.name) : AVATAR_PALETTES[0];
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      onClick={onClose}
-    >
+    <CenteredModal onClose={onClose}>
       <div
-        className="mobile-sheet-enter bg-[#0f0f1a] border border-violet-800/30 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
-        style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
+        className="modal-center-enter bg-[#0f0f1a] border border-violet-800/30 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {loading ? (
@@ -318,7 +312,7 @@ function FriendProfileModal({
           </>
         ) : null}
       </div>
-    </div>
+    </CenteredModal>
   );
 }
 
@@ -386,10 +380,9 @@ function ShareModal({ onClose }: { onClose: () => void }) {
   const canNativeShare = typeof navigator !== "undefined" && !!navigator.share;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <CenteredModal onClose={onClose}>
       <div
-        className="mobile-sheet-enter bg-[#0f0f1a] border border-violet-800/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl"
-        style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
+        className="modal-center-enter bg-[#0f0f1a] border border-violet-800/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
@@ -434,7 +427,7 @@ function ShareModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
       </div>
-    </div>
+    </CenteredModal>
   );
 }
 

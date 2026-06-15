@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Shield, Loader2, Sparkles } from "lucide-react";
+import CenteredModal from "@/components/ui/CenteredModal";
 
 interface AIAnalysis {
   pattern: string;
@@ -39,11 +40,8 @@ export default function StreakBrokenModal({ onUpgrade, onDismiss, brokenHabitNam
   }, [brokenHabitName, isPaid]);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      onClick={(e) => e.target === e.currentTarget && onDismiss()}
-    >
-      <div className="mobile-sheet-enter w-full sm:max-w-sm bg-[#0f0f1a] border border-slate-700/40 rounded-2xl shadow-2xl overflow-hidden" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+    <CenteredModal onClose={onDismiss} backdrop="bg-black/60 backdrop-blur-sm">
+      <div className="modal-center-enter w-full max-w-sm bg-[#0f0f1a] border border-slate-700/40 rounded-2xl shadow-2xl overflow-hidden">
         <div className="p-6">
           {/* Icon + title */}
           <div className="text-center mb-5">
@@ -134,6 +132,6 @@ export default function StreakBrokenModal({ onUpgrade, onDismiss, brokenHabitNam
           </button>
         </div>
       </div>
-    </div>
+    </CenteredModal>
   );
 }

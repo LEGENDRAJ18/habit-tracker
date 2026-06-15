@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Calendar, Flame, Zap, Target, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import CenteredModal from "@/components/ui/CenteredModal";
 import { xpForLevel, xpIntoLevel, xpSpanOfLevel, levelName, levelEmoji } from "@/lib/xp";
 import { ACHIEVEMENT_META, type AchievementId } from "@/hooks/useXP";
 
@@ -96,37 +97,22 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
   const unlock    = LEVEL_UNLOCKS[nextLv] ?? null;
   const recentAch = [...achievements].reverse().slice(0, 3);
 
-  return (
-    <div
-      className={`fixed inset-0 z-50 transition-opacity duration-300 ${visible ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-      onClick={dismiss}
-    >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" />
+  if (!visible) return null;
 
-      {/* Sheet */}
+  return (
+    <CenteredModal onClose={dismiss}>
       <div
-        className="absolute bottom-0 left-0 right-0 max-w-lg mx-auto rounded-t-3xl overflow-hidden"
+        className="modal-center-enter w-full max-w-lg rounded-3xl overflow-hidden flex flex-col"
         style={{
-          transform: visible ? `translateY(${dragY}px)` : "translateY(100%)",
-          transition: dragY > 0 ? "none" : "transform 0.35s cubic-bezier(0.32,0.72,0,1)",
           background: "linear-gradient(160deg,#140e22 0%,#0c0c18 60%,#0a0a14 100%)",
           border: "1px solid rgba(139,92,246,0.28)",
-          borderBottom: "none",
-          boxShadow: "0 -24px 70px rgba(109,40,217,0.28), 0 -2px 0 rgba(139,92,246,0.12)",
+          boxShadow: "0 24px 70px rgba(109,40,217,0.28)",
+          maxHeight: "90vh",
         }}
         onClick={(e) => e.stopPropagation()}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
       >
-        {/* Drag handle */}
-        <div className="flex justify-center pt-3">
-          <div className="w-9 h-1 rounded-full bg-slate-700/70" />
-        </div>
-
         {/* Header */}
-        <div className="flex items-start justify-between px-5 pt-3 pb-1">
+        <div className="flex items-start justify-between px-5 pt-5 pb-1 flex-shrink-0">
           <div>
             <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">XP & Level</p>
             <h2 className="text-xl font-black text-white mt-0.5">{levelEmoji(level)} Lv {level} · {levelName(level)}</h2>
@@ -140,7 +126,7 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
         </div>
 
         {/* Scrollable content */}
-        <div className="overflow-y-auto px-5 pb-10 space-y-5" style={{ maxHeight: "82vh" }}>
+        <div className="overflow-y-auto px-5 pb-8 space-y-5 flex-1">
 
           {/* Ring + stats */}
           <div className="flex items-center gap-5 pt-2">
@@ -300,6 +286,6 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
           </div>
         </div>
       </div>
-    </div>
+    </CenteredModal>
   );
 }

@@ -5,6 +5,7 @@ import { X, Lock, Download, Share2, Star, Clock, Calendar, Sparkles, Award, Tren
 import type { Habit, Plan } from "@/types";
 import { useHabitDNA } from "@/hooks/useHabitDNA";
 import posthog from "posthog-js";
+import CenteredModal from "@/components/ui/CenteredModal";
 
 interface Props {
   habits: Habit[];
@@ -346,14 +347,10 @@ export default function HabitDNAModal({ habits, logs, tier, totalXP, onClose, on
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
+    <CenteredModal onClose={onClose} backdrop="bg-black/75 backdrop-blur-sm">
       <div
-        className="w-full sm:max-w-lg bg-[#0b0b18] border border-violet-700/20 rounded-3xl shadow-2xl overflow-hidden max-h-[88vh] flex flex-col"
+        className="modal-center-enter w-full max-w-lg bg-[#0b0b18] border border-violet-700/20 rounded-3xl shadow-2xl overflow-hidden max-h-[88vh] flex flex-col"
         style={{
-          animation: "dnaSlideUp 0.4s cubic-bezier(0.16,1,0.3,1) both",
           boxShadow: "0 0 0 1px rgba(139,92,246,0.08), 0 32px 64px rgba(0,0,0,0.7)",
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
@@ -620,6 +617,6 @@ export default function HabitDNAModal({ habits, logs, tier, totalXP, onClose, on
           to   { opacity: 1; transform: translateY(0);    }
         }
       `}</style>
-    </div>
+    </CenteredModal>
   );
 }

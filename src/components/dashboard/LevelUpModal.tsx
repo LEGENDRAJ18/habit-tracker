@@ -60,6 +60,12 @@ export default function LevelUpModal({ newLevel, onDismiss, onShare }: Props) {
     return () => { clearTimeout(t); clearTimeout(auto); };
   }, [onDismiss, isGoat]);
 
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   const colorKey     = levelColorKey(newLevel);
   const style        = STYLES[colorKey];
   const name         = levelName(newLevel);

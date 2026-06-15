@@ -6,6 +6,7 @@ import { X, Swords, Loader2, Trophy, Clock, CheckCircle2, XCircle, AlertCircle }
 import type { Plan } from "@/types";
 import FeatureUpgradeGate from "./FeatureUpgradeGate";
 import posthog from "posthog-js";
+import CenteredModal from "@/components/ui/CenteredModal";
 
 interface BattleWithNames {
   id: string;
@@ -185,11 +186,8 @@ export default function HabitBattleModal({ tier, friends, onClose, onUpgrade }: 
   const completed = battles.filter((b) => b.status === "completed");
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="mobile-sheet-enter w-full sm:max-w-md bg-[#0d0d1a] border border-violet-700/30 rounded-3xl shadow-2xl shadow-violet-950/60 overflow-hidden max-h-[90vh] flex flex-col" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+    <CenteredModal onClose={onClose} backdrop="bg-black/70 backdrop-blur-sm">
+      <div className="modal-center-enter w-full max-w-md bg-[#0d0d1a] border border-violet-700/30 rounded-3xl shadow-2xl shadow-violet-950/60 overflow-hidden max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="relative px-6 pt-6 pb-4 border-b border-violet-900/20 flex-shrink-0">
           <div className="absolute inset-0 bg-gradient-to-br from-violet-600/10 to-transparent pointer-events-none" />
@@ -333,6 +331,6 @@ export default function HabitBattleModal({ tier, friends, onClose, onUpgrade }: 
           )}
         </div>
       </div>
-    </div>
+    </CenteredModal>
   );
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { X, Sparkles, Check, Minus, Zap, Loader2, Brain, Crown, Lock, ClipboardList } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useProfile } from "@/hooks/useProfile";
+import CenteredModal from "@/components/ui/CenteredModal";
 
 export type UpgradeReason = "habits" | "ai" | "reminders" | "export" | "pro_feature";
 
@@ -115,11 +116,8 @@ function ConsentModal({ plan, loading, onConfirm, onCancel, plusPrice, proPrice,
   const [agreed, setAgreed] = useState(false);
   const bullets = consentBullets(plan, plusPrice, proPrice);
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      onClick={(e) => e.target === e.currentTarget && onCancel()}
-    >
-      <div className="mobile-sheet-enter w-full sm:max-w-sm bg-[#0f0f1a] border border-violet-700/40 rounded-2xl shadow-2xl shadow-violet-950/60 overflow-hidden" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+    <CenteredModal onClose={onCancel} zIndex="z-[60]" backdrop="bg-black/60 backdrop-blur-sm">
+      <div className="modal-center-enter w-full max-w-sm bg-[#0f0f1a] border border-violet-700/40 rounded-2xl shadow-2xl shadow-violet-950/60 overflow-hidden">
         {/* Header */}
         <div className="relative bg-gradient-to-br from-violet-900/50 to-purple-900/20 px-5 pt-5 pb-4 border-b border-violet-800/30">
           <button
@@ -218,7 +216,7 @@ function ConsentModal({ plan, loading, onConfirm, onCancel, plusPrice, proPrice,
           </div>
         </div>
       </div>
-    </div>
+    </CenteredModal>
   );
 }
 
@@ -264,11 +262,8 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
         currency={currency}
       />
     )}
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="mobile-sheet-enter w-full sm:max-w-2xl bg-[#0f0f1a] border border-violet-700/40 rounded-2xl shadow-2xl shadow-violet-950/60 overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[90vh]" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+    <CenteredModal onClose={onClose} backdrop="bg-black/70 backdrop-blur-sm">
+      <div className="modal-center-enter w-full max-w-2xl bg-[#0f0f1a] border border-violet-700/40 rounded-2xl shadow-2xl shadow-violet-950/60 overflow-hidden flex flex-col max-h-[90vh]">
 
         {/* Header */}
         <div className="relative bg-gradient-to-br from-violet-900/60 to-purple-900/30 px-6 pt-6 pb-5 border-b border-violet-800/30 flex-shrink-0">
@@ -499,7 +494,7 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
           </button>
         </div>
       </div>
-    </div>
+    </CenteredModal>
     </>
   );
 }

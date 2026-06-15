@@ -5,6 +5,7 @@ import { X, Globe, Lock, Users, Loader2, AlertCircle } from "lucide-react";
 import type { Plan } from "@/types";
 import { createClient } from "@/lib/supabase/client";
 import FeatureUpgradeGate from "./FeatureUpgradeGate";
+import CenteredModal from "@/components/ui/CenteredModal";
 
 interface Props {
   habitId: string;
@@ -51,11 +52,8 @@ export default function CommitmentModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="mobile-sheet-enter w-full sm:max-w-sm bg-[#0d0d1a] border border-violet-700/30 rounded-3xl shadow-2xl shadow-violet-950/60 overflow-hidden" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+    <CenteredModal onClose={onClose} backdrop="bg-black/70 backdrop-blur-sm">
+      <div className="modal-center-enter w-full max-w-sm bg-[#0d0d1a] border border-violet-700/30 rounded-3xl shadow-2xl shadow-violet-950/60 overflow-hidden">
         {/* Header */}
         <div className="relative px-6 pt-5 pb-4 border-b border-violet-900/20">
           <div className="absolute inset-0 bg-gradient-to-br from-violet-600/8 to-transparent pointer-events-none" />
@@ -163,6 +161,6 @@ export default function CommitmentModal({
           )}
         </div>
       </div>
-    </div>
+    </CenteredModal>
   );
 }
