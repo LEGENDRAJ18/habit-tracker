@@ -1177,8 +1177,38 @@ export default function CalendarPage() {
     );
   }
 
+  const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
   return (
     <div className="min-h-screen bg-[#09090f] pb-nav">
+      {/* Page hero */}
+      <div className="max-w-[1340px] mx-auto px-4 sm:px-6 pt-6 pb-0">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-950/40 via-[#0d0d1a] to-[#0d0d1a] border border-emerald-800/25 p-5 mb-4">
+          <div className="absolute -top-10 -right-10 w-52 h-52 bg-emerald-600/6 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-emerald-600/20 border border-emerald-500/25 flex items-center justify-center" style={{ boxShadow: "0 0 14px rgba(16,185,129,0.18)" }}>
+                <CalendarIcon className="w-4 h-4 text-emerald-300" />
+              </div>
+              <div>
+                <h1 className="text-base font-bold text-white leading-none">Calendar</h1>
+                <p className="text-[11px] text-slate-500 mt-0.5">{MONTH_NAMES[month]} {year}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className="text-xl font-black text-orange-400 tabular-nums">{currentStreak}<span className="text-sm ml-0.5">d</span></p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-wide font-medium">streak</p>
+              </div>
+              <div className="w-px h-7 bg-emerald-900/40" />
+              <div className="text-right">
+                <p className="text-xl font-black text-emerald-400 tabular-nums">{thisMonthTotal}</p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-wide font-medium">this month</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       {showPlanModal && (
         <AddHabitModal
           onClose={() => setShowPlanModal(false)}

@@ -116,10 +116,10 @@ function ConsentModal({ plan, loading, onConfirm, onCancel, plusPrice, proPrice,
   const bullets = consentBullets(plan, plusPrice, proPrice);
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end sm:items-start justify-center sm:pt-16 sm:p-4 overflow-y-auto bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onCancel()}
     >
-      <div className="mobile-sheet-enter w-full sm:max-w-sm bg-[#0f0f1a] border border-violet-700/40 rounded-t-2xl sm:rounded-2xl shadow-2xl shadow-violet-950/60 overflow-hidden" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+      <div className="mobile-sheet-enter w-full sm:max-w-sm bg-[#0f0f1a] border border-violet-700/40 rounded-2xl shadow-2xl shadow-violet-950/60 overflow-hidden" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         {/* Header */}
         <div className="relative bg-gradient-to-br from-violet-900/50 to-purple-900/20 px-5 pt-5 pb-4 border-b border-violet-800/30">
           <button
@@ -265,10 +265,10 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
       />
     )}
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-start justify-center sm:pt-16 sm:p-4 overflow-y-auto bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="mobile-sheet-enter w-full sm:max-w-2xl bg-[#0f0f1a] border border-violet-700/40 rounded-t-2xl sm:rounded-2xl shadow-2xl shadow-violet-950/60 overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[90vh]" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+      <div className="mobile-sheet-enter w-full sm:max-w-2xl bg-[#0f0f1a] border border-violet-700/40 rounded-2xl shadow-2xl shadow-violet-950/60 overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[90vh]" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
 
         {/* Header */}
         <div className="relative bg-gradient-to-br from-violet-900/60 to-purple-900/30 px-6 pt-6 pb-5 border-b border-violet-800/30 flex-shrink-0">

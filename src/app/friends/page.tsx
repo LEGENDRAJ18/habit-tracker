@@ -1,11 +1,13 @@
 ﻿"use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Users, Flame, Zap, Send, Check, X, Loader2, UserPlus, Trophy, UserSearch, ChevronDown, Share2, Copy, Mail, Swords } from "lucide-react";
+import { Users, Flame, Zap, Send, Check, X, Loader2, UserPlus, Trophy, UserSearch, ChevronDown, Share2, Copy, Mail, Swords, BarChart2, GitCompare } from "lucide-react";
 import posthog from "posthog-js";
 import { friendlyError } from "@/lib/friendlyError";
 import { useProfile } from "@/hooks/useProfile";
 import HabitBattleModal from "@/components/dashboard/HabitBattleModal";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "@/components/ui/Toast";
 
 interface FriendStat {
   id: string;
@@ -55,6 +57,144 @@ function getInitials(name: string) {
   return name.slice(0, 2).toUpperCase();
 }
 
+// ─── Friend Compare Modal ────────────────────────────────────────────────────
+
+interface CompareProfile {
+  id: string;
+  name: string;
+  username: string | null;
+  level: number;
+  xp: number;
+  streak: number;
+  weeklyPct: number;
+}
+
+function StatVs({
+  label,
+  mine,
+  theirs,
+  suffix = "",
+  higherIsBetter = true,
+}: {
+  label: string;
+  mine: number;
+  theirs: number;
+  suffix?: string;
+  higherIsBetter?: boolean;
+}) {
+  const iWin = higherIsBetter ? mine > theirs : mine < theirs;
+  const tied = mine === theirs;
+  return (
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 py-3 border-b border-violet-900/15 last:border-0">
+      <div className={`text-right text-base font-bold ${iWin && !tied ? "text-violet-300" : "text-slate-300"}`}>
+        {mine}{suffix}
+        {iWin && !tied && <span className="ml-1 text-xs text-violet-400">▲</span>}
+      </div>
+      <div className="text-center text-[10px] font-semibold text-slate-600 uppercase tracking-wider w-16">{label}</div>
+      <div className={`text-left text-base font-bold ${!iWin && !tied ? "text-violet-300" : "text-slate-300"}`}>
+        {!iWin && !tied && <span className="mr-1 text-xs text-violet-400">▲</span>}
+        {theirs}{suffix}
+      </div>
+    </div>
+  );
+}
+
+function FriendCompareModal({
+  myUserId,
+  friend,
+  onClose,
+}: {
+  myUserId: string;
+  friend: FriendStat;
+  onClose: () => void;
+}) {
+  const [myProfile, setMyProfile] = useState<CompareProfile | null>(null);
+  const [friendProfile, setFriendProfile] = useState<CompareProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`/api/friends/profile/${myUserId}`).then((r) => r.json()),
+      fetch(`/api/friends/profile/${friend.id}`).then((r) => r.json()),
+    ])
+      .then(([myData, friendData]) => {
+        setMyProfile(myData.profile as CompareProfile);
+        setFriendProfile(friendData.profile as CompareProfile);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [myUserId, friend.id]);
+
+  const myPalette   = myProfile ? avatarPalette(myProfile.name) : AVATAR_PALETTES[0];
+  const theirPalette = avatarPalette(friend.name);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-violet-900/20">
+          <div className="flex items-center gap-2">
+            <BarChart2 className="w-4 h-4 text-violet-400" />
+            <h2 className="text-sm font-bold text-white">Head to Head</h2>
+          </div>
+          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-14">
+            <Loader2 className="w-7 h-7 text-violet-500 animate-spin" />
+          </div>
+        ) : myProfile && friendProfile ? (
+          <div className="p-5">
+            {/* Avatars row */}
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 mb-5">
+              <div className="flex flex-col items-end gap-1.5">
+                <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${myPalette.bg} border ${myPalette.border} flex items-center justify-center`}>
+                  <span className={`text-sm font-bold ${myPalette.text}`}>{getInitials(myProfile.name)}</span>
+                </div>
+                <p className="text-xs font-semibold text-slate-200 text-right truncate max-w-[80px]">{myProfile.name.split(" ")[0]}</p>
+                <span className="text-[10px] text-violet-400 font-medium">You</span>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-violet-900/30 border border-violet-700/30 flex items-center justify-center flex-shrink-0">
+                <GitCompare className="w-3.5 h-3.5 text-violet-400" />
+              </div>
+              <div className="flex flex-col items-start gap-1.5">
+                <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${theirPalette.bg} border ${theirPalette.border} flex items-center justify-center`}>
+                  <span className={`text-sm font-bold ${theirPalette.text}`}>{getInitials(friend.name)}</span>
+                </div>
+                <p className="text-xs font-semibold text-slate-200 truncate max-w-[80px]">{friend.name.split(" ")[0]}</p>
+                {friend.username && <span className="text-[10px] text-slate-500">@{friend.username}</span>}
+              </div>
+            </div>
+
+            {/* Stats comparison */}
+            <div className="bg-violet-950/20 border border-violet-900/20 rounded-xl px-4 py-1">
+              <StatVs label="Level" mine={myProfile.level} theirs={friendProfile.level} />
+              <StatVs label="Total XP" mine={myProfile.xp} theirs={friendProfile.xp} />
+              <StatVs label="Streak" mine={myProfile.streak} theirs={friendProfile.streak} suffix="d" />
+              <StatVs label="This Week" mine={myProfile.weeklyPct} theirs={friendProfile.weeklyPct} suffix="%" />
+            </div>
+
+            <p className="text-[10px] text-slate-600 text-center mt-3">▲ indicates the leader for each stat</p>
+          </div>
+        ) : (
+          <div className="py-10 text-center">
+            <p className="text-sm text-slate-500">Couldn&apos;t load comparison data</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Friend Profile Modal ────────────────────────────────────────────────────
 
 function FriendProfileModal({
@@ -92,11 +232,11 @@ function FriendProfileModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-start justify-center sm:pt-16 sm:p-4 overflow-y-auto bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="mobile-sheet-enter bg-[#0f0f1a] border border-violet-800/30 rounded-t-2xl sm:rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+        className="mobile-sheet-enter bg-[#0f0f1a] border border-violet-800/30 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
         style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -246,9 +386,9 @@ function ShareModal({ onClose }: { onClose: () => void }) {
   const canNativeShare = typeof navigator !== "undefined" && !!navigator.share;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-start justify-center sm:pt-16 sm:p-4 overflow-y-auto bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="mobile-sheet-enter bg-[#0f0f1a] border border-violet-800/30 rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-sm shadow-2xl"
+        className="mobile-sheet-enter bg-[#0f0f1a] border border-violet-800/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl"
         style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -302,9 +442,12 @@ function ShareModal({ onClose }: { onClose: () => void }) {
 
 export default function FriendsPage() {
   const { tier } = useProfile();
+  const [supabase] = useState(() => createClient());
   const [friends, setFriends]   = useState<FriendStat[]>([]);
   const [pending, setPending]   = useState<PendingFriend[]>([]);
   const [loading, setLoading]   = useState(true);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [compareTarget, setCompareTarget] = useState<FriendStat | null>(null);
   const [showBattleModal, setShowBattleModal]         = useState(false);
   const [pendingBattlesCount, setPendingBattlesCount] = useState(0);
 
@@ -379,6 +522,34 @@ export default function FriendsPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadFriends();
   }, [loadFriends]);
+
+  // Get current user ID for compare + realtime
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) setMyUserId(session.user.id);
+    });
+  }, [supabase]);
+
+  // Realtime: show toast when a friend accepts our invite
+  useEffect(() => {
+    if (!myUserId) return;
+    let seq = 0;
+    const ch = supabase
+      .channel(`friendships-accepted-${myUserId}-${++seq}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "friendships", filter: `requester_id=eq.${myUserId}` },
+        (payload) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if ((payload.new as any).status === "accepted") {
+            void loadFriends();
+            toast("A friend accepted your invite 🎉", "success");
+          }
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch).catch(() => {}); };
+  }, [myUserId, supabase, loadFriends]);
 
   useEffect(() => {
     fetch("/api/battles")
@@ -466,6 +637,13 @@ export default function FriendsPage() {
           onClose={() => setSelectedFriend(null)}
         />
       )}
+      {compareTarget && myUserId && (
+        <FriendCompareModal
+          myUserId={myUserId}
+          friend={compareTarget}
+          onClose={() => setCompareTarget(null)}
+        />
+      )}
       {showShareModal && <ShareModal onClose={() => setShowShareModal(false)} />}
       {showBattleModal && (
         <HabitBattleModal
@@ -477,31 +655,45 @@ export default function FriendsPage() {
       )}
 
       <div className="min-h-screen bg-[#09090f] pb-nav">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-8 pb-3 flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">👥 Friends</h1>
-            <p className="text-sm text-slate-500 mt-1.5">Compete and stay accountable with your friends</p>
-          </div>
-          <div className="flex items-center gap-2 mt-1">
-            <button
-              onClick={() => { setShowBattleModal(true); setPendingBattlesCount(0); }}
-              className="relative flex items-center gap-2 px-3.5 py-2 bg-violet-950/40 hover:bg-violet-900/40 border border-violet-700/30 text-violet-300 text-sm font-medium rounded-xl transition-all flex-shrink-0"
-            >
-              <Swords className="w-4 h-4" />
-              <span className="hidden sm:inline">Battles</span>
-              {pendingBattlesCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold px-1 leading-none">
-                  {pendingBattlesCount > 9 ? "9+" : pendingBattlesCount}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setShowShareModal(true)}
-              className="flex items-center gap-2 px-3.5 py-2 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-600/30 text-violet-300 text-sm font-medium rounded-xl transition-all flex-shrink-0"
-            >
-              <Share2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Invite</span>
-            </button>
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-6 pb-0">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-fuchsia-950/40 via-[#0d0d1a] to-[#0d0d1a] border border-fuchsia-800/25 p-5 mb-5">
+            <div className="absolute -top-10 -right-10 w-48 h-48 bg-fuchsia-600/7 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-fuchsia-600/20 border border-fuchsia-500/25 flex items-center justify-center" style={{ boxShadow: "0 0 14px rgba(217,70,239,0.18)" }}>
+                  <Users className="w-4 h-4 text-fuchsia-300" />
+                </div>
+                <div>
+                  <h1 className="text-base font-bold text-white leading-none">Friends</h1>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    {friends.length > 0
+                      ? `${friends.length} friend${friends.length !== 1 ? "s" : ""} · ranked by streak`
+                      : "Compete, cheer, and stay accountable"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() => { setShowBattleModal(true); setPendingBattlesCount(0); }}
+                  className="relative flex items-center gap-2 px-3.5 py-2 bg-violet-950/40 hover:bg-violet-900/40 border border-violet-700/30 text-violet-300 text-sm font-medium rounded-xl transition-all flex-shrink-0"
+                >
+                  <Swords className="w-4 h-4" />
+                  <span className="hidden sm:inline">Battles</span>
+                  {pendingBattlesCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold px-1 leading-none">
+                      {pendingBattlesCount > 9 ? "9+" : pendingBattlesCount}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowShareModal(true)}
+                  className="flex items-center gap-2 px-3.5 py-2 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-600/30 text-violet-300 text-sm font-medium rounded-xl transition-all flex-shrink-0"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Invite</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -741,6 +933,16 @@ export default function FriendsPage() {
                         </p>
                         <p className="text-[10px] text-slate-600">streak</p>
                       </div>
+
+                      {/* Compare button */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setCompareTarget(friend); }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-violet-950/40 border border-violet-800/30 text-violet-400 hover:bg-violet-900/40 hover:border-violet-700/50"
+                        title="Compare stats"
+                      >
+                        <BarChart2 className="w-3 h-3" />
+                        <span className="hidden sm:inline">Compare</span>
+                      </button>
 
                       {/* Cheer button */}
                       <button

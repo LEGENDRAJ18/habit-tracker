@@ -40,10 +40,10 @@ export default function StreakBrokenModal({ onUpgrade, onDismiss, brokenHabitNam
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-start justify-center sm:pt-16 sm:p-4 overflow-y-auto bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onDismiss()}
     >
-      <div className="mobile-sheet-enter w-full sm:max-w-sm bg-[#0f0f1a] border border-slate-700/40 rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+      <div className="mobile-sheet-enter w-full sm:max-w-sm bg-[#0f0f1a] border border-slate-700/40 rounded-2xl shadow-2xl overflow-hidden" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         <div className="p-6">
           {/* Icon + title */}
           <div className="text-center mb-5">

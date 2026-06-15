@@ -214,10 +214,10 @@ export default function HabitTemplatesModal({ onClose, existingHabits, canAddMor
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-start justify-center sm:pt-16 sm:p-4 overflow-y-auto bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="mobile-sheet-enter w-full sm:max-w-lg bg-[#0f0f1a] border border-violet-800/30 rounded-t-2xl sm:rounded-2xl shadow-2xl shadow-violet-950/50 flex flex-col max-h-[85vh]" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+      <div className="mobile-sheet-enter w-full sm:max-w-lg bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl shadow-violet-950/50 flex flex-col max-h-[85vh]" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-violet-900/20 flex-shrink-0">

@@ -63,10 +63,10 @@ export default function AIInsightModal({ onClose, onUpgrade, tier }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-start justify-center sm:pt-16 sm:p-4 overflow-y-auto bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="mobile-sheet-enter w-full sm:max-w-md bg-[#0d0d1a] border border-violet-700/30 rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-violet-950/60 overflow-hidden max-h-[92vh] flex flex-col" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+      <div className="mobile-sheet-enter w-full sm:max-w-md bg-[#0d0d1a] border border-violet-700/30 rounded-3xl shadow-2xl shadow-violet-950/60 overflow-hidden max-h-[92vh] flex flex-col" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         {/* Header */}
         <div className="relative px-6 pt-6 pb-5 border-b border-violet-900/20">
           <div className="absolute inset-0 bg-gradient-to-br from-violet-600/10 via-transparent to-transparent pointer-events-none" />

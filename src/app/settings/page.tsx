@@ -1913,6 +1913,20 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-[#09090f] pb-nav">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-6">
+        {/* Hero */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900/80 via-[#0d0d1a] to-[#0d0d1a] border border-slate-700/30 p-4 mb-4">
+          <div className="absolute -top-8 -right-8 w-40 h-40 bg-violet-600/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-slate-700/40 border border-slate-600/30 flex items-center justify-center">
+              <SlidersHorizontal className="w-4 h-4 text-slate-300" />
+            </div>
+            <div>
+              <h1 className="text-base font-bold text-white leading-none">Settings</h1>
+              {name && <p className="text-[11px] text-slate-500 mt-0.5">{email}</p>}
+            </div>
+          </div>
+        </div>
+
         {/* Tab bar */}
         <div className="flex overflow-x-auto gap-1 bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-1.5 mb-6 scrollbar-none">
           {TABS.map((t) => (

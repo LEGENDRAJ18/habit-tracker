@@ -738,31 +738,59 @@ export default function AnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-[#09090f] pb-nav">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8 pb-3 flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">📊 Analytics</h1>
-          <p className="text-sm text-slate-500 mt-1.5">Track your progress and build better habits over time</p>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {isPro ? (
-            <button
-              onClick={() => void downloadCSV()}
-              disabled={exporting}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600/20 border border-amber-500/30 text-amber-300 text-xs font-semibold rounded-xl hover:bg-amber-600/30 transition-all disabled:opacity-50"
-              title="Export all habit data as CSV"
-            >
-              {exporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
-              Export CSV
-            </button>
-          ) : !isPaid ? (
-            <Link
-              href="/dashboard?checkout=plus"
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/20 border border-violet-500/30 text-violet-300 text-xs font-semibold rounded-xl hover:bg-violet-600/30 transition-all"
-            >
-              <Lock className="w-3 h-3" />
-              Unlock full analytics
-            </Link>
-          ) : null}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-0">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-950/50 via-[#0d0d1a] to-[#0d0d1a] border border-violet-800/25 p-5 mb-5">
+          <div className="absolute -top-10 -right-10 w-56 h-56 bg-violet-600/8 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <div className="flex items-center gap-2.5 mb-3">
+                <div className="w-8 h-8 rounded-xl bg-violet-600/25 border border-violet-500/30 flex items-center justify-center" style={{ boxShadow: "0 0 14px rgba(139,92,246,0.25)" }}>
+                  <BarChart2 className="w-4 h-4 text-violet-300" />
+                </div>
+                <div>
+                  <h1 className="text-base font-bold text-white leading-none">Analytics</h1>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Patterns, streaks, and progress</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-5">
+                <div>
+                  <p className="text-2xl font-black text-white tabular-nums">{totalCompletions.toLocaleString()}</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5 uppercase tracking-wide font-medium">all-time</p>
+                </div>
+                <div className="w-px h-8 bg-violet-900/40" />
+                <div>
+                  <p className="text-2xl font-black text-amber-400 tabular-nums">{bestStreak}<span className="text-sm font-bold ml-0.5">d</span></p>
+                  <p className="text-[10px] text-slate-500 mt-0.5 uppercase tracking-wide font-medium">best streak</p>
+                </div>
+                <div className="w-px h-8 bg-violet-900/40" />
+                <div>
+                  <p className="text-2xl font-black text-emerald-400 tabular-nums">{activeDaysSet.size}</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5 uppercase tracking-wide font-medium">active/30d</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0 self-start">
+              {isPro ? (
+                <button
+                  onClick={() => void downloadCSV()}
+                  disabled={exporting}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600/20 border border-amber-500/30 text-amber-300 text-xs font-semibold rounded-xl hover:bg-amber-600/30 transition-all disabled:opacity-50"
+                  title="Export all habit data as CSV"
+                >
+                  {exporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                  Export CSV
+                </button>
+              ) : !isPaid ? (
+                <Link
+                  href="/dashboard?checkout=plus"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600/20 border border-violet-500/30 text-violet-300 text-xs font-semibold rounded-xl hover:bg-violet-600/30 transition-all"
+                >
+                  <Lock className="w-3 h-3" />
+                  Unlock all
+                </Link>
+              ) : null}
+            </div>
+          </div>
         </div>
       </div>
 

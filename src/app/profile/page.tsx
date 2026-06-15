@@ -122,9 +122,32 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#09090f] pb-nav">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-8 pb-3">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">👤 Profile</h1>
-        <p className="text-sm text-slate-500 mt-1.5">Your journey so far — levels, achievements, and stats</p>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-6 pb-0">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-950/30 via-[#0d0d1a] to-[#0d0d1a] border border-amber-800/20 p-5 mb-4">
+          <div className="absolute -top-10 -right-10 w-48 h-48 bg-amber-600/6 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-amber-600/20 border border-amber-500/25 flex items-center justify-center" style={{ boxShadow: "0 0 14px rgba(245,158,11,0.18)" }}>
+                <User className="w-4 h-4 text-amber-300" />
+              </div>
+              <div>
+                <h1 className="text-base font-bold text-white leading-none">Profile</h1>
+                <p className="text-[11px] text-slate-500 mt-0.5">Your journey and achievements</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className="text-xl font-black text-violet-300 tabular-nums">{level}</p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-wide font-medium">level</p>
+              </div>
+              <div className="w-px h-7 bg-amber-900/40" />
+              <div className="text-right">
+                <p className="text-xl font-black text-amber-400 tabular-nums">{xp.toLocaleString()}</p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-wide font-medium">XP</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 pb-8">
