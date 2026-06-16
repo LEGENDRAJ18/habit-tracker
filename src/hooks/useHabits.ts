@@ -262,8 +262,17 @@ export function useHabits() {
     difficulty?: number | null,
     habitType?: "standard" | "limit",
   ): Promise<{ error: string | null }> => {
-    const user = await resolveUser();
+    // Fast path: getSession() reads from memory and is nearly instant (<50ms).
+    // Only call resolveUser() (network, up to ~6.5s) when there is no local session.
+    const t0 = performance.now();
+    const { data: { session: fastSession } } = await Promise.race([
+      supabase.auth.getSession(),
+      new Promise<{ data: { session: null } }>((r) => setTimeout(() => r({ data: { session: null } }), 500)),
+    ]);
+    const user = fastSession?.user ?? await resolveUser();
+    console.log(`[habit] auth resolve ${Math.round(performance.now() - t0)}ms, user ${user?.id ?? "null"}`);
     if (!user) return { error: "Not authenticated" };
+    console.log(`[habit] creating habit "${name}" for ${user.id}`);
 
     const offline = typeof navigator !== "undefined" && !navigator.onLine;
 

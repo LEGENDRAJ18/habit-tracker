@@ -418,8 +418,10 @@ export default function AddHabitModal({
         reminderTime || null, durationMinutes,
         difficulty.xp, difficulty.level, habitType,
       );
+      // Outer safety net: auth resolve ≤6.5s + DB insert ≤6s = ≤12.5s worst case.
+      // 20s gives comfortable headroom without blocking the UI indefinitely.
       const timeoutPromise = new Promise<{ error: string }>((resolve) =>
-        setTimeout(() => resolve({ error: "Request timed out — please try again." }), 15000)
+        setTimeout(() => resolve({ error: "Request timed out — please try again." }), 20_000)
       );
       const { error } = await Promise.race([addPromise, timeoutPromise]);
       if (error) { setError(error); setLoading(false); }

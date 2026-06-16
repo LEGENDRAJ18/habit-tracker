@@ -2,51 +2,61 @@ import { createClient } from "./client";
 
 // Resolves the current authenticated user with three layers of fallback.
 //
-// Layer 1 — getSession() (0ms, reads from memory/localStorage)
-//   Works when the session is fresh. Returns null when the token has been
-//   silently cleared after a long idle, even if the user IS still logged in.
+// Layer 1 — getSession() (reads from memory/localStorage, should be ~0ms)
+//   Returns fast when the session is fresh. Returns null when the token was
+//   cleared after a long idle even if the user IS still logged in.
 //
 // Layer 2 — getUser() (network call, validates JWT, triggers token refresh)
-//   Succeeds even when getSession() is null, as long as a refresh token
-//   exists and is valid. If the access token expired, getUser() refreshes it.
+//   Succeeds even when getSession() is null, as long as a refresh token exists.
 //
 // Layer 3 — refreshSession() (network call, forces a new token pair)
-//   Final safety net for cases where getUser() also can't resolve. Uses the
-//   stored refresh token to get a brand-new access token and session.
+//   Final safety net for cases where getUser() also fails.
 //
-// Only returns null when the user is genuinely not logged in.
-// NEVER let a transient null cause a habit completion or add to be discarded.
+// Timeouts (per-layer): 500ms / 3s / 3s → hard worst-case total ≈ 6.5s.
+// Previously: 5s / 8s / 10s → 23s, which caused the frontend timeout to fire
+// first and show "Request timed out" even though the backend was healthy.
 export async function resolveUser() {
   const supabase = createClient();
+  const t0 = performance.now();
 
-  // Layer 1: fast path
+  // Layer 1: fast path — reads from memory, almost always instant
   const { data: sessionData } = await Promise.race([
     supabase.auth.getSession(),
     new Promise<{ data: { session: null } }>((resolve) =>
-      setTimeout(() => resolve({ data: { session: null } }), 5_000)
+      setTimeout(() => resolve({ data: { session: null } }), 500)
     ),
   ]);
-  if (sessionData.session?.user) return sessionData.session.user;
+  if (sessionData.session?.user) {
+    console.log(`[auth] resolveUser → session (${Math.round(performance.now() - t0)}ms)`);
+    return sessionData.session.user;
+  }
 
   // Layer 2: server-side validation / token refresh
   const { data: userData } = await Promise.race([
     supabase.auth.getUser(),
     new Promise<{ data: { user: null } }>((resolve) =>
-      setTimeout(() => resolve({ data: { user: null } }), 8_000)
+      setTimeout(() => resolve({ data: { user: null } }), 3_000)
     ),
   ]);
-  if (userData.user) return userData.user;
+  if (userData.user) {
+    console.log(`[auth] resolveUser → getUser (${Math.round(performance.now() - t0)}ms)`);
+    return userData.user;
+  }
 
-  // Layer 3: force a session refresh via the stored refresh token
+  // Layer 3: force a fresh token pair via stored refresh token
   try {
     const { data: refreshData } = await Promise.race([
       supabase.auth.refreshSession(),
       new Promise<{ data: { session: null } }>((resolve) =>
-        setTimeout(() => resolve({ data: { session: null } }), 10_000)
+        setTimeout(() => resolve({ data: { session: null } }), 3_000)
       ),
     ]);
-    if (refreshData.session?.user) return refreshData.session.user;
+    if (refreshData.session?.user) {
+      console.log(`[auth] resolveUser → refresh (${Math.round(performance.now() - t0)}ms)`);
+      return refreshData.session.user;
+    }
   } catch {}
 
+  console.log(`[auth] resolveUser → null (${Math.round(performance.now() - t0)}ms)`);
   return null;
 }
