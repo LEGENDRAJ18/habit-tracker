@@ -774,6 +774,9 @@ function HelpTab() {
         <p className="text-sm text-slate-500">Find answers, contact support, or browse the FAQ.</p>
       </div>
 
+      {/* XP & Levels explainer */}
+      <LevelGuideSection />
+
       {/* How to use guide */}
       <div className={cardCls} style={{ padding: "1.25rem" }}>
         <div className="flex items-start gap-4">
@@ -900,13 +903,20 @@ function LevelGuideSection() {
 
   return (
     <div className={cardCls}>
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2 mb-3">
         <Zap className="w-4 h-4 text-violet-400" />
-        <p className="text-sm font-semibold text-white">Level Guide</p>
+        <p className="text-sm font-semibold text-white">How XP &amp; Levels Work ⚡</p>
       </div>
-      <p className="text-xs text-slate-500 leading-relaxed">
-        Earn XP by completing habits every day. Level up to unlock identity titles and show off your consistency.
-      </p>
+      {/* Concept explainer */}
+      <div className="bg-violet-950/30 border border-violet-800/20 rounded-xl p-3 mb-1">
+        <p className="text-xs text-slate-400 leading-relaxed">
+          <span className="font-semibold text-violet-300">XP (Experience Points)</span> is the score you collect every time you do something in HabitAI — completing habits, logging in, hitting milestones.
+          XP adds up and <span className="text-white font-medium">never resets</span>.
+          <br className="my-1" />
+          <span className="font-semibold text-white">Levels</span> are the rank your total XP unlocks.
+          Think of it like a game: XP are the points, your Level is the badge those points earn you.
+        </p>
+      </div>
 
       {/* Current level progress */}
       {loaded && (

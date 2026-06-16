@@ -267,21 +267,83 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
             <span className="text-2xl leading-none">🎯</span>
           </div>
 
-          {/* How XP works */}
-          <div className="border-t border-slate-800/40 pt-4">
-            <p className="text-[10px] text-slate-600 uppercase tracking-wider font-medium mb-2.5">How XP Works</p>
-            <div className="grid grid-cols-3 gap-1.5 text-center">
-              {([
-                { icon: "✅", label: "Valid habit",  xp: "+10 XP" },
-                { icon: "⚠️", label: "Partial",      xp: "+5 XP"  },
-                { icon: "🎰", label: "Lucky bonus",   xp: "+20 XP" },
-              ] as const).map((r) => (
-                <div key={r.label} className="bg-slate-900/40 rounded-xl py-2.5 px-1 border border-slate-800/30">
-                  <span className="text-base leading-none">{r.icon}</span>
-                  <p className="text-[9px] text-slate-600 mt-1">{r.label}</p>
-                  <p className="text-[10px] font-bold text-violet-400 mt-0.5">{r.xp}</p>
+          {/* How XP & Levels Work */}
+          <div className="border-t border-slate-800/40 pt-4 space-y-4">
+            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">How XP &amp; Levels Work</p>
+
+            {/* Concept */}
+            <div className="bg-violet-950/30 border border-violet-800/20 rounded-xl p-3">
+              <p className="text-xs text-slate-400 leading-relaxed">
+                <span className="font-semibold text-violet-300">XP (Experience Points)</span> adds up every time you do something in HabitAI — completing habits, logging in, hitting milestones. It <span className="text-white font-medium">never resets</span>, only grows.{" "}
+                <span className="font-semibold text-white">Levels</span> are the rank your total XP unlocks. Think of it like a game: XP are the points, your Level is the badge.
+              </p>
+            </div>
+
+            {/* XP earn rates */}
+            <div>
+              <p className="text-[10px] text-slate-600 uppercase tracking-wider font-medium mb-2">Ways to earn XP</p>
+              {[
+                { icon: "✅", label: "Habit done (valid)",         xp: "+10 XP" },
+                { icon: "⚠️", label: "Habit done (partial)",       xp: "+5 XP"  },
+                { icon: "🌅", label: "Daily login",                xp: "+5 XP"  },
+                { icon: "🎯", label: "All habits done today",      xp: "+25 XP" },
+                { icon: "🔥", label: "7-day streak milestone",     xp: "+50 XP" },
+                { icon: "💪", label: "30-day streak milestone",    xp: "+200 XP"},
+                { icon: "🎰", label: "Lucky bonus (12% chance)",   xp: "+20 XP" },
+              ].map(({ icon, label, xp: xpVal }) => (
+                <div key={label} className="flex items-center justify-between py-1.5 border-b border-slate-800/30 last:border-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm leading-none w-5 flex-shrink-0">{icon}</span>
+                    <span className="text-[11px] text-slate-400">{label}</span>
+                  </div>
+                  <span className="text-[11px] font-bold text-violet-400 flex-shrink-0 ml-2">{xpVal}</span>
                 </div>
               ))}
+            </div>
+
+            {/* Level ladder */}
+            <div>
+              <p className="text-[10px] text-slate-600 uppercase tracking-wider font-medium mb-2">Level ladder</p>
+              <div className="rounded-xl overflow-hidden border border-violet-900/20">
+                {([
+                  { lvl: 1,  xpNeeded: 0,      name: "Beginner",  emoji: "🌱" },
+                  { lvl: 2,  xpNeeded: 100,     name: "Beginner",  emoji: "🌱" },
+                  { lvl: 3,  xpNeeded: 250,     name: "Rising",    emoji: "🌿" },
+                  { lvl: 4,  xpNeeded: 500,     name: "Rising",    emoji: "🌿" },
+                  { lvl: 5,  xpNeeded: 1000,    name: "Committed", emoji: "💪" },
+                  { lvl: 6,  xpNeeded: 2000,    name: "Committed", emoji: "💪" },
+                  { lvl: 7,  xpNeeded: 3500,    name: "Dedicated", emoji: "🔥" },
+                  { lvl: 8,  xpNeeded: 5000,    name: "Dedicated", emoji: "🔥" },
+                  { lvl: 9,  xpNeeded: 7500,    name: "Elite",     emoji: "⚡" },
+                  { lvl: 10, xpNeeded: 10000,   name: "Elite",     emoji: "⚡" },
+                  { lvl: 11, xpNeeded: 13000,   name: "Legend",    emoji: "👑" },
+                ] as { lvl: number; xpNeeded: number; name: string; emoji: string }[]).map((row, i) => {
+                  const isCurrent = row.lvl === level;
+                  return (
+                    <div
+                      key={row.lvl}
+                      className={`flex items-center gap-2 px-3 py-2 text-[11px] ${
+                        isCurrent
+                          ? "bg-violet-900/50 border-l-2 border-violet-500"
+                          : i % 2 === 0 ? "bg-violet-950/20" : ""
+                      }`}
+                    >
+                      <span className="w-5 flex-shrink-0 leading-none">{row.emoji}</span>
+                      <span className={`font-bold w-12 flex-shrink-0 ${isCurrent ? "text-violet-300" : "text-slate-500"}`}>
+                        Lv {row.lvl}
+                      </span>
+                      <span className={`flex-1 ${isCurrent ? "text-white" : "text-slate-600"}`}>{row.name}</span>
+                      <span className={`font-semibold text-right flex-shrink-0 tabular-nums ${isCurrent ? "text-violet-300" : "text-slate-600"}`}>
+                        {row.xpNeeded.toLocaleString()} XP
+                      </span>
+                      {isCurrent && (
+                        <span className="text-[9px] font-bold text-violet-400 bg-violet-900/60 px-1.5 py-0.5 rounded-full flex-shrink-0">YOU</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-slate-600 text-center mt-1.5">Level 11+ costs 3,000 XP per level · 500 levels total</p>
             </div>
           </div>
         </div>
