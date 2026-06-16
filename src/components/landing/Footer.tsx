@@ -64,14 +64,23 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-violet-900/20">
-          <p className="text-xs text-slate-600">
-            © {new Date().getFullYear()} habitAI. All rights reserved.
-          </p>
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-8 border-t border-violet-900/20">
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-1">
             <p className="text-xs text-slate-600">
-              Built with ❤️ for habit builders everywhere
+              © {new Date().getFullYear()} habitAI. All rights reserved.
             </p>
+            <span className="text-slate-700 hidden sm:inline">·</span>
+            <p className="text-xs text-slate-600">Made by Mannraj Jubbal</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <a
+              href="https://forms.gle/AsS3J4uug48sG4EM9"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-slate-500 hover:text-violet-400 transition-colors"
+            >
+              Give Feedback 📝
+            </a>
             <span className="text-slate-700">·</span>
             <div className="flex items-center gap-1 text-[11px] text-slate-600">
               <span>Currency:</span>

@@ -27,7 +27,7 @@ export default function LeftSidebar() {
 
       {/* Discord community card */}
       <a
-        href="https://discord.gg/JM6QJks8"
+        href="https://discord.gg/MqKSw3Unsq"
         target="_blank"
         rel="noopener noreferrer"
         className="block mb-5 bg-[#0c0c18] border border-[#5865F2]/25 hover:border-[#5865F2]/50 rounded-2xl p-3.5 transition-all group"
