@@ -974,7 +974,7 @@ function Footer() {
 
         {/* Bottom bar */}
         <div className="border-t border-violet-900/20 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
-          <p>© {year} HabitAI. All rights reserved.</p>
+          <p>© {year} HabitAI · Made by Mannraj Jubbal</p>
           <p className="order-last sm:order-none">
             Made with ❤️ in Wellington, NZ 🇳🇿
           </p>
