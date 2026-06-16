@@ -457,27 +457,23 @@ export default function AddHabitModal({
       {/* Dark overlay — click to close */}
       <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm modal-overlay-enter" onClick={onClose} />
 
-      {/* ── Modal panel ──
-          Mobile  : full-screen, slides up from bottom
-          Desktop : centered / near-top floating dialog  */}
+      {/* ── Modal panel — fixed, centered on viewport, never exceeds 90dvh ── */}
       <div className={[
-        "fixed z-50 bg-[#0f0f1a] flex flex-col mobile-modal-enter",
-        // Mobile: full screen, no rounding, no border (inset-0 = all 4 edges 0)
-        "inset-0",
-        // sm+: floating dialog with border, shadow, rounded corners, constrained size
+        // Positioning: centered on the viewport on every screen size.
+        "fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+        // Appearance
+        "bg-[#0f0f1a] border border-violet-800/30 shadow-2xl shadow-violet-950/60 rounded-2xl",
+        // Layout: flex column so header/footer are flex-shrink-0 and body scrolls.
+        // overflow-hidden is REQUIRED — without it max-height doesn't clip flex overflow.
+        "flex flex-col overflow-hidden mobile-modal-enter",
+        // Height cap: 90dvh accounts for mobile browser chrome (address bar, nav bar).
+        // Falls back to 90vh on browsers without dvh support.
+        "max-h-[90dvh]",
+        // Width: fill small screens with 8px gutters; cap at 640px on larger ones.
         isSchedulingMode
-          ? "sm:inset-auto sm:border sm:border-violet-800/30 sm:shadow-2xl sm:shadow-violet-950/60 sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:w-[min(620px,calc(100vw-32px))] sm:max-h-[90vh]"
-          : "sm:inset-auto sm:border sm:border-violet-800/30 sm:shadow-2xl sm:shadow-violet-950/60 sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:w-[min(640px,calc(100vw-32px))] sm:max-h-[88vh]",
+          ? "w-[min(620px,calc(100vw-16px))]"
+          : "w-[min(640px,calc(100vw-16px))]",
       ].join(" ")}>
-
-        {/* Drag handle — tap or drag down to dismiss, mobile only */}
-        <div
-          className="sm:hidden flex justify-center pt-4 pb-1 flex-shrink-0 cursor-pointer"
-          onClick={onClose}
-          aria-label="Close"
-        >
-          <div className="w-12 h-1.5 bg-slate-700/60 rounded-full" />
-        </div>
 
         {/* ── Header ─────────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between px-5 py-3 sm:py-3.5 border-b border-violet-900/20 flex-shrink-0 modal-content-enter">
@@ -514,7 +510,9 @@ export default function AddHabitModal({
         {/* ══════════ STEP 1: HABIT DETAILS ══════════════════════════════════ */}
         {step === "details" && (
           <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
+            {/* min-h-0 is required: flex items default to min-height:auto which
+                prevents them from shrinking, so the scroll never kicks in. */}
+            <div className="overflow-y-auto flex-1 min-h-0 px-5 py-4 space-y-4">
 
               {error && (
                 <p className="text-xs text-red-400 bg-red-950/30 border border-red-800/30 rounded-xl px-3 py-2">{error}</p>
@@ -952,7 +950,7 @@ export default function AddHabitModal({
         {/* ══════════ STEP 2: DATE PICKER ════════════════════════════════════ */}
         {step === "schedule" && (
           <div className="flex flex-col flex-1 min-h-0">
-            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
+            <div className="overflow-y-auto flex-1 min-h-0 px-5 py-4 space-y-4">
 
               {/* Habit name recap pill */}
               <div className="flex items-center gap-2 bg-violet-950/50 border border-violet-800/20 rounded-xl px-3.5 py-2.5">
