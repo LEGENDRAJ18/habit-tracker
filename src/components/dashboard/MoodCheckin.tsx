@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { resolveUser } from "@/lib/supabase/resolve-user";
 
 const MOODS = [
   { value: 1, emoji: "😞", label: "Rough" },
@@ -102,8 +103,7 @@ export default function MoodCheckin() {
     setSelected(value);
     setSaving(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user ?? null;
+      const user = await resolveUser();
       if (!user) return;
       await supabase.from("mood_logs").insert({ user_id: user.id, mood: value });
       setTodayMood(value);

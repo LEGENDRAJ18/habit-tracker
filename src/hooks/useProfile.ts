@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { resolveUser } from "@/lib/supabase/resolve-user";
 import type { Plan } from "@/types";
 import { applyAccentCSSVars, ACCENT_PALETTE, type AccentColor } from "@/contexts/AppearanceContext";
 
@@ -323,8 +324,7 @@ export function useProfile() {
 
   const applyFreeze = useCallback(
     async (protectedDate: string) => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user ?? null;
+      const user = await resolveUser();
       if (!user) return;
       const todayStr = new Date().toISOString().split("T")[0];
       await supabase
@@ -339,8 +339,7 @@ export function useProfile() {
 
   const saveReminderPrefs = useCallback(
     async (enabled: boolean, hour: number, minute = 0) => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user ?? null;
+      const user = await resolveUser();
       if (!user) return;
       await supabase
         .from("profiles")

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Sparkles, ArrowRight, Loader2, CheckCircle2, AlertCircle, AtSign } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { resolveUser } from "@/lib/supabase/resolve-user";
 import { AVATARS, type AvatarId } from "@/lib/avatars";
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/i;
@@ -55,8 +56,7 @@ function OnboardingForm() {
     setError(null);
     try {
       const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user;
+      const user = await resolveUser();
       if (!user) { setError("Not authenticated."); setSaving(false); return; }
       const { error: dbErr } = await supabase
         .from("profiles")

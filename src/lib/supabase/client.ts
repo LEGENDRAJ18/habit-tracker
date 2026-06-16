@@ -3,6 +3,7 @@ import { createBrowserClient } from "@supabase/ssr";
 // Singleton on the browser: all hook instances share one auth state manager,
 // one refresh timer, and one realtime connection pool.
 let _client: ReturnType<typeof makeClient> | null = null;
+let _listenerAttached = false;
 
 function makeClient() {
   return createBrowserClient(
@@ -29,8 +30,24 @@ function makeClient() {
 export function createClient() {
   // Server render: no localStorage, create a fresh client per request.
   if (typeof window === "undefined") return makeClient();
+
   // Browser: reuse the same instance. The assignment expression evaluates to
   // the non-null value so TypeScript infers ReturnType<typeof makeClient>,
   // which avoids the `| null` widening that breaks callers' type inference.
-  return (_client = _client ?? makeClient());
+  const client = (_client = _client ?? makeClient());
+
+  // Attach the proactive session-recovery listener once per page load.
+  // Browsers throttle or pause the Supabase auto-refresh timer when a tab is
+  // in the background. On focus we restart it so the token is fresh before
+  // the user's first action (add habit, toggle, etc.).
+  if (!_listenerAttached) {
+    _listenerAttached = true;
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && _client) {
+        void _client.auth.startAutoRefresh();
+      }
+    });
+  }
+
+  return client;
 }

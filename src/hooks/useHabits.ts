@@ -63,13 +63,12 @@ export function useHabits() {
     if (!silent && !loadHabitsCache()) setLoading(true);
     setIsSyncing(true);
 
-    // getSession() reads from localStorage — instant, no network call.
-    // We only need the user ID for data queries; JWT validation happens
-    // server-side on each Supabase request automatically.
+    // resolveUser() tries getSession() first (instant), falls back to
+    // getUser() which also refreshes the token if expired. This means
+    // fetchData() doubles as a session-recovery point on tab refocus.
     const t0 = performance.now();
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user ?? null;
-    console.log("[LOAD] getSession", Math.round(performance.now() - t0), "ms");
+    const user = await resolveUser();
+    console.log("[LOAD] resolveUser", Math.round(performance.now() - t0), "ms");
 
     if (!user) {
       if (!silent) {
@@ -734,8 +733,7 @@ export function useHabits() {
     };
 
     (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user ?? null;
+      const user = await resolveUser();
       if (!user || cancelled) return;
 
       const seq = ++_habitsRTSeq;

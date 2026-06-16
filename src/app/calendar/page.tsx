@@ -7,6 +7,7 @@ import {
   Trophy, Target,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { resolveUser } from "@/lib/supabase/resolve-user";
 import type { Habit, HabitLog, Plan } from "@/types";
 import AddHabitModal from "@/components/dashboard/AddHabitModal";
 import Link from "next/link";
@@ -1012,8 +1013,7 @@ export default function CalendarPage() {
 
   // Complete a scheduled habit early — create in DB + log
   const handleCompleteScheduled = useCallback(async (s: ScheduledHabit) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user ?? null;
+    const user = await resolveUser();
     if (!user) return;
 
     let habitId = s.habitId;
