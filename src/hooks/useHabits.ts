@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import posthog from "posthog-js";
 import { createClient } from "@/lib/supabase/client";
+import { resolveUser } from "@/lib/supabase/resolve-user";
 import type { Habit, HabitLog } from "@/types";
 import {
   saveHabitsCache, loadHabitsCache,
@@ -216,8 +217,7 @@ export function useHabits() {
       if (queue.length === 0) return;
       clearQueue();
 
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user;
+      const user = await resolveUser();
       if (!user) return;
 
       for (const op of queue as OfflineOp[]) {
@@ -263,9 +263,7 @@ export function useHabits() {
     difficulty?: number | null,
     habitType?: "standard" | "limit",
   ): Promise<{ error: string | null }> => {
-    // getSession() is instant (localStorage read) — no network hang risk
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user ?? null;
+    const user = await resolveUser();
     if (!user) return { error: "Not authenticated" };
 
     const offline = typeof navigator !== "undefined" && !navigator.onLine;
@@ -407,8 +405,7 @@ export function useHabits() {
         prev.map((h) => (h.id === habitId ? { ...h, habit_strength: newStrength } : h)),
       );
 
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user ?? null;
+      const user = await resolveUser();
       if (!user) {
         // Revert — not authenticated
         setTodayLogs((prev) => [...prev, existing]);
@@ -477,8 +474,7 @@ export function useHabits() {
       posthog.capture("habit_completed", { habit_name: habit?.name, frequency: habit?.frequency });
       if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(10);
 
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user ?? null;
+      const user = await resolveUser();
       if (!user) {
         // Revert
         setTodayLogs((prev) => prev.filter((l) => l.id !== tempId));
@@ -501,7 +497,7 @@ export function useHabits() {
 
       const { data, error: insertErr } = await supabase
         .from("habit_logs")
-        .insert({ habit_id: habitId, user_id: user.id })
+        .insert({ habit_id: habitId, user_id: user.id, completed_at: now, outcome: "success" })
         .select()
         .single();
 
@@ -589,8 +585,7 @@ export function useHabits() {
     // Idempotent — skip if already acted on today
     if (todayLogs.some((l) => l.habit_id === habitId)) return;
 
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user ?? null;
+    const user = await resolveUser();
     if (!user) return;
 
     const now    = new Date().toISOString();

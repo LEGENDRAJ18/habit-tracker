@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { resolveUser } from "@/lib/supabase/resolve-user";
 import {
   levelFromXP,
   XP_PER_HABIT,
@@ -153,8 +154,7 @@ export function useXP() {
   // Core: award XP and detect level-up
   const awardXP = useCallback(
     async (amount: number) => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user ?? null;
+      const user = await resolveUser();
       if (!user) return false;
 
       const newXP    = xpRef.current + amount;
@@ -186,8 +186,7 @@ export function useXP() {
     xpValue?: number | null,
     currentStreak?: number,
   ): Promise<{ luckyBonus: boolean }> => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user ?? null;
+    const user = await resolveUser();
     if (!user) return { luckyBonus: false };
 
     const newTotal = totalRef.current + 1;
@@ -224,8 +223,7 @@ export function useXP() {
     const today = new Date().toISOString().split("T")[0];
     if (localStorage.getItem("habitai_last_login_xp") === today) return false;
     localStorage.setItem("habitai_last_login_xp", today);
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user ?? null;
+    const user = await resolveUser();
     if (!user) return false;
     await awardXP(5);
     return true;
@@ -235,8 +233,7 @@ export function useXP() {
   // Returns a Set of newly achieved milestone IDs so the caller can animate/play sounds.
   const checkMilestones = useCallback(
     async (completedCount: number, totalHabits: number, maxStreak: number): Promise<Set<string>> => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user ?? null;
+      const user = await resolveUser();
       if (!user) return new Set();
 
       const newly = new Set<string>();
