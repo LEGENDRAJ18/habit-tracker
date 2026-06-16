@@ -463,7 +463,10 @@ export default function AddHabitModal({
         className={[
           "bg-[#0f0f1a] border border-violet-800/30 shadow-2xl shadow-violet-950/60 rounded-2xl",
           "flex flex-col overflow-hidden mobile-modal-enter w-full",
-          "max-h-full",
+          // 90dvh is explicit and reliable across all browsers.
+          // max-h-full (100%) on a flex item resolves inconsistently when the
+          // flex container uses align-items:center — some browsers ignore it.
+          "max-h-[90dvh]",
           isSchedulingMode ? "max-w-[620px]" : "max-w-[640px]",
         ].join(" ")}
         onClick={(e) => e.stopPropagation()}
@@ -503,7 +506,7 @@ export default function AddHabitModal({
 
         {/* ══════════ STEP 1: HABIT DETAILS ══════════════════════════════════ */}
         {step === "details" && (
-          <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
             {/* min-h-0 is required: flex items default to min-height:auto which
                 prevents them from shrinking, so the scroll never kicks in. */}
             <div className="overflow-y-auto flex-1 min-h-0 px-5 py-4 space-y-4">
@@ -943,7 +946,7 @@ export default function AddHabitModal({
 
         {/* ══════════ STEP 2: DATE PICKER ════════════════════════════════════ */}
         {step === "schedule" && (
-          <div className="flex flex-col flex-1 min-h-0">
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
             <div className="overflow-y-auto flex-1 min-h-0 px-5 py-4 space-y-4">
 
               {/* Habit name recap pill */}
