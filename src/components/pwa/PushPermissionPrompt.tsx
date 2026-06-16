@@ -1,6 +1,7 @@
 "use client";
 
 import { Bell, X } from "lucide-react";
+import CenteredModal from "@/components/ui/CenteredModal";
 
 interface Props {
   onAllow: () => void;
@@ -9,11 +10,8 @@ interface Props {
 
 export default function PushPermissionPrompt({ onAllow, onDismiss }: Props) {
   return (
-    <div
-      className="fixed bottom-24 sm:bottom-6 left-1/2 -translate-x-1/2 z-[70] w-[calc(100vw-32px)] max-w-sm"
-      style={{ animation: "toastSlideUp 0.4s cubic-bezier(0.34,1.56,0.64,1) both" }}
-    >
-      <div className="bg-[#0f0f1a] border border-violet-700/40 rounded-2xl p-4 shadow-2xl shadow-violet-950/60">
+    <CenteredModal onClose={onDismiss}>
+      <div className="modal-center-enter w-full max-w-sm bg-[#0f0f1a] border border-violet-700/40 rounded-2xl p-4 shadow-2xl shadow-violet-950/60 overflow-y-auto max-h-[90dvh]">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center flex-shrink-0 shadow-lg shadow-violet-900/40 mt-0.5">
             <Bell className="w-5 h-5 text-white" />
@@ -53,6 +51,6 @@ export default function PushPermissionPrompt({ onAllow, onDismiss }: Props) {
           </button>
         </div>
       </div>
-    </div>
+    </CenteredModal>
   );
 }
