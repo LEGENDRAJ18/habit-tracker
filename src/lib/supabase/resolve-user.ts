@@ -1,4 +1,4 @@
-import { createClient } from "./client";
+import { createClient, awaitCachedUser } from "./client";
 
 // Resolves the current authenticated user with three layers of fallback.
 //
@@ -18,6 +18,15 @@ import { createClient } from "./client";
 export async function resolveUser() {
   const supabase = createClient();
   const t0 = performance.now();
+
+  // Layer 0: zero-network — waits out the Supabase client init window then reads cache.
+  // Resolves in <1ms when already initialised; waits up to 2s during the brief null window
+  // (between createBrowserClient() and the first INITIAL_SESSION/SIGNED_IN event).
+  const cachedUser = await awaitCachedUser(2_000);
+  if (cachedUser) {
+    console.log(`[auth] resolveUser → cache (${Math.round(performance.now() - t0)}ms)`);
+    return cachedUser;
+  }
 
   // Layer 1: fast path — reads from memory, almost always instant
   const { data: sessionData } = await Promise.race([

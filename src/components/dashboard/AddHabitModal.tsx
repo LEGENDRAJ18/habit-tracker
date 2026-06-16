@@ -455,27 +455,19 @@ export default function AddHabitModal({
   ) : null;
 
   return (
-    <>
-      {/* Dark overlay — click to close */}
-      <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm modal-overlay-enter" onClick={onClose} />
-
-      {/* ── Modal panel — fixed, centered on viewport, never exceeds 90dvh ── */}
-      <div className={[
-        // Positioning: centered on the viewport on every screen size.
-        "fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
-        // Appearance
-        "bg-[#0f0f1a] border border-violet-800/30 shadow-2xl shadow-violet-950/60 rounded-2xl",
-        // Layout: flex column so header/footer are flex-shrink-0 and body scrolls.
-        // overflow-hidden is REQUIRED — without it max-height doesn't clip flex overflow.
-        "flex flex-col overflow-hidden mobile-modal-enter",
-        // Height cap: 90dvh accounts for mobile browser chrome (address bar, nav bar).
-        // Falls back to 90vh on browsers without dvh support.
-        "max-h-[90dvh]",
-        // Width: fill small screens with 8px gutters; cap at 640px on larger ones.
-        isSchedulingMode
-          ? "w-[min(620px,calc(100vw-16px))]"
-          : "w-[min(640px,calc(100vw-16px))]",
-      ].join(" ")}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-sm modal-overlay-enter"
+      onClick={onClose}
+    >
+      <div
+        className={[
+          "bg-[#0f0f1a] border border-violet-800/30 shadow-2xl shadow-violet-950/60 rounded-2xl",
+          "flex flex-col overflow-hidden mobile-modal-enter w-full",
+          "max-h-full",
+          isSchedulingMode ? "max-w-[620px]" : "max-w-[640px]",
+        ].join(" ")}
+        onClick={(e) => e.stopPropagation()}
+      >
 
         {/* ── Header ─────────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between px-5 py-3 sm:py-3.5 border-b border-violet-900/20 flex-shrink-0 modal-content-enter">
@@ -1038,6 +1030,6 @@ export default function AddHabitModal({
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }
