@@ -345,7 +345,7 @@ export function useHabits() {
         return result as InsertResult;
       })(),
       new Promise<InsertResult>((resolve) =>
-        setTimeout(() => resolve({ data: null, error: { message: "Couldn't add — try again" } }), 15_000)
+        setTimeout(() => resolve({ data: null, error: { message: "Couldn't add — try again" } }), 6_000)
       ),
     ]);
 
@@ -355,8 +355,13 @@ export function useHabits() {
       return { error: error.message };
     }
     if (data) {
-      // Swap temp placeholder with the real DB record
-      setHabits((prev) => prev.map((h) => (h.id === tempId ? data : h)));
+      // Swap temp placeholder with real DB record. If fetchData wiped tempId
+      // concurrently, append the real record so the habit isn't silently lost.
+      setHabits((prev) => {
+        if (prev.some((h) => h.id === tempId)) return prev.map((h) => (h.id === tempId ? data : h));
+        if (!prev.some((h) => h.id === data.id)) return [...prev, data];
+        return prev;
+      });
       posthog.capture("habit_created", {
         habit_name:     name,
         frequency,
@@ -514,7 +519,23 @@ export function useHabits() {
         throw insertErr ?? new Error("habit_log insert returned no data");
       }
 
-      setTodayLogs((prev) => prev.map((l) => (l.id === tempId ? data : l)));
+      // Replace tempId with the real DB record. If fetchData ran concurrently
+      // and wiped tempId from state, fall back to appending the real record so
+      // the completion is never silently lost.
+      setTodayLogs((prev) => {
+        if (prev.some((l) => l.id === tempId)) {
+          return prev.map((l) => (l.id === tempId ? data : l));
+        }
+        if (!prev.some((l) => l.id === data.id)) return [...prev, data];
+        return prev;
+      });
+      setHistoricalLogs((prev) => {
+        const dateStr = data.completed_at.split("T")[0];
+        if (!prev.some((l) => l.habit_id === habitId && l.completed_at.split("T")[0] === dateStr)) {
+          return [{ habit_id: habitId, completed_at: data.completed_at }, ...prev];
+        }
+        return prev;
+      });
       void supabase.from("habits").update({ habit_strength: newStrength }).eq("id", habitId);
       saveHabitsCache(
         habits.map((h) => (h.id === habitId ? { ...h, habit_strength: newStrength } : h)),

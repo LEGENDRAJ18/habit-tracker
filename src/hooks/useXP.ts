@@ -167,6 +167,7 @@ export function useXP() {
       setXP(newXP);
       setLevel(newLevel);
       if (leveled) setJustLeveledUp(newLevel);
+      writeXPCache({ xp: newXP, level: newLevel, achievements: achievementsRef.current, totalCompletions: totalRef.current, dailyMilestones: dailyRef.current });
 
       await supabase
         .from("profiles")
@@ -192,6 +193,7 @@ export function useXP() {
     const newTotal = totalRef.current + 1;
     totalRef.current = newTotal;
     setTotalCompletions(newTotal);
+    writeXPCache({ xp: xpRef.current, level: levelRef.current, achievements: achievementsRef.current, totalCompletions: newTotal, dailyMilestones: dailyRef.current });
     await supabase
       .from("profiles")
       .update({ total_completions: newTotal })
