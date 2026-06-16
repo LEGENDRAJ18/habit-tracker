@@ -915,8 +915,9 @@ export default function CalendarPage() {
 
     async function load() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const user = session?.user ?? null;
+        // resolveUser() has awaitCachedUser() as Layer 0 plus per-layer
+        // timeouts — it's bounded and never hangs the way bare getSession() can.
+        const user = await resolveUser();
         if (!user) { setLoading(false); return; }
 
         const result = await Promise.race([

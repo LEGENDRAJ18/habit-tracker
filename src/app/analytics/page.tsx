@@ -11,6 +11,7 @@ import {
   ResponsiveContainer, Cell,
 } from "recharts";
 import { createClient } from "@/lib/supabase/client";
+import { resolveUser } from "@/lib/supabase/resolve-user";
 import type { Habit, HabitLog, Plan } from "@/types";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -609,8 +610,9 @@ export default function AnalyticsPage() {
 
     async function load() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const user = session?.user ?? null;
+        // resolveUser() has awaitCachedUser() as Layer 0 plus per-layer
+        // timeouts — it's bounded and never hangs the way bare getSession() can.
+        const user = await resolveUser();
         if (!user) { setLoading(false); return; }
         setUserId(user.id);
 
