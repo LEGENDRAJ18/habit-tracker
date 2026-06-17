@@ -320,7 +320,8 @@ export function useHabits() {
       return { error: null };
     }
 
-    type InsertResult = { data: Habit | null; error: { message: string } | null };
+    type InsertError = { message: string; code?: string; details?: string; hint?: string };
+    type InsertResult = { data: Habit | null; error: InsertError | null };
     const insertPayload = {
       user_id:                 user.id,
       name,
@@ -338,18 +339,39 @@ export function useHabits() {
       habit_type:              habitType       ?? "standard",
     };
 
+    console.log("[habit:insert] payload", JSON.stringify(insertPayload));
+
+    let _insertTimedOut = false;
     const doInsert = (): Promise<InsertResult> =>
       Promise.race<InsertResult>([
         (async (): Promise<InsertResult> => {
           const r = await supabase.from("habits").insert(insertPayload).select().single();
+          const err = r.error as InsertError | null;
+          if (err) {
+            console.error("[habit:insert] error", {
+              message: err.message,
+              code:    err.code,
+              details: err.details,
+              hint:    err.hint,
+            });
+          } else {
+            console.log("[habit:insert] success, id:", (r.data as Habit | null)?.id);
+          }
           return r as unknown as InsertResult;
         })(),
         new Promise<InsertResult>((resolve) =>
-          setTimeout(() => resolve({ data: null, error: { message: "Couldn't add — try again" } }), 6_000)
+          setTimeout(() => {
+            _insertTimedOut = true;
+            console.error("[habit:insert] TIMED OUT after 6s — insert never returned");
+            resolve({ data: null, error: { message: "Couldn't add — try again" } });
+          }, 6_000)
         ),
       ]);
 
     let { data, error } = await doInsert();
+    if (_insertTimedOut) {
+      console.error("[habit:insert] timed-out path: user_id =", user.id, "— insert is hanging (network or RLS?)");
+    }
 
     // Refresh-and-retry: covers the race where the token expires between
     // resolveUser() returning and the insert reaching the Supabase server.
