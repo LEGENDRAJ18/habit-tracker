@@ -341,37 +341,34 @@ export function useHabits() {
 
     console.log("[habit:insert] payload", JSON.stringify(insertPayload));
 
-    let _insertTimedOut = false;
-    const doInsert = (): Promise<InsertResult> =>
-      Promise.race<InsertResult>([
-        (async (): Promise<InsertResult> => {
-          const r = await supabase.from("habits").insert(insertPayload).select().single();
-          const err = r.error as InsertError | null;
-          if (err) {
-            console.error("[habit:insert] error", {
-              message: err.message,
-              code:    err.code,
-              details: err.details,
-              hint:    err.hint,
-            });
-          } else {
-            console.log("[habit:insert] success, id:", (r.data as Habit | null)?.id);
-          }
-          return r as unknown as InsertResult;
-        })(),
-        new Promise<InsertResult>((resolve) =>
-          setTimeout(() => {
-            _insertTimedOut = true;
-            console.error("[habit:insert] TIMED OUT after 6s — insert never returned");
-            resolve({ data: null, error: { message: "Couldn't add — try again" } });
-          }, 6_000)
-        ),
-      ]);
+    const doInsert = (): Promise<InsertResult> => {
+      let timerId: ReturnType<typeof setTimeout> | undefined;
+      const insertPromise = (async (): Promise<InsertResult> => {
+        const r = await supabase.from("habits").insert(insertPayload).select().single();
+        clearTimeout(timerId); // cancel timeout — insert returned, don't show false error
+        const err = r.error as InsertError | null;
+        if (err) {
+          console.error("[habit:insert] error", {
+            message: err.message,
+            code:    err.code,
+            details: err.details,
+            hint:    err.hint,
+          });
+        } else {
+          console.log("[habit:insert] success, id:", (r.data as Habit | null)?.id);
+        }
+        return r as unknown as InsertResult;
+      })();
+      const timeoutPromise = new Promise<InsertResult>((resolve) => {
+        timerId = setTimeout(() => {
+          console.error("[habit:insert] TIMED OUT after 15s — insert never returned, user_id:", user.id);
+          resolve({ data: null, error: { message: "Couldn't add — try again" } });
+        }, 15_000);
+      });
+      return Promise.race<InsertResult>([insertPromise, timeoutPromise]);
+    };
 
     let { data, error } = await doInsert();
-    if (_insertTimedOut) {
-      console.error("[habit:insert] timed-out path: user_id =", user.id, "— insert is hanging (network or RLS?)");
-    }
 
     // Refresh-and-retry: covers the race where the token expires between
     // resolveUser() returning and the insert reaching the Supabase server.
