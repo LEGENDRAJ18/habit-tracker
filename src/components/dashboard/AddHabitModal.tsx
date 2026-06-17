@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import {
   X, Loader2, Plus, ArrowRight,
   CheckCircle2, AlertTriangle, XCircle, Sparkles,
@@ -454,7 +455,7 @@ export default function AddHabitModal({
     </div>
   ) : null;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-sm modal-overlay-enter"
       onClick={onClose}
@@ -1033,6 +1034,7 @@ export default function AddHabitModal({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

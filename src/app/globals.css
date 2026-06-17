@@ -199,7 +199,11 @@ body {
 /* Page fade-in */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0);   }
+  to   { opacity: 1; }
+  /* NOTE: 'to' intentionally omits transform so the element's base transform
+     (none) is restored after the animation. If 'to' kept translateY(0),
+     the animated element would become a containing block for position:fixed
+     children even after animation ends, breaking overlay/modal centering. */
 }
 
 /* Skeleton shimmer */

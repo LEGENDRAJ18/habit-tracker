@@ -49,7 +49,12 @@ function readXPCache(): XPCache | null {
   } catch { return null; }
 }
 function writeXPCache(c: XPCache) {
-  try { localStorage.setItem(XP_CACHE_KEY, JSON.stringify(c)); } catch {}
+  try {
+    localStorage.setItem(XP_CACHE_KEY, JSON.stringify(c));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("habitai:xp", { detail: c }));
+    }
+  } catch {}
 }
 
 // IDs of milestones that reset daily vs. are one-time achievements
@@ -85,6 +90,25 @@ export function useXP() {
   const [supabase] = useState(() => createClient());
   // Prevents XP-awarding callbacks from running before the initial DB fetch completes
   const initialLoadDone = useRef(false);
+
+  // Sync XP state across all useXP() instances on the same page (e.g. DashboardNav + dashboard)
+  useEffect(() => {
+    function onXPEvent(e: Event) {
+      const c = (e as CustomEvent<XPCache>).detail;
+      xpRef.current           = c.xp;
+      levelRef.current        = c.level;
+      achievementsRef.current = c.achievements;
+      dailyRef.current        = c.dailyMilestones;
+      totalRef.current        = c.totalCompletions;
+      setXP(c.xp);
+      setLevel(c.level);
+      setAchievements(c.achievements);
+      setDailyMilestones(c.dailyMilestones);
+      setTotalCompletions(c.totalCompletions);
+    }
+    window.addEventListener("habitai:xp", onXPEvent);
+    return () => window.removeEventListener("habitai:xp", onXPEvent);
+  }, []);
 
   useEffect(() => {
     void (async () => {
