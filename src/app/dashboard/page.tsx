@@ -41,6 +41,7 @@ import TeacherDashboard from "@/components/dashboard/TeacherDashboard";
 import FocusTimer from "@/components/dashboard/FocusTimer";
 import FocusStatsWidget from "@/components/dashboard/FocusStatsWidget";
 import FirstCompletionModal from "@/components/dashboard/FirstCompletionModal";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import type { Habit } from "@/types";
 
 // ─── Greeting & quote ─────────────────────────────────────────────────────────
@@ -934,18 +935,20 @@ export default function DashboardPage() {
         </div>
 
         {/* Mood check-in */}
-        {!loading && habits.length > 0 && <MoodCheckin />}
+        {!loading && habits.length > 0 && <ErrorBoundary section="mood-checkin"><MoodCheckin /></ErrorBoundary>}
 
         {/* Daily AI check-in card */}
         {checkinHabit && isPaid && (
-          <AICheckinCard
-            missedHabitName={checkinHabit}
-            onDismiss={() => {
-              setCheckinHabit(null);
-              const todayKey = new Date().toISOString().split("T")[0];
-              localStorage.setItem(`ai_checkin_dismissed_${todayKey}`, "1");
-            }}
-          />
+          <ErrorBoundary section="ai-checkin">
+            <AICheckinCard
+              missedHabitName={checkinHabit}
+              onDismiss={() => {
+                setCheckinHabit(null);
+                const todayKey = new Date().toISOString().split("T")[0];
+                localStorage.setItem(`ai_checkin_dismissed_${todayKey}`, "1");
+              }}
+            />
+          </ErrorBoundary>
         )}
 
         {/* First habit wow moment */}
@@ -1105,6 +1108,7 @@ export default function DashboardPage() {
               const info = streakInfoMap.get(habit.id) ?? { streak: 0, freezeApplied: false, newFreezeUsed: false };
               const stackParent = habit.stack_after_id ? habits.find((h) => h.id === habit.stack_after_id) : undefined;
               return (
+              <ErrorBoundary key={habit.id} section="habit-card">
               <HabitCard
                 key={habit.id}
                 habit={habit}
@@ -1218,6 +1222,7 @@ export default function DashboardPage() {
                   setEditingHabitId(null);
                 }}
               />
+              </ErrorBoundary>
               );
             })}
 
@@ -1239,7 +1244,7 @@ export default function DashboardPage() {
               xpLoading={xpLoading}
               onOpenXP={() => setShowXPSheet(true)}
             />
-            {habits.some((h) => h.duration_minutes) && <FocusStatsWidget />}
+            {habits.some((h) => h.duration_minutes) && <ErrorBoundary section="focus-stats"><FocusStatsWidget /></ErrorBoundary>}
           </div>
         )}
 
@@ -1435,7 +1440,7 @@ export default function DashboardPage() {
 
           {/* Weekly Game Plan — Pro only, teaser for others */}
           {tier === "pro" ? (
-            <WeeklyPlanCard />
+            <ErrorBoundary section="weekly-plan"><WeeklyPlanCard /></ErrorBoundary>
           ) : (
             <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-3">

@@ -14,17 +14,31 @@ function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   return arr.buffer as ArrayBuffer;
 }
 
+// Discord/Instagram in-app browsers (WKWebView on iOS < 16.4, Android WebView)
+// do not expose the Notification API at all. Accessing Notification.permission
+// without this guard throws ReferenceError and crashes the dashboard.
+const notifPermission = (): NotificationPermission | null => {
+  if (typeof window === "undefined") return null;
+  if (typeof Notification === "undefined") return null;
+  return Notification.permission;
+};
+
+const hasNotifAPI = (): boolean =>
+  typeof window !== "undefined" &&
+  typeof Notification !== "undefined" &&
+  "serviceWorker" in navigator &&
+  "PushManager" in window;
+
 export function usePushNotifications() {
   const [showModal, setShowModal] = useState(false);
   const [isSubscribed, setSubscribed] = useState(
-    () => typeof window !== "undefined" && Notification.permission === "granted"
+    () => notifPermission() === "granted"
   );
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
-    if (Notification.permission === "granted") return;
-    if (Notification.permission === "denied") return;
+    if (!hasNotifAPI()) return;
+    if (notifPermission() === "granted") return;
+    if (notifPermission() === "denied") return;
     if (localStorage.getItem(DISMISSED_KEY)) return;
     if (localStorage.getItem(SUBSCRIBED_KEY)) return;
 
@@ -61,6 +75,7 @@ export function usePushNotifications() {
 
   const allow = useCallback(async () => {
     setShowModal(false);
+    if (!hasNotifAPI()) return;
     const permission = await Notification.requestPermission();
     if (permission === "granted") {
       await subscribe();
@@ -76,7 +91,8 @@ export function usePushNotifications() {
 
   // Allow external trigger (e.g. from settings page "Enable notifications" button)
   const requestPermission = useCallback(async (): Promise<boolean> => {
-    if (Notification.permission === "granted") {
+    if (!hasNotifAPI()) return false;
+    if (notifPermission() === "granted") {
       return subscribe();
     }
     const permission = await Notification.requestPermission();
@@ -88,10 +104,9 @@ export function usePushNotifications() {
 
   // Called after onboarding completes — show modal immediately (no timeout)
   const showAfterOnboarding = useCallback(() => {
-    if (typeof window === "undefined") return;
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
-    if (Notification.permission === "granted") return; // already subscribed
-    if (Notification.permission === "denied") return;
+    if (!hasNotifAPI()) return;
+    if (notifPermission() === "granted") return; // already subscribed
+    if (notifPermission() === "denied") return;
     if (localStorage.getItem(DISMISSED_KEY)) return;
     setShowModal(true);
   }, []);

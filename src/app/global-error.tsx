@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import posthog from "posthog-js";
 
 export default function GlobalError({
   error,
@@ -10,7 +11,15 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("Root layout error:", error);
+    console.error("[GlobalErrorBoundary] caught:", error.message, error.stack);
+    try {
+      posthog.capture("global_error_boundary", {
+        error_message: error.message,
+        error_stack:   error.stack?.slice(0, 1000),
+        digest:        error.digest,
+        url:           typeof window !== "undefined" ? window.location.href : "",
+      });
+    } catch {}
   }, [error]);
 
   return (

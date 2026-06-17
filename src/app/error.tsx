@@ -3,8 +3,9 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { RefreshCw, Home } from "lucide-react";
+import posthog from "posthog-js";
 
-export default function GlobalError({
+export default function AppError({
   error,
   reset,
 }: {
@@ -12,7 +13,15 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("App error:", error);
+    console.error("[ErrorBoundary] caught:", error.message, error.stack);
+    try {
+      posthog.capture("app_error_boundary", {
+        error_message: error.message,
+        error_stack:   error.stack?.slice(0, 1000),
+        digest:        error.digest,
+        url:           typeof window !== "undefined" ? window.location.href : "",
+      });
+    } catch {}
   }, [error]);
 
   return (
@@ -21,16 +30,27 @@ export default function GlobalError({
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-red-700/5 rounded-full blur-[140px]" />
       </div>
 
-      <div className="relative text-center max-w-md">
+      <div className="relative text-center max-w-md w-full">
         <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-red-950/40 border border-red-500/20 flex items-center justify-center">
           <span className="text-3xl">⚡</span>
         </div>
 
         <h1 className="text-2xl font-bold text-white mb-2">Something went wrong</h1>
-        <p className="text-slate-500 text-sm leading-relaxed mb-8">
+        <p className="text-slate-500 text-sm leading-relaxed mb-6">
           We hit an unexpected error. Our team has been notified.
           <br />Please try refreshing — it usually fixes it.
         </p>
+
+        {/* Error details — visible so users can report the exact message */}
+        <details className="mb-6 text-left bg-[#0f0f1a] border border-red-900/30 rounded-xl overflow-hidden">
+          <summary className="px-4 py-2 text-xs text-slate-500 cursor-pointer select-none hover:text-slate-400">
+            Technical details
+          </summary>
+          <pre className="px-4 pb-3 text-[11px] text-red-400/80 whitespace-pre-wrap break-all leading-relaxed max-h-40 overflow-y-auto">
+            {error.message}
+            {error.digest ? `\ndigest: ${error.digest}` : ""}
+          </pre>
+        </details>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
