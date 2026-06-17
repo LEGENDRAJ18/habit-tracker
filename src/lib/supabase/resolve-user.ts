@@ -1,4 +1,4 @@
-import { createClient, awaitCachedUser } from "./client";
+import { createClient, awaitCachedUser, getCachedExpiresAt } from "./client";
 
 // Resolves the current authenticated user with three layers of fallback.
 //
@@ -22,10 +22,15 @@ export async function resolveUser() {
   // Layer 0: zero-network — waits out the Supabase client init window then reads cache.
   // Resolves in <1ms when already initialised; waits up to 2s during the brief null window
   // (between createBrowserClient() and the first INITIAL_SESSION/SIGNED_IN event).
+  // Skips if the cached token is expired/near-expiry so Layers 1-3 can refresh it.
   const cachedUser = await awaitCachedUser(2_000);
-  if (cachedUser) {
+  const cachedExpiry = getCachedExpiresAt();
+  if (cachedUser && cachedExpiry > Date.now() + 10_000) {
     console.log(`[auth] resolveUser → cache (${Math.round(performance.now() - t0)}ms)`);
     return cachedUser;
+  }
+  if (cachedUser) {
+    console.log(`[auth] resolveUser → cached token expired/expiring (${new Date(cachedExpiry).toISOString()}), falling through to refresh`);
   }
 
   // Layer 1: fast path — reads from memory, almost always instant
@@ -35,9 +40,14 @@ export async function resolveUser() {
       setTimeout(() => resolve({ data: { session: null } }), 500)
     ),
   ]);
-  if (sessionData.session?.user) {
+  const session1 = sessionData.session;
+  const expiresAt1 = (session1?.expires_at ?? 0) * 1_000;
+  if (session1?.user && expiresAt1 > Date.now() + 10_000) {
     console.log(`[auth] resolveUser → session (${Math.round(performance.now() - t0)}ms)`);
-    return sessionData.session.user;
+    return session1.user;
+  }
+  if (session1?.user) {
+    console.log(`[auth] resolveUser → session token expired/expiring (${new Date(expiresAt1).toISOString()}), falling through to getUser()`);
   }
 
   // Layer 2: server-side validation / token refresh

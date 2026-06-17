@@ -262,14 +262,11 @@ export function useHabits() {
     difficulty?: number | null,
     habitType?: "standard" | "limit",
   ): Promise<{ error: string | null }> => {
-    // Fast path: getSession() reads from memory and is nearly instant (<50ms).
-    // Only call resolveUser() (network, up to ~6.5s) when there is no local session.
+    // resolveUser() checks token expiry at every layer and refreshes via
+    // getUser()/refreshSession() if expired, so the token is guaranteed fresh
+    // by the time we reach the insert below.
     const t0 = performance.now();
-    const { data: { session: fastSession } } = await Promise.race([
-      supabase.auth.getSession(),
-      new Promise<{ data: { session: null } }>((r) => setTimeout(() => r({ data: { session: null } }), 500)),
-    ]);
-    const user = fastSession?.user ?? await resolveUser();
+    const user = await resolveUser();
     console.log(`[habit] auth resolve ${Math.round(performance.now() - t0)}ms, user ${user?.id ?? "null"}`);
     if (!user) return { error: "Not authenticated" };
     console.log(`[habit] creating habit "${name}" for ${user.id}`);
@@ -323,37 +320,47 @@ export function useHabits() {
       return { error: null };
     }
 
-    // 5-second timeout on the insert — prevents the template modal from
-    // spinning forever if Supabase is slow.
     type InsertResult = { data: Habit | null; error: { message: string } | null };
-    const { data, error } = await Promise.race<InsertResult>([
-      (async (): Promise<InsertResult> => {
-        const result = await supabase
-          .from("habits")
-          .insert({
-            user_id:                 user.id,
-            name,
-            description:             description || null,
-            frequency,
-            stack_after_id:          stackAfterId    ?? null,
-            when_time:               whenTime        ?? null,
-            where_location:          whereLocation   ?? null,
-            how_long:                howLong         ?? null,
-            validity_score:          validityScore   ?? "valid",
-            preferred_reminder_time: reminderTime    ?? null,
-            duration_minutes:        durationMinutes ?? null,
-            xp_value:                xpValue         ?? 10,
-            difficulty:              difficulty      ?? 1,
-            habit_type:              habitType       ?? "standard",
-          })
-          .select()
-          .single();
-        return result as InsertResult;
-      })(),
-      new Promise<InsertResult>((resolve) =>
-        setTimeout(() => resolve({ data: null, error: { message: "Couldn't add — try again" } }), 6_000)
-      ),
-    ]);
+    const insertPayload = {
+      user_id:                 user.id,
+      name,
+      description:             description || null,
+      frequency,
+      stack_after_id:          stackAfterId    ?? null,
+      when_time:               whenTime        ?? null,
+      where_location:          whereLocation   ?? null,
+      how_long:                howLong         ?? null,
+      validity_score:          validityScore   ?? "valid",
+      preferred_reminder_time: reminderTime    ?? null,
+      duration_minutes:        durationMinutes ?? null,
+      xp_value:                xpValue         ?? 10,
+      difficulty:              difficulty      ?? 1,
+      habit_type:              habitType       ?? "standard",
+    };
+
+    const doInsert = (): Promise<InsertResult> =>
+      Promise.race<InsertResult>([
+        (async (): Promise<InsertResult> => {
+          const r = await supabase.from("habits").insert(insertPayload).select().single();
+          return r as unknown as InsertResult;
+        })(),
+        new Promise<InsertResult>((resolve) =>
+          setTimeout(() => resolve({ data: null, error: { message: "Couldn't add — try again" } }), 6_000)
+        ),
+      ]);
+
+    let { data, error } = await doInsert();
+
+    // Refresh-and-retry: covers the race where the token expires between
+    // resolveUser() returning and the insert reaching the Supabase server.
+    if (error && /jwt|expired|not authorized/i.test(error.message ?? "")) {
+      console.log("[habit] JWT error on insert, refreshing token and retrying...");
+      const { data: refreshData } = await supabase.auth.refreshSession();
+      if (refreshData.session) {
+        console.log(`[habit] token refreshed (new expiry: ${new Date((refreshData.session.expires_at ?? 0) * 1_000).toISOString()}), retrying insert`);
+        ({ data, error } = await doInsert());
+      }
+    }
 
     if (error) {
       // Revert the optimistic add
@@ -503,11 +510,27 @@ export function useHabits() {
         return;
       }
 
-      const { data, error: insertErr } = await supabase
+      let logResult = await supabase
         .from("habit_logs")
         .insert({ habit_id: habitId, user_id: user.id, completed_at: now, outcome: "success" })
         .select()
         .single();
+
+      // Refresh-and-retry on JWT expiry (token may have expired during idle)
+      if (logResult.error && /jwt|expired|not authorized/i.test(logResult.error.message ?? "")) {
+        console.log("[habit] JWT error on log insert, refreshing and retrying...");
+        const { data: refreshData } = await supabase.auth.refreshSession();
+        if (refreshData.session) {
+          console.log(`[habit] token refreshed, retrying log insert`);
+          logResult = await supabase
+            .from("habit_logs")
+            .insert({ habit_id: habitId, user_id: refreshData.session.user.id, completed_at: now, outcome: "success" })
+            .select()
+            .single();
+        }
+      }
+
+      const { data, error: insertErr } = logResult;
 
       if (insertErr || !data) {
         setTodayLogs((prev) => prev.filter((l) => l.id !== tempId));

@@ -18,6 +18,9 @@ let _listenerAttached = false;
 // createBrowserClient() but before INITIAL_SESSION fires.  awaitCachedUser()
 // waits out this window so callers never incorrectly see "not authenticated".
 let _cachedUser: User | null | undefined = undefined;
+// Unix-ms expiry of the current access token; 0 = unknown.
+// Updated on every INITIAL_SESSION / TOKEN_REFRESHED / SIGNED_IN event.
+let _cachedExpiresAt: number = 0;
 
 // Callbacks queued while _cachedUser is still undefined
 let _waiters: Array<(user: User | null) => void> = [];
@@ -31,6 +34,9 @@ let _waiters: Array<(user: User | null) => void> = [];
  * - Timeout (default 2 s) → resolves with whatever we have (usually null only
  *   when there is genuinely no session)
  */
+/** Returns the Unix-ms expiry of the cached access token (0 = unknown/signed-out). */
+export function getCachedExpiresAt(): number { return _cachedExpiresAt; }
+
 export function awaitCachedUser(timeoutMs = 2_000): Promise<User | null> {
   if (_cachedUser !== undefined) return Promise.resolve(_cachedUser);
 
@@ -91,6 +97,7 @@ export function createClient() {
     client.auth.onAuthStateChange((_event, session) => {
       const user = session?.user ?? null;
       _cachedUser = user;
+      _cachedExpiresAt = (session?.expires_at ?? 0) * 1_000;
       // Wake any callers that were waiting in awaitCachedUser()
       const waiting = _waiters.splice(0);
       waiting.forEach((w) => w(user));
@@ -103,6 +110,14 @@ export function createClient() {
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible" && _client) {
         void _client.auth.startAutoRefresh();
+        // startAutoRefresh() restarts the timer but doesn't immediately fetch
+        // a new token. If the tab was idle long enough for the token to expire,
+        // the user's very first mutation would fail before the timer fires.
+        // Proactively call refreshSession() so the token is fresh before any action.
+        if (_cachedExpiresAt > 0 && _cachedExpiresAt < Date.now() + 60_000) {
+          console.log(`[auth] token expired/expiring on tab focus (${new Date(_cachedExpiresAt).toISOString()}), proactive refresh`);
+          void _client.auth.refreshSession();
+        }
       }
     });
   }
