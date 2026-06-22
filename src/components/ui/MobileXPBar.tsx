@@ -21,12 +21,13 @@ const LEVEL_COLORS: Record<LevelColorKey, { text: string; bar: string }> = {
 };
 
 export default function MobileXPBar() {
-  const { xp, level } = useXP();
+  const { xp, level, previewBonus } = useXP();
   const colorKey = levelColorKey(level);
   const s = LEVEL_COLORS[colorKey];
-  const pct = xpProgressPct(xp);
-  const into = xpIntoLevel(xp);
-  const span = xpSpanOfLevel(xp);
+  const previewXP = xp + previewBonus;
+  const pct = xpProgressPct(previewXP);
+  const into = xpIntoLevel(previewXP);
+  const span = xpSpanOfLevel(previewXP);
 
   return (
     <div className="sm:hidden bg-[#09090f]/95 border-b border-violet-900/20 px-4 h-9 flex items-center gap-3">
@@ -42,6 +43,9 @@ export default function MobileXPBar() {
       <span className={`text-[10px] ${s.text} flex-shrink-0 whitespace-nowrap`}>
         {into.toLocaleString()} / {span.toLocaleString()} XP · Lv {level + 1}
       </span>
+      {previewBonus > 0 && (
+        <span className="text-[10px] font-bold text-emerald-400 flex-shrink-0 animate-pulse">+{previewBonus}</span>
+      )}
     </div>
   );
 }

@@ -54,15 +54,21 @@ Triggers for immediate block:
 
 ══ HABIT QUALITY RULES ══
 good   = specific, measurable, actionable (e.g. "Run 5km daily", "Read 20 pages before bed")
-warning = too vague, leisure/entertainment, or missing frequency/duration — earns only 50% XP
+warning = too vague, leisure/entertainment, or missing duration/specificity — earns only 50% XP
 blocked = not a trackable habit: pure emotion, nonsense, single noun, random phrase, inappropriate
+
+══ APP CONTEXT — IMPORTANT ══
+This screen has no "frequency" field on the habit name itself — cadence (daily/weekly, or
+specific days) is always chosen separately via its own selector or a calendar day-picker
+in a later step, and it always has a value. NEVER say a habit "lacks frequency" or "needs
+to specify how often" — only duration and activity specificity can be flagged as missing.
 
 ══ MESSAGE REQUIREMENTS — MANDATORY ══
 Every message MUST:
 1. Mention the habit by name
 2. Explain specifically WHY it is good / vague / blocked
-   - good   → explain the concrete benefit AND what makes it specific (duration, frequency, action)
-   - warning → name EXACTLY what information is missing (frequency? duration? activity type?) and why that matters
+   - good   → explain the concrete benefit AND what makes it specific (duration, action)
+   - warning → name EXACTLY what information is missing (duration? activity type/specificity?) and why that matters
    - blocked → explain why it cannot be tracked and suggest a real alternative
 3. Stay under 30 words. Conversational tone. No filler phrases like "looks great!".
 
@@ -148,7 +154,7 @@ const ABSTRACT_RE = /\b(meaning\s+of\s+life|universe|consciousness|enlightenment
 
 const BLOCKED_RE = /^\d+$|^(.)\1{3,}$|^[^a-zA-Z]{2,}$/;
 
-function ruleBasedValidation(name: string): ValidationResponse {
+function ruleBasedValidation(name: string, selected?: { hasDuration?: boolean }): ValidationResponse {
   const lower = name.trim().toLowerCase();
   const words = lower.split(/\s+/).filter(Boolean);
   const cap   = name.trim().charAt(0).toUpperCase() + name.trim().slice(1);
@@ -170,36 +176,49 @@ function ruleBasedValidation(name: string): ValidationResponse {
     };
   }
 
+  const hasDur = detectDurationContext(name) || selected?.hasDuration === true;
+
   if (words.length === 1 && GENERIC_WORDS.has(words[0])) {
+    if (hasDur) {
+      return {
+        status:  "good",
+        message: `'${cap}' has a duration set, giving you a concrete target to track each time.`,
+      };
+    }
     return {
       status:     "warning",
-      message:    `'${cap}' is too vague — there's no frequency, duration, or specifics to track. Add how long or how often.`,
+      message:    `'${cap}' is too vague — there's no duration or specifics to track. Add how long, or set a duration below.`,
       suggestion: GENERIC_SUGGESTIONS[words[0]] ?? `${cap} for 20 minutes every day`,
     };
   }
 
   if (words.length === 1) {
+    if (hasDur) {
+      return {
+        status:  "good",
+        message: `'${cap}' has a duration set — that's enough detail to track consistently.`,
+      };
+    }
     return {
       status:  "warning",
-      message: `'${cap}' needs more detail — what exactly will you do, how often, and for how long?`,
+      message: `'${cap}' needs more detail — what exactly will you do, and for how long?`,
     };
   }
 
   // Multi-word habit — check if it has some specificity
   const hasTimeLoc  = detectTimeContext(name);
-  const hasDurLoc   = detectDurationContext(name);
   const hasNumber   = /\d/.test(lower);
   const hasFreq     = /\b(daily|every|each|per|weekly|morning|evening|night|before|after)\b/.test(lower);
 
   // If the habit already contains time and duration info, it's strong enough
-  if (hasTimeLoc && hasDurLoc) {
+  if (hasTimeLoc && hasDur) {
     return {
       status:  "good",
       message: `'${cap}' is specific and measurable — clear time, duration, and action to track.`,
     };
   }
 
-  if (hasNumber || hasFreq || hasTimeLoc || hasDurLoc) {
+  if (hasNumber || hasFreq || hasTimeLoc || hasDur) {
     return {
       status:  "good",
       message: `'${cap}' is specific and measurable — you have a clear target to track.`,
@@ -207,10 +226,9 @@ function ruleBasedValidation(name: string): ValidationResponse {
   }
 
   // Generate warning that doesn't contradict what's already there
-  const missing: string[] = [];
-  if (!hasDurLoc && !hasNumber) missing.push("a duration");
-  if (!hasTimeLoc && !hasFreq) missing.push("a frequency");
-  const missingText = missing.length > 0 ? `adding ${missing.join(" and ")} makes it fully trackable.` : "more specifics would make it even stronger.";
+  const missingText = !hasDur && !hasNumber
+    ? "adding a duration makes it fully trackable."
+    : "more specifics would make it even stronger.";
 
   // Only suggest if we can generate a sensible sentence.
   // Never blindly append "for 20 minutes every morning" to arbitrary multi-word phrases.
@@ -230,7 +248,10 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const body = await request.json() as { habitName?: string; goals?: string[]; calendarContext?: boolean };
+    const body = await request.json() as {
+      habitName?: string; goals?: string[]; calendarContext?: boolean;
+      hasDuration?: boolean; hasWhen?: boolean;
+    };
     const habitName = body.habitName?.trim() ?? "";
     const goals = Array.isArray(body.goals) && body.goals.length > 0 ? body.goals : null;
     const calendarContext = body.calendarContext === true;
@@ -243,18 +264,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json<ValidationResponse>(INAPPROPRIATE_RESPONSE);
     }
 
-    const hasTime     = detectTimeContext(habitName);
-    const hasDuration = detectDurationContext(habitName);
+    // "Selected" flags reflect the form's own When/Duration pickers, not just
+    // text typed into the name — a duration chosen via the dropdown counts
+    // just as much as one written into the habit name.
+    const hasTime     = detectTimeContext(habitName) || body.hasWhen === true;
+    const hasDuration = detectDurationContext(habitName) || body.hasDuration === true;
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json<ValidationResponse>(ruleBasedValidation(habitName));
+      return NextResponse.json<ValidationResponse>(ruleBasedValidation(habitName, { hasDuration }));
     }
 
     // Build context notes so AI doesn't contradict already-specified info
     const contextNotes: string[] = [];
-    if (hasTime)     contextNotes.push("The habit name already specifies a time of day. Do NOT suggest adding 'when' as something missing.");
-    if (hasDuration) contextNotes.push("The habit name already specifies a duration. Do NOT suggest adding duration or time commitment.");
+    if (hasTime)     contextNotes.push("The user has already set a time of day via a separate form field. Do NOT suggest adding 'when' as something missing.");
+    if (hasDuration) contextNotes.push("The user has already set a duration via a separate form field. Do NOT suggest adding duration or time commitment.");
 
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -284,7 +308,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!res.ok) {
-      return NextResponse.json<ValidationResponse>(ruleBasedValidation(habitName));
+      return NextResponse.json<ValidationResponse>(ruleBasedValidation(habitName, { hasDuration }));
     }
 
     const data = await res.json();
@@ -292,7 +316,7 @@ export async function POST(request: NextRequest) {
 
     // Sanitise — never return an unknown status
     if (!["good", "warning", "blocked"].includes(parsed.status)) {
-      return NextResponse.json<ValidationResponse>(ruleBasedValidation(habitName));
+      return NextResponse.json<ValidationResponse>(ruleBasedValidation(habitName, { hasDuration }));
     }
 
     // Second-pass moderation: if AI returned "good" or "warning" but the habit name

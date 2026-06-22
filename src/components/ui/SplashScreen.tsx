@@ -33,7 +33,12 @@ export default function SplashScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (phase === "gone") return null;
+  // "pre" is the universal first-paint state (server and client must match to
+  // avoid a hydration mismatch), but its content is invisible (opacity 0) — so
+  // rendering the full-screen backdrop during "pre" shows a dim overlay with
+  // nothing on top until the 50ms timeout flips to "in". Skip rendering until
+  // there's actual content to show.
+  if (phase === "pre" || phase === "gone") return null;
 
   const isIn      = phase === "in" || phase === "pulse";
   const isPulsing = phase === "pulse";

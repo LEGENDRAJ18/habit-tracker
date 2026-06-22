@@ -9,8 +9,10 @@ import {
 } from "lucide-react";
 import type { Habit, Plan } from "@/types";
 import { useHabitValidation } from "@/hooks/useHabitValidation";
+import { setXPPreview } from "@/hooks/useXP";
 import { DURATION_BONUS_XP } from "@/lib/xp";
 import { lockScroll, unlockScroll } from "@/lib/scroll-lock";
+import { toast } from "@/components/ui/Toast";
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
@@ -342,7 +344,12 @@ export default function AddHabitModal({
   }, []);
 
   const isSchedulingMode = !!(withScheduling && onSchedule);
-  const aiValidation = useHabitValidation(name, goals, 400, isSchedulingMode);
+  const hasDurationSelected = !!howLong || durationMinutes !== null;
+  const hasWhenSelected     = !!whenTime;
+  const aiValidation = useHabitValidation(name, goals, 400, isSchedulingMode, {
+    hasDuration: hasDurationSelected,
+    hasWhen: hasWhenSelected,
+  });
   const duplicate    = name.trim().length > 2 && isDuplicate(name, existingHabits);
 
   // Difficulty derived from current name
@@ -393,6 +400,16 @@ export default function AddHabitModal({
     : aiValidation.status === "warning" ? "partial"
     : "valid";
 
+  // Live-preview the per-completion "+XP" shown below — mirrors the same
+  // condition as the difficulty badge — on the top XP bar while this modal
+  // is open. Cleared on unmount (cancel, close, or after a successful add).
+  useEffect(() => {
+    const showsBadge = name.trim().length > 2 && !duplicate && aiValidation.status !== "blocked";
+    setXPPreview(showsBadge ? difficulty.xp + durationBonus : 0);
+  }, [name, duplicate, aiValidation.status, difficulty.xp, durationBonus]);
+
+  useEffect(() => () => setXPPreview(0), []);
+
   // Step 1 → step 2 (calendar mode). Uses type="button" onClick, NOT form submit,
   // so there's zero interference from browser form validation.
   const goToStep2 = () => {
@@ -426,7 +443,7 @@ export default function AddHabitModal({
       );
       const { error } = await Promise.race([addPromise, timeoutPromise]);
       if (error) { setError(error); setLoading(false); }
-      else onClose();
+      else { toast(`"${name.trim()}" added ✓`, "success"); onClose(); }
     } catch {
       setError("Couldn't save habit — please try again.");
       setLoading(false);
@@ -441,6 +458,7 @@ export default function AddHabitModal({
       whenTime || null, whereLocation || null, howLong || null, getValidity(),
       Array.from(selectedDates).sort(),
     );
+    toast(`"${name.trim()}" added to your plan ✓`, "success");
     onClose();
   };
 
@@ -934,6 +952,7 @@ export default function AddHabitModal({
                       whenTime || null, whereLocation || null, howLong || null, getValidity(),
                       [scheduledDate],
                     );
+                    toast(`"${name.trim()}" added to your plan ✓`, "success");
                     onClose();
                   }}
                   className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl text-sm transition-all flex items-center justify-center gap-2"

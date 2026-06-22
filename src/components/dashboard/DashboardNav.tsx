@@ -72,10 +72,10 @@ function PlanBadge({ tier }: { tier: Plan }) {
 
 /** Compact XP pill shown in the navbar on mobile only */
 function MobileNavXP() {
-  const { xp, level, xpLoading } = useXP();
+  const { xp, level, xpLoading, previewBonus } = useXP();
   const colorKey = levelColorKey(level);
   const s        = LEVEL_COLORS[colorKey];
-  const into     = xpIntoLevel(xp);
+  const into     = xpIntoLevel(xp + previewBonus);
 
   if (xpLoading) return (
     <div className="sm:hidden h-7 w-28 skeleton rounded-full flex-shrink-0" />
@@ -88,17 +88,21 @@ function MobileNavXP() {
       <span className="text-[11px] font-medium text-slate-300 tabular-nums leading-none">
         {into.toLocaleString()} XP
       </span>
+      {previewBonus > 0 && (
+        <span className="text-[10px] font-bold text-emerald-400 leading-none animate-pulse">+{previewBonus}</span>
+      )}
     </div>
   );
 }
 
 /** Full XP widget shown on desktop (sm+) */
 function NavXP() {
-  const { xp, level, xpLoading } = useXP();
+  const { xp, level, xpLoading, previewBonus } = useXP();
   const colorKey   = levelColorKey(level);
   const s          = LEVEL_COLORS[colorKey];
-  const pct        = xpProgressPct(xp);
-  const into       = xpIntoLevel(xp);
+  const previewXP  = xp + previewBonus;
+  const pct        = xpProgressPct(previewXP);
+  const into       = xpIntoLevel(previewXP);
   const nextReward = getNextReward(level);
 
   if (xpLoading) return (
@@ -119,6 +123,9 @@ function NavXP() {
         </div>
         <span className={`text-[9px] font-medium tabular-nums ${s.text} leading-none whitespace-nowrap`}>
           {into.toLocaleString()} XP
+          {previewBonus > 0 && (
+            <span className="text-emerald-400 font-bold animate-pulse">{" "}+{previewBonus}</span>
+          )}
           {nextReward && (
             <span className="text-slate-600 font-normal">
               {" · "}Next reward: Lv {nextReward.level} {nextReward.icon}

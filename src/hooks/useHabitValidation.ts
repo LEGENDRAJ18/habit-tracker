@@ -12,14 +12,30 @@ export interface HabitValidation {
 
 const IDLE: HabitValidation = { status: "idle", message: "" };
 
-export function useHabitValidation(habitName: string, goals?: string[], debounceMs = 400, calendarContext = false): HabitValidation {
+export interface HabitSelections {
+  /** A duration has been chosen via the form's duration picker (not just typed into the name) */
+  hasDuration?: boolean;
+  /** A time of day has been chosen via the form's "When?" picker */
+  hasWhen?: boolean;
+}
+
+export function useHabitValidation(
+  habitName: string, goals?: string[], debounceMs = 400, calendarContext = false,
+  selections?: HabitSelections,
+): HabitValidation {
   const [result, setResult] = useState<HabitValidation>(IDLE);
   const timerRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastQueried   = useRef("");
   const abortRef      = useRef<AbortController | null>(null);
 
+  const hasDuration = selections?.hasDuration ?? false;
+  const hasWhen     = selections?.hasWhen ?? false;
+
   useEffect(() => {
     const trimmed = habitName.trim();
+    // Selections are part of the query identity — changing them must re-validate
+    // even when the name text itself didn't change.
+    const queryKey = `${trimmed}|${hasDuration ? 1 : 0}|${hasWhen ? 1 : 0}`;
 
     if (trimmed.length < 4) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -28,8 +44,8 @@ export function useHabitValidation(habitName: string, goals?: string[], debounce
       return;
     }
 
-    // Already have a result for exactly this text — keep it
-    if (trimmed === lastQueried.current) return;
+    // Already have a result for this exact text + selections — keep it
+    if (queryKey === lastQueried.current) return;
 
     // Cancel pending debounce and any in-flight request
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -46,14 +62,19 @@ export function useHabitValidation(habitName: string, goals?: string[], debounce
         const res = await fetch("/api/validate-habit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ habitName: trimmed, goals, calendarContext: calendarContext || undefined }),
+          body: JSON.stringify({
+            habitName: trimmed, goals,
+            calendarContext: calendarContext || undefined,
+            hasDuration: hasDuration || undefined,
+            hasWhen: hasWhen || undefined,
+          }),
           signal: controller.signal,
         });
 
         if (!res.ok) { setResult(IDLE); return; }
 
         const data = await res.json() as HabitValidation;
-        lastQueried.current = trimmed;
+        lastQueried.current = queryKey;
         // Treat an empty message as idle (server silently passed rate-limit)
         setResult(data.message ? data : IDLE);
       } catch (err) {
@@ -66,7 +87,7 @@ export function useHabitValidation(habitName: string, goals?: string[], debounce
       abortRef.current?.abort();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [habitName, goals?.join(","), debounceMs, calendarContext]);
+  }, [habitName, goals?.join(","), debounceMs, calendarContext, hasDuration, hasWhen]);
 
   return result;
 }

@@ -57,6 +57,18 @@ function writeXPCache(c: XPCache) {
   } catch {}
 }
 
+// ─── Live XP preview ──────────────────────────────────────────────────────────
+// Lets the Add Habit modal broadcast the "+XP" it's currently showing in the
+// form so the top XP bar can preview it live, without touching real XP/level
+// state (XP is only ever actually earned on habit completion, not on add).
+
+/** Broadcast (or clear with 0) a live XP preview amount for the top XP bar to show. */
+export function setXPPreview(amount: number) {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("habitai:xp-preview", { detail: amount }));
+  }
+}
+
 // IDs of milestones that reset daily vs. are one-time achievements
 const DAILY_MILESTONE_IDS = ["first_habit_today", "all_habits_today"] as const;
 type DailyMilestoneId = (typeof DAILY_MILESTONE_IDS)[number];
@@ -79,6 +91,9 @@ export function useXP() {
   const [justLeveledUp, setJustLeveledUp]   = useState<number | null>(null);
   // xpLoading is false immediately when cache exists — no skeleton flash for returning users
   const [xpLoading, setXPLoading]           = useState(!cached);
+  // Live preview of the "+XP" currently shown in the Add Habit modal — purely
+  // visual, never persisted or added to real xp/level state.
+  const [previewBonus, setPreviewBonus]     = useState(0);
 
   // Use refs to avoid stale closure in callbacks
   const xpRef           = useRef(0);
@@ -108,6 +123,15 @@ export function useXP() {
     }
     window.addEventListener("habitai:xp", onXPEvent);
     return () => window.removeEventListener("habitai:xp", onXPEvent);
+  }, []);
+
+  // Sync the live XP preview across all useXP() instances (e.g. DashboardNav)
+  useEffect(() => {
+    function onPreviewEvent(e: Event) {
+      setPreviewBonus((e as CustomEvent<number>).detail ?? 0);
+    }
+    window.addEventListener("habitai:xp-preview", onPreviewEvent);
+    return () => window.removeEventListener("habitai:xp-preview", onPreviewEvent);
   }, []);
 
   useEffect(() => {
@@ -356,6 +380,7 @@ export function useXP() {
     totalCompletions,
     justLeveledUp,
     xpLoading,
+    previewBonus,
     isDailyAchieved,
     onHabitCompleted,
     onDailyOpen,
