@@ -115,37 +115,173 @@ function detectDurationFromName(name: string): { howLong: string | null; duratio
 }
 
 const DIFFICULTY_LEVELS = [
-  { level: 1, label: "Easy",      emoji: "🟢", xp: 10,  color: "text-emerald-400", bg: "bg-emerald-950/30 border-emerald-800/30" },
-  { level: 2, label: "Light",     emoji: "🟡", xp: 15,  color: "text-yellow-400",  bg: "bg-yellow-950/30 border-yellow-800/30"  },
-  { level: 3, label: "Medium",    emoji: "🟠", xp: 25,  color: "text-orange-400",  bg: "bg-orange-950/30 border-orange-800/30"  },
-  { level: 4, label: "Hard",      emoji: "🔴", xp: 40,  color: "text-red-400",     bg: "bg-red-950/30 border-red-800/30"        },
-  { level: 5, label: "Very Hard", emoji: "🔥", xp: 60,  color: "text-fuchsia-400", bg: "bg-fuchsia-950/30 border-fuchsia-800/30"},
+  { level: 1, label: "Very Easy", emoji: "🟢", xp: 5,  color: "text-emerald-400", bg: "bg-emerald-950/30 border-emerald-800/30" },
+  { level: 2, label: "Easy",      emoji: "🟡", xp: 10, color: "text-yellow-400",  bg: "bg-yellow-950/30 border-yellow-800/30"  },
+  { level: 3, label: "Normal",    emoji: "🟠", xp: 20, color: "text-orange-400",  bg: "bg-orange-950/30 border-orange-800/30"  },
+  { level: 4, label: "Hard",      emoji: "🔴", xp: 35, color: "text-red-400",     bg: "bg-red-950/30 border-red-800/30"        },
+  { level: 5, label: "Extreme",   emoji: "🔥", xp: 50, color: "text-fuchsia-400", bg: "bg-fuchsia-950/30 border-fuchsia-800/30"},
 ] as const;
+
+// Magnitude extraction is unit-aware (distance beats duration beats a bare
+// rep count) and tolerant of hyphens ("30-min") so "1000 pushup" and
+// "1000 pushups" always resolve to the exact same number — singular/plural
+// must never change the result.
+function extractMagnitude(lower: string): { value: number; unit: "reps" | "km" | "min" | null } {
+  const km = lower.match(/\b(\d+(?:\.\d+)?)[\s-]*(?:km|kilometres?|kilometers?)\b/);
+  if (km) return { value: parseFloat(km[1]), unit: "km" };
+  const mi = lower.match(/\b(\d+(?:\.\d+)?)[\s-]*(?:mi|miles?)\b/);
+  if (mi) return { value: parseFloat(mi[1]) * 1.609, unit: "km" };
+  const hr = lower.match(/\b(\d+(?:\.\d+)?)[\s-]*(?:hours?|hrs?)\b/);
+  if (hr) return { value: parseFloat(hr[1]) * 60, unit: "min" };
+  const min = lower.match(/\b(\d+)[\s-]*(?:minutes?|mins?)\b/);
+  if (min) return { value: parseInt(min[1], 10), unit: "min" };
+  const num = lower.match(/\b(\d+)\b/);
+  if (num) return { value: parseInt(num[1], 10), unit: "reps" };
+  return { value: 0, unit: null };
+}
+
+// Index into DIFFICULTY_LEVELS (0 = Very Easy … 4 = Extreme).
+function levelFromReps(n: number): number {
+  if (n <= 10)  return 0;
+  if (n <= 30)  return 1;
+  if (n <= 100) return 2;
+  if (n <= 300) return 3;
+  return 4;
+}
+function levelFromDistanceKm(km: number): number {
+  if (km <= 1)  return 0;
+  if (km <= 3)  return 1;
+  if (km <= 7)  return 2;
+  if (km <= 15) return 3;
+  return 4;
+}
+function levelFromMinutes(min: number): number {
+  if (min <= 10)  return 0;
+  if (min <= 30)  return 1;
+  if (min <= 60)  return 2;
+  if (min <= 120) return 3;
+  return 4;
+}
+
+const REP_ACTIVITY_RE      = /\b(push.?ups?|pull.?ups?|sit.?ups?|squats?|burpees?|lunges?|crunch(?:es)?|jumping\s*jacks?|planks?|reps?)\b/;
+const DISTANCE_ACTIVITY_RE = /\b(run|running|jog|jogging|walk|walking|cycle|cycling|bike|biking|swim|swimming|hike|hiking|row|rowing|skate|skating|ski|skiing)\b/;
+const DURATION_ACTIVITY_RE = /\b(workout|gym|exercise|cardio|study|studying|practice|practising|practicing|focus|deep.?work|code|coding|yoga|dance|dancing)\b/;
+// Inherently low physical-effort regardless of how long it's sustained for.
+const LOW_EFFORT_RE        = /\b(drink|water|vitamin|supplement|gratitude|journal|breathe|breathing|stretch|stretching|nap|read|reading|hydrat\w*|affirmation|meditat\w*)\b/;
+// Always floors the result at Hard, regardless of stated magnitude.
+const INTENSE_FLOOR_RE     = /\b(hiit|sprint|deadlift|heavy\s*lift|max\s*effort|intense|cold\s*(plunge|shower|ice)|fasting|intermittent\s*fast|4\s*am|4am|5am)\b/;
+// Always resolves straight to Extreme.
+const EXTREME_FLOOR_RE     = /\b(marathon|ultra|extreme|ironman|triathlon)\b/;
 
 function detectDifficulty(name: string): typeof DIFFICULTY_LEVELS[number] {
   const lower = name.toLowerCase();
-  const words = lower.split(/\s+/);
+  const words = lower.split(/\s+/).filter(Boolean);
+  const { value, unit } = extractMagnitude(lower);
 
-  // Require at least one specific physical/action word to qualify for harder tiers.
-  // This prevents "find the meaning of life" from matching "Medium" via a coincidental word.
-  const hasSpecificActivity = /\b(run|jog|gym|workout|exercise|swim|cycle|bike|pushup|push.?up|pull.?up|squat|plank|lift|sprint|deadlift|hiit|yoga|dance|climb|row|skate|hike|ski|surf)\b/.test(lower);
+  let level: number;
 
-  if (/\b(marathon|ultra|extreme|2\s*hour|two\s*hour|100\s*(push|pull)|cold\s*(plunge|shower|ice)|4\s*am|4am|5am|fasting|intermittent\s*fast)\b/.test(lower) && hasSpecificActivity) {
-    return DIFFICULTY_LEVELS[4];
+  if (EXTREME_FLOOR_RE.test(lower)) {
+    level = 4;
+  } else if (LOW_EFFORT_RE.test(lower) && !DISTANCE_ACTIVITY_RE.test(lower)) {
+    // Inherently low-effort habits stay Very Easy unless a long duration is given.
+    level = Math.max(0, levelFromMinutes(unit === "min" ? value : 0) - 2);
+  } else if (REP_ACTIVITY_RE.test(lower)) {
+    level = unit === "reps" && value > 0 ? levelFromReps(value) : 2;
+  } else if (DISTANCE_ACTIVITY_RE.test(lower)) {
+    level = unit === "km" ? levelFromDistanceKm(value) : unit === "min" ? levelFromMinutes(value) : 2;
+  } else if (DURATION_ACTIVITY_RE.test(lower)) {
+    level = unit === "min" && value > 0 ? levelFromMinutes(value) : 2;
+  } else if (words.length <= 3) {
+    level = 1; // short, simple habit names default to Easy
+  } else {
+    level = 2; // generic multi-word habits with no recognisable activity default to Normal
   }
-  if (/\b(5k|10k|run\s*5|deadlift|heavy\s*lift|hiit|intense|hard\s+workout|challenging|sprint|plank\s*(60|90|120))\b/.test(lower) && hasSpecificActivity) {
-    return DIFFICULTY_LEVELS[3];
+
+  if (INTENSE_FLOOR_RE.test(lower)) level = Math.max(level, 3);
+
+  return DIFFICULTY_LEVELS[Math.min(4, Math.max(0, level))];
+}
+
+// ─── sub-type suggestions ──────────────────────────────────────────────────────
+// For umbrella activities with a small, clearly-enumerable set of sub-types,
+// offer one-tap chips that make the habit name specific. Kept to a short list
+// of obviously-applicable cases rather than guessing at arbitrary activities.
+
+interface SubTypeGroup {
+  trigger: RegExp;
+  alreadySpecific: RegExp;
+  emoji: string;
+  options: { label: string; name: string }[];
+}
+
+const SUB_TYPE_GROUPS: SubTypeGroup[] = [
+  {
+    trigger: /\bcricket\b/,
+    alreadySpecific: /\b(bat(?:ting)?|bowl(?:ing)?|field(?:ing)?|wicket.?keep\w*)\b/,
+    emoji: "🏏",
+    options: [
+      { label: "Batting practice", name: "Cricket batting practice" },
+      { label: "Bowling practice", name: "Cricket bowling practice" },
+      { label: "Fielding drills",  name: "Cricket fielding drills" },
+    ],
+  },
+  {
+    trigger: /\b(football|soccer)\b/,
+    alreadySpecific: /\b(shoot\w*|pass(?:ing)?|dribbl\w*|defen(?:se|ce|ding))\b/,
+    emoji: "⚽",
+    options: [
+      { label: "Shooting drills",    name: "Football shooting drills" },
+      { label: "Passing drills",     name: "Football passing drills" },
+      { label: "Dribbling practice", name: "Football dribbling practice" },
+    ],
+  },
+  {
+    trigger: /\bbasketball\b/,
+    alreadySpecific: /\b(shoot\w*|dribbl\w*|defen(?:se|ce|ding)|layup)\b/,
+    emoji: "🏀",
+    options: [
+      { label: "Shooting drills",    name: "Basketball shooting drills" },
+      { label: "Dribbling practice", name: "Basketball dribbling practice" },
+      { label: "Defense drills",     name: "Basketball defense drills" },
+    ],
+  },
+  {
+    trigger: /\bswim(?:ming)?\b/,
+    alreadySpecific: /\b(freestyle|backstroke|breaststroke|butterfly|lap)/,
+    emoji: "🏊",
+    options: [
+      { label: "Freestyle laps",    name: "Swim freestyle laps" },
+      { label: "Backstroke laps",   name: "Swim backstroke laps" },
+      { label: "Breaststroke laps", name: "Swim breaststroke laps" },
+    ],
+  },
+  {
+    trigger: /\b(gym|workout)\b/,
+    alreadySpecific: /\b(upper.?body|lower.?body|leg\s*day|push.?ups?|pull.?ups?|squats?|cardio|chest|back\s*day|arms?|shoulders?|core)\b/,
+    emoji: "💪",
+    options: [
+      { label: "Upper body workout", name: "Upper body workout" },
+      { label: "Lower body workout", name: "Lower body workout" },
+      { label: "Cardio session",     name: "Cardio session" },
+    ],
+  },
+];
+
+function findSubTypeGroup(name: string): SubTypeGroup | null {
+  const lower = name.toLowerCase();
+  for (const g of SUB_TYPE_GROUPS) {
+    if (g.trigger.test(lower) && !g.alreadySpecific.test(lower)) return g;
   }
-  if (hasSpecificActivity || /\b(study\s+for|practice\s+\w+\s+for|30\s*min\w*\s*(workout|session)|45\s*min|1\s*hour\s+(workout|session|gym))\b/.test(lower)) {
-    return DIFFICULTY_LEVELS[2];
-  }
-  if (/\b(walk|stretch|meditat|journal|read\s|\breadings?\b|flashcard|podcast|vitamin|supplement|hydrat|breathe|gratitude|affirmation|nap|sleep\s+by)\b/.test(lower)) {
-    return DIFFICULTY_LEVELS[1];
-  }
-  // Only count short, simple habits (< 4 words with no activity context) as Easy
-  if (words.length <= 3) return DIFFICULTY_LEVELS[0];
-  // Multi-word habits with no recognizable activity pattern default to Light
-  return DIFFICULTY_LEVELS[1];
+  return null;
+}
+
+// Returns a "daily" | "weekly" frequency if the habit name already states a
+// cadence, else null.
+function detectFrequencyFromName(name: string): "daily" | "weekly" | null {
+  const lower = name.toLowerCase();
+  if (/\b(daily|every\s*day|each\s*day|per\s*day)\b/.test(lower)) return "daily";
+  if (/\b(weekly|every\s*week|each\s*week|per\s*week|once\s*a\s*week|twice\s*a\s*week)\b/.test(lower)) return "weekly";
+  return null;
 }
 
 function toDateStr(d: Date) { return d.toISOString().split("T")[0]; }
@@ -316,6 +452,11 @@ export default function AddHabitModal({
   const [durationOverridden, setDurationOverridden]             = useState(false);
   const prevDetectedDurRef                                      = useRef<string | null>(null);
 
+  // Smart frequency detection
+  const [frequencyDetectedFromName, setFrequencyDetectedFromName] = useState<"daily" | "weekly" | null>(null);
+  const [frequencyOverridden, setFrequencyOverridden]             = useState(false);
+  const prevDetectedFreqRef                                       = useRef<"daily" | "weekly" | null>(null);
+
   // Single-date mode — one date picker replaces Step 2
   const [scheduledDate, setScheduledDate] = useState(() => toDateStr(new Date()));
 
@@ -355,6 +496,9 @@ export default function AddHabitModal({
   // Difficulty derived from current name
   const difficulty = useMemo(() => detectDifficulty(name), [name]);
 
+  // Sub-type suggestion chips for umbrella activities (cricket, gym, etc.)
+  const subTypeGroup = useMemo(() => findSubTypeGroup(name), [name]);
+
   const handleNameChange = useCallback((newName: string) => {
     setName(newName);
     setError(null);
@@ -378,6 +522,15 @@ export default function AddHabitModal({
         setHowLong(detectedHowLong);
         if (detectedMins !== null) setDurationMinutes(detectedMins);
       }
+    }
+
+    // Auto-detect frequency
+    const detectedFreq = detectFrequencyFromName(newName);
+    if (detectedFreq !== prevDetectedFreqRef.current) {
+      prevDetectedFreqRef.current = detectedFreq;
+      setFrequencyDetectedFromName(detectedFreq);
+      setFrequencyOverridden(false);
+      if (detectedFreq) setFrequency(detectedFreq);
     }
   }, []);
 
@@ -465,8 +618,13 @@ export default function AddHabitModal({
   const inputCls = "w-full bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none focus:ring-1 focus:ring-violet-600/20 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-600 transition-all";
   const labelCls = "block text-[11px] font-medium text-slate-400 mb-1";
 
-  // ── Shared step indicator (always rendered in header when scheduling) ─────
-  const stepIndicator = isSchedulingMode ? (
+  // singleDateMode never transitions to step "schedule" — there's no
+  // goToStep2 call in that flow, so it's genuinely a single step. Only the
+  // multi-date calendar flow (Next: Choose Days → day picker) has a real step 2.
+  const hasTwoSteps = isSchedulingMode && !singleDateMode;
+
+  // ── Shared step indicator (only rendered when there's a real step 2) ──────
+  const stepIndicator = hasTwoSteps ? (
     <div className="flex items-center gap-1.5 mr-1">
       <div className={`w-2.5 h-2.5 rounded-full transition-all duration-200 ${step === "details" ? "bg-violet-500 scale-110" : "bg-violet-800"}`} />
       <div className={`w-2.5 h-2.5 rounded-full transition-all duration-200 ${step === "schedule" ? "bg-violet-500 scale-110" : "bg-violet-800"}`} />
@@ -505,7 +663,7 @@ export default function AddHabitModal({
               <h2 className="text-sm font-semibold text-white leading-tight">
                 {step === "details" ? "Add New Habit" : "Choose Your Days"}
               </h2>
-              {isSchedulingMode && (
+              {hasTwoSteps && (
                 <p className="text-[10px] text-slate-500 mt-0.5">
                   {step === "details" ? "Step 1 of 2 — Habit Details" : "Step 2 of 2 — When to do it"}
                 </p>
@@ -617,6 +775,18 @@ export default function AddHabitModal({
                       <span className={`font-bold ${difficulty.color}`}>{difficulty.xp} XP</span>
                       <span className="text-slate-500"> per completion</span>
                     </p>
+                  </div>
+                )}
+
+                {/* Sub-type suggestion chips — make a generic activity specific */}
+                {subTypeGroup && !duplicate && aiValidation.status !== "blocked" && (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    <span className="text-[10px] text-slate-500">{subTypeGroup.emoji} Make it specific:</span>
+                    {subTypeGroup.options.map((opt) => (
+                      <button key={opt.name} type="button" onClick={() => handleNameChange(opt.name)}
+                        className="px-2 py-0.5 rounded-full text-[10px] font-medium border border-violet-700/35 bg-violet-950/40 text-violet-300 hover:text-violet-200 hover:border-violet-600/50 transition-all"
+                      >{opt.label}</button>
+                    ))}
                   </div>
                 )}
               </div>
@@ -767,17 +937,31 @@ export default function AddHabitModal({
                     <>
                       <div>
                         <label className={labelCls}>Frequency</label>
-                        <div className="grid grid-cols-2 gap-1.5">
-                          {(["daily", "weekly"] as const).map((freq) => (
-                            <button key={freq} type="button" onClick={() => setFrequency(freq)}
-                              className={`py-2 rounded-xl text-xs font-medium border transition-all capitalize ${
-                                frequency === freq
-                                  ? "bg-violet-600/20 border-violet-600/50 text-violet-300"
-                                  : "bg-violet-950/20 border-violet-900/20 text-slate-500 hover:text-slate-300"
-                              }`}
-                            >{freq}</button>
-                          ))}
-                        </div>
+                        {frequencyDetectedFromName && !frequencyOverridden ? (
+                          <div className="flex items-center gap-2 bg-violet-950/40 border border-violet-700/35 rounded-xl px-3 py-2.5">
+                            <span className="text-base leading-none flex-shrink-0">{frequencyDetectedFromName === "daily" ? "📆" : "🗓"}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-violet-300 leading-tight capitalize">{frequencyDetectedFromName}</p>
+                              <p className="text-[10px] text-slate-500 mt-0.5">detected from your habit name</p>
+                            </div>
+                            <button type="button" onClick={() => setFrequencyOverridden(true)}
+                              className="text-[10px] text-violet-400 hover:text-violet-300 flex-shrink-0 underline underline-offset-2 transition-colors"
+                            >change</button>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {(["daily", "weekly"] as const).map((freq) => (
+                              <button key={freq} type="button"
+                                onClick={() => { setFrequency(freq); if (frequencyDetectedFromName) setFrequencyOverridden(true); }}
+                                className={`py-2 rounded-xl text-xs font-medium border transition-all capitalize ${
+                                  frequency === freq
+                                    ? "bg-violet-600/20 border-violet-600/50 text-violet-300"
+                                    : "bg-violet-950/20 border-violet-900/20 text-slate-500 hover:text-slate-300"
+                                }`}
+                              >{freq}</button>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
                       {/* Habit type — standard positive action vs. self-reported limit */}

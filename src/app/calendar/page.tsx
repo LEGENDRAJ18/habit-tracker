@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { resolveUser } from "@/lib/supabase/resolve-user";
 import type { Habit, HabitLog, Plan } from "@/types";
 import AddHabitModal from "@/components/dashboard/AddHabitModal";
+import { useUpgrade } from "@/contexts/UpgradeContext";
 import Link from "next/link";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -591,6 +592,7 @@ function PlanAheadSection({ habits, goals, tier, scheduled, onAdd, onRemove, onC
   onComplete: (s: ScheduledHabit) => void;
 }) {
   const [showModal, setShowModal] = useState(false);
+  const { openUpgradeModal } = useUpgrade();
 
   const upcoming = useMemo(() => {
     // eslint-disable-next-line react-hooks/purity
@@ -629,7 +631,7 @@ function PlanAheadSection({ habits, goals, tier, scheduled, onAdd, onRemove, onC
           withScheduling={true}
           onAdd={async () => ({ error: null })}
           onSchedule={handleSchedule}
-          onUpgradePro={() => {}}
+          onUpgradePro={() => openUpgradeModal("pro_feature", tier === "plus")}
         />
       )}
 
@@ -892,6 +894,7 @@ function ContributionHeatmap({ logs, habits }: {
 
 export default function CalendarPage() {
   const [supabase] = useState(() => createClient());
+  const { openUpgradeModal } = useUpgrade();
 
   const [habits,      setHabits]      = useState<Habit[]>([]);
   const [logs,        setLogs]        = useState<(Pick<HabitLog, "habit_id" | "completed_at"> & { id: string })[]>([]);
@@ -1220,7 +1223,7 @@ export default function CalendarPage() {
           singleDateMode={true}
           onAdd={async () => ({ error: null })}
           onSchedule={handleCalendarSchedule}
-          onUpgradePro={() => {}}
+          onUpgradePro={() => openUpgradeModal("pro_feature", tier === "plus")}
         />
       )}
       <main className="max-w-[1340px] mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-8 page-fade">
