@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Loader2, AlertCircle, CheckCircle2, Shield, Share2, Sparkles, Search, X, ClipboardList, Crown, Flame, Brain, Calendar, ChevronUp } from "lucide-react";
+import { Plus, Loader2, AlertCircle, CheckCircle2, Shield, Share2, Sparkles, Search, X, ClipboardList, Crown, Flame, Brain, Calendar, ChevronUp, Zap } from "lucide-react";
 import type { Plan } from "@/types";
 import { useHabits } from "@/hooks/useHabits";
 import { useProfile } from "@/hooks/useProfile";
@@ -17,7 +17,7 @@ import LevelUpModal from "@/components/dashboard/LevelUpModal";
 import ShareAchievement from "@/components/dashboard/ShareAchievement";
 import { useXP } from "@/hooks/useXP";
 import { playSound } from "@/lib/sounds";
-import { levelName, levelEmoji, xpIntoLevel, xpSpanOfLevel } from "@/lib/xp";
+import { levelName, levelEmoji, xpIntoLevel, xpSpanOfLevel, levelColorKey, type LevelColorKey } from "@/lib/xp";
 import XPDetailSheet from "@/components/dashboard/XPDetailSheet";
 import AICheckinCard from "@/components/dashboard/AICheckinCard";
 import SmartNotification from "@/components/ui/SmartNotification";
@@ -94,6 +94,18 @@ function getDailyQuote(): string {
   return QUOTES[dayOfYear % QUOTES.length];
 }
 
+// ─── Level color theme (mirrors DashboardNav's level→color mapping) ──────────
+
+const LEVEL_COLORS: Record<LevelColorKey, { bar: string; text: string; ring: string; bg: string }> = {
+  slate:   { bar: "from-slate-500 to-slate-400",   text: "text-slate-300",  ring: "ring-slate-600/50",   bg: "bg-slate-700/20"   },
+  emerald: { bar: "from-emerald-500 to-teal-400",   text: "text-emerald-300", ring: "ring-emerald-600/50", bg: "bg-emerald-900/20" },
+  blue:    { bar: "from-blue-500 to-cyan-400",      text: "text-blue-300",   ring: "ring-blue-600/50",    bg: "bg-blue-900/20"    },
+  violet:  { bar: "from-violet-500 to-fuchsia-400", text: "text-violet-300", ring: "ring-violet-600/50",  bg: "bg-violet-900/20"  },
+  amber:   { bar: "from-amber-400 to-yellow-300",   text: "text-amber-300",  ring: "ring-amber-500/60",   bg: "bg-amber-900/20"   },
+  red:     { bar: "from-red-500 to-orange-400",     text: "text-red-300",    ring: "ring-red-600/60",     bg: "bg-red-900/20"     },
+  gold:    { bar: "from-yellow-400 to-amber-300",   text: "text-yellow-200", ring: "ring-yellow-400/70",  bg: "bg-yellow-900/20"  },
+};
+
 // ─── Skeleton card ────────────────────────────────────────────────────────────
 
 function SkeletonCard() {
@@ -130,26 +142,31 @@ function QuickStats({
 
   return (
     <div className="grid grid-cols-3 gap-2 mb-4">
-      <div className="bg-[#0c0c18] border border-violet-900/20 rounded-xl px-3 py-2.5 text-center">
-        <p className="text-lg font-bold leading-none text-violet-400" style={{ animation: "countUp 0.5s ease-out both" }}>{pct}%</p>
-        <p className="text-[10px] text-slate-600 mt-1 uppercase tracking-wider font-medium">Today · done</p>
+      <div className="relative overflow-hidden bg-gradient-to-br from-violet-900/35 to-[#0c0c18] border border-violet-700/30 rounded-xl px-3 py-2.5 text-center">
+        <CheckCircle2 className="w-3.5 h-3.5 text-violet-400 mx-auto mb-1" />
+        <p className="text-lg font-bold leading-none text-violet-300 tabular-nums" style={{ animation: "countUp 0.5s ease-out both" }}>{pct}%</p>
+        <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider font-medium">Today · done</p>
       </div>
 
-      <div className="bg-[#0c0c18] border border-violet-900/20 rounded-xl px-3 py-2.5 text-center">
-        <p className="text-lg font-bold leading-none text-orange-400" style={{ animation: "countUp 0.5s ease-out both" }}>{bestStreak}d</p>
-        <p className="text-[10px] text-slate-600 mt-1 uppercase tracking-wider font-medium">Streak · best</p>
+      <div className="relative overflow-hidden bg-gradient-to-br from-orange-900/35 to-[#0c0c18] border border-orange-700/30 rounded-xl px-3 py-2.5 text-center">
+        <Flame className="w-3.5 h-3.5 text-orange-400 mx-auto mb-1" />
+        <p className="text-lg font-bold leading-none text-orange-400 tabular-nums" style={{ animation: "countUp 0.5s ease-out both" }}>{bestStreak}d</p>
+        <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider font-medium">Streak · best</p>
       </div>
 
       <button
         onClick={onOpenXP}
-        className="bg-[#0c0c18] border border-violet-900/20 hover:border-violet-600/40 rounded-xl px-3 py-2.5 text-center transition-all active:scale-95 group"
+        className="relative overflow-hidden bg-gradient-to-br from-amber-900/30 to-[#0c0c18] border border-amber-700/30 hover:border-amber-500/50 rounded-xl px-3 py-2.5 text-center transition-all active:scale-95 group"
       >
         {xpLoading ? (
           <div className="h-5 w-12 skeleton rounded mx-auto" />
         ) : (
-          <p className="text-lg font-bold leading-none text-amber-400 tabular-nums" style={{ animation: "countUp 0.5s ease-out both" }}>{totalXP.toLocaleString()}</p>
+          <>
+            <Zap className="w-3.5 h-3.5 text-amber-400 mx-auto mb-1" />
+            <p className="text-lg font-bold leading-none text-amber-400 tabular-nums" style={{ animation: "countUp 0.5s ease-out both" }}>{totalXP.toLocaleString()}</p>
+          </>
         )}
-        <p className="text-[10px] text-slate-600 group-hover:text-violet-500 mt-1 uppercase tracking-wider font-medium transition-colors">XP · tap ›</p>
+        <p className="text-[10px] text-slate-500 group-hover:text-amber-300 mt-1 uppercase tracking-wider font-medium transition-colors">XP · tap ›</p>
       </button>
     </div>
   );
@@ -161,21 +178,24 @@ function XPLevelBar({ xp, level, onClick }: { xp: number; level: number; onClick
   const xpInto = xpIntoLevel(xp);
   const xpSpan = xpSpanOfLevel(xp);
   const pct    = xpSpan > 0 ? Math.min(100, Math.round((xpInto / xpSpan) * 100)) : 100;
+  const s      = LEVEL_COLORS[levelColorKey(level)];
   return (
     <button
       data-tour="xp-bar"
       onClick={onClick}
       className="w-full flex items-center gap-3 bg-[#0c0c18] border border-violet-900/25 hover:border-violet-600/45 rounded-xl px-3 py-2.5 mb-4 transition-all group active:scale-[0.99]"
     >
-      <span className="text-xl leading-none flex-shrink-0">{levelEmoji(level)}</span>
+      <div className={`w-9 h-9 rounded-xl ${s.bg} ring-2 ${s.ring} flex items-center justify-center flex-shrink-0`}>
+        <span className="text-base leading-none">{levelEmoji(level)}</span>
+      </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1.5">
           <p className="text-xs font-bold text-white">Lv {level} · {levelName(level)}</p>
-          <p className="text-[10px] text-violet-400 font-medium tabular-nums">{xpInto.toLocaleString()} / {xpSpan.toLocaleString()} XP</p>
+          <p className={`text-[10px] font-medium tabular-nums ${s.text}`}>{xpInto.toLocaleString()} / {xpSpan.toLocaleString()} XP</p>
         </div>
         <div className="h-1.5 bg-violet-950/60 rounded-full overflow-hidden">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500 transition-all duration-700"
+            className={`h-full rounded-full bg-gradient-to-r ${s.bar} transition-all duration-700`}
             style={{ width: `${pct}%`, boxShadow: "0 0 6px rgba(139,92,246,0.5)" }}
           />
         </div>
@@ -785,7 +805,9 @@ export default function DashboardPage() {
         <div className="min-w-0">
 
         {/* Header */}
-        <div className="mb-4 pt-6 pb-4">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-950/45 via-[#0d0d1a] to-[#0d0d1a] border border-violet-800/25 p-5 mb-5 mt-4">
+        <div className="absolute -top-12 -right-12 w-64 h-64 bg-violet-600/8 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative">
           {/* Greeting */}
           <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">{today}</p>
           <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -932,6 +954,7 @@ export default function DashboardPage() {
 
           {/* Weekly progress bar */}
           {!loading && habits.length > 0 && <WeeklyProgressBar logs={historicalLogs} />}
+        </div>
         </div>
 
         {/* Mood check-in */}
@@ -1350,9 +1373,13 @@ export default function DashboardPage() {
               pct < 100   ? "Almost there, finish strong! ⚡" :
                             "Perfect day! Amazing work! 🎉";
             return (
-              <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-4">
-                <p className="text-xs font-semibold text-slate-400 mb-3">Today&apos;s Progress</p>
-                <div className="flex items-center gap-4">
+              <div className="relative overflow-hidden rounded-2xl bg-[#0c0c18] border border-violet-900/20 p-4">
+                <div
+                  className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl pointer-events-none"
+                  style={{ backgroundColor: ringColor, opacity: 0.1 }}
+                />
+                <p className="relative text-xs font-semibold text-slate-400 mb-3">Today&apos;s Progress</p>
+                <div className="relative flex items-center gap-4">
                   <div className="relative flex-shrink-0">
                     <svg width="64" height="64" viewBox="0 0 64 64">
                       <circle cx="32" cy="32" r={r} fill="none" stroke="#1e1b4b" strokeWidth="5" />
@@ -1365,28 +1392,26 @@ export default function DashboardPage() {
                         strokeDasharray={`${circ}`}
                         strokeDashoffset={`${offset}`}
                         transform="rotate(-90 32 32)"
-                        style={{ transition: "stroke-dashoffset 0.6s ease" }}
+                        style={{ transition: "stroke-dashoffset 0.6s ease", filter: `drop-shadow(0 0 5px ${ringColor}80)` }}
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-sm font-bold text-white">{pct}%</span>
                     </div>
                   </div>
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-base leading-none">🔥</span>
-                      <span className="text-xs font-semibold text-white">{bestStreak} day{bestStreak !== 1 ? "s" : ""}</span>
-                      <span className="text-[10px] text-slate-600">streak</span>
+                  <div className="flex-1 space-y-1.5">
+                    <div className="inline-flex items-center gap-1.5 bg-orange-950/40 border border-orange-700/25 rounded-full px-2 py-1">
+                      <span className="text-sm leading-none">🔥</span>
+                      <span className="text-xs font-bold text-orange-300">{bestStreak} day{bestStreak !== 1 ? "s" : ""}</span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-base leading-none">⚡</span>
-                      <span className="text-xs font-semibold text-white">{completedCount * 10} XP</span>
-                      <span className="text-[10px] text-slate-600">today</span>
+                    <div className="inline-flex items-center gap-1.5 bg-amber-950/40 border border-amber-700/25 rounded-full px-2 py-1 ml-1.5">
+                      <span className="text-sm leading-none">⚡</span>
+                      <span className="text-xs font-bold text-amber-300">{completedCount * 10} XP</span>
                     </div>
-                    <p className="text-[10px] text-slate-600">{completedCount}/{habits.length} habits done</p>
+                    <p className="text-[10px] text-slate-600 pt-0.5">{completedCount}/{habits.length} habits done today</p>
                   </div>
                 </div>
-                <p className="text-[11px] text-violet-300/80 mt-3 font-medium">{motivational}</p>
+                <p className="relative text-[11px] text-violet-300/80 mt-3 font-medium">{motivational}</p>
               </div>
             );
           })()}

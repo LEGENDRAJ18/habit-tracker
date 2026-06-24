@@ -221,7 +221,9 @@ function GoalsTab({ initialGoals }: { initialGoals: string[] }) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-base font-semibold text-white mb-1">My Goals</h2>
+        <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
+          <Target className="w-4 h-4 text-violet-400" />My Goals
+        </h2>
         <p className="text-sm text-slate-500">Your AI coaching adapts to these. Pick everything you&apos;re working towards.</p>
       </div>
       <div className={cardCls} style={{ padding: "1.25rem" }}>
@@ -500,7 +502,9 @@ function AppearanceTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-base font-semibold text-white mb-1">Appearance</h2>
+        <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
+          <Palette className="w-4 h-4 text-violet-400" />Appearance
+        </h2>
         <p className="text-sm text-slate-500">Customize how HabitAI looks for you.</p>
       </div>
 
@@ -569,7 +573,9 @@ function AccessibilityTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-base font-semibold text-white mb-1">Accessibility</h2>
+        <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
+          <SlidersHorizontal className="w-4 h-4 text-violet-400" />Accessibility
+        </h2>
         <p className="text-sm text-slate-500">Adjust the app to better suit your needs.</p>
       </div>
       <div className={cardCls}>
@@ -770,7 +776,9 @@ function HelpTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-base font-semibold text-white mb-1">Help &amp; Support</h2>
+        <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
+          <HelpCircle className="w-4 h-4 text-violet-400" />Help &amp; Support
+        </h2>
         <p className="text-sm text-slate-500">Find answers, contact support, or browse the FAQ.</p>
       </div>
 
@@ -1075,7 +1083,9 @@ function PlanTab({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-base font-semibold text-white mb-1">Your Plan</h2>
+        <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
+          <CreditCard className="w-4 h-4 text-violet-400" />Your Plan
+        </h2>
         <p className="text-sm text-slate-500">Manage your subscription and billing.</p>
       </div>
 
@@ -1243,7 +1253,9 @@ function AvatarTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-base font-semibold text-white mb-1">Profile Picture</h2>
+        <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
+          <Smile className="w-4 h-4 text-violet-400" />Profile Picture
+        </h2>
         <p className="text-sm text-slate-500">Choose an animated avatar that represents you.</p>
       </div>
       <div className={cardCls}>
@@ -1345,7 +1357,9 @@ function ModeTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-base font-semibold text-white mb-1">Your Mode</h2>
+        <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
+          <span className="text-base leading-none">🎓</span>Your Mode
+        </h2>
         <p className="text-sm text-slate-500">Your dashboard, AI coaching, and habit suggestions all adapt to your selected mode. Switch anytime — your data is never lost.</p>
       </div>
 
@@ -1520,7 +1534,9 @@ function NotificationsTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-base font-semibold text-white mb-1">Notifications</h2>
+        <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
+          <Bell className="w-4 h-4 text-violet-400" />Notifications
+        </h2>
         <p className="text-sm text-slate-500">Control when and how HabitAI reminds you to build your habits.</p>
       </div>
 

@@ -78,21 +78,37 @@ const PARTICLE_COLORS = [
   "#8b5cf6","#a78bfa","#e879f9","#fbbf24","#60a5fa","#34d399","#fb923c","#f472b6",
 ];
 
-const HABIT_ACCENT_COLORS = [
-  "#8b5cf6", // violet
-  "#06b6d4", // cyan
-  "#f59e0b", // amber
-  "#10b981", // emerald
-  "#ec4899", // pink
-  "#f97316", // orange
-  "#3b82f6", // blue
-  "#a855f7", // purple
+interface AccentStyle {
+  hex: string;
+  ringIdle: string;
+  fillBg: string;
+  fillBorder: string;
+  glow: string;
+  cardTint: string;
+  cardBorder: string;
+}
+
+// Each habit gets a stable accent (hashed from its id) carried through the checkbox,
+// the completed-state card tint, and the left border — not just a thin border accent.
+const HABIT_ACCENTS: AccentStyle[] = [
+  { hex: "#8b5cf6", ringIdle: "border-violet-700/50 hover:border-violet-500",   fillBg: "bg-violet-500",   fillBorder: "border-violet-500",   glow: "rgba(139,92,246,0.45)", cardTint: "bg-violet-600/8",   cardBorder: "border-violet-600/20"   }, // violet
+  { hex: "#06b6d4", ringIdle: "border-cyan-700/50 hover:border-cyan-500",       fillBg: "bg-cyan-500",     fillBorder: "border-cyan-500",     glow: "rgba(6,182,212,0.45)",  cardTint: "bg-cyan-600/8",     cardBorder: "border-cyan-600/20"     }, // cyan
+  { hex: "#f59e0b", ringIdle: "border-amber-700/50 hover:border-amber-500",     fillBg: "bg-amber-500",    fillBorder: "border-amber-500",    glow: "rgba(245,158,11,0.45)", cardTint: "bg-amber-600/8",    cardBorder: "border-amber-600/20"    }, // amber
+  { hex: "#10b981", ringIdle: "border-emerald-700/50 hover:border-emerald-500", fillBg: "bg-emerald-500",  fillBorder: "border-emerald-500",  glow: "rgba(16,185,129,0.45)", cardTint: "bg-emerald-600/8",  cardBorder: "border-emerald-600/20"  }, // emerald
+  { hex: "#ec4899", ringIdle: "border-pink-700/50 hover:border-pink-500",       fillBg: "bg-pink-500",     fillBorder: "border-pink-500",     glow: "rgba(236,72,153,0.45)", cardTint: "bg-pink-600/8",     cardBorder: "border-pink-600/20"     }, // pink
+  { hex: "#f97316", ringIdle: "border-orange-700/50 hover:border-orange-500",   fillBg: "bg-orange-500",   fillBorder: "border-orange-500",   glow: "rgba(249,115,22,0.45)", cardTint: "bg-orange-600/8",   cardBorder: "border-orange-600/20"   }, // orange
+  { hex: "#3b82f6", ringIdle: "border-blue-700/50 hover:border-blue-500",       fillBg: "bg-blue-500",     fillBorder: "border-blue-500",     glow: "rgba(59,130,246,0.45)", cardTint: "bg-blue-600/8",     cardBorder: "border-blue-600/20"     }, // blue
+  { hex: "#a855f7", ringIdle: "border-purple-700/50 hover:border-purple-500",   fillBg: "bg-purple-500",   fillBorder: "border-purple-500",   glow: "rgba(168,85,247,0.45)", cardTint: "bg-purple-600/8",   cardBorder: "border-purple-600/20"   }, // purple
 ];
 
-function getHabitAccentColor(id: string): string {
+function getHabitAccent(id: string): AccentStyle {
   let hash = 0;
   for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
-  return HABIT_ACCENT_COLORS[hash % HABIT_ACCENT_COLORS.length];
+  return HABIT_ACCENTS[hash % HABIT_ACCENTS.length];
+}
+
+function getHabitAccentColor(id: string): string {
+  return getHabitAccent(id).hex;
 }
 
 function strengthColor(s: number): string {
@@ -137,6 +153,7 @@ export default function HabitCard({
   onSmartTimingToggle, onUpgradePro, onCommitment, onStartTimer, isTourTarget,
 }: Props) {
   const isLimit = habit.habit_type === "limit";
+  const accent = getHabitAccent(habit.id);
   const { score: identityScore, phrase: identityPhrase } = useIdentityScore(habit, allLogs);
   const [deleting, setDeleting]     = useState(false);
   const [showParticles, setShowParticles] = useState(false);
@@ -298,7 +315,7 @@ export default function HabitCard({
         failed
           ? "bg-red-950/15 border-red-800/30"
           : completed
-          ? "bg-violet-600/8 border-violet-600/20"
+          ? `${accent.cardTint} ${accent.cardBorder}`
           : "bg-[#0f0f1a] border-violet-900/20 sm:hover:border-violet-800/30 sm:hover:-translate-y-px sm:hover:shadow-[0_4px_20px_rgba(109,40,217,0.10)]"
       }`}
       style={{
@@ -351,12 +368,15 @@ export default function HabitCard({
               </div>
             )
           ) : (
-            /* Standard habit — single checkbox */
+            /* Standard habit — single checkbox, tinted with this habit's accent color */
             <button onClick={handleToggle}
               className={`w-8 h-8 sm:w-6 sm:h-6 rounded-full flex items-center justify-center border-2 transition-colors duration-200 ${
-                completed ? "bg-violet-500 border-violet-500 shadow-lg shadow-violet-500/30" : "border-violet-700/50 hover:border-violet-500"
+                completed ? `${accent.fillBg} ${accent.fillBorder}` : accent.ringIdle
               }`}
-              style={justCompleted && completed ? { animation: "checkPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both" } : undefined}
+              style={{
+                ...(completed ? { boxShadow: `0 0 12px ${accent.glow}` } : {}),
+                ...(justCompleted && completed ? { animation: "checkPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both" } : {}),
+              }}
             >
               {completed && <Check className="w-4 h-4 sm:w-3 sm:h-3 text-white" strokeWidth={3} />}
             </button>
@@ -624,6 +644,16 @@ export default function HabitCard({
           habitLogId={logId}
           tier={tier ?? "free"}
         />
+      </div>
+
+      {/* Habit Strength bar — mobile only (slim, no label/tooltip — desktop gets the full detail block below) */}
+      <div className="sm:hidden px-4 pb-3">
+        <div className="w-full h-1 bg-violet-950/50 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-700 ${strengthColor(strength)}`}
+            style={{ width: `${strength}%` }}
+          />
+        </div>
       </div>
 
       {/* Identity Score + Habit Strength — desktop only */}

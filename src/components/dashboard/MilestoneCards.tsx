@@ -2,6 +2,8 @@
 
 import { Check, Lock, Share2 } from "lucide-react";
 
+type MilestoneColor = "blue" | "emerald" | "orange" | "amber";
+
 interface Milestone {
   id: string;
   emoji: string;
@@ -9,9 +11,17 @@ interface Milestone {
   desc: string;
   xp: number;
   achieved: boolean;
+  color: MilestoneColor;
   shareType?: "streak" | "level" | "daily";
   shareValue?: number;
 }
+
+const COLOR_STYLES: Record<MilestoneColor, { achievedBg: string; achievedBorder: string; badgeBg: string; badgeText: string; text: string; hoverText: string; bar: string; glow: string }> = {
+  blue:    { achievedBg: "bg-blue-900/20",    achievedBorder: "border-blue-600/30",    badgeBg: "bg-blue-500/20",    badgeText: "text-blue-300",    text: "text-blue-400",    hoverText: "hover:text-blue-400",    bar: "bg-blue-600/50",    glow: "rgba(59,130,246,0.12)"  },
+  emerald: { achievedBg: "bg-emerald-900/20", achievedBorder: "border-emerald-600/30", badgeBg: "bg-emerald-500/20", badgeText: "text-emerald-300", text: "text-emerald-400", hoverText: "hover:text-emerald-400", bar: "bg-emerald-600/50", glow: "rgba(16,185,129,0.12)"  },
+  orange:  { achievedBg: "bg-orange-900/20",  achievedBorder: "border-orange-600/30",  badgeBg: "bg-orange-500/20",  badgeText: "text-orange-300",  text: "text-orange-400",  hoverText: "hover:text-orange-400",  bar: "bg-orange-600/50",  glow: "rgba(251,146,60,0.12)" },
+  amber:   { achievedBg: "bg-amber-900/20",   achievedBorder: "border-amber-600/30",   badgeBg: "bg-amber-500/20",   badgeText: "text-amber-300",   text: "text-amber-400",   hoverText: "hover:text-amber-400",   bar: "bg-amber-600/50",   glow: "rgba(251,191,36,0.14)" },
+};
 
 interface Props {
   completedCount: number;
@@ -42,6 +52,7 @@ export default function MilestoneCards({
       desc:       "Complete 1 habit today",
       xp:         10,
       achieved:   isDailyAchieved("first_habit_today") || completedCount >= 1,
+      color:      "blue",
       shareType:  "daily",
       shareValue: 1,
     },
@@ -54,6 +65,7 @@ export default function MilestoneCards({
       achieved:
         isDailyAchieved("all_habits_today") ||
         (totalHabits > 0 && completedCount >= totalHabits),
+      color:      "emerald",
       shareType:  "daily",
       shareValue: completedCount,
     },
@@ -64,6 +76,7 @@ export default function MilestoneCards({
       desc:       "Maintain a 7-day streak",
       xp:         50,
       achieved:   hasStreak7,
+      color:      "orange",
       shareType:  "streak",
       shareValue: 7,
     },
@@ -74,6 +87,7 @@ export default function MilestoneCards({
       desc:       "Maintain a 30-day streak",
       xp:         200,
       achieved:   hasStreak30,
+      color:      "amber",
       shareType:  "streak",
       shareValue: 30,
     },
@@ -98,6 +112,7 @@ export default function MilestoneCards({
       <div className={sidebar ? "space-y-2" : "grid grid-cols-2 sm:grid-cols-4 gap-2.5"}>
         {milestones.map((m) => {
           const pct = progress(m);
+          const cs  = COLOR_STYLES[m.color];
 
           return sidebar ? (
             /* ── Sidebar: compact horizontal ───────────────────────────── */
@@ -105,9 +120,10 @@ export default function MilestoneCards({
               key={m.id}
               className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all ${
                 m.achieved
-                  ? "bg-violet-900/20 border-violet-600/30"
+                  ? `${cs.achievedBg} ${cs.achievedBorder}`
                   : "bg-[#0f0f1a] border-violet-900/15"
               }`}
+              style={m.achieved ? { boxShadow: `0 0 16px ${cs.glow}` } : undefined}
             >
               <span className={`text-lg leading-none flex-shrink-0 ${m.achieved ? "" : "opacity-30"}`}>
                 {m.achieved ? m.emoji : <Lock className="w-4 h-4 text-slate-700" />}
@@ -118,13 +134,13 @@ export default function MilestoneCards({
                 </p>
                 {!m.achieved && pct > 0 && (
                   <div className="mt-1 w-full h-1 bg-violet-950/60 rounded-full overflow-hidden">
-                    <div className="h-full bg-violet-600/50 rounded-full" style={{ width: `${pct}%` }} />
+                    <div className={`h-full ${cs.bar} rounded-full`} style={{ width: `${pct}%` }} />
                   </div>
                 )}
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
                 <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
-                  m.achieved ? "bg-violet-500/20 text-violet-300" : "bg-slate-800/60 text-slate-600"
+                  m.achieved ? `${cs.badgeBg} ${cs.badgeText}` : "bg-slate-800/60 text-slate-600"
                 }`}>
                   +{m.xp}
                 </span>
@@ -132,7 +148,7 @@ export default function MilestoneCards({
                   <button
                     onClick={() => onShare(m.shareType!, m.shareValue!)}
                     aria-label={`Share ${m.title}`}
-                    className="p-1 rounded-lg text-slate-600 hover:text-violet-400 hover:bg-violet-950/40 transition-all"
+                    className={`p-1 rounded-lg text-slate-600 ${cs.hoverText} hover:bg-violet-950/40 transition-all`}
                   >
                     <Share2 className="w-3 h-3" />
                   </button>
@@ -145,12 +161,13 @@ export default function MilestoneCards({
               key={m.id}
               className={`relative overflow-hidden rounded-xl border p-3.5 transition-all ${
                 m.achieved
-                  ? "bg-violet-900/20 border-violet-600/30"
+                  ? `${cs.achievedBg} ${cs.achievedBorder}`
                   : "bg-[#0f0f1a] border-violet-900/15"
               }`}
+              style={m.achieved ? { boxShadow: `0 0 20px ${cs.glow}` } : undefined}
             >
               <span className={`absolute top-2.5 right-2.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
-                m.achieved ? "bg-violet-500/20 text-violet-300" : "bg-slate-800/60 text-slate-600"
+                m.achieved ? `${cs.badgeBg} ${cs.badgeText}` : "bg-slate-800/60 text-slate-600"
               }`}>
                 +{m.xp} XP
               </span>
@@ -172,20 +189,20 @@ export default function MilestoneCards({
               </p>
               {!m.achieved && pct > 0 && (
                 <div className="mt-2 w-full h-1 bg-violet-950/60 rounded-full overflow-hidden">
-                  <div className="h-full bg-violet-600/50 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                  <div className={`h-full ${cs.bar} rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
                 </div>
               )}
               {m.achieved && (
                 <div className="mt-2 flex items-center justify-between">
                   <div className="flex items-center gap-1">
-                    <Check className="w-3 h-3 text-violet-400" />
-                    <span className="text-[10px] text-violet-400 font-medium">Earned</span>
+                    <Check className={`w-3 h-3 ${cs.text}`} />
+                    <span className={`text-[10px] font-medium ${cs.text}`}>Earned</span>
                   </div>
                   {onShare && m.shareType && m.shareValue !== undefined && (
                     <button
                       onClick={() => onShare(m.shareType!, m.shareValue!)}
                       aria-label={`Share ${m.title}`}
-                      className="flex items-center gap-0.5 text-[10px] text-slate-600 hover:text-violet-400 transition-colors"
+                      className={`flex items-center gap-0.5 text-[10px] text-slate-600 ${cs.hoverText} transition-colors`}
                     >
                       <Share2 className="w-2.5 h-2.5" />
                       Share
