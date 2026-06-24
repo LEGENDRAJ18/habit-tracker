@@ -712,67 +712,6 @@ function WhoItsFor() {
 // ─── 5. PRICING ───────────────────────────────────────────────────────────────
 // Uses the existing Pricing component (already updated with accurate feature lists)
 
-// ─── REFERRAL SECTION ─────────────────────────────────────────────────────────
-
-function ReferralSection() {
-  const steps = [
-    { n: "1", title: "Get your link", desc: "Find your unique referral link in Settings → Refer a Friend. One tap to copy or share." },
-    { n: "2", title: "Friend signs up", desc: "They click your link and join HabitAI. They instantly get 14 days of Plus — no credit card needed." },
-    { n: "3", title: "You earn rewards", desc: "Once your friend completes their first week of habits, you earn 14 free days of Plus automatically." },
-  ];
-
-  return (
-    <section className="py-24 px-4 sm:px-6 bg-[#060609]">
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-14">
-          <div className="inline-flex items-center gap-2 bg-violet-950/50 border border-violet-700/25 rounded-full px-4 py-1.5 text-sm text-violet-300 mb-6">
-            🎁 Refer &amp; earn
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 leading-tight">
-            Share HabitAI,{" "}
-            <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
-              earn free Plus
-            </span>
-          </h2>
-          <p className="text-lg text-slate-400 max-w-xl mx-auto">
-            For every friend who builds their first week of habits, you both get rewarded.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
-          {steps.map(({ n, title, desc }) => (
-            <div key={n} className="bg-[#0f0f1a] border border-violet-800/25 rounded-2xl p-6 relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-700/30 to-transparent" />
-              <div className="w-9 h-9 rounded-xl bg-violet-600/20 border border-violet-600/30 flex items-center justify-center mb-4">
-                <span className="text-sm font-black text-violet-300">{n}</span>
-              </div>
-              <h3 className="text-sm font-bold text-white mb-2">{title}</h3>
-              <p className="text-sm text-slate-500 leading-relaxed">{desc}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Reward callout */}
-        <div className="bg-gradient-to-br from-violet-950/60 to-[#0f0f1a] border border-violet-700/30 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
-          <div className="text-5xl flex-shrink-0">🎉</div>
-          <div className="flex-1">
-            <p className="text-lg font-bold text-white mb-1">You + your friend both win</p>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              Your friend gets <span className="text-violet-300 font-semibold">14 days of Plus free</span> the moment they sign up. You earn <span className="text-violet-300 font-semibold">14 days of Plus free</span> once they complete their first week. No limits — refer more, earn more.
-            </p>
-          </div>
-          <Link
-            href="/auth/login"
-            className="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-xl transition-all text-sm"
-          >
-            Get my link →
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 // ─── ABOUT SECTION ────────────────────────────────────────────────────────────
 
 function AboutSection() {
@@ -1011,7 +950,6 @@ export default async function LandingPage() {
         <div id="pricing">
           <Pricing />
         </div>
-        <ReferralSection />
         <AboutSection />
         <FinalCta />
       </main>

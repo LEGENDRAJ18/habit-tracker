@@ -11,6 +11,12 @@ export const TOUR_FORCE_KEY = "habitai-tour-force";
 export const TOUR_STORAGE_KEY = TOUR_DONE_KEY;
 export const TOUR_SESSION_KEY = "habitai-tour-session-legacy"; // no longer used
 
+// Set the moment the tour auto-activates so a remount (route change, hard
+// refresh) within the same tab doesn't re-trigger the full-screen dim
+// overlay every time — only TOUR_FORCE_KEY (Settings "Restart tour") or a
+// brand new browser session can bring it back before TOUR_DONE_KEY is set.
+const TOUR_SESSION_SHOWN_KEY = "habitai-tour-session-shown";
+
 const MS_48H = 48 * 60 * 60 * 1000;
 
 // ─── Step definitions ─────────────────────────────────────────────────────────
@@ -200,12 +206,19 @@ export default function OnboardingTour({ habitCount, signedUpAt }: { habitCount:
     // Already completed — don't auto-show again
     if (localStorage.getItem(TOUR_DONE_KEY)) return;
 
+    // Already auto-shown once this tab session — don't re-trigger the
+    // full-screen overlay on every hard refresh / route remount.
+    if (sessionStorage.getItem(TOUR_SESSION_SHOWN_KEY)) return;
+
     // Auto-trigger for new users only
     if (!signedUpAt) return;
     if (Date.now() - new Date(signedUpAt).getTime() > MS_48H) return;
 
     if (habitCount > 0) {
-      setTimeout(() => { setStep(0); setActive(true); }, 1500);
+      setTimeout(() => {
+        sessionStorage.setItem(TOUR_SESSION_SHOWN_KEY, "1");
+        setStep(0); setActive(true);
+      }, 1500);
     } else {
       // Wait until they add their first habit
       pendingRef.current = true;
@@ -218,7 +231,10 @@ export default function OnboardingTour({ habitCount, signedUpAt }: { habitCount:
     if (!pendingRef.current) return;
     if (habitCount > 0) {
       pendingRef.current = false;
-      setTimeout(() => { setStep(0); setActive(true); }, 700);
+      setTimeout(() => {
+        sessionStorage.setItem(TOUR_SESSION_SHOWN_KEY, "1");
+        setStep(0); setActive(true);
+      }, 700);
     }
   }, [habitCount]);
 
