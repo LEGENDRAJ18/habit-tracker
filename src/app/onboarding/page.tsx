@@ -11,8 +11,66 @@ import posthog from "posthog-js";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 5;
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/i;
+
+// ─── Persona data ─────────────────────────────────────────────────────────────
+
+type PersonaId =
+  | "student"
+  | "professional"
+  | "athlete"
+  | "breaking_bad_habits"
+  | "entrepreneur"
+  | "parent"
+  | "wellness"
+  | "just_improving";
+
+const PERSONAS: { id: PersonaId; emoji: string; label: string; tagline: string }[] = [
+  { id: "student",             emoji: "🎓", label: "Student",             tagline: "Crush your academic goals"              },
+  { id: "professional",        emoji: "💼", label: "Professional",        tagline: "Level up your career & productivity"    },
+  { id: "athlete",             emoji: "💪", label: "Athlete",             tagline: "Build peak physical performance"        },
+  { id: "breaking_bad_habits", emoji: "🚫", label: "Breaking Bad Habits", tagline: "Quit what's holding you back"           },
+  { id: "entrepreneur",        emoji: "🚀", label: "Entrepreneur",        tagline: "Build discipline & ship faster"         },
+  { id: "parent",              emoji: "👨‍👩‍👧", label: "Parent",             tagline: "Model good habits for your family"     },
+  { id: "wellness",            emoji: "🧘", label: "Wellness Seeker",     tagline: "Improve sleep, stress & mental health"  },
+  { id: "just_improving",      emoji: "🌱", label: "Just Improving",      tagline: "Become a better version of yourself"   },
+];
+
+const PERSONA_TO_USER_MODE: Record<PersonaId, "student" | "parent" | "personal"> = {
+  student:             "student",
+  professional:        "personal",
+  athlete:             "personal",
+  breaking_bad_habits: "personal",
+  entrepreneur:        "personal",
+  parent:              "parent",
+  wellness:            "personal",
+  just_improving:      "personal",
+};
+
+const PERSONA_GOALS: Record<PersonaId, string[]> = {
+  student:             ["Get into my dream university", "Improve my grades", "Build better study habits", "Reduce phone distraction", "Improve sleep & energy"],
+  professional:        ["Be more productive", "Build a morning routine", "Read more", "Exercise consistently", "Manage stress better"],
+  athlete:             ["Build strength & muscle", "Improve endurance", "Lose weight", "Recover faster", "Train consistently"],
+  breaking_bad_habits: ["Quit smoking", "Reduce alcohol", "Less social media", "Stop procrastinating", "Cut out junk food"],
+  entrepreneur:        ["Ship faster", "Wake up earlier", "Build deep work habits", "Exercise & stay sharp", "Read & learn daily"],
+  parent:              ["Model healthy habits", "Exercise with my kids", "Reduce screen time", "Sleep better", "Manage stress"],
+  wellness:            ["Sleep better", "Reduce anxiety", "Meditate daily", "Exercise more", "Eat healthier"],
+  just_improving:      ["Build a morning routine", "Exercise regularly", "Read more", "Eat healthier", "Sleep better"],
+};
+
+const PERSONA_HABIT_SUGGESTIONS: Record<PersonaId, string[]> = {
+  student:             ["Study 2 hours daily", "Read for 20 minutes", "No phone 1 hour before bed"],
+  professional:        ["2 hours of deep work", "Morning planning session (15 min)", "Evening wind-down routine"],
+  athlete:             ["Morning run (30 min)", "Evening stretching (15 min)", "Track daily nutrition"],
+  breaking_bad_habits: ["Log craving instead of acting on it", "Replace cigarette break with a 5-min walk", "Track alcohol-free days"],
+  entrepreneur:        ["1 hour focused building (before email)", "Wake up at 6am", "Daily reading (30 min)"],
+  parent:              ["Morning family exercise (20 min)", "Phone-free dinner time", "10-min bedtime wind-down"],
+  wellness:            ["10-min morning meditation", "In bed by 10:30 PM", "5-min evening journaling"],
+  just_improving:      ["Morning routine (wake up on time)", "Exercise 30 minutes", "Read for 20 minutes"],
+};
+
+// ─── Category data ────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
   { id: "fitness",       label: "Fitness & Health",        emoji: "💪" },
@@ -63,7 +121,136 @@ function ProgressDots({ step }: { step: number }) {
   );
 }
 
-// ─── Step 1 — Goals ───────────────────────────────────────────────────────────
+// ─── Step 1 — Persona selection ───────────────────────────────────────────────
+
+function PersonaStep({
+  selected,
+  onSelect,
+  onNext,
+}: {
+  selected: PersonaId | null;
+  onSelect: (id: PersonaId) => void;
+  onNext: () => void;
+}) {
+  return (
+    <div className="w-full max-w-lg px-4">
+      <div className="text-center mb-6">
+        <h1 className="text-3xl sm:text-4xl font-black mb-2 text-white leading-tight">
+          Who are you? ✨
+        </h1>
+        <p className="text-slate-400 text-sm">Pick the one that fits you best</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2.5 mb-6">
+        {PERSONAS.map((p) => {
+          const active = selected === p.id;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => onSelect(p.id)}
+              className={`relative flex flex-col gap-1 p-3.5 rounded-2xl border text-left transition-all duration-150 active:scale-95 ${
+                active
+                  ? "bg-violet-600/20 border-violet-500/60 shadow-md shadow-violet-900/30"
+                  : "bg-[#0c0c18]/80 border-slate-800 hover:border-violet-800/50 hover:bg-violet-950/20"
+              }`}
+            >
+              <span className="text-2xl mb-0.5 leading-none">{p.emoji}</span>
+              <span className="text-sm font-bold text-white leading-snug">{p.label}</span>
+              <span className="text-[11px] text-slate-400 leading-snug">{p.tagline}</span>
+              {active && (
+                <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-violet-500 flex items-center justify-center shrink-0">
+                  <Check className="w-2.5 h-2.5 text-white" />
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      <button
+        onClick={onNext}
+        disabled={!selected}
+        className="w-full py-3.5 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-violet-900/40 active:scale-[0.98]"
+      >
+        Continue <ArrowRight className="w-4 h-4" />
+      </button>
+      {!selected && (
+        <p className="text-center text-xs text-slate-600 mt-3">Pick one to continue</p>
+      )}
+    </div>
+  );
+}
+
+// ─── Step 2 — Goal selection (persona-aware) ──────────────────────────────────
+
+function PersonaGoalStep({
+  persona,
+  selectedGoal,
+  onSelect,
+  onNext,
+}: {
+  persona: PersonaId;
+  selectedGoal: string | null;
+  onSelect: (goal: string) => void;
+  onNext: () => void;
+}) {
+  const goals        = PERSONA_GOALS[persona];
+  const personaLabel = PERSONAS.find((p) => p.id === persona)?.label ?? "";
+
+  return (
+    <div className="w-full max-w-md px-4">
+      <div className="text-center mb-6">
+        <h1 className="text-3xl font-black mb-2 text-white leading-tight">
+          What&apos;s your main goal? 🎯
+        </h1>
+        <p className="text-slate-400 text-sm">
+          As a{" "}
+          <span className="text-violet-300 font-semibold">{personaLabel}</span>
+          , what matters most?
+        </p>
+      </div>
+
+      <div className="space-y-2.5 mb-6">
+        {goals.map((goal) => {
+          const active = selectedGoal === goal;
+          return (
+            <button
+              key={goal}
+              type="button"
+              onClick={() => onSelect(goal)}
+              className={`w-full flex items-center gap-3 p-4 rounded-2xl border text-left transition-all duration-150 active:scale-[0.98] ${
+                active
+                  ? "border-violet-500/60 bg-violet-600/20 shadow-md shadow-violet-900/30"
+                  : "border-slate-800 bg-[#0c0c18]/80 hover:border-violet-800/40 hover:bg-violet-950/20"
+              }`}
+            >
+              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                active ? "border-violet-500 bg-violet-500" : "border-slate-600"
+              }`}>
+                {active && <Check className="w-3 h-3 text-white" />}
+              </div>
+              <span className="text-sm font-medium text-white">{goal}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <button
+        onClick={onNext}
+        disabled={!selectedGoal}
+        className="w-full py-3.5 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-violet-900/40 active:scale-[0.98]"
+      >
+        Continue <ArrowRight className="w-4 h-4" />
+      </button>
+      {!selectedGoal && (
+        <p className="text-center text-xs text-slate-600 mt-3">Pick a goal to continue</p>
+      )}
+    </div>
+  );
+}
+
+// ─── Step 3 — Goals (categories) ─────────────────────────────────────────────
 
 function GoalsStep({
   selected,
@@ -128,7 +315,7 @@ function GoalsStep({
   );
 }
 
-// ─── Step 2 — Profile (username + avatar combined) ────────────────────────────
+// ─── Step 4 — Profile (username + avatar) ─────────────────────────────────────
 
 function ProfileStep({
   username,
@@ -230,7 +417,7 @@ function ProfileStep({
   );
 }
 
-// ─── Step 3 — First habit ─────────────────────────────────────────────────────
+// ─── Step 5 — First habit (persona-aware suggestions) ────────────────────────
 
 function HabitStep({
   suggestions,
@@ -243,7 +430,7 @@ function HabitStep({
   setChosenHabit: (h: string | null) => void;
   onComplete: (habit: string | null) => void;
 }) {
-  const [custom, setCustom]       = useState("");
+  const [custom, setCustom]         = useState("");
   const [showCustom, setShowCustom] = useState(false);
 
   const finalHabit = showCustom ? (custom.trim() || null) : chosenHabit;
@@ -343,23 +530,27 @@ function OnboardingFlow() {
   const [step,      setStep]      = useState(1);
   const [direction, setDirection] = useState<"fwd" | "back">("fwd");
 
-  // Step 1
+  // Step 1 — persona
+  const [persona, setPersona] = useState<PersonaId | null>(null);
+
+  // Step 2 — persona goal
+  const [personaGoal, setPersonaGoal] = useState<string | null>(null);
+
+  // Step 3 — categories
   const [categories, setCategories] = useState<string[]>([]);
 
-  // Step 2
+  // Step 4 — profile
   const [username,   setUsername]   = useState("");
   const [checking,   setChecking]   = useState(false);
   const [available,  setAvailable]  = useState<boolean | null>(null);
   const [avatarId,   setAvatarId]   = useState<AvatarId>("ghost");
   const debounceRef                 = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Step 3
+  // Step 5 — habit
   const [chosenHabit, setChosenHabit] = useState<string | null>(null);
 
   // ── Auth: getSession() reads from cached storage — no network round-trip ──
   useEffect(() => {
-    // Hard cap: if still loading after 5 s (middleware fell through + page-level
-    // check hung), redirect to login rather than spinning forever.
     const fallback = setTimeout(() => {
       if (loadingAuthRef.current) router.replace("/auth/login");
     }, 5_000);
@@ -368,9 +559,6 @@ function OnboardingFlow() {
       try {
         const supabase = createClient();
 
-        // Race getSession() against a 4.5 s timeout so we always resolve.
-        // getSession() reads cookies/localStorage and is normally instant, but
-        // can hang if the Supabase client is reinitialising a stale session.
         const { data: { session } } = await Promise.race([
           supabase.auth.getSession(),
           new Promise<{ data: { session: null } }>((resolve) =>
@@ -383,9 +571,8 @@ function OnboardingFlow() {
         const uid = session.user.id;
         setUserId(uid);
         loadingAuthRef.current = false;
-        setLoadingAuth(false); // show step 1 NOW — don't wait for profile query
+        setLoadingAuth(false);
 
-        // Profile check in background: redirect if already onboarded, pre-fill if partial
         const { data: profile } = await supabase
           .from("profiles")
           .select("onboarding_completed, username, avatar_id")
@@ -396,7 +583,6 @@ function OnboardingFlow() {
         if (profile?.username)  setUsername(profile.username);
         if (profile?.avatar_id) setAvatarId(profile.avatar_id as AvatarId);
       } catch {
-        // Any unhandled error → fail safe to login rather than spinning forever
         router.replace("/auth/login");
       }
     })();
@@ -432,7 +618,28 @@ function OnboardingFlow() {
   const goNext = () => { setDirection("fwd");  setStep((s) => s + 1); };
   const goBack = () => { setDirection("back"); setStep((s) => s - 1); };
 
-  // ── Step 1 → 2: save goals in background ─────────────────────────────────
+  // ── Step 1 → 2: save persona + user_mode in background ───────────────────
+  const handlePersonaNext = () => {
+    if (userId && persona) {
+      const sb = createClient();
+      sb.from("profiles").update({
+        persona,
+        user_mode: PERSONA_TO_USER_MODE[persona],
+      }).eq("id", userId).then();
+    }
+    goNext();
+  };
+
+  // ── Step 2 → 3: save primary goal in background ───────────────────────────
+  const handlePersonaGoalNext = () => {
+    if (userId && personaGoal) {
+      const sb = createClient();
+      sb.from("profiles").update({ goal: personaGoal }).eq("id", userId).then();
+    }
+    goNext();
+  };
+
+  // ── Step 3 → 4: save category goals in background ────────────────────────
   const handleGoalsNext = () => {
     if (userId) {
       const sb = createClient();
@@ -441,7 +648,7 @@ function OnboardingFlow() {
     goNext();
   };
 
-  // ── Step 2 → 3: save username/avatar in background ───────────────────────
+  // ── Step 4 → 5: save username/avatar in background ───────────────────────
   const handleProfileNext = () => {
     if (userId) {
       const sb = createClient();
@@ -456,14 +663,11 @@ function OnboardingFlow() {
 
   // ── Final step: mark done, navigate instantly, save everything in bg ──────
   const complete = (habit: string | null) => {
-    // Set localStorage flags so the dashboard never shows the onboarding modal
     localStorage.setItem("habitai_onboarding_done", "1");
     sessionStorage.setItem("habitai_onboarding_done", "1");
 
-    // Navigate immediately — don't make the user wait
     router.push("/dashboard");
 
-    // Save profile + habit in background (fire-and-forget)
     const uid = userId;
     if (!uid) return;
 
@@ -473,6 +677,8 @@ function OnboardingFlow() {
       goals:                categories,
       avatar_id:            avatarId,
       onboarding_completed: true,
+      ...(persona ? { persona, user_mode: PERSONA_TO_USER_MODE[persona] } : {}),
+      ...(personaGoal ? { goal: personaGoal } : {}),
     };
     if (username.trim() && USERNAME_RE.test(username) && available !== false) {
       profileUpdate.username = username.toLowerCase().trim();
@@ -489,13 +695,16 @@ function OnboardingFlow() {
     posthog.capture("onboarding_completed", {
       has_username:    !!(username.trim()),
       avatar_id:       avatarId,
+      persona,
+      persona_goal:    personaGoal,
       categories,
       has_first_habit: !!habit,
     });
   };
 
-  // ── Habit suggestions based on chosen categories ──────────────────────────
+  // ── Habit suggestions: persona-first, then category fallback ─────────────
   const suggestions = useMemo(() => {
+    if (persona) return PERSONA_HABIT_SUGGESTIONS[persona];
     const seen = new Set<string>();
     const out: string[] = [];
     for (const cat of categories) {
@@ -504,9 +713,9 @@ function OnboardingFlow() {
       if (out.length >= 3) break;
     }
     return out;
-  }, [categories]);
+  }, [persona, categories]);
 
-  // ── Loading: just until getUser() resolves (near-instant) ────────────────
+  // ── Loading ───────────────────────────────────────────────────────────────
   if (loadingAuth) {
     return (
       <div className="min-h-screen bg-[#09090f] flex items-center justify-center">
@@ -530,10 +739,8 @@ function OnboardingFlow() {
              style={{ width: 520, height: 520, bottom: "-18%", right: "-8%" }} />
       </div>
 
-      {/* Progress dots */}
       <ProgressDots step={step} />
 
-      {/* Back button */}
       {step > 1 && (
         <button
           onClick={goBack}
@@ -544,13 +751,29 @@ function OnboardingFlow() {
         </button>
       )}
 
-      {/* Step content */}
       <div
         key={`step-${step}`}
         className={`relative z-10 min-h-screen flex items-center justify-center pt-16 pb-8
           ${direction === "fwd" ? "step-slide-in" : "step-slide-in-left"}`}
       >
         {step === 1 && (
+          <PersonaStep
+            selected={persona}
+            onSelect={(p) => { setPersona(p); setPersonaGoal(null); }}
+            onNext={handlePersonaNext}
+          />
+        )}
+
+        {step === 2 && persona && (
+          <PersonaGoalStep
+            persona={persona}
+            selectedGoal={personaGoal}
+            onSelect={setPersonaGoal}
+            onNext={handlePersonaGoalNext}
+          />
+        )}
+
+        {step === 3 && (
           <GoalsStep
             selected={categories}
             onChange={setCategories}
@@ -558,7 +781,7 @@ function OnboardingFlow() {
           />
         )}
 
-        {step === 2 && (
+        {step === 4 && (
           <ProfileStep
             username={username}
             setUsername={(v) => { setUsername(v); setAvailable(null); }}
@@ -570,7 +793,7 @@ function OnboardingFlow() {
           />
         )}
 
-        {step === 3 && (
+        {step === 5 && (
           <HabitStep
             suggestions={suggestions}
             chosenHabit={chosenHabit}
