@@ -70,6 +70,17 @@ const PERSONA_HABIT_SUGGESTIONS: Record<PersonaId, string[]> = {
   just_improving:      ["Morning routine (wake up on time)", "Exercise 30 minutes", "Read for 20 minutes"],
 };
 
+const PERSONA_CATEGORY_PRESELECTS: Record<PersonaId, CategoryId[]> = {
+  student:             ["learning", "career", "sleep"],
+  athlete:             ["fitness", "nutrition", "sleep"],
+  professional:        ["career", "fitness", "mindfulness"],
+  entrepreneur:        ["career", "fitness", "sleep"],
+  breaking_bad_habits: ["breaking", "mindfulness", "sleep"],
+  wellness:            ["mindfulness", "sleep", "fitness"],
+  parent:              ["fitness", "relationships", "mindfulness"],
+  just_improving:      ["fitness", "sleep", "career"],
+};
+
 // ─── Category data ────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
@@ -256,10 +267,12 @@ function GoalsStep({
   selected,
   onChange,
   onNext,
+  hasPersona,
 }: {
   selected: string[];
   onChange: (cats: string[]) => void;
   onNext: () => void;
+  hasPersona?: boolean;
 }) {
   const toggle = (id: string) =>
     onChange(selected.includes(id) ? selected.filter((c) => c !== id) : [...selected, id]);
@@ -270,7 +283,11 @@ function GoalsStep({
         <h1 className="text-3xl sm:text-4xl font-black mb-2 text-white leading-tight">
           What do you want to work on? ✨
         </h1>
-        <p className="text-slate-400 text-sm">Pick as many areas as you like</p>
+        <p className="text-slate-400 text-sm">
+          {hasPersona
+            ? "We’ve picked some based on your profile — adjust as you like"
+            : "Pick as many areas as you like"}
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-2.5 mb-6">
@@ -424,11 +441,13 @@ function HabitStep({
   chosenHabit,
   setChosenHabit,
   onComplete,
+  saving,
 }: {
   suggestions: string[];
   chosenHabit: string | null;
   setChosenHabit: (h: string | null) => void;
   onComplete: (habit: string | null) => void;
+  saving?: boolean;
 }) {
   const [custom, setCustom]         = useState("");
   const [showCustom, setShowCustom] = useState(false);
@@ -503,14 +522,18 @@ function HabitStep({
 
       <button
         onClick={() => onComplete(finalHabit)}
-        className="w-full py-4 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-violet-900/40 active:scale-[0.98]"
+        disabled={saving}
+        className="w-full py-4 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-violet-900/40 active:scale-[0.98]"
       >
-        Let&apos;s go! 🚀
+        {saving
+          ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</>
+          : "Let’s go! 🚀"}
       </button>
 
       <button
         onClick={() => onComplete(null)}
-        className="w-full mt-3 py-2 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+        disabled={saving}
+        className="w-full mt-3 py-2 text-xs text-slate-500 hover:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         Skip and add habits on my dashboard
       </button>
@@ -548,6 +571,12 @@ function OnboardingFlow() {
 
   // Step 5 — habit
   const [chosenHabit, setChosenHabit] = useState<string | null>(null);
+
+  // Completion loading state
+  const [saving, setSaving] = useState(false);
+
+  // Tracks which persona's category defaults have been applied (avoids overwriting user edits on back-nav)
+  const [preselectedForPersona, setPreselectedForPersona] = useState<PersonaId | null>(null);
 
   // ── Auth: getSession() reads from cached storage — no network round-trip ──
   useEffect(() => {
@@ -630,11 +659,15 @@ function OnboardingFlow() {
     goNext();
   };
 
-  // ── Step 2 → 3: save primary goal in background ───────────────────────────
+  // ── Step 2 → 3: save primary goal in background; pre-select categories ───
   const handlePersonaGoalNext = () => {
     if (userId && personaGoal) {
       const sb = createClient();
       sb.from("profiles").update({ goal: personaGoal }).eq("id", userId).then();
+    }
+    if (persona && preselectedForPersona !== persona) {
+      setCategories(PERSONA_CATEGORY_PRESELECTS[persona]);
+      setPreselectedForPersona(persona);
     }
     goNext();
   };
@@ -661,36 +694,30 @@ function OnboardingFlow() {
     goNext();
   };
 
-  // ── Final step: mark done, navigate instantly, save everything in bg ──────
-  const complete = (habit: string | null) => {
-    localStorage.setItem("habitai_onboarding_done", "1");
-    sessionStorage.setItem("habitai_onboarding_done", "1");
-
-    router.push("/dashboard");
+  // ── Final step: await all DB writes, then navigate ────────────────────────
+  const complete = async (habit: string | null) => {
+    setSaving(true);
 
     const uid = userId;
-    if (!uid) return;
+    if (uid) {
+      const sb = createClient();
+      const profileUpdate: Record<string, unknown> = {
+        id:                   uid,
+        goals:                categories,
+        avatar_id:            avatarId,
+        onboarding_completed: true,
+        ...(persona ? { persona, user_mode: PERSONA_TO_USER_MODE[persona] } : {}),
+        ...(personaGoal ? { goal: personaGoal } : {}),
+      };
+      if (username.trim() && USERNAME_RE.test(username) && available !== false) {
+        profileUpdate.username = username.toLowerCase().trim();
+      }
 
-    const sb = createClient();
-    const profileUpdate: Record<string, unknown> = {
-      id:                   uid,
-      goals:                categories,
-      avatar_id:            avatarId,
-      onboarding_completed: true,
-      ...(persona ? { persona, user_mode: PERSONA_TO_USER_MODE[persona] } : {}),
-      ...(personaGoal ? { goal: personaGoal } : {}),
-    };
-    if (username.trim() && USERNAME_RE.test(username) && available !== false) {
-      profileUpdate.username = username.toLowerCase().trim();
+      await sb.from("profiles").upsert(profileUpdate, { onConflict: "id" });
+      if (habit) {
+        await sb.from("habits").insert({ user_id: uid, name: habit, frequency: "daily" });
+      }
     }
-
-    sb.from("profiles")
-      .upsert(profileUpdate, { onConflict: "id" })
-      .then(() => {
-        if (habit) {
-          sb.from("habits").insert({ user_id: uid, name: habit, frequency: "daily" });
-        }
-      });
 
     posthog.capture("onboarding_completed", {
       has_username:    !!(username.trim()),
@@ -700,6 +727,10 @@ function OnboardingFlow() {
       categories,
       has_first_habit: !!habit,
     });
+
+    localStorage.setItem("habitai_onboarding_done", "1");
+    sessionStorage.setItem("habitai_onboarding_done", "1");
+    router.push("/dashboard");
   };
 
   // ── Habit suggestions: persona-first, then category fallback ─────────────
@@ -778,6 +809,7 @@ function OnboardingFlow() {
             selected={categories}
             onChange={setCategories}
             onNext={handleGoalsNext}
+            hasPersona={!!persona}
           />
         )}
 
@@ -799,6 +831,7 @@ function OnboardingFlow() {
             chosenHabit={chosenHabit}
             setChosenHabit={setChosenHabit}
             onComplete={complete}
+            saving={saving}
           />
         )}
       </div>
