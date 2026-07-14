@@ -805,7 +805,7 @@ function OnboardingFlow() {
         {step === 1 && (
           <PersonaStep
             selected={persona}
-            onSelect={(p) => { setPersona(p); setPersonaGoal(null); }}
+            onSelect={(p) => { setPersona(p); setPersonaGoals([]); }}
             onNext={handlePersonaNext}
           />
         )}
