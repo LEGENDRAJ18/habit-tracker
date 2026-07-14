@@ -12,7 +12,7 @@ import posthog from "posthog-js";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const TOTAL_STEPS = 5;
-const USERNAME_RE = /^[a-z0-9_]{3,20}$/i;
+const USERNAME_RE = /^[a-zA-Z0-9_ .'\-]{3,30}$/;
 
 // ─── Persona data ─────────────────────────────────────────────────────────────
 
@@ -193,17 +193,17 @@ function PersonaStep({
   );
 }
 
-// ─── Step 2 — Goal selection (persona-aware) ──────────────────────────────────
+// ─── Step 2 — Goal selection (persona-aware, multi-select) ───────────────────
 
 function PersonaGoalStep({
   persona,
-  selectedGoal,
-  onSelect,
+  selectedGoals,
+  onToggle,
   onNext,
 }: {
   persona: PersonaId;
-  selectedGoal: string | null;
-  onSelect: (goal: string) => void;
+  selectedGoals: string[];
+  onToggle: (goal: string) => void;
   onNext: () => void;
 }) {
   const goals        = PERSONA_GOALS[persona];
@@ -213,30 +213,30 @@ function PersonaGoalStep({
     <div className="w-full max-w-md px-4">
       <div className="text-center mb-6">
         <h1 className="text-3xl font-black mb-2 text-white leading-tight">
-          What&apos;s your main goal? 🎯
+          What are your goals? 🎯
         </h1>
         <p className="text-slate-400 text-sm">
           As a{" "}
           <span className="text-violet-300 font-semibold">{personaLabel}</span>
-          , what matters most?
+          {" "}— pick all that apply
         </p>
       </div>
 
       <div className="space-y-2.5 mb-6">
         {goals.map((goal) => {
-          const active = selectedGoal === goal;
+          const active = selectedGoals.includes(goal);
           return (
             <button
               key={goal}
               type="button"
-              onClick={() => onSelect(goal)}
+              onClick={() => onToggle(goal)}
               className={`w-full flex items-center gap-3 p-4 rounded-2xl border text-left transition-all duration-150 active:scale-[0.98] ${
                 active
                   ? "border-violet-500/60 bg-violet-600/20 shadow-md shadow-violet-900/30"
                   : "border-slate-800 bg-[#0c0c18]/80 hover:border-violet-800/40 hover:bg-violet-950/20"
               }`}
             >
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
                 active ? "border-violet-500 bg-violet-500" : "border-slate-600"
               }`}>
                 {active && <Check className="w-3 h-3 text-white" />}
@@ -249,13 +249,16 @@ function PersonaGoalStep({
 
       <button
         onClick={onNext}
-        disabled={!selectedGoal}
+        disabled={selectedGoals.length === 0}
         className="w-full py-3.5 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-violet-900/40 active:scale-[0.98]"
       >
-        Continue <ArrowRight className="w-4 h-4" />
+        {selectedGoals.length > 0
+          ? `Continue with ${selectedGoals.length} goal${selectedGoals.length > 1 ? "s" : ""}`
+          : "Continue"}{" "}
+        <ArrowRight className="w-4 h-4" />
       </button>
-      {!selectedGoal && (
-        <p className="text-center text-xs text-slate-600 mt-3">Pick a goal to continue</p>
+      {selectedGoals.length === 0 && (
+        <p className="text-center text-xs text-slate-600 mt-3">Pick at least one goal to continue</p>
       )}
     </div>
   );
@@ -372,7 +375,7 @@ function ProfileStep({
           <input
             type="text"
             value={username}
-            onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+            onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9_ .'\-]/g, ""))}
             placeholder="your_username"
             maxLength={20}
             autoComplete="off"
@@ -387,7 +390,7 @@ function ProfileStep({
           </div>
         </div>
         <div className="h-4 mt-1">
-          {usernameTaken && <p className="text-[11px] text-red-400">Username taken — try another</p>}
+          {usernameTaken && <p className="text-[11px] text-red-400">Username already taken</p>}
           {!usernameTaken && isValidFormat && !checking && available === true && (
             <p className="text-[11px] text-emerald-400">Looks good!</p>
           )}
@@ -556,8 +559,8 @@ function OnboardingFlow() {
   // Step 1 — persona
   const [persona, setPersona] = useState<PersonaId | null>(null);
 
-  // Step 2 — persona goal
-  const [personaGoal, setPersonaGoal] = useState<string | null>(null);
+  // Step 2 — persona goals (multi-select)
+  const [personaGoals, setPersonaGoals] = useState<string[]>([]);
 
   // Step 3 — categories
   const [categories, setCategories] = useState<string[]>([]);
@@ -661,9 +664,9 @@ function OnboardingFlow() {
 
   // ── Step 2 → 3: save primary goal in background; pre-select categories ───
   const handlePersonaGoalNext = () => {
-    if (userId && personaGoal) {
+    if (userId && personaGoals.length > 0) {
       const sb = createClient();
-      sb.from("profiles").update({ goal: personaGoal }).eq("id", userId).then();
+      sb.from("profiles").update({ goal: personaGoals[0] }).eq("id", userId).then();
     }
     if (persona && preselectedForPersona !== persona) {
       setCategories(PERSONA_CATEGORY_PRESELECTS[persona]);
@@ -698,6 +701,8 @@ function OnboardingFlow() {
   const complete = async (habit: string | null) => {
     setSaving(true);
 
+    console.log("[onboarding] complete() called", { habit, userId });
+
     const uid = userId;
     if (uid) {
       const sb = createClient();
@@ -707,23 +712,33 @@ function OnboardingFlow() {
         avatar_id:            avatarId,
         onboarding_completed: true,
         ...(persona ? { persona, user_mode: PERSONA_TO_USER_MODE[persona] } : {}),
-        ...(personaGoal ? { goal: personaGoal } : {}),
+        ...(personaGoals.length > 0 ? { goal: personaGoals[0] } : {}),
       };
       if (username.trim() && USERNAME_RE.test(username) && available !== false) {
         profileUpdate.username = username.toLowerCase().trim();
       }
 
-      await sb.from("profiles").upsert(profileUpdate, { onConflict: "id" });
+      const profileResult = await sb.from("profiles").upsert(profileUpdate, { onConflict: "id" });
+      console.log("[onboarding] profile upsert result", profileResult);
+
+      console.log("[onboarding] habit insert — will attempt?", !!habit, "| uid:", uid, "| habit value:", habit);
       if (habit) {
-        await sb.from("habits").insert({ user_id: uid, name: habit, frequency: "daily" });
+        const habitPayload = { user_id: uid, name: habit, frequency: "daily" };
+        console.log("[onboarding] habit insert payload:", habitPayload);
+        const habitResult = await sb.from("habits").insert(habitPayload);
+        console.log("[onboarding] habit insert result — data:", habitResult.data, "| error:", habitResult.error);
+      } else {
+        console.log("[onboarding] habit is null — skipping insert");
       }
+    } else {
+      console.log("[onboarding] uid is null — skipping all DB writes");
     }
 
     posthog.capture("onboarding_completed", {
       has_username:    !!(username.trim()),
       avatar_id:       avatarId,
       persona,
-      persona_goal:    personaGoal,
+      persona_goals:   personaGoals,
       categories,
       has_first_habit: !!habit,
     });
@@ -798,8 +813,8 @@ function OnboardingFlow() {
         {step === 2 && persona && (
           <PersonaGoalStep
             persona={persona}
-            selectedGoal={personaGoal}
-            onSelect={setPersonaGoal}
+            selectedGoals={personaGoals}
+            onToggle={(g) => setPersonaGoals((prev) => prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g])}
             onNext={handlePersonaGoalNext}
           />
         )}

@@ -20,8 +20,8 @@ export default function PageNav({
 }: Props) {
   return (
     <>
-      {/* Sticky breadcrumb header */}
-      <div className="sticky top-0 z-40 bg-[#09090f]/90 backdrop-blur-xl border-b border-violet-900/20">
+      {/* Sticky breadcrumb header — sits below DashboardNav (h-14 mobile / h-16 desktop) */}
+      <div className="sticky top-14 sm:top-16 z-30 bg-[#09090f]/90 backdrop-blur-xl border-b border-violet-900/20">
         <div className={`${maxWidth} mx-auto px-4 sm:px-6 h-14 flex items-center gap-2`}>
           <Link
             href="/dashboard"

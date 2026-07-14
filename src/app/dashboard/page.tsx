@@ -519,6 +519,7 @@ export default function DashboardPage() {
   const [timerMinimized, setTimerMinimized] = useState(false);
   const [showXPSheet, setShowXPSheet] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [currentMood, setCurrentMood] = useState<number | null>(null);
 
   const isPaid = tier === "plus" || tier === "pro";
 
@@ -958,7 +959,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Mood check-in */}
-        {!loading && habits.length > 0 && <ErrorBoundary section="mood-checkin"><MoodCheckin /></ErrorBoundary>}
+        {!loading && habits.length > 0 && <ErrorBoundary section="mood-checkin"><MoodCheckin onMoodSelected={setCurrentMood} /></ErrorBoundary>}
 
         {/* Daily AI check-in card */}
         {checkinHabit && isPaid && (
@@ -1286,13 +1287,26 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Recommended habits — PRO only */}
+        {/* Recommended habits — mood-based (all tiers) or goal-based (PRO) */}
         {!loading && !profileLoading && onboardingCompleted && tier === "pro" && (
           <HabitRecommendations
             goals={goals}
             existingHabits={habits}
             canAddMore={true}
             isPro={true}
+            mood={currentMood}
+            onAdd={(name, desc) => addHabit(name, desc, "daily")}
+            onSetGoal={() => setShowReOnboard(true)}
+            onUpgrade={() => openUpgradeModal("pro_feature", true)}
+          />
+        )}
+        {!loading && !profileLoading && onboardingCompleted && tier !== "pro" && currentMood != null && (
+          <HabitRecommendations
+            goals={goals}
+            existingHabits={habits}
+            canAddMore={habits.length < 999}
+            isPro={false}
+            mood={currentMood}
             onAdd={(name, desc) => addHabit(name, desc, "daily")}
             onSetGoal={() => setShowReOnboard(true)}
             onUpgrade={() => openUpgradeModal("pro_feature", true)}

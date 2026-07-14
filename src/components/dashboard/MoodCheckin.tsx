@@ -18,7 +18,7 @@ interface Correlation {
   delta: number;
 }
 
-export default function MoodCheckin() {
+export default function MoodCheckin({ onMoodSelected }: { onMoodSelected?: (mood: number) => void }) {
   const supabase = createClient();
   const [todayMood,    setTodayMood]    = useState<number | null>(null);
   const [selected,     setSelected]     = useState<number | null>(null);
@@ -107,6 +107,7 @@ export default function MoodCheckin() {
       if (!user) return;
       await supabase.from("mood_logs").insert({ user_id: user.id, mood: value });
       setTodayMood(value);
+      onMoodSelected?.(value);
       setDismissed(true); // instant dismiss — same feel as deleting a habit
     } finally { setSaving(false); }
   }

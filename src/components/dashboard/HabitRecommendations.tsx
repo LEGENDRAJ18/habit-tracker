@@ -48,6 +48,43 @@ const DEFAULT_RECS: Rec[] = [
   { emoji: "🏃", name: "Morning walk",               description: "Get moving to start the day right" },
 ];
 
+const MOOD_RECS: Record<number, Rec[]> = {
+  1: [ // Rough
+    { emoji: "🧘", name: "5-min breathing exercise",  description: "4-7-8 technique to calm your nervous system" },
+    { emoji: "🚶", name: "Short walk outside",         description: "Even 10 minutes shifts your mood"           },
+    { emoji: "📔", name: "Write 3 thoughts down",      description: "Journaling releases mental pressure"        },
+    { emoji: "💧", name: "Drink a full glass of water", description: "Hydration helps more than you think"       },
+  ],
+  2: [ // Meh
+    { emoji: "🧘", name: "10-min meditation",          description: "Quiet the noise and reset"                  },
+    { emoji: "🚶", name: "Walk for 15 minutes",        description: "Movement lifts your baseline mood"          },
+    { emoji: "📔", name: "Journal for 5 minutes",      description: "Write what's on your mind"                  },
+    { emoji: "🌬️", name: "Deep breathing (5 min)",     description: "Slow down and breathe intentionally"       },
+  ],
+  3: [ // Okay
+    { emoji: "🏃", name: "Light jog or walk",          description: "Keep the energy balanced"                   },
+    { emoji: "📖", name: "Read for 20 minutes",        description: "Good days are great for learning"           },
+    { emoji: "🧘", name: "Stretching routine",         description: "Stay loose and maintain momentum"           },
+    { emoji: "📝", name: "Plan your evening",          description: "Set up tomorrow while you're grounded"      },
+  ],
+  4: [ // Good
+    { emoji: "💪", name: "Full workout session",       description: "Ride the high energy — push yourself"       },
+    { emoji: "🧠", name: "Deep work session (1 hr)",  description: "Channel that focus into real output"         },
+    { emoji: "📚", name: "Learn a new skill (30 min)", description: "Great mood = great retention"               },
+    { emoji: "🏋️", name: "Strength training",          description: "Your body is ready — use it"               },
+  ],
+  5: [ // Amazing
+    { emoji: "🚀", name: "Intense workout",            description: "Turn that amazing feeling into performance"  },
+    { emoji: "🧊", name: "Cold shower",                description: "Build mental toughness while you're up"     },
+    { emoji: "🎯", name: "Deep work (2 hrs)",          description: "Your best days deserve your best focus"     },
+    { emoji: "🆕", name: "Try something new",          description: "High confidence is the best time to stretch" },
+  ],
+};
+
+function getMoodLabel(mood: number): string {
+  return ["", "Rough", "Meh", "Okay", "Good", "Amazing"][mood] ?? "";
+}
+
 function getRecsForGoals(goals: string[]): Rec[] | null {
   if (goals.length === 0) return null;
   const seen = new Set<string>();
@@ -74,6 +111,7 @@ interface Props {
   onAdd: (name: string, description: string) => Promise<{ error: string | null }>;
   onSetGoal: () => void;
   onUpgrade: () => void;
+  mood?: number | null;
 }
 
 export default function HabitRecommendations({
@@ -84,6 +122,7 @@ export default function HabitRecommendations({
   onAdd,
   onSetGoal,
   onUpgrade,
+  mood,
 }: Props) {
   const [adding, setAdding] = useState<Set<string>>(new Set());
 
@@ -101,6 +140,56 @@ export default function HabitRecommendations({
       return next;
     });
   };
+
+  // ── Mood-based suggestions (available to all tiers) ──────────────────────────
+  const moodRecs = mood != null ? MOOD_RECS[mood] ?? null : null;
+  const moodVisible = moodRecs?.filter((r) => !owned.has(r.name.toLowerCase())) ?? [];
+
+  if (moodVisible.length > 0) {
+    const moodLabel = getMoodLabel(mood!);
+    const moodEmoji = ["", "😞", "😕", "😐", "🙂", "😄"][mood!] ?? "";
+    return (
+      <section className="mt-8">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-base leading-none">{moodEmoji}</span>
+          <h2 className="text-sm font-semibold text-slate-300">
+            {moodLabel === "Rough" || moodLabel === "Meh"
+              ? "Gentle habits for right now"
+              : moodLabel === "Okay"
+              ? "Balanced habits for today"
+              : "High-energy habits to match your mood"}
+          </h2>
+        </div>
+        <div className="space-y-2">
+          {moodVisible.map((rec) => {
+            const isAdding = adding.has(rec.name);
+            return (
+              <div
+                key={rec.name}
+                className="group flex items-center gap-3 px-4 py-3 rounded-xl border border-violet-900/12 bg-[#0c0c18] hover:border-violet-800/22 hover:bg-[#0f0f1a] transition-all duration-200"
+              >
+                <div className="w-9 h-9 rounded-lg bg-violet-950/50 border border-violet-900/18 flex items-center justify-center flex-shrink-0 text-[18px] leading-none select-none">
+                  {rec.emoji}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-200 truncate">{rec.name}</p>
+                  <p className="text-xs text-slate-600 truncate mt-0.5">{rec.description}</p>
+                </div>
+                <button
+                  onClick={() => handleAdd(rec)}
+                  disabled={isAdding}
+                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-violet-300 border border-violet-700/35 hover:border-violet-500/55 hover:text-violet-200 hover:bg-violet-950/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  {isAdding ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                  {isAdding ? "Adding…" : "Add"}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    );
+  }
 
   // ── Pro gate — show locked state for free/plus users ─────────────────────────
   if (!isPro) {

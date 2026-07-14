@@ -142,10 +142,22 @@ function calcTipPos(rect: Rect, preferSide: Side): React.CSSProperties {
   if (preferSide === "right") {
     if (vw - rect.left - rect.width - PAD >= CARD_W + 12)
       return { position: "fixed", top: Math.max(12, rect.top - 8), left: rect.left + rect.width + PAD + 8 };
+    // Not enough room right → try left, then above/below
+    if (rect.left - PAD >= CARD_W + 12)
+      return { position: "fixed", top: Math.max(12, rect.top - 8), left: rect.left - PAD - CARD_W - 8 };
+    if (rect.top - PAD - CARD_H - 8 > 0)
+      return { position: "fixed", top: rect.top - PAD - CARD_H - 8, left: cx };
+    return { position: "fixed", top: rect.top + rect.height + PAD + 8, left: cx };
   }
   if (preferSide === "left") {
     if (rect.left - PAD >= CARD_W + 12)
       return { position: "fixed", top: Math.max(12, rect.top - 8), left: rect.left - PAD - CARD_W - 8 };
+    // Not enough room left → try right, then above/below
+    if (vw - rect.left - rect.width - PAD >= CARD_W + 12)
+      return { position: "fixed", top: Math.max(12, rect.top - 8), left: rect.left + rect.width + PAD + 8 };
+    if (rect.top - PAD - CARD_H - 8 > 0)
+      return { position: "fixed", top: rect.top - PAD - CARD_H - 8, left: cx };
+    return { position: "fixed", top: rect.top + rect.height + PAD + 8, left: cx };
   }
   // Fallback: center
   return { position: "fixed", top: Math.max(12, vh / 2 - CARD_H / 2), left: vw / 2 - CARD_W / 2 };

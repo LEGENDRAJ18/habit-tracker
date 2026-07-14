@@ -7,6 +7,9 @@ export interface LevelReward {
 }
 
 export const LEVEL_REWARDS: LevelReward[] = [
+  { level: 2,   id: "streak_freeze",   icon: "🧊", name: "Streak Freeze",      desc: "Protects your streak for one day if you miss" },
+  { level: 3,   id: "custom_avatars",  icon: "🎨", name: "Custom Avatars",     desc: "Unlock all avatar options for your profile" },
+  { level: 4,   id: "lucky_xp",        icon: "🎰", name: "Lucky XP Bonus",     desc: "12% chance of bonus XP on each habit completion" },
   { level: 5,   id: "streak_shield",      icon: "🛡️",  name: "Streak Shield",       desc: "Automatically protects your streak once per week" },
   { level: 10,  id: "custom_icons",       icon: "🎨",  name: "Custom Habit Icons",  desc: "Pick custom emoji icons for any habit" },
   { level: 15,  id: "habit_templates",    icon: "📋",  name: "Habit Templates",     desc: "Pre-made habit packs for fitness, study & wellness" },
