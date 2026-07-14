@@ -15,6 +15,7 @@ import { friendlyError } from "@/lib/friendlyError";
 import { xpForLevel, levelName, levelEmoji, levelFromXP, xpIntoLevel, xpSpanOfLevel } from "@/lib/xp";
 import { useProfile } from "@/hooks/useProfile";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { TOUR_DONE_KEY, TOUR_FORCE_KEY } from "@/components/ui/OnboardingTour";
 import ReminderSettings from "@/components/dashboard/ReminderSettings";
 import {
@@ -1444,9 +1445,12 @@ function NotificationsTab() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [pushEnabling, setPushEnabling] = useState(false);
+  const [pushFeedback, setPushFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
   const [soundsOn, setSoundsOn] = useState(() =>
     typeof window !== "undefined" && localStorage.getItem("habitai_sounds") === "on"
   );
+  const { requestPermission } = usePushNotifications();
 
   useEffect(() => {
     // Check push permission state
@@ -1491,33 +1495,20 @@ function NotificationsTab() {
   }
 
   async function enablePush() {
-    const permission = await Notification.requestPermission();
-    if (permission === "granted") {
+    setPushEnabling(true);
+    setPushFeedback(null);
+    const result = await requestPermission();
+    setPushEnabling(false);
+    if (result === "success") {
       setPushEnabled(true);
-      // Subscribe via service worker
-      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-      if (vapidKey && "serviceWorker" in navigator) {
-        try {
-          const reg = await navigator.serviceWorker.ready;
-          const padding = "=".repeat((4 - (vapidKey.length % 4)) % 4);
-          const base64 = (vapidKey + padding).replace(/-/g, "+").replace(/_/g, "/");
-          const raw = atob(base64);
-          const arr = new Uint8Array(raw.length);
-          for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
-          const sub = await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: arr.buffer,
-          });
-          await fetch("/api/push/subscribe", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              subscription: sub.toJSON(),
-              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            }),
-          });
-        } catch { /* ignore */ }
-      }
+      setPushFeedback({ ok: true, msg: "Notifications enabled!" });
+      setTimeout(() => setPushFeedback(null), 4000);
+    } else if (result === "denied") {
+      // Browser permission denied — the existing "blocked" notice covers this
+    } else if (result === "no_vapid") {
+      setPushFeedback({ ok: false, msg: "Push notifications are not configured. Please contact support." });
+    } else {
+      setPushFeedback({ ok: false, msg: "Couldn't enable notifications, please try again." });
     }
   }
 
@@ -1574,9 +1565,10 @@ function NotificationsTab() {
             {typeof window !== "undefined" && "Notification" in window && Notification.permission !== "denied" && (
               <button
                 onClick={() => void enablePush()}
-                className="flex-shrink-0 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold rounded-xl transition-all"
+                disabled={pushEnabling}
+                className="flex-shrink-0 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-xl transition-all"
               >
-                Enable
+                {pushEnabling ? "Enabling…" : "Enable"}
               </button>
             )}
           </div>
@@ -1632,6 +1624,17 @@ function NotificationsTab() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {pushFeedback && (
+        <div className={`flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium ${
+          pushFeedback.ok
+            ? "bg-emerald-950/40 border border-emerald-800/30 text-emerald-300"
+            : "bg-red-950/40 border border-red-800/30 text-red-300"
+        }`}>
+          {pushFeedback.ok ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <Bell className="w-4 h-4 flex-shrink-0" />}
+          {pushFeedback.msg}
         </div>
       )}
 

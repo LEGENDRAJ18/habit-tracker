@@ -29,11 +29,15 @@ const hasNotifAPI = (): boolean =>
   "serviceWorker" in navigator &&
   "PushManager" in window;
 
+export type SubscribeResult = "success" | "denied" | "error" | "no_vapid" | "unsupported";
+
 export function usePushNotifications() {
   const [showModal, setShowModal] = useState(false);
   const [isSubscribed, setSubscribed] = useState(
     () => notifPermission() === "granted"
   );
+  const [subscribeError, setSubscribeError] = useState<string | null>(null);
+  const [subscribeSuccess, setSubscribeSuccess] = useState(false);
 
   useEffect(() => {
     if (!hasNotifAPI()) return;
@@ -48,16 +52,21 @@ export function usePushNotifications() {
     return () => clearTimeout(t);
   }, []);
 
-  const subscribe = useCallback(async () => {
+  // Core subscribe: gets SW subscription and saves it to the backend.
+  // Returns a SubscribeResult so callers can show appropriate feedback.
+  const subscribe = useCallback(async (): Promise<SubscribeResult> => {
     const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-    if (!vapidKey) return false;
+    if (!vapidKey) return "no_vapid";
+    if (!hasNotifAPI()) return "unsupported";
+
     try {
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidKey),
       });
-      await fetch("/api/push/subscribe", {
+
+      const res = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -65,11 +74,21 @@ export function usePushNotifications() {
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }),
       });
+
+      if (!res.ok) {
+        // Unsubscribe from the browser too so state stays consistent
+        await sub.unsubscribe().catch(() => {});
+        return "error";
+      }
+
       setSubscribed(true);
+      setSubscribeSuccess(true);
+      setSubscribeError(null);
       localStorage.setItem(SUBSCRIBED_KEY, "1");
-      return true;
+      setTimeout(() => setSubscribeSuccess(false), 4000);
+      return "success";
     } catch {
-      return false;
+      return "error";
     }
   }, []);
 
@@ -78,7 +97,10 @@ export function usePushNotifications() {
     if (!hasNotifAPI()) return;
     const permission = await Notification.requestPermission();
     if (permission === "granted") {
-      await subscribe();
+      const result = await subscribe();
+      if (result !== "success") {
+        setSubscribeError("Couldn't enable notifications, please try again.");
+      }
     } else {
       localStorage.setItem(DISMISSED_KEY, "1");
     }
@@ -90,16 +112,21 @@ export function usePushNotifications() {
   }, []);
 
   // Allow external trigger (e.g. from settings page "Enable notifications" button)
-  const requestPermission = useCallback(async (): Promise<boolean> => {
-    if (!hasNotifAPI()) return false;
-    if (notifPermission() === "granted") {
-      return subscribe();
+  const requestPermission = useCallback(async (): Promise<SubscribeResult> => {
+    if (!hasNotifAPI()) return "unsupported";
+    setSubscribeError(null);
+
+    let permission = notifPermission();
+    if (permission !== "granted") {
+      permission = await Notification.requestPermission();
     }
-    const permission = await Notification.requestPermission();
-    if (permission === "granted") {
-      return subscribe();
+    if (permission !== "granted") return "denied";
+
+    const result = await subscribe();
+    if (result !== "success") {
+      setSubscribeError("Couldn't enable notifications, please try again.");
     }
-    return false;
+    return result;
   }, [subscribe]);
 
   // Called after onboarding completes — show modal immediately (no timeout)
@@ -111,5 +138,14 @@ export function usePushNotifications() {
     setShowModal(true);
   }, []);
 
-  return { showModal, isSubscribed, allow, dismiss, requestPermission, showAfterOnboarding };
+  return {
+    showModal,
+    isSubscribed,
+    subscribeError,
+    subscribeSuccess,
+    allow,
+    dismiss,
+    requestPermission,
+    showAfterOnboarding,
+  };
 }
