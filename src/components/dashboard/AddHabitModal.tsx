@@ -163,11 +163,11 @@ function levelFromMinutes(min: number): number {
   return 4;
 }
 
-const REP_ACTIVITY_RE      = /\b(push.?ups?|pull.?ups?|sit.?ups?|squats?|burpees?|lunges?|crunch(?:es)?|jumping\s*jacks?|planks?|reps?)\b/;
+const REP_ACTIVITY_RE      = /\b(push.?ups?|pull.?ups?|sit.?ups?|squats?|burpees?|lunges?|crunch(?:es)?|jumping\s*jacks?|planks?|reps?|steps?|bench|deadlift|curl|dips?)\b/;
 const DISTANCE_ACTIVITY_RE = /\b(run|running|jog|jogging|walk|walking|cycle|cycling|bike|biking|swim|swimming|hike|hiking|row|rowing|skate|skating|ski|skiing)\b/;
-const DURATION_ACTIVITY_RE = /\b(workout|gym|exercise|cardio|study|studying|practice|practising|practicing|focus|deep.?work|code|coding|yoga|dance|dancing)\b/;
+const DURATION_ACTIVITY_RE = /\b(workout|gym|exercise|cardio|study|studying|practice|practising|practicing|focus|deep.?work|code|coding|yoga|pilates|dance|dancing|lift\w*|weight\w*|boxing|martial\s*arts?|climb(?:ing)?)\b/;
 // Inherently low physical-effort regardless of how long it's sustained for.
-const LOW_EFFORT_RE        = /\b(drink|water|vitamin|supplement|gratitude|journal|breathe|breathing|stretch|stretching|nap|read|reading|hydrat\w*|affirmation|meditat\w*)\b/;
+const LOW_EFFORT_RE        = /\b(drink|water|vitamins?|supplements?|gratitude|journal|breathe|breathing|stretch|stretching|nap|read|reading|hydrat\w*|affirmations?|meditat\w*)\b/;
 // Always floors the result at Hard, regardless of stated magnitude.
 const INTENSE_FLOOR_RE     = /\b(hiit|sprint|deadlift|heavy\s*lift|max\s*effort|intense|cold\s*(plunge|shower|ice)|fasting|intermittent\s*fast|4\s*am|4am|5am)\b/;
 // Always resolves straight to Extreme.
@@ -191,11 +191,25 @@ function detectDifficulty(name: string): typeof DIFFICULTY_LEVELS[number] {
     level = unit === "km" ? levelFromDistanceKm(value) : unit === "min" ? levelFromMinutes(value) : 2;
   } else if (DURATION_ACTIVITY_RE.test(lower)) {
     level = unit === "min" && value > 0 ? levelFromMinutes(value) : 2;
+  } else if (value > 0 && unit !== null) {
+    // A number was extracted but no activity keyword matched — use the magnitude
+    // tables directly rather than falling back to word count.
+    if (unit === "km")        level = levelFromDistanceKm(value);
+    else if (unit === "min")  level = levelFromMinutes(value);
+    else                      level = levelFromReps(value);
   } else if (words.length <= 3) {
     level = 1; // short, simple habit names default to Easy
   } else {
     level = 2; // generic multi-word habits with no recognisable activity default to Normal
   }
+
+  // Hard override: very large magnitudes must never score Easy/Normal regardless
+  // of which activity branch ran above (e.g. "walk 10000 steps" via DISTANCE
+  // gets unit "reps" because "steps" isn't a distance unit in extractMagnitude).
+  if      (unit === "reps" && value >= 500) level = Math.max(level, 4);
+  else if (unit === "reps" && value >= 200) level = Math.max(level, 3);
+  else if (unit === "min"  && value >= 50)  level = Math.max(level, 3);
+  else if (unit === "km"   && value >= 20)  level = Math.max(level, 4);
 
   if (INTENSE_FLOOR_RE.test(lower)) level = Math.max(level, 3);
 
