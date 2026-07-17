@@ -55,9 +55,11 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Tier gate — Plus/Pro only
-    const admin = createAdminClient();
-    const { data: profile } = await admin
+    // Tier gate — Plus/Pro only.
+    // Use the user-authenticated client (not admin) so the lookup works even
+    // when SUPABASE_SERVICE_ROLE_KEY is absent; users can always read their
+    // own profile row via RLS.
+    const { data: profile } = await supabase
       .from("profiles")
       .select("subscription_tier")
       .eq("id", user.id)
@@ -66,6 +68,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Habit Battles require Plus or Pro." }, { status: 403 });
     }
 
+    const admin = createAdminClient();
     const body = await request.json() as { opponent_id: string; habit_name: string; duration_days?: number };
     const { opponent_id, habit_name, duration_days = 7 } = body;
 
@@ -74,6 +77,10 @@ export async function POST(request: NextRequest) {
     }
     if (opponent_id === user.id) {
       return NextResponse.json({ error: "You can't battle yourself!" }, { status: 400 });
+    }
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_RE.test(opponent_id)) {
+      return NextResponse.json({ error: "opponent_id must be a valid user ID" }, { status: 400 });
     }
 
     const { data: battle, error } = await admin

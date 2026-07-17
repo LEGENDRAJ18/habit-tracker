@@ -95,6 +95,10 @@ async function authedCtx(browser: Browser, s: SupaSession): Promise<BrowserConte
   const ctx = await browser.newContext({ baseURL: BASE });
   await ctx.addCookies(sessionCookies(s));
   await ctx.addInitScript(() => {
+    // Playwright's headless Chromium reports navigator.onLine = false when it
+    // can't confirm internet connectivity. useHabits bails before fetching when
+    // offline, leaving habits empty. Force it true so the Supabase fetch runs.
+    Object.defineProperty(navigator, 'onLine', { get: () => true });
     localStorage.setItem('habitai-tour-done',       'true');
     localStorage.setItem('habitai_onboarding_done', 'true');
     sessionStorage.setItem('habitai_onboarding_done', 'true');
@@ -111,7 +115,7 @@ async function createHabit(s: SupaSession, userId: string): Promise<string> {
       user_id:          userId,
       name:             '__pw_tier_test__',
       frequency:        'daily',
-      habit_type:       'build',
+      habit_type:       'standard',
       validity_score:   'valid',
       duration_minutes: 25,
     })
@@ -208,8 +212,8 @@ test.describe('Plus tier', () => {
     const page = await ctx.newPage();
     try {
       await page.goto('/dashboard', { waitUntil: 'networkidle' });
-      // Habit has duration_minutes: 25 → button reads "25 min focus"
-      await expect(page.locator('button:has-text("min focus")').first()).toBeVisible({ timeout: 15_000 });
+      // Habit has duration_minutes: 25 → button title "Start 25-min focus session"
+      await expect(page.locator('button').filter({ hasText: /min focus/ }).first()).toBeVisible({ timeout: 15_000 });
     } finally {
       await ctx.close();
     }
@@ -244,7 +248,7 @@ test.describe('Plus tier', () => {
     const page = await ctx.newPage();
     try {
       await page.goto('/groups', { waitUntil: 'networkidle' });
-      await expect(page.locator('text=Plus Feature').first()).not.toBeVisible({ timeout: 5_000 });
+      await expect(page.locator('text=Plus or Pro required').first()).not.toBeVisible({ timeout: 5_000 });
     } finally {
       await ctx.close();
     }
@@ -280,7 +284,7 @@ test.describe('Plus tier', () => {
     const page = await ctx.newPage();
     try {
       await page.goto('/dashboard', { waitUntil: 'networkidle' });
-      await page.locator('button:has-text("min focus")').first().waitFor({ timeout: 15_000 });
+      await page.locator('button').filter({ hasText: /min focus/ }).first().waitFor({ timeout: 15_000 });
       await expect(page.locator('text=🍅 Pomodoro')).not.toBeVisible();
     } finally {
       await ctx.close();
@@ -294,7 +298,7 @@ test.describe('Plus tier', () => {
     const page = await ctx.newPage();
     try {
       await page.goto('/dashboard', { waitUntil: 'networkidle' });
-      await page.locator('button:has-text("min focus")').first().waitFor({ timeout: 15_000 });
+      await page.locator('button').filter({ hasText: /min focus/ }).first().waitFor({ timeout: 15_000 });
       await expect(page.locator('text=Smart timing')).not.toBeVisible();
     } finally {
       await ctx.close();
@@ -352,7 +356,7 @@ test.describe('Free tier — all Plus+Pro features blocked', () => {
     const page = await ctx.newPage();
     try {
       await page.goto('/groups', { waitUntil: 'networkidle' });
-      await expect(page.locator('text=Plus Feature').first()).toBeVisible({ timeout: 10_000 });
+      await expect(page.locator('text=Plus or Pro required').first()).toBeVisible({ timeout: 10_000 });
     } finally {
       await ctx.close();
     }
@@ -366,7 +370,7 @@ test.describe('Free tier — all Plus+Pro features blocked', () => {
     expect(res.status).toBe(429);
     // Free message: "You've used your free AI insight for today."
     expect(body.error).toMatch(/free AI insight/i);
-    expect(body.error).not.toMatch(/5.*insights?/i);
+    expect(body.error).not.toMatch(/used all 5/i);  // "used all 5" only appears in the Plus-tier message
   });
 
   test('Streak Freeze — indicator NOT shown for Free user', async ({ browser }) => {
@@ -376,7 +380,7 @@ test.describe('Free tier — all Plus+Pro features blocked', () => {
     try {
       await page.goto('/dashboard', { waitUntil: 'networkidle' });
       // Wait for habit card to confirm page rendered; then assert absence of freeze text
-      await page.locator('button:has-text("min focus")').first().waitFor({ timeout: 15_000 });
+      await page.locator('button').filter({ hasText: /min focus/ }).first().waitFor({ timeout: 15_000 });
       await expect(page.locator('text=/freeze.+week/i')).not.toBeVisible();
     } finally {
       await ctx.close();
@@ -403,7 +407,7 @@ test.describe('Free tier — all Plus+Pro features blocked', () => {
     const page = await ctx.newPage();
     try {
       await page.goto('/dashboard', { waitUntil: 'networkidle' });
-      const timerBtn = page.locator('button:has-text("min focus")').first();
+      const timerBtn = page.locator('button').filter({ hasText: /min focus/ }).first();
       await timerBtn.waitFor({ timeout: 15_000 });
       await timerBtn.click();
       // FocusTimer modal opens; the Pomodoro upgrade badge is in the bottom section

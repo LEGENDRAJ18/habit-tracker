@@ -79,10 +79,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Use the user-authenticated client for the user's own rows so these
+    // queries succeed via RLS even when SUPABASE_SERVICE_ROLE_KEY is absent.
     const [{ data: habits }, { data: rawLogs }, { data: profile }] = await Promise.all([
-      admin.from("habits").select("id, name, habit_strength, created_at").eq("user_id", user.id).order("created_at"),
-      admin.from("habit_logs").select("habit_id, completed_at").eq("user_id", user.id).gte("completed_at", daysAgo(90)),
-      admin.from("profiles").select("goal, goals, subscription_tier, ai_memory, ai_insight_count, ai_insight_date").eq("id", user.id).single(),
+      supabase.from("habits").select("id, name, habit_strength, created_at").eq("user_id", user.id).order("created_at"),
+      supabase.from("habit_logs").select("habit_id, completed_at").eq("user_id", user.id).gte("completed_at", daysAgo(90)),
+      supabase.from("profiles").select("goal, goals, subscription_tier, ai_memory, ai_insight_count, ai_insight_date").eq("id", user.id).single(),
     ]);
 
     const userTier = (profile?.subscription_tier ?? "free") as "free" | "plus" | "pro";
@@ -104,7 +106,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Increment atomically in DB
-      await admin.from("profiles").update({
+      await supabase.from("profiles").update({
         ai_insight_count: todayCount + 1,
         ai_insight_date:  today,
       }).eq("id", user.id);

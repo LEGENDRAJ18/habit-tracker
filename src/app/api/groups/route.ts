@@ -22,7 +22,9 @@ export async function GET() {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const admin = createAdminClient();
-    const { data: profile } = await admin.from("profiles").select("group_id, subscription_tier").eq("id", user.id).single();
+    // Use user-authenticated client for own profile so subscription_tier is
+    // correct even when SUPABASE_SERVICE_ROLE_KEY is absent.
+    const { data: profile } = await supabase.from("profiles").select("group_id, subscription_tier").eq("id", user.id).single();
 
     const [{ data: ownGroups }, memberGroupData] = await Promise.all([
       admin.from("groups").select("*").eq("admin_id", user.id),
