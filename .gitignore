@@ -15,6 +15,10 @@
 
 # testing
 /coverage
+/playwright-report/
+/test-results/
+pw_test.cjs
+*pw_test.cjs
 
 # next.js
 /.next/

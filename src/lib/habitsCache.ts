@@ -83,6 +83,8 @@ export type AddHabitPayload = {
   duration_minutes:        number | null;
   xp_value:                number;
   difficulty:              number;
+  verification_type:       string;
+  target_value:            number | null;
 };
 
 export type OfflineOp =

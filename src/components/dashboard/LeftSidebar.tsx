@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, BarChart2, Calendar, Users, User, Zap, Crown } from "lucide-react";
+import { LayoutDashboard, BarChart2, Calendar, Users, User, Zap, Crown, Sparkles, Lock } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useUpgrade } from "@/contexts/UpgradeContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
@@ -50,6 +50,40 @@ export default function LeftSidebar() {
           </svg>
         </span>
       </a>
+
+      {/* AI Goal Program card */}
+      {tier === "pro" ? (
+        <Link
+          href="/goal-program"
+          className="block mb-5 bg-[#0c0c18] border border-violet-600/25 hover:border-violet-500/50 rounded-2xl p-3.5 transition-all group"
+        >
+          <div className="flex items-center gap-2.5 mb-1">
+            <div className="w-7 h-7 rounded-lg bg-violet-600/20 flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-3.5 h-3.5 text-violet-300" />
+            </div>
+            <p className="text-xs font-semibold text-white leading-none">AI Goal Program</p>
+          </div>
+          <p className="text-[10px] text-slate-500 leading-relaxed">A phased plan built around your goal</p>
+        </Link>
+      ) : (
+        <button
+          onClick={() => openUpgradeModal("pro_feature", tier === "plus")}
+          className="w-full text-left block mb-5 bg-[#0c0c18] border border-violet-900/25 hover:border-violet-600/40 rounded-2xl p-3.5 transition-all"
+        >
+          <div className="flex items-center gap-2.5 mb-1">
+            <div className="w-7 h-7 rounded-lg bg-violet-950/50 flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-3.5 h-3.5 text-violet-500/70" />
+            </div>
+            <p className="text-xs font-semibold text-slate-300 leading-none flex-1">AI Goal Program</p>
+            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-300 bg-amber-900/25 border border-amber-600/25 px-1.5 py-0.5 rounded-full flex-shrink-0">
+              <Crown className="w-2.5 h-2.5" />PRO
+            </span>
+          </div>
+          <p className="text-[10px] text-slate-600 leading-relaxed flex items-center gap-1">
+            <Lock className="w-2.5 h-2.5" /> Unlock a personalized, phased habit plan
+          </p>
+        </button>
+      )}
 
       {/* Nav links */}
       <nav className="space-y-0.5 mb-5">

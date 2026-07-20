@@ -441,7 +441,7 @@ function getEmptyStateRecs(goals: string[]) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { habits, todayLogs, loading, isSyncing, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, isFailedToday, markFailed, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength, refetch, historicalLogs } =
+  const { habits, todayLogs, loading, isSyncing, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, isFailedToday, markFailed, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength, refetch, historicalLogs, completeHabitWithVerification, undoCompletion, addLaterReminder, skipHabitToday } =
     useHabits();
   const { tier, profileLoading, onboardingCompleted, goals, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt, dreamUniversity, userMode } = useProfile();
   const { xp, level, achievements, totalCompletions, justLeveledUp, xpLoading, isDailyAchieved, onHabitCompleted, onDailyOpen, checkMilestones, dismissLevelUp } = useXP();
@@ -1192,8 +1192,29 @@ export default function DashboardPage() {
                   }, 5000);
                 }}
                 isEditing={editingHabitId === habit.id}
-                onCompleted={() => {
+                onVerifiedComplete={async (result) => {
+                  const res = await completeHabitWithVerification(habit.id, {
+                    actualValue: result.actualValue ?? null,
+                    verificationType: habit.verification_type ?? null,
+                    reflectionText: result.reflectionText ?? null,
+                    photoUrl: result.photoUrl ?? null,
+                    completionQuality: result.completionQuality,
+                    timerUsed: result.timerUsed ?? false,
+                  });
+                  return { error: res.error, logId: res.log?.id ?? null };
+                }}
+                onUndoComplete={(logId) => { void undoCompletion(habit.id, logId); }}
+                onSkip={() => {
+                  void skipHabitToday(habit.id, tier).then(({ error }) => {
+                    if (error) toast(error, "error", undefined, 3500);
+                    else toast(`"${habit.name}" skipped for today`, "success", undefined, 2500);
+                  });
+                }}
+                onLater={() => { void addLaterReminder(habit.id, habit.name); }}
+                onCompleted={(opts) => {
                   const validity = habit.validity_score ?? "valid";
+                  const qualityMultiplier = opts?.xpMultiplier ?? 1;
+                  const photoBonus = opts?.photoBonus ?? false;
                   playSound("complete");
 
                   // Time-based micro-achievements (once per day each)
@@ -1221,15 +1242,16 @@ export default function DashboardPage() {
 
                   const habitXP = habit.xp_value ?? 10;
                   const habitStreak = getStreak(habit.id);
-                  onHabitCompleted(validity, habit.how_long, habitXP, habitStreak).then(({ luckyBonus }) => {
+                  onHabitCompleted(validity, habit.how_long, habitXP, habitStreak, qualityMultiplier, photoBonus).then(({ luckyBonus }) => {
                     if (luckyBonus) setTimeout(() => toast("🎰 Lucky bonus! +20 XP", "success", undefined, 2500), 300);
                   }).catch(() => {});
 
                   if (validity === "valid") {
                     const mult = habitStreak >= 30 ? 2 : habitStreak >= 7 ? 1.5 : 1;
-                    const earned = Math.round(habitXP * mult);
+                    const earned = Math.round(habitXP * mult * qualityMultiplier) + (photoBonus ? 10 : 0);
                     const multStr = mult > 1 ? ` (${mult}x streak!)` : "";
-                    toast(`✅ ${habit.name} — +${earned} XP${multStr}`, "success", undefined, 2000);
+                    const qualityStr = qualityMultiplier < 1 ? " (partial credit)" : photoBonus ? " (+10 photo bonus)" : "";
+                    toast(`✅ ${habit.name} — +${earned} XP${multStr}${qualityStr}`, "success", undefined, 2000);
                   } else if (validity === "partial") {
                     toast(`⚠️ ${habit.name} — +${Math.round((habit.xp_value ?? 10) * 0.5)} XP (make it more specific for full XP)`, "warning", undefined, 2500);
                   } else if (validity === "invalid") {

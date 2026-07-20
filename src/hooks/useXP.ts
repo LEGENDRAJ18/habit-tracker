@@ -233,6 +233,8 @@ export function useXP() {
     howLong?: string | null,
     xpValue?: number | null,
     currentStreak?: number,
+    qualityMultiplier = 1,
+    photoBonus = false,
   ): Promise<{ luckyBonus: boolean }> => {
     const user = await resolveUser();
     if (!user) return { luckyBonus: false };
@@ -250,10 +252,10 @@ export function useXP() {
     const streakMult = (currentStreak ?? 0) >= 30 ? 2 : (currentStreak ?? 0) >= 7 ? 1.5 : 1;
     const baseXP =
       validityScore === "invalid" ? 0
-      : validityScore === "partial" ? Math.round(habitXP * 0.5 * streakMult)
-      : Math.round(habitXP * streakMult);
+      : validityScore === "partial" ? Math.round(habitXP * 0.5 * streakMult * qualityMultiplier)
+      : Math.round(habitXP * streakMult * qualityMultiplier);
     const durationBonus = baseXP > 0 && howLong ? (DURATION_BONUS_XP[howLong] ?? 0) : 0;
-    const xpToAward = baseXP + durationBonus;
+    const xpToAward = baseXP + durationBonus + (photoBonus && baseXP > 0 ? 10 : 0);
     if (xpToAward > 0) await awardXP(xpToAward);
 
     // ~12% chance lucky bonus

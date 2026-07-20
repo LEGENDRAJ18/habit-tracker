@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Trash2, Check, Flame, Snowflake, ArrowRight, Pencil, X, Loader2, Zap, Globe } from "lucide-react";
+import { Trash2, Check, Flame, Snowflake, ArrowRight, Pencil, X, Loader2, Zap, Globe, Clock3, SkipForward } from "lucide-react";
 import type { Habit, Plan } from "@/types";
 import { useIdentityScore } from "@/hooks/useIdentityScore";
 import VoiceCheckin from "./VoiceCheckin";
+import VerificationSheet, { type VerificationResult } from "./VerificationSheet";
 import { toast } from "@/components/ui/Toast";
 import { DURATION_BONUS_XP } from "@/lib/xp";
 
@@ -22,7 +23,11 @@ interface Props {
   failed?: boolean;
   onToggle: () => void;
   onDelete: () => void;
-  onCompleted?: () => void;
+  onCompleted?: (opts?: { xpMultiplier?: number; photoBonus?: boolean }) => void;
+  onVerifiedComplete?: (result: VerificationResult) => Promise<{ error: string | null; logId?: string | null }>;
+  onUndoComplete?: (logId: string) => void;
+  onSkip?: () => void;
+  onLater?: () => void;
   onMarkFailed?: () => void;
   onRename?: (newName: string, validityScore: "valid" | "partial" | "invalid") => Promise<void>;
   onSmartTimingToggle?: (enabled: boolean) => Promise<void>;
@@ -149,7 +154,8 @@ function getTimeEmoji(whenTime: string | null): string | null {
 
 export default function HabitCard({
   habit, completed, failed = false, streak, strength, isProtected, stackAfterName, isEditing,
-  tier, logId = null, allLogs = [], onToggle, onDelete, onCompleted, onMarkFailed, onRename,
+  tier, logId = null, allLogs = [], onToggle, onDelete, onCompleted, onVerifiedComplete, onUndoComplete,
+  onSkip, onLater, onMarkFailed, onRename,
   onSmartTimingToggle, onUpgradePro, onCommitment, onStartTimer, isTourTarget,
 }: Props) {
   const isLimit = habit.habit_type === "limit";
@@ -167,9 +173,13 @@ export default function HabitCard({
   const [editSaving, setEditSaving]     = useState(false);
   const [smartToggling, setSmartToggling] = useState(false);
   const [swipeX, setSwipeX]         = useState(0);
+  const [showVerifySheet, setShowVerifySheet] = useState(false);
+  const [showActionMenu, setShowActionMenu]   = useState(false);
   const swipeXRef   = useRef(0);
   const touchRef    = useRef({ startX: 0, startY: 0, locked: false });
   const togglingRef = useRef(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFired = useRef(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -227,24 +237,63 @@ export default function HabitCard({
     return base + bonus;
   })();
 
+  // Plays the completion animation/sound/haptics — shared by the instant
+  // uncomplete→complete toggle (limit habits) and the verification sheet path.
+  const playCompletionFeedback = () => {
+    setShowParticles(true);
+    setJustCompleted(true);
+    setShowXPFloat(true);
+    setXPFloatKey((k) => k + 1);
+    setTimeout(() => { setShowParticles(false); setJustCompleted(false); }, 700);
+    setTimeout(() => setShowXPFloat(false), 1200);
+    if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(50);
+    playCompletionSound();
+  };
+
   const handleToggle = () => {
     if (togglingRef.current) return;
     togglingRef.current = true;
     setTimeout(() => { togglingRef.current = false; }, 800);
 
     if (!completed) {
-      setShowParticles(true);
-      setJustCompleted(true);
-      setShowXPFloat(true);
-      setXPFloatKey((k) => k + 1);
-      setTimeout(() => { setShowParticles(false); setJustCompleted(false); }, 700);
-      setTimeout(() => setShowXPFloat(false), 1200);
-      if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(50);
-      playCompletionSound();
+      playCompletionFeedback();
       onCompleted?.();
     }
     // Optimistic — fire and forget; parent handles revert on error
     void onToggle();
+  };
+
+  // Non-standard verification types (counter/duration/photo/reflection) route
+  // through the bottom sheet instead of completing instantly; standard habits
+  // still get a lightweight one-tap "Done" confirmation inside the same sheet.
+  const handleRequestComplete = () => {
+    if (togglingRef.current || completed) return;
+    setShowVerifySheet(true);
+  };
+
+  const handleVerified = async (result: VerificationResult) => {
+    if (!onVerifiedComplete) { setShowVerifySheet(false); return; }
+    const { error, logId } = await onVerifiedComplete(result);
+    setShowVerifySheet(false);
+    if (error) {
+      toast(error, "error", undefined, 3500);
+      return;
+    }
+    playCompletionFeedback();
+    onCompleted?.({ xpMultiplier: result.xpMultiplier, photoBonus: result.photoBonus });
+
+    // 10-second undo window — undoes by the exact log id just created, not by
+    // re-deriving "today's log" from (possibly stale) parent state.
+    if (logId) {
+      let undone = false;
+      const dismiss = toast(
+        `"${habit.name}" completed`,
+        "success",
+        { label: "Undo", onClick: () => { undone = true; onUndoComplete?.(logId); } },
+        10_000,
+      );
+      setTimeout(() => { if (!undone) dismiss(); }, 10_000);
+    }
   };
 
   const handleDelete = () => {
@@ -252,15 +301,27 @@ export default function HabitCard({
     onDelete();
   };
 
+  const clearLongPress = () => {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+  };
+
   const handleTouchStart = (e: React.TouchEvent) => {
     if (editMode) return;
     touchRef.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY, locked: false };
+    longPressFired.current = false;
+    clearLongPress();
+    longPressTimer.current = setTimeout(() => {
+      longPressFired.current = true;
+      if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(20);
+      setShowActionMenu(true);
+    }, 550);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (editMode) return;
     const dx = e.touches[0].clientX - touchRef.current.startX;
     const dy = e.touches[0].clientY - touchRef.current.startY;
+    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) clearLongPress();
     if (!touchRef.current.locked) {
       if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
       if (Math.abs(dy) > Math.abs(dx)) return;
@@ -272,10 +333,11 @@ export default function HabitCard({
   };
 
   const handleTouchEnd = () => {
-    if (editMode) return;
+    clearLongPress();
+    if (editMode || longPressFired.current) { swipeXRef.current = 0; setSwipeX(0); return; }
     const sx = swipeXRef.current;
     if (sx < -72) handleDelete();
-    else if (sx > 72 && !completed) handleToggle();
+    else if (sx > 72 && !completed) { if (isLimit) handleToggle(); else handleRequestComplete(); }
     swipeXRef.current = 0;
     setSwipeX(0);
   };
@@ -293,6 +355,7 @@ export default function HabitCard({
     : midStreak ? "text-xs font-semibold text-orange-400" : "text-xs text-orange-400/50";
 
   return (
+    <>
     <div className={`relative overflow-hidden rounded-xl ${deleting ? "opacity-50 pointer-events-none" : ""}`}>
       {/* Swipe-left (delete) backdrop */}
       <div
@@ -327,6 +390,14 @@ export default function HabitCard({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onMouseDown={() => {
+        if (editMode) return;
+        longPressFired.current = false;
+        clearLongPress();
+        longPressTimer.current = setTimeout(() => { longPressFired.current = true; setShowActionMenu(true); }, 550);
+      }}
+      onMouseUp={clearLongPress}
+      onMouseLeave={clearLongPress}
     >
       {/* Stack-after indicator */}
       {stackAfterName && (
@@ -369,7 +440,7 @@ export default function HabitCard({
             )
           ) : (
             /* Standard habit — single checkbox, tinted with this habit's accent color */
-            <button onClick={handleToggle}
+            <button onClick={completed ? handleToggle : handleRequestComplete}
               className={`w-8 h-8 sm:w-6 sm:h-6 rounded-full flex items-center justify-center border-2 transition-colors duration-200 ${
                 completed ? `${accent.fillBg} ${accent.fillBorder}` : accent.ringIdle
               }`}
@@ -704,5 +775,49 @@ export default function HabitCard({
       </div>
     </div>
     </div>
+
+      {showVerifySheet && (
+        <VerificationSheet
+          habit={habit}
+          onClose={() => setShowVerifySheet(false)}
+          onConfirm={handleVerified}
+        />
+      )}
+
+      {showActionMenu && (
+        <div
+          className="fixed inset-0 z-[9998] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowActionMenu(false); }}
+        >
+          <div className="w-full sm:max-w-xs sm:mx-4 bg-[#0f0f1a] border border-violet-900/30 rounded-t-3xl sm:rounded-3xl p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+            <p className="px-4 pt-3 pb-2 text-xs font-semibold text-slate-500 truncate">{habit.name}</p>
+            <button
+              onClick={() => { setShowActionMenu(false); onSkip?.(); }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-slate-200 hover:bg-white/5 transition-colors"
+            >
+              <SkipForward className="w-4 h-4 text-amber-400" /> Skip today
+            </button>
+            <button
+              onClick={() => { setShowActionMenu(false); onLater?.(); toast("We'll remind you in 2 hours.", "success", undefined, 2500); }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-slate-200 hover:bg-white/5 transition-colors"
+            >
+              <Clock3 className="w-4 h-4 text-blue-400" /> Remind me later
+            </button>
+            <button
+              onClick={() => { setShowActionMenu(false); setEditName(habit.name); setEditMode(true); }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-slate-200 hover:bg-white/5 transition-colors"
+            >
+              <Pencil className="w-4 h-4 text-violet-400" /> Edit habit
+            </button>
+            <button
+              onClick={() => setShowActionMenu(false)}
+              className="w-full px-4 py-2.5 mt-1 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
