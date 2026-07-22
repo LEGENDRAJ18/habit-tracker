@@ -354,7 +354,7 @@ function AllDoneCelebration({
         />
       ))}
       <div
-        className="relative z-10 bg-[#0f0f1a] border border-violet-700/30 rounded-3xl px-8 py-8 text-center shadow-2xl shadow-violet-950/60 max-w-xs mx-4"
+        className="relative z-10 bg-[#0f0f1a] border border-violet-700/30 rounded-3xl px-8 py-8 text-center shadow-2xl shadow-violet-950/60 max-w-xs mx-4 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
         style={{ boxShadow: "0 0 60px rgba(139,92,246,0.3), 0 25px 60px rgba(0,0,0,0.6)" }}
       >

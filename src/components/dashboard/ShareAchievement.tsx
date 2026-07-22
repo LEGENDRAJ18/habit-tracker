@@ -219,7 +219,7 @@ export default function ShareAchievement({
 
   return (
     <CenteredModal onClose={onClose} zIndex="z-[60]" backdrop="bg-black/70 backdrop-blur-sm">
-      <div className="modal-center-enter w-full max-w-sm bg-[#0f0f1a] border border-violet-700/35 rounded-2xl shadow-2xl shadow-violet-950/60 overflow-hidden">
+      <div className="modal-center-enter w-full max-w-sm bg-[#0f0f1a] border border-violet-700/35 rounded-2xl shadow-2xl shadow-violet-950/60 max-h-[90vh] overflow-y-auto">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-violet-900/20">

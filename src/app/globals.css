@@ -296,7 +296,15 @@ body {
 
 /* Page wrapper fade — apply to <main> */
 .page-fade {
-  animation: fadeIn 0.3s ease-out both;
+  /* fill-mode intentionally omitted (not "both"/"forwards"): despite the 'to'
+     keyframe above omitting transform, Chromium still resolves the animated
+     property's held end-state to `matrix(1,0,0,1,0,0)` rather than the literal
+     `none` when a fill-mode holds it — and any non-"none" transform (even the
+     identity matrix) creates a containing block for position:fixed descendants,
+     breaking every modal/sheet rendered inside <main> after the page loads.
+     Without a fill-mode, the animation fully detaches once it ends and the
+     element's computed transform correctly reverts to `none`. */
+  animation: fadeIn 0.3s ease-out;
 }
 
 /* ── Interactive polish ──────────────────────────────────────────────── */
@@ -373,7 +381,12 @@ button:not(:disabled):active,
   to   { opacity: 1; transform: translateY(0);   }
 }
 .route-enter {
-  animation: routeIn 0.25s cubic-bezier(0.25,0.46,0.45,0.94) both;
+  /* No fill-mode: "both"/"forwards" would leave transform: translateY(0) applied
+     after the animation ends. Even at 0px that's a non-"none" transform, which
+     creates a new containing block for any position:fixed descendant (every
+     modal/sheet rendered inside page content, since they're not portaled) —
+     pinning them to this scrolled content div instead of the viewport. */
+  animation: routeIn 0.25s cubic-bezier(0.25,0.46,0.45,0.94);
 }
 
 /* ── Card hover lift ──────────────────────────────────────────────────── */

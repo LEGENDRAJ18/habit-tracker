@@ -41,7 +41,7 @@ export default function StreakBrokenModal({ onUpgrade, onDismiss, brokenHabitNam
 
   return (
     <CenteredModal onClose={onDismiss} backdrop="bg-black/60 backdrop-blur-sm">
-      <div className="modal-center-enter w-full max-w-sm bg-[#0f0f1a] border border-slate-700/40 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="modal-center-enter w-full max-w-sm bg-[#0f0f1a] border border-slate-700/40 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           {/* Icon + title */}
           <div className="text-center mb-5">

@@ -56,9 +56,9 @@ export default function HelpModal() {
 
       {open && (
         <CenteredModal onClose={() => setOpen(false)}>
-          <div className="modal-center-enter w-full max-w-sm bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl overflow-hidden">
+          <div className="modal-center-enter w-full max-w-sm bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-violet-900/20">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-violet-900/20 flex-shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-7 h-7 rounded-lg bg-violet-900/30 flex items-center justify-center">
                   <HelpCircle className="w-3.5 h-3.5 text-violet-400" />
@@ -75,7 +75,7 @@ export default function HelpModal() {
             </div>
 
             {/* FAQ list */}
-            <div className="max-h-[65vh] overflow-y-auto divide-y divide-violet-900/10">
+            <div className="overflow-y-auto flex-1 min-h-0 divide-y divide-violet-900/10">
               {FAQ.map(({ q, a, icon: Icon }, i) => (
                 <div key={i}>
                   <button
@@ -100,7 +100,7 @@ export default function HelpModal() {
             </div>
 
             {/* Footer */}
-            <div className="px-5 py-3.5 border-t border-violet-900/15 bg-violet-950/10">
+            <div className="px-5 py-3.5 border-t border-violet-900/15 bg-violet-950/10 flex-shrink-0">
               <p className="text-[11px] text-slate-600 text-center">
                 Need more help?{" "}
                 <a

@@ -54,7 +54,7 @@ export default function FirstCompletionModal({ onDismiss }: Props) {
       ))}
 
       <div
-        className={`relative z-10 bg-[#0f0f1a] border border-violet-700/40 rounded-3xl px-8 py-9 text-center shadow-2xl max-w-xs mx-4 transition-all duration-500 ${
+        className={`relative z-10 bg-[#0f0f1a] border border-violet-700/40 rounded-3xl px-8 py-9 text-center shadow-2xl max-w-xs mx-4 max-h-[90vh] overflow-y-auto transition-all duration-500 ${
           visible ? "opacity-100 scale-100" : "opacity-0 scale-90"
         }`}
         style={{

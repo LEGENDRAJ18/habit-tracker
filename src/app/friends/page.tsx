@@ -231,7 +231,7 @@ function FriendProfileModal({
   return (
     <CenteredModal onClose={onClose}>
       <div
-        className="modal-center-enter bg-[#0f0f1a] border border-violet-800/30 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+        className="modal-center-enter bg-[#0f0f1a] border border-violet-800/30 rounded-2xl p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {loading ? (
@@ -382,7 +382,7 @@ function ShareModal({ onClose }: { onClose: () => void }) {
   return (
     <CenteredModal onClose={onClose}>
       <div
-        className="modal-center-enter bg-[#0f0f1a] border border-violet-800/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl"
+        className="modal-center-enter bg-[#0f0f1a] border border-violet-800/30 rounded-2xl p-6 w-full max-w-sm max-h-[90vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">

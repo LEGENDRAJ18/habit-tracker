@@ -241,7 +241,7 @@ export default function GoalProgramDashboard({
 
       {showCheckin && (
         <CenteredModal onClose={() => setShowCheckin(false)}>
-          <div className="w-full max-w-sm bg-[#0f0f1a] border border-violet-900/30 rounded-3xl p-5" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-sm bg-[#0f0f1a] border border-violet-900/30 rounded-3xl p-5 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-base font-bold text-white mb-3">Week {program.current_week} check-in</h3>
             <p className="text-xs text-slate-500 mb-1.5">How did this week go?</p>
             <div className="flex gap-1.5 mb-4">

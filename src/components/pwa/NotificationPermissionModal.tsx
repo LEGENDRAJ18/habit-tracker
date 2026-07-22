@@ -56,7 +56,7 @@ export default function NotificationPermissionModal({ onAllow, onDismiss }: Prop
 
   return (
     <CenteredModal onClose={handleDismiss} zIndex="z-[90]" backdrop="bg-black/70 backdrop-blur-sm">
-      <div className="modal-center-enter w-full max-w-md bg-[#0d0d1c] border border-violet-700/40 rounded-3xl p-6 shadow-2xl shadow-violet-950/60 overflow-hidden relative">
+      <div className="modal-center-enter w-full max-w-md bg-[#0d0d1c] border border-violet-700/40 rounded-3xl p-6 shadow-2xl shadow-violet-950/60 max-h-[90vh] overflow-y-auto relative">
           {/* Glow accent */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-violet-600/15 blur-3xl pointer-events-none rounded-full" />
 

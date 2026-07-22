@@ -332,6 +332,8 @@ export default function OnboardingTour({ habitCount, signedUpAt }: { habitCount:
         style={{
           ...tipPos,
           width: CARD_W,
+          maxHeight: "90vh",
+          overflowY: "auto",
           animation: "toastSlideUp 0.3s cubic-bezier(0.34,1.56,0.64,1) both",
         }}
         onClick={(e) => e.stopPropagation()}

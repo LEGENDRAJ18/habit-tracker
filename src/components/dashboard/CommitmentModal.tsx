@@ -53,7 +53,7 @@ export default function CommitmentModal({
 
   return (
     <CenteredModal onClose={onClose} backdrop="bg-black/70 backdrop-blur-sm">
-      <div className="modal-center-enter w-full max-w-sm bg-[#0d0d1a] border border-violet-700/30 rounded-3xl shadow-2xl shadow-violet-950/60 overflow-hidden">
+      <div className="modal-center-enter w-full max-w-sm bg-[#0d0d1a] border border-violet-700/30 rounded-3xl shadow-2xl shadow-violet-950/60 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="relative px-6 pt-5 pb-4 border-b border-violet-900/20">
           <div className="absolute inset-0 bg-gradient-to-br from-violet-600/8 to-transparent pointer-events-none" />

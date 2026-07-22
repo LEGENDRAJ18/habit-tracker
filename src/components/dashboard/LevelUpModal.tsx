@@ -109,7 +109,7 @@ export default function LevelUpModal({ newLevel, onDismiss, onShare }: Props) {
 
         {/* Card */}
         <div
-          className={`relative z-10 text-center px-8 py-10 max-w-sm mx-4 rounded-3xl bg-[#0f0f1a] border border-yellow-500/30 transition-all duration-700 ${
+          className={`relative z-10 text-center px-8 py-10 max-w-sm mx-4 rounded-3xl bg-[#0f0f1a] border border-yellow-500/30 max-h-[90vh] overflow-y-auto transition-all duration-700 ${
             visible ? "opacity-100 scale-100" : "opacity-0 scale-90"
           }`}
           style={{ boxShadow: "0 0 80px rgba(251,191,36,0.25), 0 0 0 1px rgba(251,191,36,0.1), 0 25px 60px rgba(0,0,0,0.7)" }}
@@ -208,7 +208,7 @@ export default function LevelUpModal({ newLevel, onDismiss, onShare }: Props) {
       ))}
 
       <div
-        className={`relative bg-[#0f0f1a] border border-violet-700/30 rounded-3xl px-8 py-8 text-center shadow-2xl max-w-sm mx-4 transition-all duration-500 z-10 ${
+        className={`relative bg-[#0f0f1a] border border-violet-700/30 rounded-3xl px-8 py-8 text-center shadow-2xl max-w-sm mx-4 max-h-[90vh] overflow-y-auto transition-all duration-500 z-10 ${
           visible ? "opacity-100 scale-100" : "opacity-0 scale-90"
         }`}
         style={{ boxShadow: `0 0 60px ${style.glow}, 0 25px 60px rgba(0,0,0,0.6)` }}

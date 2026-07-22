@@ -354,7 +354,7 @@ export default function FocusTimer({ habit, tier, isCompleted, minimized, onMini
           <CelebrationBurst />
 
           <div
-            className="relative bg-[#0f0f1a] border border-violet-700/40 rounded-3xl px-8 py-10 text-center shadow-2xl shadow-violet-950/60 w-full"
+            className="relative bg-[#0f0f1a] border border-violet-700/40 rounded-3xl px-8 py-10 text-center shadow-2xl shadow-violet-950/60 w-full max-h-[90vh] overflow-y-auto"
             style={{ animation: "ftPop 0.55s cubic-bezier(0.34,1.56,0.64,1) both" }}
           >
             {/* Gradient top highlight */}
@@ -423,7 +423,7 @@ export default function FocusTimer({ habit, tier, isCompleted, minimized, onMini
   if (state.isGivenUp) {
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm">
-        <div className="bg-[#0f0f1a] border border-slate-700/40 rounded-3xl px-8 py-8 text-center max-w-xs mx-4 shadow-2xl">
+        <div className="bg-[#0f0f1a] border border-slate-700/40 rounded-3xl px-8 py-8 text-center max-w-xs mx-4 max-h-[90vh] overflow-y-auto shadow-2xl">
           <div className="text-5xl mb-4">😔</div>
           <h3 className="text-xl font-bold text-white mb-2">Session Ended</h3>
           <p className="text-sm text-slate-400 mb-6">
@@ -478,7 +478,7 @@ export default function FocusTimer({ habit, tier, isCompleted, minimized, onMini
 
       {/* Card */}
       <div
-        className="relative w-full max-w-sm mx-4 bg-[#0d0d1a] rounded-3xl shadow-2xl shadow-violet-950/60 overflow-hidden"
+        className="relative w-full max-w-sm mx-4 bg-[#0d0d1a] rounded-3xl shadow-2xl shadow-violet-950/60 max-h-[90vh] overflow-x-hidden overflow-y-auto"
         style={{
           animation: "ftSlideIn 0.4s cubic-bezier(0.34,1.2,0.64,1) both",
           border: "1px solid rgba(139,92,246,0.25)",
