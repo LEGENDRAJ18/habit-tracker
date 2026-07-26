@@ -6,53 +6,9 @@ import {
   GraduationCap, UserCheck, BookOpen, Smile,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { PERSONAS, PERSONA_TO_USER_MODE, type PersonaId, type PersonaUserMode } from "@/lib/personas";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
-
-type UserMode = "student" | "parent" | "teacher" | "personal";
-
-const MODES: { id: UserMode; emoji: string; label: string; tagline: string; desc: string; color: string; border: string; glow: string }[] = [
-  {
-    id: "student",
-    emoji: "🎓",
-    label: "Student",
-    tagline: "Academic excellence",
-    desc: "I want to build habits that help me achieve academically and get into my dream uni",
-    color: "text-indigo-300",
-    border: "border-indigo-500/50",
-    glow: "bg-indigo-500/10",
-  },
-  {
-    id: "parent",
-    emoji: "👨‍👩‍👧",
-    label: "Parent",
-    tagline: "Monitor & encourage",
-    desc: "I want to monitor and encourage my child's habit journey",
-    color: "text-emerald-300",
-    border: "border-emerald-500/50",
-    glow: "bg-emerald-500/10",
-  },
-  {
-    id: "teacher",
-    emoji: "👨‍🏫",
-    label: "Teacher / Coach",
-    tagline: "Lead your team",
-    desc: "I want to track habits for my class, team, or organisation",
-    color: "text-amber-300",
-    border: "border-amber-500/50",
-    glow: "bg-amber-500/10",
-  },
-  {
-    id: "personal",
-    emoji: "🙋",
-    label: "Personal",
-    tagline: "Self improvement",
-    desc: "I want to build better habits for my own self improvement",
-    color: "text-violet-300",
-    border: "border-violet-500/50",
-    glow: "bg-violet-500/10",
-  },
-];
 
 const GOALS = [
   { id: "fitness",    emoji: "🏋️", label: "Get fit & healthy"    },
@@ -69,10 +25,9 @@ const CONFETTI_COLORS = [
 ];
 
 // Step counts per mode (for progress dots)
-const MODE_TOTAL_STEPS: Record<UserMode, number> = {
+const MODE_TOTAL_STEPS: Record<PersonaUserMode, number> = {
   student:  7,
   parent:   5,
-  teacher:  5,
   personal: 6,
 };
 
@@ -299,13 +254,13 @@ interface Props { onComplete: () => void; }
 
 export default function OnboardingModal({ onComplete }: Props) {
   const [step, setStep]               = useState(1);
-  const [userMode, setUserMode]       = useState<UserMode | null>(null);
+  const [persona, setPersona]         = useState<PersonaId | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [customGoal, setCustomGoal]   = useState("");
   const [dreamUni, setDreamUni]       = useState("");
-  const [orgName, setOrgName]         = useState("");
   const [saving, setSaving]           = useState(false);
 
+  const userMode: PersonaUserMode | null = persona ? PERSONA_TO_USER_MODE[persona] : null;
   const totalSteps = userMode ? MODE_TOTAL_STEPS[userMode] : 7;
 
   const toggle = (id: string) =>
@@ -320,9 +275,9 @@ export default function OnboardingModal({ onComplete }: Props) {
   const next = () => setStep((s) => s + 1);
   const back = () => setStep((s) => s - 1);
 
-  // For parent/teacher, skip habit steps and jump to final
-  const handleModeNext = (mode: UserMode) => {
-    setUserMode(mode);
+  // For parent, skip habit steps and jump to final
+  const handlePersonaNext = (id: PersonaId) => {
+    setPersona(id);
     next();
   };
 
@@ -338,14 +293,11 @@ export default function OnboardingModal({ onComplete }: Props) {
         });
         const update: Record<string, unknown> = {
           onboarding_completed: true,
+          persona,
           user_mode: userMode ?? "personal",
           ...(goalLabels.length > 0 ? { goals: goalLabels, goal: goalLabels[0] } : {}),
           ...(dreamUni.trim() ? { dream_university: dreamUni.trim() } : {}),
         };
-        // Save org name as invite_code for teacher mode
-        if (userMode === "teacher" && orgName.trim()) {
-          update.invite_code = orgName.trim().toUpperCase().replace(/\s+/g, "").slice(0, 8);
-        }
         await supabase.from("profiles").update(update).eq("id", user.id);
       }
     } catch {
@@ -435,33 +387,24 @@ export default function OnboardingModal({ onComplete }: Props) {
                   👋
                 </div>
                 <h1 className="text-3xl font-extrabold text-white mb-2 leading-tight">
-                  HabitAI adapts<br />to who you are
+                  Who are you? ✨
                 </h1>
                 <p className="text-slate-400 text-sm leading-relaxed">
-                  Choose your mode — your dashboard, AI coaching, and habit suggestions all personalise to your life.
+                  Pick the one that fits you best — your dashboard, AI coaching, and habit suggestions all personalise to it.
                 </p>
               </div>
 
-              <div className="space-y-3">
-                {MODES.map((mode) => (
+              <div className="grid grid-cols-2 gap-2.5">
+                {PERSONAS.map((p) => (
                   <button
-                    key={mode.id}
+                    key={p.id}
                     type="button"
-                    onClick={() => handleModeNext(mode.id)}
-                    className={`w-full text-left rounded-2xl border p-4 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] ${mode.border} ${mode.glow} hover:shadow-lg`}
-                    style={{ background: "rgba(15,15,26,0.95)" }}
+                    onClick={() => handlePersonaNext(p.id)}
+                    className="relative flex flex-col gap-1 p-3.5 rounded-2xl border text-left transition-all duration-150 active:scale-95 bg-[#0c0c18]/80 border-slate-800 hover:border-violet-800/50 hover:bg-violet-950/20"
                   >
-                    <div className="flex items-center gap-3.5">
-                      <span className="text-3xl leading-none flex-shrink-0">{mode.emoji}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <p className={`text-sm font-bold ${mode.color}`}>{mode.label}</p>
-                          <span className={`text-[10px] font-semibold ${mode.color} opacity-60`}>· {mode.tagline}</span>
-                        </div>
-                        <p className="text-xs text-slate-500 leading-snug">{mode.desc}</p>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-slate-600 flex-shrink-0" />
-                    </div>
+                    <span className="text-2xl mb-0.5 leading-none">{p.emoji}</span>
+                    <span className="text-sm font-bold text-white leading-snug">{p.label}</span>
+                    <span className="text-[11px] text-slate-400 leading-snug">{p.tagline}</span>
                   </button>
                 ))}
               </div>
@@ -534,44 +477,6 @@ export default function OnboardingModal({ onComplete }: Props) {
                 className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-xl shadow-emerald-900/40"
               >
                 Continue <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-
-          {step === 3 && userMode === "teacher" && (
-            <div className="text-center">
-              <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
-                👨‍🏫
-              </div>
-              <h1 className="text-3xl font-extrabold text-white mb-3 leading-tight">
-                Create your<br />first class
-              </h1>
-              <p className="text-slate-400 text-sm mb-6 leading-relaxed">
-                Give your class or team a name. Students join using your unique invite code — they&apos;ll see it in your dashboard.
-              </p>
-              <input
-                autoFocus
-                value={orgName}
-                onChange={(e) => setOrgName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && orgName.trim()) next(); }}
-                placeholder="e.g. Year 11 Biology, Swim Team A…"
-                maxLength={40}
-                className="w-full bg-amber-950/30 border border-amber-700/40 focus:border-amber-500/60 focus:outline-none focus:ring-2 focus:ring-amber-500/20 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 mb-4 transition-all"
-              />
-              {orgName.trim() && (
-                <div className="mb-5 p-3.5 rounded-xl bg-amber-950/40 border border-amber-700/30 text-left" style={{ animation: "stepIn 0.25s ease-out both" }}>
-                  <p className="text-xs text-amber-300 leading-relaxed">
-                    🏫 Your class <span className="font-semibold text-white">&ldquo;{orgName.trim()}&rdquo;</span> will get an invite code your students can use to join.
-                  </p>
-                </div>
-              )}
-              <button type="button" onClick={next} disabled={!orgName.trim()}
-                className="w-full py-3.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-xl shadow-amber-900/40"
-              >
-                Create class <ChevronRight className="w-4 h-4" />
-              </button>
-              <button type="button" onClick={next} className="w-full py-2.5 text-slate-500 hover:text-slate-300 text-sm transition-colors mt-2">
-                Skip — set up later
               </button>
             </div>
           )}
@@ -661,39 +566,6 @@ export default function OnboardingModal({ onComplete }: Props) {
             </div>
           )}
 
-          {step === 4 && userMode === "teacher" && (
-            <div className="text-center">
-              <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
-                🏫
-              </div>
-              <h1 className="text-3xl font-extrabold text-white mb-3 leading-tight">
-                Your class<br />dashboard
-              </h1>
-              <p className="text-slate-400 text-sm mb-6 leading-relaxed">
-                Assign habits, track completion rates, and highlight top performers — all from one place.
-              </p>
-              <div className="space-y-2.5 mb-7 text-left">
-                {[
-                  { emoji: "📈", text: "See overall class completion rate at a glance" },
-                  { emoji: "🏆", text: "Highlight top 3 performers each week" },
-                  { emoji: "📣", text: "Send group announcements and habit challenges" },
-                  { emoji: "📋", text: "Export progress reports for parents or admin" },
-                  { emoji: "🔗", text: "Invite students via your unique class code" },
-                ].map(({ emoji, text }) => (
-                  <div key={text} className="flex items-center gap-3 bg-[#0f0f1a] border border-amber-900/20 rounded-xl px-4 py-3">
-                    <span className="text-xl leading-none flex-shrink-0">{emoji}</span>
-                    <p className="text-sm text-slate-300">{text}</p>
-                  </div>
-                ))}
-              </div>
-              <button type="button" onClick={next}
-                className="w-full py-3.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-xl shadow-amber-900/40"
-              >
-                Let&apos;s go <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-
           {step === 4 && userMode === "personal" && (
             <div className="text-center">
               <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
@@ -761,35 +633,29 @@ export default function OnboardingModal({ onComplete }: Props) {
             </div>
           )}
 
-          {/* Parent + Teacher final step */}
-          {step === 5 && (userMode === "parent" || userMode === "teacher") && (
+          {/* Parent final step */}
+          {step === 5 && userMode === "parent" && (
             <div className="relative">
               <Confetti />
               <div className="relative text-center">
                 <div className="text-6xl mb-5 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
-                  {userMode === "parent" ? "👨‍👩‍👧" : "🏫"}
+                  👨‍👩‍👧
                 </div>
                 <h1 className="text-3xl font-extrabold text-white mb-2 leading-tight">
                   You&apos;re all set!
                 </h1>
                 <p className="text-slate-400 text-sm mb-6 leading-relaxed">
-                  {userMode === "parent"
-                    ? "Your parent dashboard is ready. Invite your child from the dashboard to start monitoring their progress."
-                    : "Your teacher dashboard is ready. Share your class invite code with students to get them on board."}
+                  Your parent dashboard is ready. Invite your child from the dashboard to start monitoring their progress.
                 </p>
-                <div className={`${userMode === "parent" ? "bg-emerald-950/30 border-emerald-700/30" : "bg-amber-950/30 border-amber-700/30"} border rounded-2xl p-5 mb-7 text-left`}>
-                  <p className={`text-xs font-bold uppercase tracking-wider mb-3 ${userMode === "parent" ? "text-emerald-400" : "text-amber-400"}`}>What happens next</p>
-                  {(userMode === "parent" ? [
+                <div className="bg-emerald-950/30 border-emerald-700/30 border rounded-2xl p-5 mb-7 text-left">
+                  <p className="text-xs font-bold uppercase tracking-wider mb-3 text-emerald-400">What happens next</p>
+                  {[
                     "Go to your dashboard to find your invite link",
                     "Share it with your child — they sign up with their own account",
                     "Once they accept, their habits appear in your monitoring view",
-                  ] : [
-                    "Your class invite code is shown on your dashboard",
-                    "Share it with your students — they sign up and enter the code",
-                    "Their habit completions appear in your class analytics view",
-                  ]).map((t) => (
+                  ].map((t) => (
                     <div key={t} className="flex items-start gap-2.5 mb-2 last:mb-0">
-                      <Check className={`w-4 h-4 flex-shrink-0 mt-0.5 ${userMode === "parent" ? "text-emerald-400" : "text-amber-400"}`} />
+                      <Check className="w-4 h-4 flex-shrink-0 mt-0.5 text-emerald-400" />
                       <p className="text-sm text-slate-300 leading-snug">{t}</p>
                     </div>
                   ))}
@@ -798,7 +664,7 @@ export default function OnboardingModal({ onComplete }: Props) {
                   type="button"
                   onClick={handleFinish}
                   disabled={saving}
-                  className={`w-full py-4 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all text-base flex items-center justify-center gap-2 shadow-xl ${userMode === "parent" ? "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/40" : "bg-amber-600 hover:bg-amber-500 shadow-amber-900/40"}`}
+                  className="w-full py-4 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all text-base flex items-center justify-center gap-2 shadow-xl bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/40"
                 >
                   {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <>Go to my dashboard <ChevronRight className="w-5 h-5" /></>}
                 </button>

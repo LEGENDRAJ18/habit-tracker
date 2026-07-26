@@ -35,6 +35,9 @@ interface Props {
   onCommitment?: () => void;
   onStartTimer?: () => void;
   isTourTarget?: boolean;
+  /** Briefly pulses a highlight ring around the card — used to draw attention
+   *  right after onboarding (e.g. the welcome overlay pointing at habit #1). */
+  highlighted?: boolean;
 }
 
 // Singleton AudioContext — created once on first use, reused every tap.
@@ -156,7 +159,7 @@ export default function HabitCard({
   habit, completed, failed = false, streak, strength, isProtected, stackAfterName, isEditing,
   tier, logId = null, allLogs = [], onToggle, onDelete, onCompleted, onVerifiedComplete, onUndoComplete,
   onSkip, onLater, onMarkFailed, onRename,
-  onSmartTimingToggle, onUpgradePro, onCommitment, onStartTimer, isTourTarget,
+  onSmartTimingToggle, onUpgradePro, onCommitment, onStartTimer, isTourTarget, highlighted = false,
 }: Props) {
   const isLimit = habit.habit_type === "limit";
   const accent = getHabitAccent(habit.id);
@@ -380,7 +383,7 @@ export default function HabitCard({
           : completed
           ? `${accent.cardTint} ${accent.cardBorder}`
           : "bg-[#0f0f1a] border-violet-900/20 sm:hover:border-violet-800/30 sm:hover:-translate-y-px sm:hover:shadow-[0_4px_20px_rgba(109,40,217,0.10)]"
-      }`}
+      } ${highlighted ? "ring-2 ring-violet-500 ring-offset-2 ring-offset-[#09090f] animate-pulse" : ""}`}
       style={{
         ...(swipeX !== 0 ? { transform: `translateX(${swipeX}px)`, transition: "none" } : { transition: "transform 0.32s cubic-bezier(0.25,0.46,0.45,0.94)" }),
         ...(justCompleted ? { animation: "cardNudge 0.35s ease-out both" } : {}),

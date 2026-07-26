@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { AVATARS, type AvatarId } from "@/lib/avatars";
+import { PERSONAS, PERSONA_TO_USER_MODE, type PersonaId } from "@/lib/personas";
 import posthog from "posthog-js";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -14,39 +15,7 @@ import posthog from "posthog-js";
 const TOTAL_STEPS = 5;
 const USERNAME_RE = /^[a-zA-Z0-9_ .'\-]{3,30}$/;
 
-// ─── Persona data ─────────────────────────────────────────────────────────────
-
-type PersonaId =
-  | "student"
-  | "professional"
-  | "athlete"
-  | "breaking_bad_habits"
-  | "entrepreneur"
-  | "parent"
-  | "wellness"
-  | "just_improving";
-
-const PERSONAS: { id: PersonaId; emoji: string; label: string; tagline: string }[] = [
-  { id: "student",             emoji: "🎓", label: "Student",             tagline: "Crush your academic goals"              },
-  { id: "professional",        emoji: "💼", label: "Professional",        tagline: "Level up your career & productivity"    },
-  { id: "athlete",             emoji: "💪", label: "Athlete",             tagline: "Build peak physical performance"        },
-  { id: "breaking_bad_habits", emoji: "🚫", label: "Breaking Bad Habits", tagline: "Quit what's holding you back"           },
-  { id: "entrepreneur",        emoji: "🚀", label: "Entrepreneur",        tagline: "Build discipline & ship faster"         },
-  { id: "parent",              emoji: "👨‍👩‍👧", label: "Parent",             tagline: "Model good habits for your family"     },
-  { id: "wellness",            emoji: "🧘", label: "Wellness Seeker",     tagline: "Improve sleep, stress & mental health"  },
-  { id: "just_improving",      emoji: "🌱", label: "Just Improving",      tagline: "Become a better version of yourself"   },
-];
-
-const PERSONA_TO_USER_MODE: Record<PersonaId, "student" | "parent" | "personal"> = {
-  student:             "student",
-  professional:        "personal",
-  athlete:             "personal",
-  breaking_bad_habits: "personal",
-  entrepreneur:        "personal",
-  parent:              "parent",
-  wellness:            "personal",
-  just_improving:      "personal",
-};
+// ─── Persona-keyed data (goals/suggestions specific to this page's flow) ──────
 
 const PERSONA_GOALS: Record<PersonaId, string[]> = {
   student:             ["Get into my dream university", "Improve my grades", "Build better study habits", "Reduce phone distraction", "Improve sleep & energy"],

@@ -29,6 +29,9 @@ interface ProfileSnapshot {
   username: string | null;
   avatarId: string | null;
   accentColor: string | null;
+  persona: string | null;
+  welcomeSeen: boolean;
+  notifPromptLastAskedAt: string | null;
 }
 
 function readCache(): ProfileSnapshot | null {
@@ -96,6 +99,9 @@ export function useProfile() {
   );
   const [username, setUsername]                       = useState<string | null>(cached?.username ?? null);
   const [avatarId, setAvatarId]                       = useState<string | null>(cached?.avatarId ?? null);
+  const [persona, setPersona]                         = useState<string | null>(cached?.persona ?? null);
+  const [welcomeSeen, setWelcomeSeen]                 = useState(cached?.welcomeSeen ?? true);
+  const [notifPromptLastAskedAt, setNotifPromptLastAskedAt] = useState<string | null>(cached?.notifPromptLastAskedAt ?? null);
 
   const [supabase] = useState(() => createClient());
 
@@ -123,6 +129,9 @@ export function useProfile() {
       username?: string | null;
       avatar_id?: string | null;
       accent_color?: string | null;
+      persona?: string | null;
+      welcome_seen?: boolean | null;
+      notif_prompt_last_asked_at?: string | null;
     }) {
       const newTier              = (d.subscription_tier as Plan | null) ?? "free";
       const newOnboarding        = d.onboarding_completed ?? false;
@@ -144,6 +153,9 @@ export function useProfile() {
       const newUsername          = d.username ?? null;
       const newAvatarId          = d.avatar_id ?? null;
       const newAccentColor       = (d.accent_color as AccentColor | null) ?? null;
+      const newPersona           = d.persona ?? null;
+      const newWelcomeSeen       = d.welcome_seen ?? true;
+      const newNotifPromptLastAskedAt = d.notif_prompt_last_asked_at ?? null;
 
       setTier(newTier);
       setOnboardingCompleted(newOnboarding);
@@ -162,6 +174,9 @@ export function useProfile() {
       setUserMode(newUserMode);
       setUsername(newUsername);
       setAvatarId(newAvatarId);
+      setPersona(newPersona);
+      setWelcomeSeen(newWelcomeSeen);
+      setNotifPromptLastAskedAt(newNotifPromptLastAskedAt);
 
       // Apply accent color CSS vars immediately (no React re-render needed — it's DOM)
       if (newAccentColor && ACCENT_PALETTE[newAccentColor]) {
@@ -198,6 +213,9 @@ export function useProfile() {
         username: newUsername,
         avatarId: newAvatarId,
         accentColor: newAccentColor,
+        persona: newPersona,
+        welcomeSeen: newWelcomeSeen,
+        notifPromptLastAskedAt: newNotifPromptLastAskedAt,
       });
     }
 
@@ -242,7 +260,7 @@ export function useProfile() {
                   "freeze_protected_date, reminder_enabled, reminder_hour, reminder_minute, " +
                   "subscription_cancel_at_period_end, subscription_current_period_end, " +
                   "subscription_status, trial_end_date, dream_university, user_mode, " +
-                  "username, avatar_id, accent_color"
+                  "username, avatar_id, accent_color, persona, welcome_seen, notif_prompt_last_asked_at"
                 )
                 .eq("id", _uid)
                 .single();
@@ -352,6 +370,21 @@ export function useProfile() {
     [supabase]
   );
 
+  const markWelcomeSeen = useCallback(async () => {
+    setWelcomeSeen(true);
+    const user = await resolveUser();
+    if (!user) return;
+    await supabase.from("profiles").update({ welcome_seen: true }).eq("id", user.id);
+  }, [supabase]);
+
+  const markNotifPromptAsked = useCallback(async () => {
+    const now = new Date().toISOString();
+    setNotifPromptLastAskedAt(now);
+    const user = await resolveUser();
+    if (!user) return;
+    await supabase.from("profiles").update({ notif_prompt_last_asked_at: now }).eq("id", user.id);
+  }, [supabase]);
+
   return {
     tier,
     onboardingCompleted,
@@ -374,5 +407,10 @@ export function useProfile() {
     userMode,
     username,
     avatarId,
+    persona,
+    welcomeSeen,
+    markWelcomeSeen,
+    notifPromptLastAskedAt,
+    markNotifPromptAsked,
   };
 }

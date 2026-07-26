@@ -41,6 +41,7 @@ import TeacherDashboard from "@/components/dashboard/TeacherDashboard";
 import FocusTimer from "@/components/dashboard/FocusTimer";
 import FocusStatsWidget from "@/components/dashboard/FocusStatsWidget";
 import FirstCompletionModal from "@/components/dashboard/FirstCompletionModal";
+import WelcomeOverlay from "@/components/dashboard/WelcomeOverlay";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import type { Habit } from "@/types";
 
@@ -443,11 +444,11 @@ export default function DashboardPage() {
   const router = useRouter();
   const { habits, todayLogs, loading, isSyncing, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, isFailedToday, markFailed, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength, refetch, historicalLogs, completeHabitWithVerification, undoCompletion, addLaterReminder, skipHabitToday } =
     useHabits();
-  const { tier, profileLoading, onboardingCompleted, goals, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt, dreamUniversity, userMode } = useProfile();
+  const { tier, profileLoading, onboardingCompleted, goal, goals, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt, dreamUniversity, userMode, username, persona, welcomeSeen, markWelcomeSeen, notifPromptLastAskedAt, markNotifPromptAsked } = useProfile();
   const { xp, level, achievements, totalCompletions, justLeveledUp, xpLoading, isDailyAchieved, onHabitCompleted, onDailyOpen, checkMilestones, dismissLevelUp } = useXP();
   const { openUpgradeModal } = useUpgrade();
   const { openAIInsight } = useAIInsight();
-  const { showModal: showPushModal, allow: allowPush, dismiss: dismissPush } = usePushNotifications();
+  const { showModal: showPushModal, allow: allowPush, dismiss: dismissPush, showAfterFirstCompletion } = usePushNotifications();
 
   // Update last_seen_at so streak-at-risk detection works
   useEffect(() => {
@@ -490,6 +491,13 @@ export default function DashboardPage() {
     !onboardingDone &&
     isNewUser &&
     habits.length === 0;
+
+  // One-time welcome moment right after onboarding completes. Gated on the
+  // `welcome_seen` profile flag (not localStorage) so it survives device
+  // changes, and never fires for users who onboarded before this existed
+  // (backfilled to welcome_seen=true in migration 014).
+  const showWelcome = !profileLoading && onboardingCompleted && !welcomeSeen;
+  const [highlightFirstHabit, setHighlightFirstHabit] = useState(false);
 
   const [editingHabitId, setEditingHabitId] = useState<string | null>(null);
   const [showAdd, setShowAdd]           = useState(false);
@@ -777,7 +785,10 @@ export default function DashboardPage() {
   return (
     <div className="bg-[#09090f]">
       {showPushModal && (
-        <NotificationPermissionModal onAllow={allowPush} onDismiss={dismissPush} />
+        <NotificationPermissionModal
+          onAllow={allowPush}
+          onDismiss={() => { dismissPush(); void markNotifPromptAsked(); }}
+        />
       )}
 
       <main className="max-w-[1340px] mx-auto px-4 sm:px-6 py-8 pb-nav page-fade">
@@ -1137,6 +1148,7 @@ export default function DashboardPage() {
                 key={habit.id}
                 habit={habit}
                 isTourTarget={index === 0}
+                highlighted={highlightFirstHabit && index === 0}
                 completed={isCompletedToday(habit.id)}
                 failed={isFailedToday(habit.id)}
                 streak={info.streak}
@@ -1650,7 +1662,25 @@ export default function DashboardPage() {
       )}
 
       {showFirstCompletion && (
-        <FirstCompletionModal onDismiss={() => setShowFirstCompletion(false)} />
+        <FirstCompletionModal
+          onDismiss={() => {
+            setShowFirstCompletion(false);
+            showAfterFirstCompletion(notifPromptLastAskedAt);
+          }}
+        />
+      )}
+
+      {showWelcome && (
+        <WelcomeOverlay
+          username={username}
+          persona={persona}
+          goal={goal}
+          onDismiss={() => {
+            void markWelcomeSeen();
+            setHighlightFirstHabit(true);
+            setTimeout(() => setHighlightFirstHabit(false), 3000);
+          }}
+        />
       )}
 
       {/* Focus Timer — stays mounted while minimized so the timer keeps running */}

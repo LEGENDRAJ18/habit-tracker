@@ -27,6 +27,29 @@ export function getIdentityLabel(habitName: string): string {
   return "consistent";
 }
 
+// Strips a leading "a "/"an " so the label can stand alone as a noun phrase
+// (e.g. "a fitness person" -> "fitness person") for the 0% and 100% tiers,
+// which read as a bare identity rather than mid-sentence ("you are ___").
+function bareLabel(label: string): string {
+  return label.replace(/^(a|an)\s+/i, "");
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// A raw "X%" identity claim reads as demotivating at low scores, especially
+// 0% for a brand-new habit that hasn't had a chance to build any history yet.
+// Framed instead as progress toward an identity, at every tier.
+function identityPhrase(score: number, label: string): string {
+  const bare = bareLabel(label);
+  if (score === 0)   return `Your ${bare} identity starts today`;
+  if (score <= 33)   return `You're becoming ${label}`;
+  if (score <= 66)   return `You're ${label} in the making`;
+  if (score <= 99)   return `You're ${label}`;
+  return `${capitalize(bare)}, certified`;
+}
+
 export function computeIdentityScore(
   habit: Habit,
   logs: Array<{ habit_id: string; completed_at: string }>,
@@ -53,7 +76,7 @@ export function useIdentityScore(
   return useMemo(() => {
     const score = computeIdentityScore(habit, logs);
     const label = getIdentityLabel(habit.name);
-    const phrase = `You are ${score}% ${label}`;
+    const phrase = identityPhrase(score, label);
     return { score, label, phrase };
   }, [habit, logs]);
 }

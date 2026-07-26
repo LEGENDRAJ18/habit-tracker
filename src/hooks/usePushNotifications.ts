@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 
-const DISMISSED_KEY = "habitai-push-dismissed";
 const SUBSCRIBED_KEY = "habitai-push-subscribed";
+const SNOOZE_DAYS = 3;
+const SNOOZE_MS = SNOOZE_DAYS * 24 * 60 * 60 * 1000;
 
 function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -38,19 +39,6 @@ export function usePushNotifications() {
   );
   const [subscribeError, setSubscribeError] = useState<string | null>(null);
   const [subscribeSuccess, setSubscribeSuccess] = useState(false);
-
-  useEffect(() => {
-    if (!hasNotifAPI()) return;
-    if (notifPermission() === "granted") return;
-    if (notifPermission() === "denied") return;
-    if (localStorage.getItem(DISMISSED_KEY)) return;
-    if (localStorage.getItem(SUBSCRIBED_KEY)) return;
-
-    // Show the beautiful modal 5 seconds after the dashboard loads
-    // (give user time to see their habits first)
-    const t = setTimeout(() => setShowModal(true), 5000);
-    return () => clearTimeout(t);
-  }, []);
 
   // Core subscribe: gets SW subscription and saves it to the backend.
   // Returns a SubscribeResult so callers can show appropriate feedback.
@@ -101,14 +89,16 @@ export function usePushNotifications() {
       if (result !== "success") {
         setSubscribeError("Couldn't enable notifications, please try again.");
       }
-    } else {
-      localStorage.setItem(DISMISSED_KEY, "1");
     }
+    // If denied at the browser level, notifPermission() === "denied" is now
+    // permanent and already checked everywhere below — no local flag needed.
   }, [subscribe]);
 
+  // "Maybe later" — just hides the modal. The 3-day snooze is enforced by the
+  // caller persisting `notif_prompt_last_asked_at` on the profile (survives
+  // devices) and passing it back into showAfterFirstCompletion.
   const dismiss = useCallback(() => {
     setShowModal(false);
-    localStorage.setItem(DISMISSED_KEY, "1");
   }, []);
 
   // Allow external trigger (e.g. from settings page "Enable notifications" button)
@@ -129,12 +119,16 @@ export function usePushNotifications() {
     return result;
   }, [subscribe]);
 
-  // Called after onboarding completes — show modal immediately (no timeout)
-  const showAfterOnboarding = useCallback(() => {
+  // Called right after the user's first-ever habit completion celebration —
+  // not on dashboard load, so they've already seen the app deliver value.
+  // `lastAskedAt` is the profile's `notif_prompt_last_asked_at` timestamp; if
+  // they dismissed with "Maybe later" less than SNOOZE_DAYS ago, skip.
+  const showAfterFirstCompletion = useCallback((lastAskedAt: string | null) => {
     if (!hasNotifAPI()) return;
     if (notifPermission() === "granted") return; // already subscribed
     if (notifPermission() === "denied") return;
-    if (localStorage.getItem(DISMISSED_KEY)) return;
+    if (localStorage.getItem(SUBSCRIBED_KEY)) return;
+    if (lastAskedAt && Date.now() - new Date(lastAskedAt).getTime() < SNOOZE_MS) return;
     setShowModal(true);
   }, []);
 
@@ -146,6 +140,6 @@ export function usePushNotifications() {
     allow,
     dismiss,
     requestPermission,
-    showAfterOnboarding,
+    showAfterFirstCompletion,
   };
 }
