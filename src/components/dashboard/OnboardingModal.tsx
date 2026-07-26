@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   ChevronRight, ArrowLeft, Loader2, Check, Bot, Shield, Users, Zap,
   GraduationCap, UserCheck, BookOpen, Smile,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { PERSONAS, PERSONA_TO_USER_MODE, type PersonaId, type PersonaUserMode } from "@/lib/personas";
+import posthog from "posthog-js";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -263,6 +264,11 @@ export default function OnboardingModal({ onComplete }: Props) {
   const userMode: PersonaUserMode | null = persona ? PERSONA_TO_USER_MODE[persona] : null;
   const totalSteps = userMode ? MODE_TOTAL_STEPS[userMode] : 7;
 
+  useEffect(() => {
+    posthog.capture("onboarding_started");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const toggle = (id: string) =>
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -278,6 +284,7 @@ export default function OnboardingModal({ onComplete }: Props) {
   // For parent, skip habit steps and jump to final
   const handlePersonaNext = (id: PersonaId) => {
     setPersona(id);
+    posthog.capture("persona_selected", { persona: id });
     next();
   };
 
@@ -299,6 +306,11 @@ export default function OnboardingModal({ onComplete }: Props) {
           ...(dreamUni.trim() ? { dream_university: dreamUni.trim() } : {}),
         };
         await supabase.from("profiles").update(update).eq("id", user.id);
+        posthog.capture("onboarding_completed", {
+          persona,
+          goal_count: goalLabels.length,
+          has_first_habit: false, // this fallback flow has no first-habit step
+        });
       }
     } catch {
       // non-blocking

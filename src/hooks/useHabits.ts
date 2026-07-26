@@ -516,7 +516,12 @@ export function useHabits() {
         prev.map((h) => (h.id === habitId ? { ...h, habit_strength: newStrength } : h)),
       );
 
-      posthog.capture("habit_completed", { habit_name: habit?.name, frequency: habit?.frequency });
+      posthog.capture("habit_completed", {
+        habit_name: habit?.name,
+        frequency: habit?.frequency,
+        verification_type: habit?.verification_type ?? "standard",
+        completion_quality: "full",
+      });
       if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(10);
 
       const user = await resolveUser();

@@ -78,6 +78,24 @@ interface DailyMilestoneState {
   achieved: DailyMilestoneId[];
 }
 
+// ─── Module-level fetch deduplication ────────────────────────────────────────
+// useXP() is called from multiple simultaneously-mounted components (dashboard
+// page, DashboardNav, MobileXPBar) — without this, each mount independently
+// re-queries the same profiles row. Mirrors the identical pattern already
+// proven in useProfile.ts: at most one in-flight fetch per user, shared by
+// every concurrent caller.
+interface XPFetchData {
+  xp?: number | null;
+  level?: number | null;
+  achievements?: AchievementId[] | null;
+  daily_milestones?: DailyMilestoneState | null;
+  total_completions?: number | null;
+}
+let _xpFetchPromise: Promise<XPFetchData | null> | null = null;
+let _xpFetchUserId: string | null = null;
+let _xpFetchedAt = 0;
+const XP_FETCH_TTL_MS = 30_000;
+
 export function useXP() {
   const [cached] = useState(() => readXPCache());
 
@@ -146,17 +164,33 @@ export function useXP() {
         ]);
         const user = session?.user ?? null;
         if (!user) { setXPLoading(false); return; }
-        const data = await Promise.race([
-          (async () => {
-            const { data: d } = await supabase
-              .from("profiles")
-              .select("xp, level, achievements, daily_milestones, total_completions")
-              .eq("id", user.id)
-              .single();
-            return d ?? null;
-          })(),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 5_000)),
-        ]);
+
+        // Reuse an in-flight (or recently-completed) fetch for this user
+        // instead of firing a duplicate query per mounted instance.
+        let data: XPFetchData | null;
+        if (
+          _xpFetchUserId === user.id &&
+          _xpFetchPromise !== null &&
+          Date.now() - _xpFetchedAt < XP_FETCH_TTL_MS
+        ) {
+          data = await _xpFetchPromise;
+        } else {
+          _xpFetchUserId = user.id;
+          _xpFetchedAt   = Date.now();
+          _xpFetchPromise = Promise.race([
+            (async () => {
+              const { data: d } = await supabase
+                .from("profiles")
+                .select("xp, level, achievements, daily_milestones, total_completions")
+                .eq("id", user.id)
+                .single();
+              return d ?? null;
+            })(),
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), 5_000)),
+          ]);
+          data = await _xpFetchPromise;
+        }
+        if (data === null) { _xpFetchPromise = null; _xpFetchUserId = null; }
         console.log("[LOAD] xp", Math.round(performance.now() - _t0), "ms");
 
         const loadedXP    = data?.xp ?? 0;

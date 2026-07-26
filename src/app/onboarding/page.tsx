@@ -581,6 +581,7 @@ function OnboardingFlow() {
           .single();
 
         if (profile?.onboarding_completed) { router.replace("/dashboard"); return; }
+        posthog.capture("onboarding_started");
         if (profile?.username)  setUsername(profile.username);
         if (profile?.avatar_id) setAvatarId(profile.avatar_id as AvatarId);
       } catch {
@@ -627,6 +628,7 @@ function OnboardingFlow() {
         persona,
         user_mode: PERSONA_TO_USER_MODE[persona],
       }).eq("id", userId).then();
+      posthog.capture("persona_selected", { persona });
     }
     goNext();
   };
@@ -709,6 +711,7 @@ function OnboardingFlow() {
       persona,
       persona_goals:   personaGoals,
       categories,
+      goal_count:      categories.length,
       has_first_habit: !!habit,
     });
 

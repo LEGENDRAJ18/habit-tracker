@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { X, Sparkles, Check, Minus, Zap, Loader2, Brain, Crown, Lock, ClipboardList } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useProfile } from "@/hooks/useProfile";
 import CenteredModal from "@/components/ui/CenteredModal";
+import posthog from "posthog-js";
 
 export type UpgradeReason = "habits" | "ai" | "reminders" | "export" | "pro_feature";
 
@@ -229,6 +230,11 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
   const { tier: currentTier } = useProfile();
   const plusPrice = currencyLoading ? "$4.99" : formatPrice(4.99);
   const proPrice  = currencyLoading ? "$9.99"  : formatPrice(9.99);
+
+  useEffect(() => {
+    posthog.capture("upgrade_modal_viewed", { reason, from_plus: fromPlus });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCheckout = async (plan: "plus" | "pro") => {
     setLoading(plan);

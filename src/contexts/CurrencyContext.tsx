@@ -20,9 +20,11 @@ const FALLBACK_RATES: Record<CurrencyCode, number> = {
   USD: 1, NZD: 1.67, GBP: 0.79, AUD: 1.57, EUR: 0.92, INR: 83.5, CAD: 1.36, JPY: 155,
 };
 
-const PREF_KEY  = "habitai_currency";
-const RATES_KEY = "habitai_rates";
-const RATES_TTL = 3_600_000; // 1 hour
+const PREF_KEY    = "habitai_currency";
+const RATES_KEY   = "habitai_rates";
+const RATES_TTL   = 3_600_000; // 1 hour
+const DETECTED_KEY = "habitai_currency_detected";
+const DETECTED_TTL = 86_400_000; // 24h — IP-based geolocation doesn't change mid-session
 
 // Psychological pricing: decimal currencies → X.99; zero-decimal → X9 or round-to-10
 function psychoPrice(converted: number, decimals: number): string {
@@ -112,10 +114,34 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
         if (saved && (SUPPORTED_CURRENCIES as readonly string[]).includes(saved)) {
           code = saved as CurrencyCode;
         } else {
-          const res = await fetch("/api/geo-currency");
-          const data = await res.json() as { currency: string };
-          if ((SUPPORTED_CURRENCIES as readonly string[]).includes(data.currency)) {
-            code = data.currency as CurrencyCode;
+          // Geolocation-by-IP is stable for the session (and well beyond) —
+          // cache the detected code so every page load doesn't re-hit the
+          // geo lookup, which depends on a slow third-party service.
+          let detectedCode: string | null = null;
+          try {
+            const raw = localStorage.getItem(DETECTED_KEY);
+            if (raw) {
+              const cached = JSON.parse(raw) as { currency: string; ts: number };
+              if (Date.now() - cached.ts < DETECTED_TTL) detectedCode = cached.currency;
+            }
+          } catch {}
+
+          if (detectedCode) {
+            if ((SUPPORTED_CURRENCIES as readonly string[]).includes(detectedCode)) {
+              code = detectedCode as CurrencyCode;
+            }
+          } else {
+            const res = await Promise.race([
+              fetch("/api/geo-currency"),
+              new Promise<null>((resolve) => setTimeout(() => resolve(null), 3_000)),
+            ]);
+            if (res) {
+              const data = await res.json() as { currency: string };
+              if ((SUPPORTED_CURRENCIES as readonly string[]).includes(data.currency)) {
+                code = data.currency as CurrencyCode;
+              }
+              try { localStorage.setItem(DETECTED_KEY, JSON.stringify({ currency: code, ts: Date.now() })); } catch {}
+            }
           }
         }
       } catch {}

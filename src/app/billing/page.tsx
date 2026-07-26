@@ -379,6 +379,7 @@ export default function BillingPage() {
         sessionStorage.setItem("ph_upgrade_tracked", "1");
         if (newTier === "plus") posthog.capture("upgraded_to_plus");
         else if (newTier === "pro") posthog.capture("upgraded_to_pro");
+        if (newTier === "plus" || newTier === "pro") posthog.capture("subscription_started", { tier: newTier });
       }
     });
   }, [supabase, router]);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import posthog from "posthog-js";
 
 const SUBSCRIBED_KEY = "habitai-push-subscribed";
 const SNOOZE_DAYS = 3;
@@ -84,6 +85,7 @@ export function usePushNotifications() {
     setShowModal(false);
     if (!hasNotifAPI()) return;
     const permission = await Notification.requestPermission();
+    posthog.capture(permission === "granted" ? "notification_permission_granted" : "notification_permission_denied");
     if (permission === "granted") {
       const result = await subscribe();
       if (result !== "success") {
@@ -109,6 +111,7 @@ export function usePushNotifications() {
     let permission = notifPermission();
     if (permission !== "granted") {
       permission = await Notification.requestPermission();
+      posthog.capture(permission === "granted" ? "notification_permission_granted" : "notification_permission_denied");
     }
     if (permission !== "granted") return "denied";
 

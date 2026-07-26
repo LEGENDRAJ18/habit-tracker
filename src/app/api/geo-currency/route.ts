@@ -13,15 +13,29 @@ export async function GET(req: Request) {
   const ip = forwarded?.split(",")[0]?.trim() ?? "";
 
   try {
-    const res = await fetch(
-      `http://ip-api.com/json/${ip}?fields=countryCode,currency`,
-      { headers: { "User-Agent": "HabitAI/1.0" }, cache: "no-store" },
-    );
+    // ip-api.com is a free, unauthenticated, occasionally slow third-party
+    // service — bound it so a hung/slow lookup can't stall the response for
+    // 10+ seconds; the client falls back to USD either way on failure.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3_000);
+    let res: Response;
+    try {
+      res = await fetch(
+        `http://ip-api.com/json/${ip}?fields=countryCode,currency`,
+        { headers: { "User-Agent": "HabitAI/1.0" }, cache: "no-store", signal: controller.signal },
+      );
+    } finally {
+      clearTimeout(timeout);
+    }
     const data = await res.json() as { countryCode?: string; currency?: string };
     const country  = data.countryCode ?? "US";
     const detected = EUROZONE[country] ?? data.currency ?? "USD";
     const currency = SUPPORTED.has(detected) ? detected : "USD";
-    return Response.json({ currency, country });
+    // Geolocation-by-IP is stable for a given client for a long time — let
+    // the browser/CDN cache the response instead of re-resolving on every load.
+    return Response.json({ currency, country }, {
+      headers: { "Cache-Control": "private, max-age=86400" },
+    });
   } catch {
     return Response.json({ currency: "USD", country: "US" });
   }

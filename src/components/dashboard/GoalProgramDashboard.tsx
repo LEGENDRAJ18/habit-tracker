@@ -5,6 +5,7 @@ import { Flag, Loader2, Star, TrendingDown, CheckCircle2, Pause, Play, Ban } fro
 import type { GoalProgram, Habit, ProgramCheckin } from "@/types";
 import { toast } from "@/components/ui/Toast";
 import CenteredModal from "@/components/ui/CenteredModal";
+import posthog from "posthog-js";
 
 interface Props {
   program: GoalProgram;
@@ -70,6 +71,11 @@ export default function GoalProgramDashboard({
       });
       const data = await res.json();
       if (!res.ok) { toast(data.error ?? "Couldn't update milestone", "error"); return; }
+      posthog.capture("goal_program_milestone_completed", {
+        phase: phase.phase,
+        milestone_index: program.current_week - 1,
+        program_completed: !!data.completed,
+      });
       onProgramUpdated(data.program);
       if (data.completed) toast("🎉 Program complete — incredible work!", "success", undefined, 5000);
       else if (data.advancedToNextPhase) toast("Phase complete! Moving to the next phase.", "success", undefined, 3500);

@@ -5,6 +5,7 @@ import { Loader2, Sparkles, ArrowLeft, ArrowRight, Target, Flag } from "lucide-r
 import type { GoalCategory, GoalProgram, ProgramPhase } from "@/types";
 import { GOAL_CATEGORIES } from "@/lib/goalProgram";
 import { toast } from "@/components/ui/Toast";
+import posthog from "posthog-js";
 
 interface ProgramPreview {
   program_name: string;
@@ -89,6 +90,7 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
       const data = await res.json();
       if (!res.ok) { toast(data.error ?? "Couldn't start your program", "error"); return; }
       toast("Program started — Week 1 habits added to your dashboard 🎉", "success", undefined, 4000);
+      posthog.capture("goal_program_created", { goal_category: category });
       onCreated(data.program);
     } finally {
       setBusy(false);

@@ -44,6 +44,7 @@ import FirstCompletionModal from "@/components/dashboard/FirstCompletionModal";
 import WelcomeOverlay from "@/components/dashboard/WelcomeOverlay";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import type { Habit } from "@/types";
+import posthog from "posthog-js";
 
 // ─── Greeting & quote ─────────────────────────────────────────────────────────
 
@@ -599,6 +600,7 @@ export default function DashboardPage() {
       if (prev === 0 && completedCount === 1) {
         if (!localStorage.getItem("habitai_first_ever_completion")) {
           localStorage.setItem("habitai_first_ever_completion", "1");
+          posthog.capture("first_habit_completed");
           // eslint-disable-next-line react-hooks/set-state-in-effect
           setShowFirstCompletion(true);
         } else {
