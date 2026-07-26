@@ -437,7 +437,7 @@ function HabitStep({
         <h2 className="text-3xl font-black mb-2 text-white">Start with one habit 💪</h2>
         <p className="text-slate-400 text-sm">
           Pick one to begin —{" "}
-          <span className="text-violet-400 font-medium">3× more likely to stick</span> when you start now
+          <span className="text-violet-400 font-medium">small and specific sticks best</span>
         </p>
       </div>
 

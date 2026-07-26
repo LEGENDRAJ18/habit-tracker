@@ -215,6 +215,90 @@ function Hero() {
   );
 }
 
+// ─── 1b. HABIT VERIFICATION ────────────────────────────────────────────────────
+
+function VerificationMockup() {
+  return (
+    <div className="bg-[#0b0b18] border border-violet-700/20 rounded-2xl p-5 shadow-2xl shadow-black/40 space-y-4">
+      <div className="flex items-center gap-2">
+        <span className="text-lg">💧</span>
+        <span className="text-xs font-bold text-violet-300 uppercase tracking-widest">Verify: Drink water</span>
+      </div>
+      <div className="flex items-center justify-center gap-4 py-2">
+        <button className="w-9 h-9 rounded-full bg-violet-950/60 border border-violet-700/40 text-violet-300 text-lg font-bold flex items-center justify-center">−</button>
+        <div className="text-center">
+          <p className="text-3xl font-black text-white leading-none">6<span className="text-slate-600 text-lg font-normal"> / 8</span></p>
+          <p className="text-[10px] text-slate-600 mt-1 uppercase tracking-wide">glasses</p>
+        </div>
+        <button className="w-9 h-9 rounded-full bg-violet-600 text-white text-lg font-bold flex items-center justify-center">+</button>
+      </div>
+      <div className="w-full h-2 bg-violet-950/80 rounded-full overflow-hidden">
+        <div className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full" style={{ width: "75%" }} />
+      </div>
+      <div className="flex items-center justify-between bg-emerald-950/30 border border-emerald-700/25 rounded-xl px-3 py-2.5">
+        <span className="text-[11px] text-emerald-300 font-semibold">Real progress, real credit</span>
+        <span className="text-xs font-bold text-emerald-400">+75% XP</span>
+      </div>
+      <div className="grid grid-cols-2 gap-2 pt-1">
+        <div className="flex items-center gap-2 bg-black/30 border border-white/[0.05] rounded-xl px-3 py-2">
+          <span className="text-sm">⏱️</span>
+          <span className="text-[10px] text-slate-400">Live timer</span>
+        </div>
+        <div className="flex items-center gap-2 bg-black/30 border border-white/[0.05] rounded-xl px-3 py-2">
+          <span className="text-sm">📸</span>
+          <span className="text-[10px] text-slate-400">Photo proof</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function VerificationSection() {
+  return (
+    <section className="py-24 px-4 sm:px-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-14">
+          {/* Text */}
+          <div className="flex-1 w-full">
+            <div className="inline-flex items-center gap-2 bg-emerald-950/40 border border-emerald-700/30 rounded-full px-4 py-1.5 text-sm text-emerald-300 mb-6 font-medium">
+              ✅ Free on every plan
+            </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 leading-tight">
+              A checkbox you can lie to{" "}
+              <span className="bg-gradient-to-r from-emerald-400 to-violet-400 bg-clip-text text-transparent">
+                isn&apos;t accountability
+              </span>
+            </h2>
+            <p className="text-base text-slate-400 leading-relaxed mb-6">
+              Most habit trackers let you tap &ldquo;done&rdquo; without doing anything. HabitAI asks for proof: log the actual number of glasses, reps, or pages — run a live in-app timer — or snap a photo. And partial effort still counts.
+            </p>
+            <ul className="space-y-2.5">
+              {[
+                "Counter, timer, or photo — pick what fits the habit",
+                "Log 6 of 8 glasses and still earn 75% XP, not zero",
+                "No tier gate — real verification from day one, free",
+              ].map((b) => (
+                <li key={b} className="flex items-start gap-2.5 text-sm text-slate-300">
+                  <Check className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  {b}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Mockup */}
+          <div className="flex-1 w-full max-w-sm sm:max-w-md lg:max-w-none mx-auto">
+            <div className="relative">
+              <div className="absolute -inset-6 bg-emerald-700/8 rounded-3xl blur-3xl pointer-events-none" />
+              <div className="relative"><VerificationMockup /></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── 2. PROBLEM SECTION ───────────────────────────────────────────────────────
 
 const PROBLEMS = [
@@ -269,7 +353,7 @@ function ProblemSection() {
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 leading-tight">
             Why do{" "}
             <span className="bg-gradient-to-r from-red-400 to-rose-400 bg-clip-text text-transparent">
-              92% of people
+              most people
             </span>{" "}
             fail their habits?
           </h2>
@@ -333,7 +417,7 @@ const SOLUTIONS = [
     color: "border-violet-600/30 bg-violet-950/20",
     badgeColor: "text-violet-400",
     title: "AI that actually coaches you",
-    desc: "Not generic tips. Real personalised plans for your specific habits, your patterns, and your struggles — powered by GPT-4. Get a custom 7-day recovery plan every time you need it.",
+    desc: "Not generic tips. Real personalised plans for your specific habits, your patterns, and your struggles — powered by AI. Get a custom 7-day recovery plan every time you need it.",
     bullets: ["Identifies your weakest days", "7-day personalised action plan", "Recognises addiction & harmful patterns"],
   },
   {
@@ -341,7 +425,7 @@ const SOLUTIONS = [
     color: "border-emerald-600/25 bg-emerald-950/10",
     badgeColor: "text-emerald-400",
     title: "Friends who keep you honest",
-    desc: "Invite people you actually know. Compete on live leaderboards, send cheer reactions, and share achievements. Social accountability is the single most effective behaviour-change tool.",
+    desc: "Invite people you actually know. Compete on live leaderboards, send cheer reactions, and share achievements. It's a lot harder to quit when someone's watching.",
     bullets: ["Friend leaderboard with XP", "Cheer reactions & Habit Battles", "Compete, challenge, and stay accountable"],
   },
   {
@@ -393,6 +477,104 @@ function SolutionSection() {
               </ul>
             </div>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── 3a. AI GOAL PROGRAM (Pro flagship) ───────────────────────────────────────
+
+function GoalProgramMockup() {
+  return (
+    <div className="bg-[#0b0b18] border border-amber-700/20 rounded-2xl p-5 shadow-2xl shadow-black/40 space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+          <span className="text-xs font-bold text-amber-300 uppercase tracking-widest">Goal: Quit smoking</span>
+        </div>
+        <span className="text-[9px] px-2 py-0.5 rounded-full text-amber-300 font-semibold" style={{ background: "rgba(180,83,9,0.15)", border: "1px solid rgba(245,158,11,0.3)" }}>
+          Week 3
+        </span>
+      </div>
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-[11px] text-slate-400 font-semibold">Phase 1: Break the pattern</p>
+          <p className="text-[10px] text-slate-600">3 / 4 weeks</p>
+        </div>
+        <div className="w-full h-1.5 bg-amber-950/60 rounded-full overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full" style={{ width: "75%" }} />
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        {[
+          { label: "Delay first cigarette by 1 hour", done: true },
+          { label: "Replace triggers with a 5-min walk", done: true },
+          { label: "Zero smoking indoors — milestone", done: false },
+        ].map((m) => (
+          <div key={m.label} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-[11px] ${m.done ? "bg-amber-600/10 border-amber-600/20 text-slate-400 line-through" : "bg-[#0c0c18] border-violet-900/20 text-slate-300"}`}>
+            <div className={`w-3.5 h-3.5 rounded-full flex-shrink-0 flex items-center justify-center ${m.done ? "bg-amber-500" : "border border-slate-700"}`}>
+              {m.done && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+            </div>
+            {m.label}
+          </div>
+        ))}
+      </div>
+      <div className="flex items-start gap-2.5 bg-violet-950/40 border border-violet-700/25 rounded-xl px-3 py-2.5">
+        <Sparkles className="w-3.5 h-3.5 text-violet-400 flex-shrink-0 mt-0.5" />
+        <p className="text-[11px] text-slate-300 leading-relaxed">
+          <span className="text-violet-300 font-semibold">Weekly check-in: </span>
+          Rate your week — your coach responds with real feedback.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function GoalProgramSection() {
+  return (
+    <section className="py-24 px-4 sm:px-6 bg-[#060609]">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex flex-col lg:flex-row-reverse items-center gap-10 lg:gap-14">
+          {/* Text */}
+          <div className="flex-1 w-full">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full text-amber-300"
+                style={{ background: "rgba(180,83,9,0.15)", border: "1px solid rgba(245,158,11,0.3)" }}>
+                Pro · Flagship
+              </span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 leading-tight">
+              A coach with a plan{" "}
+              <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
+                for you
+              </span>
+            </h2>
+            <p className="text-base text-slate-400 leading-relaxed mb-6">
+              Pick a real ambitious goal — quit smoking in 60 days, become the starting striker, lose 10kg, get into your dream university. The AI asks clarifying questions, then builds a week-by-week program with specific daily habits and clear phase milestones.
+            </p>
+            <ul className="space-y-2.5">
+              {[
+                "AI asks clarifying questions, then builds your program",
+                "Week-by-week phases with concrete milestones",
+                "Daily habits generated automatically for each phase",
+                "Weekly check-ins keep your coach in the loop",
+              ].map((b) => (
+                <li key={b} className="flex items-start gap-2.5 text-sm text-slate-300">
+                  <Check className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                  {b}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Mockup */}
+          <div className="flex-1 w-full max-w-sm sm:max-w-md lg:max-w-none mx-auto">
+            <div className="relative">
+              <div className="absolute -inset-6 bg-amber-700/8 rounded-3xl blur-3xl pointer-events-none" />
+              <div className="relative"><GoalProgramMockup /></div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -709,6 +891,73 @@ function WhoItsFor() {
   );
 }
 
+// ─── 4b. PERSONALISED FROM THE FIRST SCREEN ───────────────────────────────────
+
+const LANDING_PERSONAS = [
+  { emoji: "🎓", label: "Student" },
+  { emoji: "💼", label: "Professional" },
+  { emoji: "💪", label: "Athlete" },
+  { emoji: "🚫", label: "Breaking Bad Habits" },
+  { emoji: "🚀", label: "Entrepreneur" },
+  { emoji: "👨‍👩‍👧", label: "Parent" },
+  { emoji: "🧘", label: "Wellness Seeker" },
+  { emoji: "🌱", label: "Just Improving" },
+];
+
+function PersonasSection() {
+  return (
+    <section className="py-20 px-4 sm:px-6">
+      <div className="max-w-4xl mx-auto text-center">
+        <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+          Personalised from the{" "}
+          <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
+            first screen
+          </span>
+        </h2>
+        <p className="text-slate-400 max-w-xl mx-auto mb-10">
+          Pick who you are during onboarding — your goals, categories, and habit suggestions adapt from day one.
+        </p>
+        <div className="flex flex-wrap justify-center gap-3">
+          {LANDING_PERSONAS.map(({ emoji, label }) => (
+            <span
+              key={label}
+              className="inline-flex items-center gap-2 bg-[#0f0f1a] border border-violet-900/25 rounded-full px-4 py-2 text-sm text-slate-300"
+            >
+              <span className="text-base leading-none">{emoji}</span>
+              {label}
+            </span>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── 4c. MOOD-AWARE SUGGESTIONS + SMART REMINDERS ─────────────────────────────
+
+function MoodRemindersSection() {
+  return (
+    <section className="py-24 px-4 sm:px-6 bg-[#060609]">
+      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="border border-violet-900/25 bg-violet-950/10 rounded-2xl p-7">
+          <div className="text-2xl mb-4">🎭</div>
+          <h3 className="text-lg font-bold text-white mb-2">Suggestions that match your mood</h3>
+          <p className="text-sm text-slate-400 leading-relaxed">
+            Check in with how you&apos;re feeling and HabitAI suggests habits to match — calmer picks on rough days, more of a push when you&apos;re on form.
+          </p>
+        </div>
+        <div className="border border-violet-900/25 bg-violet-950/10 rounded-2xl p-7">
+          <div className="text-2xl mb-4">🔔</div>
+          <h3 className="text-lg font-bold text-white mb-2">Reminders that actually arrive</h3>
+          <p className="text-sm text-slate-400 leading-relaxed">
+            A daily reminder at the time you set, plus a real 2-hour snooze — tap &ldquo;Later&rdquo; and HabitAI pings you back instead of letting the habit slip.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── 5. PRICING ───────────────────────────────────────────────────────────────
 // Uses the existing Pricing component (already updated with accurate feature lists)
 
@@ -763,7 +1012,7 @@ function FinalCta() {
               Ready to actually change?
             </h2>
             <p className="text-lg text-slate-400 mb-8 max-w-lg mx-auto leading-relaxed">
-              Thousands of people are already building better habits. Your AI coach is waiting.
+              Your AI coach is waiting. Free forever, no credit card needed.
             </p>
 
             <Link
@@ -942,11 +1191,15 @@ export default async function LandingPage() {
       <Navbar />
       <main>
         <Hero />
+        <VerificationSection />
         <ProblemSection />
         <SolutionSection />
+        <GoalProgramSection />
         <NewFeaturesSection />
         <WhoItsFor />
+        <PersonasSection />
         <ModesSection />
+        <MoodRemindersSection />
         <div id="pricing">
           <Pricing />
         </div>

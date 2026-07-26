@@ -72,7 +72,7 @@ const SECTIONS: Section[] = [
         q: "What's included in the Free plan?",
         a: (
           <>
-            The Free plan gives you <strong className="text-white">unlimited habits</strong>, a full AI coach, Identity Score, Habit Battles (2/month), friends &amp; leaderboard, and XP tracking. No credit card required — it&apos;s genuinely unlimited.
+            The Free plan gives you <strong className="text-white">unlimited habits</strong>, a full AI coach, Identity Score, habit verification, friends &amp; leaderboard, and XP tracking. No credit card required — it&apos;s genuinely unlimited.
           </>
         ),
       },
@@ -82,7 +82,7 @@ const SECTIONS: Section[] = [
           <ul className="space-y-1 mt-1">
             {[
               "Everything in Free",
-              "Unlimited Habit Battles (free gets 2/month)",
+              "Unlimited Habit Battles",
               "Full Habit DNA shareable card",
               "Public Commitment Contracts",
               "Group habits",

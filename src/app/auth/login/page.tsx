@@ -445,7 +445,7 @@ function AuthForm() {
                 Start building better habits ✨
               </h1>
               <p className="text-sm text-slate-500">
-                Join thousands building better habits 🚀
+                Free forever — no credit card needed 🚀
               </p>
             </div>
 

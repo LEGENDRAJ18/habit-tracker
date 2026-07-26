@@ -1092,7 +1092,7 @@ export default function DashboardPage() {
                 <p className="text-slate-400 text-sm mb-2 max-w-xs mx-auto leading-relaxed">
                   Every great habit starts with a single decision. Add your first habit and begin the compound effect.
                 </p>
-                <p className="text-xs text-violet-400/60 mb-8">Join 10,000+ people building better habits</p>
+                <p className="text-xs text-violet-400/60 mb-8">Your AI coach is ready when you are</p>
                 <button
                   onClick={handleAddClick}
                   className="inline-flex items-center gap-2 px-7 py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-2xl transition-all shadow-lg shadow-violet-900/40 text-base min-h-[44px]"

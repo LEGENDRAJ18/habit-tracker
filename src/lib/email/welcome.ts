@@ -85,7 +85,7 @@ function buildWelcomeHtml(firstName: string): string {
               Hey ${firstName}, you made it!
             </h1>
             <p style="margin:0 0 10px;font-size:15px;color:#a78bfa;font-weight:600;line-height:1.5;">
-              You just joined thousands of people building better habits every day.
+              Your AI coach is ready — let's build something that actually sticks.
             </p>
             <p style="margin:0;font-size:14px;color:#8b8fa8;line-height:1.65;">
               HabitAI uses AI coaching to help you build habits that actually stick &mdash; no willpower required. Here&rsquo;s how to hit the ground running.
@@ -121,9 +121,9 @@ function buildWelcomeHtml(firstName: string): string {
               <tr>
                 <td style="padding:14px 18px;">
                   <p style="margin:0;font-size:13px;color:#c4b5fd;text-align:center;line-height:1.5;">
-                    &#11088;&nbsp; <strong style="color:#fff;">4.9/5 rating</strong>&nbsp;&nbsp;&middot;&nbsp;&nbsp;
-                    &#128293;&nbsp; <strong style="color:#fff;">Thousands</strong> of daily streaks&nbsp;&nbsp;&middot;&nbsp;&nbsp;
-                    &#129302;&nbsp; <strong style="color:#fff;">AI-powered</strong> coaching
+                    &#128293;&nbsp; <strong style="color:#fff;">Streak protection</strong>&nbsp;&nbsp;&middot;&nbsp;&nbsp;
+                    &#129302;&nbsp; <strong style="color:#fff;">AI-powered</strong> coaching&nbsp;&nbsp;&middot;&nbsp;&nbsp;
+                    &#9989;&nbsp; <strong style="color:#fff;">Real</strong> verification
                   </p>
                 </td>
               </tr>

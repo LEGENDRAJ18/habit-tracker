@@ -21,33 +21,36 @@ type FeatureItem = { label: string; soon?: boolean };
 
 const FREE_FEATURES: FeatureItem[] = [
   { label: "Unlimited habits — no cap, ever" },
+  { label: "Real verification — counters, timers, photo proof" },
   { label: "Basic AI coach — 1 insight per day" },
-  { label: "Identity Score & mood tracking" },
+  { label: "Focus Timer" },
   { label: "Streaks & XP level system" },
   { label: "Friends & leaderboard" },
-  { label: "Habit Battles — 2 per month" },
 ];
 
 const PLUS_FEATURES: FeatureItem[] = [
   { label: "Everything in Free" },
+  { label: "5 AI insights per day" },
   { label: "Streak freeze — never lose a streak" },
   { label: "Unlimited Habit Battles" },
   { label: "Full Habit DNA shareable card" },
-  { label: "Public Commitment Contracts" },
+  { label: "Commitment Contracts" },
   { label: "Group habits" },
-  { label: "Weekly AI email report" },
+  { label: "Weekly email report" },
   { label: "Priority support" },
 ];
 
 const PRO_FEATURES: FeatureItem[] = [
   { label: "Everything in Plus" },
+  { label: "AI Goal Program — week-by-week plan for big goals" },
   { label: "Unlimited AI coaching — no daily cap" },
+  { label: "Weekly Game Plan — AI-generated every Monday" },
   { label: "Deep AI Memory — learns your patterns & excuses" },
   { label: "Voice check-ins" },
+  { label: "Pomodoro mode for Focus Timer" },
   { label: "Monthly Wrapped shareable report" },
+  { label: "Create & manage an Organisation" },
   { label: "CSV export — own your data" },
-  { label: "Organisation & school mode" },
-  { label: "Parent visibility dashboard" },
 ];
 
 function PaidPlanButton({ plan, priceId, primary }: { plan: string; priceId: string; primary?: boolean }) {
@@ -147,7 +150,7 @@ export default function Pricing() {
               <span className="text-4xl font-extrabold text-white">$0</span>
               <span className="text-slate-500 ml-2 text-sm">/ forever</span>
             </div>
-            <p className="text-xs text-slate-500 mb-6">Unlimited habits, AI insights, streaks — free forever.</p>
+            <p className="text-xs text-slate-500 mb-6">Unlimited habits, real verification, AI insights — free forever.</p>
 
             <Link
               href="/auth/signup"
@@ -208,7 +211,7 @@ export default function Pricing() {
               <span className="text-slate-400 text-sm">{loading ? "" : pro.suffix} / mo</span>
             </div>
             <PriceDisclaimer currency={currency} />
-            <p className="text-xs text-slate-500 mt-3 mb-4">Unlimited AI coaching, Deep Memory, voice check-ins — the full system for lasting change.</p>
+            <p className="text-xs text-slate-500 mt-3 mb-4">The AI Goal Program, unlimited coaching, Deep Memory — the full system for lasting change.</p>
 
             <PaidPlanButton plan="Pro" priceId={process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID!} primary />
 

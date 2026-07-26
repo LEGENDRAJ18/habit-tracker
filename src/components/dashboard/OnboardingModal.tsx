@@ -93,24 +93,24 @@ function SelectDot({ selected }: { selected: boolean }) {
 // ─── Goal observation ─────────────────────────────────────────────────────────
 
 const GOAL_PAIR_OBS: Record<string, string> = {
-  "fitness+mental":     "💡 These two reinforce each other directly — exercise reduces cortisol as effectively as some medications. You've picked the highest-synergy combination.",
-  "fitness+sleep":      "💡 Powerful combination — fitness and sleep form a feedback loop. Users who improve both together see 40% better results than those working on just one.",
-  "fitness+learn":      "💡 Physical exercise measurably improves memory retention by 20–30%. Your fitness habit will literally make your learning habit more effective.",
-  "learn+productive":   "💡 Natural pairing — structured learning and deep work share the same neural state. Top performers almost universally combine these two goals.",
-  "mental+sleep":       "💡 Smart focus — sleep quality is the #1 driver of mental wellness. Improving both simultaneously targets the root cause, not just the symptoms.",
-  "productive+sleep":   "💡 Sleep deprivation cuts cognitive performance by up to 40%. Fixing sleep is the single highest-leverage productivity move you can make.",
-  "mental+productive":  "💡 This combination targets the anxiety-distraction loop that kills focus. Rare to see someone identify both root causes at once.",
-  "fitness+productive": "💡 Morning exercise floods your brain with dopamine and norepinephrine for 4–6 hours — one of the most evidence-backed productivity strategies.",
-  "learn+mental":       "💡 Learning new skills is one of the most effective antidepressants. Progress from both goals creates compounding momentum.",
-  "learn+sleep":        "💡 Sleep consolidates everything you learn during the day. You're instinctively optimising for how memory actually works.",
+  "fitness+mental":     "💡 These two reinforce each other directly — exercise is one of the simplest ways to take the edge off stress. You've picked a high-synergy combination.",
+  "fitness+sleep":      "💡 Powerful combination — fitness and sleep form a feedback loop. Better workouts help you sleep, and better sleep makes workouts easier to show up for.",
+  "fitness+learn":      "💡 Physical exercise is well known to support focus and memory. Your fitness habit can make your learning habit easier too.",
+  "learn+productive":   "💡 Natural pairing — structured learning and deep work draw on the same kind of focus. It's common to build these two together.",
+  "mental+sleep":       "💡 Smart focus — sleep quality is one of the biggest drivers of mental wellness. Improving both together targets the root cause, not just the symptoms.",
+  "productive+sleep":   "💡 Poor sleep makes everything else harder. Fixing sleep first tends to make your other habits easier to keep.",
+  "mental+productive":  "💡 This combination targets the anxiety-distraction loop that kills focus. Worth tackling both at once.",
+  "fitness+productive": "💡 Morning exercise is one of the most consistently recommended ways to start a productive day.",
+  "learn+mental":       "💡 Learning new skills is a genuine mood boost for a lot of people. Progress on both goals tends to build on itself.",
+  "learn+sleep":        "💡 Sleep helps consolidate what you learn during the day. Pairing these two plays to how memory actually works.",
 };
 
 const GOAL_SINGLE_OBS: Record<string, string> = {
-  fitness:    "💪 Fitness habits have the highest 90-day retention of any goal category. Physical progress you can see keeps motivation high.",
-  learn:      "📚 People who habit-track their learning read 3× more and retain 40% more of what they study compared to those who don't.",
+  fitness:    "💪 Fitness habits are easy to see progress on, which tends to keep motivation high.",
+  learn:      "📚 People who track their learning habits report reading more and retaining more of what they study.",
   mental:     "🧘 Mental wellness habits often become the anchor habit — the one that makes every other habit easier to maintain.",
-  productive: "⚡ Productivity habits compound fast. Most users see measurable output improvements within the first 2 weeks.",
-  sleep:      "😴 Sleep is the #1 leverage point — improving sleep quality lifts every other habit's completion rate by 20–35%.",
+  productive: "⚡ Productivity habits tend to compound — small daily wins add up faster than they feel like they should.",
+  sleep:      "😴 Sleep is one of the highest-leverage habits — better sleep makes every other habit easier to keep.",
   custom:     "🎯 Goals with personal meaning have the strongest long-term adherence. The AI will tailor everything to yours.",
 };
 
@@ -351,17 +351,17 @@ export default function OnboardingModal({ onComplete }: Props) {
 
         <div key={step} style={{ animation: "stepIn 0.28s ease-out both" }}>
 
-          {/* ── Step 1: You're about to join the 8% ──────────────────────── */}
+          {/* ── Step 1: Intro ─────────────────────────────────────────────── */}
           {step === 1 && (
             <div className="text-center">
               <div className="text-6xl mb-6 leading-none" style={{ animation: "bouncePop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
                 🔥
               </div>
               <h1 className="text-3xl font-extrabold text-white mb-3 leading-tight tracking-tight">
-                You&apos;re about to<br />join the 8%
+                Most habits die<br />within a week
               </h1>
               <p className="text-slate-400 text-sm mb-7 leading-relaxed">
-                92% of people abandon their habits within 7 days.<br />
+                Not because of willpower — because nothing adapts to you.<br />
                 <span className="text-violet-300 font-semibold">HabitAI exists to make sure you&apos;re not one of them.</span>
               </p>
               <div className="space-y-2.5 mb-8 text-left">
@@ -386,7 +386,7 @@ export default function OnboardingModal({ onComplete }: Props) {
                 className="w-full py-3.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-xl shadow-violet-900/40"
                 style={{ animation: "ctaPulse 2s ease-in-out 1.2s infinite" }}
               >
-                I want to be in the 8% <ChevronRight className="w-4 h-4" />
+                Let&apos;s go <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           )}
@@ -591,9 +591,7 @@ export default function OnboardingModal({ onComplete }: Props) {
               </p>
               <div className="grid grid-cols-2 gap-3 mb-8">
                 {[
-                  { emoji: "🔥", stat: "21 days",  label: "Average streak on HabitAI"  },
                   { emoji: "🛡️", stat: "1 skip",   label: "Protected free every week"   },
-                  { emoji: "📈", stat: "3×",        label: "More likely to reach 30 days" },
                   { emoji: "⚡", stat: "10 XP",     label: "Earned per habit completed"  },
                 ].map(({ emoji, stat, label }) => (
                   <div key={label} className="bg-[#0f0f1a] border border-violet-900/20 rounded-xl px-4 py-3.5 text-center">
@@ -625,9 +623,7 @@ export default function OnboardingModal({ onComplete }: Props) {
               </p>
               <div className="grid grid-cols-2 gap-3 mb-8">
                 {[
-                  { emoji: "🔥", stat: "21 days",  label: "Average streak on HabitAI"  },
                   { emoji: "🛡️", stat: "1 skip",   label: "Protected free every week"   },
-                  { emoji: "📈", stat: "3×",        label: "More likely to reach 30 days" },
                   { emoji: "⚡", stat: "10 XP",     label: "Earned per habit completed"  },
                 ].map(({ emoji, stat, label }) => (
                   <div key={label} className="bg-[#0f0f1a] border border-violet-900/20 rounded-xl px-4 py-3.5 text-center">

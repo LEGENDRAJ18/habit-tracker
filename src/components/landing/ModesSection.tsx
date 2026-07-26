@@ -34,7 +34,7 @@ const MODES_LANDING = [
     label: "Teacher / Coach",
     tagline: "Lead your team",
     desc: "Create an organisation, invite your whole class or team with a unique code, and watch everyone build better habits together. Built for educators and coaches.",
-    bullets: ["Create unlimited organisations", "Unique invite code for your class", "Manage and track your members", "Full habit coaching for every student"],
+    bullets: ["Create an organisation (Pro)", "Unique invite code for your class", "Manage and track your members", "Full habit coaching for every student"],
     color:  "text-amber-300",
     border: "border-amber-500/30",
     glow:   "bg-amber-500/8",
