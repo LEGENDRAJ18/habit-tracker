@@ -645,8 +645,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!anyNewFreezeUsed || appliedFreezeRef.current) return;
     appliedFreezeRef.current = true;
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-    applyFreeze(yesterday);
+    applyFreeze();
   }, [anyNewFreezeUsed, applyFreeze]);
 
   // Show streak-broken modal at most once per UTC day for free users
@@ -1219,7 +1218,7 @@ export default function DashboardPage() {
                 }}
                 onUndoComplete={(logId) => { void undoCompletion(habit.id, logId); }}
                 onSkip={() => {
-                  void skipHabitToday(habit.id, tier).then(({ error }) => {
+                  void skipHabitToday(habit.id).then(({ error }) => {
                     if (error) toast(error, "error", undefined, 3500);
                     else toast(`"${habit.name}" skipped for today`, "success", undefined, 2500);
                   });

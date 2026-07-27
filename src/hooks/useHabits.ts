@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import posthog from "posthog-js";
 import { createClient } from "@/lib/supabase/client";
 import { resolveUser } from "@/lib/supabase/resolve-user";
-import type { Habit, HabitLog, CompletionQuality, Plan } from "@/types";
+import type { Habit, HabitLog, CompletionQuality } from "@/types";
 import {
   saveHabitsCache, loadHabitsCache,
   loadQueue, clearQueue, enqueue, type OfflineOp, type AddHabitPayload,
@@ -716,29 +716,12 @@ export function useHabits() {
 
   // "Skip" long-press action — consumes a weekly skip token and logs the day
   // as intentionally skipped (protects the streak, awards no XP).
-  // Weekly quota: Free 1, Plus 3, Pro unlimited.
-  const SKIP_QUOTA: Record<Plan, number> = { free: 1, plus: 3, pro: Infinity };
-
-  const skipHabitToday = async (habitId: string, tier: Plan): Promise<{ error: string | null }> => {
+  // Weekly quota: Free 1, Plus 3, Pro unlimited. Tier + quota are enforced
+  // server-side (atomic, can't be raced) — see /api/habits/[id]/skip.
+  const skipHabitToday = async (habitId: string): Promise<{ error: string | null }> => {
     if (todayLogs.some((l) => l.habit_id === habitId)) return { error: null };
     const user = await resolveUser();
     if (!user) return { error: "Not authenticated" };
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("skip_tokens_used, skip_week_start")
-      .eq("id", user.id)
-      .single();
-
-    // Week starts Monday, local time
-    const d = new Date();
-    const day = (d.getDay() + 6) % 7; // 0 = Monday
-    const monday = new Date(d.getFullYear(), d.getMonth(), d.getDate() - day).toISOString().split("T")[0];
-
-    const used = profile?.skip_week_start === monday ? (profile?.skip_tokens_used ?? 0) : 0;
-    if (used >= SKIP_QUOTA[tier]) {
-      return { error: `You've used all your skips for this week (${SKIP_QUOTA[tier]}/week).` };
-    }
 
     const now = new Date().toISOString();
     const tempId = `opt-skip-${habitId}-${Date.now()}`;
@@ -748,18 +731,19 @@ export function useHabits() {
     };
     setTodayLogs((prev) => [...prev, tempLog]);
 
-    const [{ data, error }] = await Promise.all([
-      supabase.from("habit_logs")
-        .insert({ habit_id: habitId, user_id: user.id, completed_at: now, outcome: "success", completion_quality: "skipped" })
-        .select().single(),
-      supabase.from("profiles").update({ skip_tokens_used: used + 1, skip_week_start: monday }).eq("id", user.id),
-    ]);
+    const res = await fetch(`/api/habits/${habitId}/skip`, { method: "POST" });
+    const body = await res.json().catch(() => ({})) as { error?: string | null; log?: HabitLog | null };
 
-    if (error || !data) {
+    if (!res.ok || body.error) {
       setTodayLogs((prev) => prev.filter((l) => l.id !== tempId));
-      return { error: error?.message ?? "Couldn't skip — try again" };
+      return { error: body.error ?? "Couldn't skip — try again" };
     }
-    setTodayLogs((prev) => prev.map((l) => (l.id === tempId ? data : l)));
+    if (body.log) {
+      setTodayLogs((prev) => prev.map((l) => (l.id === tempId ? (body.log as HabitLog) : l)));
+    } else {
+      // Server found an existing log for today — drop the optimistic temp entry.
+      setTodayLogs((prev) => prev.filter((l) => l.id !== tempId));
+    }
     return { error: null };
   };
 
