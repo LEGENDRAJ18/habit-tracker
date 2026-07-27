@@ -85,6 +85,7 @@ export async function POST(request: NextRequest) {
         .from("profiles")
         .select("id, full_name, username, subscription_tier")
         .eq("weekly_email_enabled", true)
+        .in("subscription_tier", ["plus", "pro"])
         .or(`weekly_report_sent_date.is.null,weekly_report_sent_date.lt.${thisWeekSunday}`);
 
       let sent = 0;
@@ -117,7 +118,11 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { data: profile } = await admin.from("profiles").select("full_name, username").eq("id", user.id).single();
+    const { data: profile } = await admin.from("profiles").select("full_name, username, subscription_tier").eq("id", user.id).single();
+    if (!profile || profile.subscription_tier === "free") {
+      return NextResponse.json({ error: "Weekly email report requires Plus or Pro." }, { status: 403 });
+    }
+
     const { stats, report } = await buildUserReport(admin, user.id);
     if (!stats) return NextResponse.json({ error: "Not enough data" }, { status: 400 });
 

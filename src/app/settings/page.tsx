@@ -1071,6 +1071,17 @@ function PlanTab({
   async function saveToggle(field: "weekly_email_enabled" | "streak_roast_enabled" | "battle_notifications_enabled", value: boolean) {
     const user = await resolveUser();
     if (!user) return;
+
+    if (field === "weekly_email_enabled") {
+      const res = await fetch("/api/settings/weekly-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: value }),
+      });
+      if (!res.ok) setWeeklyEmail(!value); // revert optimistic toggle — e.g. Free tier rejected by the API
+      return;
+    }
+
     await supabase.from("profiles").update({ [field]: value }).eq("id", user.id);
   }
 
@@ -1191,12 +1202,24 @@ function PlanTab({
             <p className="text-sm font-semibold text-white">Notification Preferences</p>
           </div>
           <div className="space-y-4 divide-y divide-violet-900/20">
-            <ToggleRow
-              label="Weekly AI Email Report"
-              sub="Every Sunday — personalised summary of your week, stats, and one tip. Sent to your account email."
-              value={weeklyEmail}
-              onChange={(v) => { setWeeklyEmail(v); void saveToggle("weekly_email_enabled", v); }}
-            />
+            {isPaid ? (
+              <ToggleRow
+                label="Weekly Email Report"
+                sub="Every Sunday — personalised summary of your week, stats, and one tip. Sent to your account email."
+                value={weeklyEmail}
+                onChange={(v) => { setWeeklyEmail(v); void saveToggle("weekly_email_enabled", v); }}
+              />
+            ) : (
+              <div className="pb-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-sm font-semibold text-white">Weekly Email Report</p>
+                  <span className="inline-flex items-center gap-1 bg-violet-900/40 border border-violet-700/40 text-violet-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    <Zap className="w-2.5 h-2.5" />Plus
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500">Every Sunday — personalised summary of your week. Available on Plus and Pro plans.</p>
+              </div>
+            )}
             <div className="pt-4">
               <ToggleRow
                 label="Streak Roast Notifications"

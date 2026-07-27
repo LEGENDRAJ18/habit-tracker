@@ -146,6 +146,14 @@ async function resetAiLimit(s: SupaSession, userId: string) {
   await authedSb(s).from('profiles').update({ ai_insight_count: 0, ai_insight_date: null }).eq('id', userId);
 }
 
+async function resetWeeklyEmail(s: SupaSession, userId: string) {
+  await authedSb(s).from('profiles').update({ weekly_email_enabled: false }).eq('id', userId);
+}
+
+async function resetSmartTiming(s: SupaSession, habitId: string) {
+  await authedSb(s).from('habits').update({ smart_timing: false, preferred_reminder_time: null }).eq('id', habitId);
+}
+
 // ─── Raw API helper ───────────────────────────────────────────────────────────
 
 /**
@@ -242,6 +250,14 @@ test.describe('Plus tier', () => {
     expect(body.error).not.toMatch(/\bfree\b.*insight/i);
   });
 
+  test('Weekly Email Report — POST enables it for Plus (not tier-blocked)', async () => {
+    const res  = await api('POST', '/api/settings/weekly-email', sess, { enabled: true });
+    const body = await res.json() as { weekly_email_enabled?: boolean; error?: string };
+    expect(res.status).toBe(200);
+    expect(body.weekly_email_enabled).toBe(true);
+    await resetWeeklyEmail(sess, ACCT.plus.id);
+  });
+
   test('Groups — page accessible, no Plus Feature upgrade gate', async ({ browser }) => {
     // Fresh context prevents any stale Web Lock from a prior navigation
     const ctx = await authedCtx(browser, sess);
@@ -304,6 +320,11 @@ test.describe('Plus tier', () => {
       await ctx.close();
     }
   });
+
+  test('Smart Timing — POST enable returns 403 for Plus (API, not just hidden UI)', async () => {
+    const res = await api('POST', `/api/habits/${habitId}/smart-timing`, sess, { enabled: true });
+    expect(res.status).toBe(403);
+  });
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -349,6 +370,34 @@ test.describe('Free tier — all Plus+Pro features blocked', () => {
   test('Organisation Mode — POST returns 403 for Free', async () => {
     const res = await api('POST', '/api/organisations', sess, { name: 'Test Org' });
     expect(res.status).toBe(403);
+  });
+
+  test('Smart Timing — POST enable returns 403 for Free (API, not just hidden UI)', async () => {
+    const res = await api('POST', `/api/habits/${habitId}/smart-timing`, sess, { enabled: true });
+    expect(res.status).toBe(403);
+  });
+
+  test('Weekly Email Report — POST returns 403 for Free and does not enable it', async () => {
+    const res  = await api('POST', '/api/settings/weekly-email', sess, { enabled: true });
+    expect(res.status).toBe(403);
+    const { data } = await authedSb(sess).from('profiles').select('weekly_email_enabled').eq('id', ACCT.free.id).single();
+    expect((data as { weekly_email_enabled: boolean } | null)?.weekly_email_enabled).toBe(false);
+  });
+
+  test('Weekly Email Report — Plus badge shown instead of toggle for Free', async ({ browser }) => {
+    const ctx = await authedCtx(browser, sess);
+    const page = await ctx.newPage();
+    try {
+      await page.goto('/settings', { waitUntil: 'networkidle' });
+      // Exact accessible-name match — a substring match on "Plan" would also hit the
+      // "AI Goal Program … phased habit plan" upsell button in the sidebar.
+      await page.getByRole('button', { name: 'Plan', exact: true }).click();
+      await expect(page.locator('text=Weekly Email Report').first()).toBeVisible({ timeout: 15_000 });
+      // Free sees the locked description, not the interactive ToggleRow
+      await expect(page.locator('text=Available on Plus and Pro plans').first()).toBeVisible();
+    } finally {
+      await ctx.close();
+    }
   });
 
   test('Groups — Plus Feature upgrade gate visible for Free', async ({ browser }) => {
@@ -415,5 +464,40 @@ test.describe('Free tier — all Plus+Pro features blocked', () => {
     } finally {
       await ctx.close();
     }
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PRO TIER — features exclusive to Pro must still work for Pro
+// ══════════════════════════════════════════════════════════════════════════════
+
+test.describe('Pro tier', () => {
+  let sess: SupaSession;
+  let habitId: string;
+
+  test.beforeAll(async () => {
+    sess    = await signIn('pro');
+    habitId = await createHabit(sess, ACCT.pro.id);
+  });
+
+  test.afterAll(async () => {
+    if (habitId) await deleteHabit(sess, habitId);
+    await resetAiLimit(sess, ACCT.pro.id);
+    await resetWeeklyEmail(sess, ACCT.pro.id);
+  });
+
+  test('Smart Timing — POST enable returns 200 for Pro and sets smart_timing=true', async () => {
+    const res  = await api('POST', `/api/habits/${habitId}/smart-timing`, sess, { enabled: true });
+    const body = await res.json() as { smart_timing?: boolean };
+    expect(res.status).toBe(200);
+    expect(body.smart_timing).toBe(true);
+    await resetSmartTiming(sess, habitId);
+  });
+
+  test('Weekly Email Report — POST enables it for Pro (not tier-blocked)', async () => {
+    const res  = await api('POST', '/api/settings/weekly-email', sess, { enabled: true });
+    const body = await res.json() as { weekly_email_enabled?: boolean };
+    expect(res.status).toBe(200);
+    expect(body.weekly_email_enabled).toBe(true);
   });
 });
