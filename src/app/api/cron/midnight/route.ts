@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getWebPush } from "@/lib/webpush";
 import { Resend } from "resend";
+import { generateUnsubscribeToken } from "@/lib/unsubscribeToken";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://habitaiapp.com";
@@ -350,7 +351,7 @@ async function processWinBack(supabase: ReturnType<typeof createAdminClient>): P
         from:    "HabitAI <hello@habitaiapp.com>",
         to:      email,
         subject: days >= 30 ? `${display}, your habits are still here 💫` : `${display}, don't lose your streak 🔥`,
-        html:    buildWinBackHtml(display, days, `${APP_URL}/api/unsubscribe?uid=${profileId}`),
+        html:    buildWinBackHtml(display, days, `${APP_URL}/api/unsubscribe?uid=${profileId}&token=${generateUnsubscribeToken(profileId)}`),
       });
       await supabase.from("profiles").update({ [field]: today }).eq("id", profileId);
       sent++;
@@ -462,7 +463,7 @@ async function processStreakMilestones(supabase: ReturnType<typeof createAdminCl
           from:    "HabitAI <hello@habitaiapp.com>",
           to:      email,
           subject: `${hitMilestone} days straight — incredible, ${display}! ${hitMilestone === 365 ? "👑" : "🔥"}`,
-          html:    buildMilestoneHtml(display, habit.name, hitMilestone, `${APP_URL}/api/unsubscribe?uid=${userId}`),
+          html:    buildMilestoneHtml(display, habit.name, hitMilestone, `${APP_URL}/api/unsubscribe?uid=${userId}&token=${generateUnsubscribeToken(userId)}`),
         });
 
         await supabase.from("profiles").update({

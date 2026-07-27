@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { levelFromXP } from "@/lib/xp";
+import { generateUnsubscribeToken } from "@/lib/unsubscribeToken";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://habitai.app";
@@ -230,7 +231,7 @@ Generate a warm weekly summary.`;
       const ai = await callOpenAIWeekly(prompt);
       if (!ai) { skipped++; continue; }
 
-      const unsubscribeUrl = `${APP_URL}/api/unsubscribe?uid=${profile.id}`;
+      const unsubscribeUrl = `${APP_URL}/api/unsubscribe?uid=${profile.id}&token=${generateUnsubscribeToken(profile.id)}`;
       await resend.emails.send({
         from: "HabitAI <reminders@habitai.app>",
         to: email,
@@ -434,7 +435,7 @@ async function runReminders(): Promise<{ sent: number; skipped: number; hour: nu
       else break;
     }
 
-    const unsubscribeUrl = `${APP_URL}/api/unsubscribe?uid=${profile.id}`;
+    const unsubscribeUrl = `${APP_URL}/api/unsubscribe?uid=${profile.id}&token=${generateUnsubscribeToken(profile.id)}`;
 
     await resend.emails.send({
       from: "HabitAI <reminders@habitai.app>",
@@ -566,7 +567,7 @@ async function runTrialReminders(supabase: ReturnType<typeof createAdminClient>)
         weekday: "long", day: "numeric", month: "long", year: "numeric",
       });
 
-      const unsubscribeUrl = `${APP_URL}/api/unsubscribe?uid=${profile.id}`;
+      const unsubscribeUrl = `${APP_URL}/api/unsubscribe?uid=${profile.id}&token=${generateUnsubscribeToken(profile.id)}`;
 
       await resend.emails.send({
         from: "HabitAI <reminders@habitai.app>",
@@ -753,7 +754,7 @@ async function runSmartTimingReminders(supabase: ReturnType<typeof createAdminCl
       const firstName = rawName.split(/[\s_\-+@]/)[0];
       const display = firstName.charAt(0).toUpperCase() + firstName.slice(1);
 
-      const unsubscribeUrl = `${APP_URL}/api/unsubscribe?uid=${userId}`;
+      const unsubscribeUrl = `${APP_URL}/api/unsubscribe?uid=${userId}&token=${generateUnsubscribeToken(userId)}`;
 
       await resend.emails.send({
         from: "HabitAI <reminders@habitai.app>",
