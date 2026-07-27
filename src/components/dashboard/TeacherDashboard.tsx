@@ -229,7 +229,7 @@ export default function TeacherDashboard() {
 
       if (org?.organisation_id) {
         const { data: orgMembers } = await supabase
-          .from("profiles")
+          .from("public_profiles")
           .select("id, username, avatar_id")
           .eq("organisation_id", org.organisation_id)
           .neq("id", user.id)

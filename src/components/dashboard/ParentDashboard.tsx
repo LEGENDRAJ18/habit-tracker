@@ -262,7 +262,7 @@ export default function ParentDashboard() {
 
           // Profile
           const { data: profile } = await supabase
-            .from("profiles")
+            .from("public_profiles")
             .select("username, avatar_id")
             .eq("id", childId)
             .single();
