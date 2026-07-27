@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { callOpenAIJSON } from "@/lib/openai";
 import { categoryLabel } from "@/lib/goalProgram";
 import type { GoalCategory, ProgramPhase } from "@/types";
@@ -19,7 +20,9 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { data: profile } = await supabase
+    // Tier read + generation-quota counter both go through the admin client.
+    const admin = createAdminClient();
+    const { data: profile } = await admin
       .from("profiles")
       .select("subscription_tier, goal_program_gen_count, goal_program_gen_date")
       .eq("id", user.id)
@@ -109,7 +112,7 @@ Design the full phased program now.`;
       }));
 
       // Increment the daily generation counter — generation (not saving) is the expensive AI step.
-      await supabase.from("profiles").update({
+      await admin.from("profiles").update({
         goal_program_gen_count: todayCount + 1,
         goal_program_gen_date: today,
       }).eq("id", user.id);

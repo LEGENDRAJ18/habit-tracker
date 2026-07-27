@@ -79,12 +79,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Use the user-authenticated client for the user's own rows so these
-    // queries succeed via RLS even when SUPABASE_SERVICE_ROLE_KEY is absent.
+    // Habits/logs use the user-authenticated client (their own rows, via RLS).
+    // The profile read includes subscription_tier + the rate-limit counters,
+    // so it goes through the admin client — same as the counter write below.
     const [{ data: habits }, { data: rawLogs }, { data: profile }] = await Promise.all([
       supabase.from("habits").select("id, name, habit_strength, created_at").eq("user_id", user.id).order("created_at"),
       supabase.from("habit_logs").select("habit_id, completed_at").eq("user_id", user.id).gte("completed_at", daysAgo(90)),
-      supabase.from("profiles").select("goal, goals, subscription_tier, ai_memory, ai_insight_count, ai_insight_date").eq("id", user.id).single(),
+      admin.from("profiles").select("goal, goals, subscription_tier, ai_memory, ai_insight_count, ai_insight_date").eq("id", user.id).single(),
     ]);
 
     const userTier = (profile?.subscription_tier ?? "free") as "free" | "plus" | "pro";
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Increment atomically in DB
-      await supabase.from("profiles").update({
+      await admin.from("profiles").update({
         ai_insight_count: todayCount + 1,
         ai_insight_date:  today,
       }).eq("id", user.id);
