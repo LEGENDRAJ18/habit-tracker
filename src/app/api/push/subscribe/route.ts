@@ -6,17 +6,34 @@ export async function POST(req: NextRequest) {
   console.log("[push/subscribe] hit");
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
   console.log("[push/subscribe] user:", user?.id ?? "NO USER");
   if (!user) {
-    console.error("[push/subscribe] 401 no user");
+    // Distinguish "no session cookie sent at all" from "cookie sent but
+    // session invalid/expired" — cookie NAMES only, never values.
+    const cookieNames = req.cookies.getAll().map((c) => c.name);
+    const hasAuthCookie = cookieNames.some((n) => n.includes("-auth-token"));
+    console.error(
+      "[push/subscribe] 401 no user — authError:", authError?.message ?? "none",
+      "| hasAuthCookie:", hasAuthCookie,
+      "| cookieNames:", cookieNames.join(", ") || "(none)",
+    );
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { subscription, timezone } = await req.json() as {
-    subscription: { endpoint: string; keys: { p256dh: string; auth: string } };
-    timezone: string;
-  };
+  let subscription: { endpoint: string; keys: { p256dh: string; auth: string } } | undefined;
+  let timezone: string | undefined;
+  try {
+    const body = await req.json() as {
+      subscription: { endpoint: string; keys: { p256dh: string; auth: string } };
+      timezone: string;
+    };
+    subscription = body.subscription;
+    timezone = body.timezone;
+  } catch (err) {
+    console.error("[push/subscribe] 400 request body failed to parse as JSON:", err);
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
 
   if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
     console.error("[push/subscribe] 400 invalid subscription", {

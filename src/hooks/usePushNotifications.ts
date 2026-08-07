@@ -16,6 +16,29 @@ function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   return arr.buffer as ArrayBuffer;
 }
 
+// Decodes + validates a VAPID public key. A valid uncompressed P-256 key is
+// exactly 65 bytes starting with 0x04 — anything else (truncated, wrong env
+// var, whitespace from a copy-paste, a private key pasted by mistake, etc.)
+// makes pushManager.subscribe() throw a generic, hard-to-diagnose error.
+// Catching it here gives a specific, logged reason instead of a bare "error".
+function decodeVapidKey(base64String: string): Uint8Array<ArrayBuffer> | null {
+  let bytes: Uint8Array<ArrayBuffer>;
+  try {
+    bytes = new Uint8Array(urlBase64ToUint8Array(base64String));
+  } catch (err) {
+    console.error("[push] VAPID public key failed to base64url-decode:", err);
+    return null;
+  }
+  if (bytes.byteLength !== 65 || bytes[0] !== 4) {
+    console.error(
+      "[push] VAPID public key has the wrong shape — decoded to", bytes.byteLength,
+      "bytes starting with 0x" + bytes[0]?.toString(16), "(expected 65 bytes starting with 0x04)."
+    );
+    return null;
+  }
+  return bytes;
+}
+
 // Discord/Instagram in-app browsers (WKWebView on iOS < 16.4, Android WebView)
 // do not expose the Notification API at all. Accessing Notification.permission
 // without this guard throws ReferenceError and crashes the dashboard.
@@ -51,11 +74,15 @@ export function usePushNotifications() {
 
   // POSTs a browser PushSubscription to the server. The route upserts on
   // (user_id, endpoint), so this is idempotent — safe to call every time we
-  // reconcile, not just on the very first subscribe.
+  // reconcile, not just on the very first subscribe. credentials:"same-origin"
+  // is explicit (not just relying on the browser default) so the Supabase
+  // auth cookie is guaranteed to be sent — a missing/expired session here is
+  // the #1 way this silently comes back 401.
   const persistSubscription = useCallback(async (sub: PushSubscription): Promise<boolean> => {
     try {
       const res = await fetch("/api/push/subscribe", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           subscription: sub.toJSON(),
@@ -63,7 +90,8 @@ export function usePushNotifications() {
         }),
       });
       if (!res.ok) {
-        console.error("[push] POST /api/push/subscribe failed with status", res.status);
+        const body = await res.json().catch(() => null) as { error?: string } | null;
+        console.error("[push] POST /api/push/subscribe failed:", res.status, body?.error ?? "(no error body)");
         return false;
       }
       return true;
@@ -80,15 +108,42 @@ export function usePushNotifications() {
   // permission alone says nothing about whether the server has a row.
   const subscribe = useCallback(async (): Promise<SubscribeResult> => {
     const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-    if (!vapidKey) return "no_vapid";
+    if (!vapidKey) {
+      console.error("[push] subscribe(): NEXT_PUBLIC_VAPID_PUBLIC_KEY is not set in the client bundle");
+      return "no_vapid";
+    }
     if (!hasNotifAPI()) return "unsupported";
+
+    const applicationServerKey = decodeVapidKey(vapidKey);
+    if (!applicationServerKey) return "no_vapid";
 
     try {
       const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidKey),
-      });
+
+      // Clear any existing subscription first. If the VAPID keypair was ever
+      // rotated, a leftover subscription tied to the OLD key makes
+      // pushManager.subscribe() throw InvalidStateError ("a subscription
+      // with a different applicationServerKey already exists") — a common,
+      // otherwise-silent cause of this failing for users who granted
+      // permission under a previous deployment/key.
+      const stale = await reg.pushManager.getSubscription();
+      if (stale) {
+        await stale.unsubscribe().catch((err) => {
+          console.error("[push] subscribe(): failed to clear stale subscription:", err);
+        });
+      }
+
+      let sub: PushSubscription;
+      try {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey,
+        });
+      } catch (err) {
+        const e = err as { name?: string; message?: string };
+        console.error("[push] subscribe(): pushManager.subscribe() threw:", e?.name, e?.message);
+        return "error";
+      }
 
       const ok = await persistSubscription(sub);
 
@@ -105,7 +160,8 @@ export function usePushNotifications() {
       localStorage.setItem(SUBSCRIBED_KEY, "1");
       setTimeout(() => setSubscribeSuccess(false), 4000);
       return "success";
-    } catch {
+    } catch (err) {
+      console.error("[push] subscribe(): unexpected error:", err);
       return "error";
     }
   }, [persistSubscription]);
@@ -174,10 +230,11 @@ export function usePushNotifications() {
 
         if (!sub) {
           const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-          if (!vapidKey) { if (!cancelled) setReconciling(false); return; }
+          const applicationServerKey = vapidKey ? decodeVapidKey(vapidKey) : null;
+          if (!applicationServerKey) { if (!cancelled) setReconciling(false); return; }
           sub = await reg.pushManager.subscribe({
             userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(vapidKey),
+            applicationServerKey,
           });
         }
 
