@@ -16,11 +16,18 @@ function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   return arr.buffer as ArrayBuffer;
 }
 
-// Decodes + validates a VAPID public key. A valid uncompressed P-256 key is
-// exactly 65 bytes starting with 0x04 — anything else (truncated, wrong env
-// var, whitespace from a copy-paste, a private key pasted by mistake, etc.)
-// makes pushManager.subscribe() throw a generic, hard-to-diagnose error.
-// Catching it here gives a specific, logged reason instead of a bare "error".
+// Decodes a VAPID public key. This only guards against input that's
+// genuinely unusable client-side (atob() throwing on unparseable base64url,
+// e.g. a truncated env var or garbage value) — it does NOT hard-reject on a
+// byte-length/prefix heuristic. An earlier version of this function also
+// required exactly 65 bytes starting with 0x04 (the standard shape for an
+// uncompressed P-256 key) and returned null otherwise; that turned out to be
+// too strict; it rejected at least one real, working key, breaking subscribe
+// for everyone. The browser's own pushManager.subscribe() is the actual
+// authority on whether a key is valid — it throws a specific, catchable
+// error (caught and logged where this is called) if the key it's handed
+// doesn't work. We still log a warning here if the shape looks off, since
+// that's useful diagnostic signal, but we no longer block on it.
 function decodeVapidKey(base64String: string): Uint8Array<ArrayBuffer> | null {
   let bytes: Uint8Array<ArrayBuffer>;
   try {
@@ -30,11 +37,11 @@ function decodeVapidKey(base64String: string): Uint8Array<ArrayBuffer> | null {
     return null;
   }
   if (bytes.byteLength !== 65 || bytes[0] !== 4) {
-    console.error(
-      "[push] VAPID public key has the wrong shape — decoded to", bytes.byteLength,
-      "bytes starting with 0x" + bytes[0]?.toString(16), "(expected 65 bytes starting with 0x04)."
+    console.warn(
+      "[push] VAPID public key has an unexpected shape — decoded to", bytes.byteLength,
+      "bytes starting with 0x" + (bytes[0]?.toString(16) ?? "?"),
+      "(uncompressed P-256 is usually 65 bytes starting with 0x04). Attempting subscribe anyway."
     );
-    return null;
   }
   return bytes;
 }
