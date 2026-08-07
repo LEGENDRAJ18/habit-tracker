@@ -1464,7 +1464,6 @@ const DEFAULT_PREFS: NotifPrefs = {
 function NotificationsTab() {
   const supabase = createClient();
   const [prefs, setPrefs] = useState<NotifPrefs>(DEFAULT_PREFS);
-  const [pushEnabled, setPushEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -1473,14 +1472,13 @@ function NotificationsTab() {
   const [soundsOn, setSoundsOn] = useState(() =>
     typeof window !== "undefined" && localStorage.getItem("habitai_sounds") === "on"
   );
-  const { requestPermission } = usePushNotifications();
+  // pushEnabled reflects whether the server actually has a saved subscription
+  // row for this device (verified/created by the hook's mount-time
+  // reconciliation against Notification.permission) — not just browser
+  // permission. See usePushNotifications for why that distinction matters.
+  const { isSubscribed: pushEnabled, reconciling: pushReconciling, requestPermission } = usePushNotifications();
 
   useEffect(() => {
-    // Check push permission state
-    if (typeof window !== "undefined" && "Notification" in window) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPushEnabled(Notification.permission === "granted");
-    }
     // Load prefs from DB
     void (async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -1520,17 +1518,22 @@ function NotificationsTab() {
   async function enablePush() {
     setPushEnabling(true);
     setPushFeedback(null);
+    // Always runs the full subscribe→POST flow, even if Notification.permission
+    // is already "granted" — see usePushNotifications.requestPermission().
     const result = await requestPermission();
     setPushEnabling(false);
     if (result === "success") {
-      setPushEnabled(true);
+      // pushEnabled (isSubscribed) is set by the hook itself once the POST
+      // to /api/push/subscribe succeeds — nothing to set locally here.
       setPushFeedback({ ok: true, msg: "Notifications enabled!" });
       setTimeout(() => setPushFeedback(null), 4000);
     } else if (result === "denied") {
       // Browser permission denied — the existing "blocked" notice covers this
     } else if (result === "no_vapid") {
+      console.error("[push] enablePush(): no_vapid");
       setPushFeedback({ ok: false, msg: "Push notifications are not configured. Please contact support." });
     } else {
+      console.error("[push] enablePush(): requestPermission() returned", result);
       setPushFeedback({ ok: false, msg: "Couldn't enable notifications, please try again." });
     }
   }
@@ -1572,7 +1575,14 @@ function NotificationsTab() {
       </div>
 
       {/* Push permission status */}
-      {!pushEnabled && (
+      {pushReconciling && (
+        <div className="flex items-center gap-2 bg-violet-950/30 border border-violet-800/30 rounded-xl px-3 py-2.5 text-xs text-slate-400">
+          <Loader2 className="w-3.5 h-3.5 animate-spin flex-shrink-0" />
+          Checking notification status…
+        </div>
+      )}
+
+      {!pushReconciling && !pushEnabled && (
         <div className="space-y-3">
           <div className="flex items-start gap-3 bg-violet-950/40 border border-violet-700/30 rounded-2xl p-4">
             <Bell className="w-5 h-5 text-violet-400 flex-shrink-0 mt-0.5" />
