@@ -3,11 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(req: NextRequest) {
-  console.log("[push/subscribe] hit");
-
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-  console.log("[push/subscribe] user:", user?.id ?? "NO USER");
   if (!user) {
     // Distinguish "no session cookie sent at all" from "cookie sent but
     // session invalid/expired" — cookie NAMES only, never values.
@@ -61,7 +58,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  console.log("[push/subscribe] OK inserted for", user.id);
   return NextResponse.json({ ok: true });
 }
 
