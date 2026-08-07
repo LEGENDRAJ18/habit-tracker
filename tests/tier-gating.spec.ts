@@ -14,11 +14,23 @@
 import { test, expect, type Browser, type BrowserContext, type Cookie } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 
+// Load SUPABASE_SERVICE_ROLE_KEY (and anything else in .env.local) into
+// process.env — this test process is invoked via `npx playwright test`
+// directly, not through `next dev`, so nothing loads .env.local for it
+// otherwise. Node 20.6+ built-in loader; safe no-op if the file is absent.
+try {
+  process.loadEnvFile('.env.local');
+} catch {
+  // Fine to continue without it — only the service-role-backed setup helpers
+  // (exhaustAiLimit/resetAiLimit) need it, everything else still works.
+}
+
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const SUPABASE_URL = 'https://uacvjxisrjemphcaetvd.supabase.co';
 const ANON_KEY     =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhY3ZqeGlzcmplbXBoY2FldHZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NjIzOTksImV4cCI6MjA5MjEzODM5OX0.5bRawbyY5Ujze7w60B5IPTu3dtoRDRcL5nL943spR0A';
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const COOKIE_NAME  = 'sb-uacvjxisrjemphcaetvd-auth-token';
 const BASE         = 'http://localhost:3000';
 const TEST_PASS    = 'HabitAI_PW_Test_2025';
@@ -54,6 +66,25 @@ function authedSb(session: SupaSession) {
   return createClient(SUPABASE_URL, ANON_KEY, {
     global: { headers: { Authorization: `Bearer ${session.access_token}` } },
     auth:   { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+}
+
+/**
+ * Service-role client, mirroring src/lib/supabase/admin.ts's createAdminClient().
+ * Bypasses RLS and the protect_quota_columns trigger's anon/authenticated-role
+ * check — used only to SEED quota-state fixtures (e.g. "already used today")
+ * the same way the real server routes write these columns, never to test the
+ * gate itself.
+ */
+function adminSb() {
+  if (!SERVICE_ROLE_KEY) {
+    throw new Error(
+      'SUPABASE_SERVICE_ROLE_KEY is not set — add it to .env.local (this test process loads ' +
+      'it via process.loadEnvFile, but the var itself must be present and a real key).'
+    );
+  }
+  return createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
 }
 
@@ -132,18 +163,23 @@ async function deleteHabit(s: SupaSession, habitId: string) {
 /**
  * Sets ai_insight_count to `count` with today's date so that the NEXT call
  * to /api/ai-insight immediately hits the 429 rate-limit response.
+ *
+ * Seeded via the service-role client — protect_quota_columns correctly
+ * rejects this write from an anon/authenticated session (that's the point
+ * of the trigger), so fixture setup has to go through the same privileged
+ * path the real server routes use, same as the app's own createAdminClient().
  */
-async function exhaustAiLimit(s: SupaSession, userId: string, count: number) {
+async function exhaustAiLimit(userId: string, count: number) {
   const today = new Date().toISOString().split('T')[0];
-  const { error } = await authedSb(s)
+  const { error } = await adminSb()
     .from('profiles')
     .update({ ai_insight_count: count, ai_insight_date: today })
     .eq('id', userId);
   if (error) throw new Error(`exhaustAiLimit: ${error.message}`);
 }
 
-async function resetAiLimit(s: SupaSession, userId: string) {
-  await authedSb(s).from('profiles').update({ ai_insight_count: 0, ai_insight_date: null }).eq('id', userId);
+async function resetAiLimit(userId: string) {
+  await adminSb().from('profiles').update({ ai_insight_count: 0, ai_insight_date: null }).eq('id', userId);
 }
 
 async function resetWeeklyEmail(s: SupaSession, userId: string) {
@@ -152,6 +188,17 @@ async function resetWeeklyEmail(s: SupaSession, userId: string) {
 
 async function resetSmartTiming(s: SupaSession, habitId: string) {
   await authedSb(s).from('habits').update({ smart_timing: false, preferred_reminder_time: null }).eq('id', habitId);
+}
+
+// Both quota columns — protect_quota_columns rejects anon/authenticated
+// writes here too, same as ai_insight_count/ai_insight_date. Seed via the
+// service-role client, same reasoning as exhaustAiLimit/resetAiLimit above.
+async function resetSkipTokens(userId: string) {
+  await adminSb().from('profiles').update({ skip_tokens_used: 0, skip_week_start: null }).eq('id', userId);
+}
+
+async function resetStreakFreeze(userId: string) {
+  await adminSb().from('profiles').update({ last_freeze_used: null, freeze_protected_date: null }).eq('id', userId);
 }
 
 // ─── Raw API helper ───────────────────────────────────────────────────────────
@@ -190,7 +237,9 @@ test.describe('Plus tier', () => {
 
   test.afterAll(async () => {
     if (habitId) await deleteHabit(sess, habitId);
-    await resetAiLimit(sess, ACCT.plus.id);
+    await resetAiLimit(ACCT.plus.id);
+    await resetSkipTokens(ACCT.plus.id);
+    await resetStreakFreeze(ACCT.plus.id);
   });
 
   // ── UNLOCKED ─────────────────────────────────────────────────────────────
@@ -241,7 +290,7 @@ test.describe('Plus tier', () => {
 
   test('AI coaching — daily limit is 5 (Plus message, not free message)', async () => {
     // Set count to the Plus daily limit so the next request returns 429
-    await exhaustAiLimit(sess, ACCT.plus.id, 5);
+    await exhaustAiLimit(ACCT.plus.id, 5);
     const res  = await api('POST', '/api/ai-insight', sess, { mode: 'coaching' });
     const body = await res.json() as { error?: string };
     expect(res.status).toBe(429);
@@ -256,6 +305,50 @@ test.describe('Plus tier', () => {
     expect(res.status).toBe(200);
     expect(body.weekly_email_enabled).toBe(true);
     await resetWeeklyEmail(sess, ACCT.plus.id);
+  });
+
+  test('Groups — POST not tier-blocked (400 for missing habit_name, not 403)', async () => {
+    // Free users get 403; Plus/Pro pass the gate and fail at validation (400).
+    // Omits habit_name so this never actually creates a group.
+    const res = await api('POST', '/api/groups', sess, { name: 'PW Test Group' });
+    expect(res.status).not.toBe(403);
+    expect([400, 200]).toContain(res.status);
+  });
+
+  test('Streak Freeze — POST /api/streak-freeze/apply succeeds for Plus', async () => {
+    await resetStreakFreeze(ACCT.plus.id);
+    const res  = await api('POST', '/api/streak-freeze/apply', sess);
+    const body = await res.json() as { freeze_protected_date?: string; error?: string };
+    expect(res.status).toBe(200);
+    expect(body.freeze_protected_date).toBeTruthy();
+    await resetStreakFreeze(ACCT.plus.id);
+  });
+
+  test('Skip token — Plus quota is 3/week (3rd succeeds, 4th is blocked)', async () => {
+    await resetSkipTokens(ACCT.plus.id);
+    const statuses: number[] = [];
+    for (let i = 0; i < 4; i++) {
+      const res = await api('POST', `/api/habits/${habitId}/skip`, sess);
+      statuses.push(res.status);
+    }
+    // First 3 skips consume the Plus weekly quota; the 4th must be blocked —
+    // proves Plus gets more than Free's 1/week and less than Pro's unlimited.
+    expect(statuses.slice(0, 3)).toEqual([200, 200, 200]);
+    expect(statuses[3]).toBe(403);
+    await resetSkipTokens(ACCT.plus.id);
+  });
+
+  test('Habit DNA — no "Upgrade to Plus" paywall shown for Plus user', async ({ browser }) => {
+    const ctx = await authedCtx(browser, sess);
+    const page = await ctx.newPage();
+    try {
+      await page.goto('/dashboard', { waitUntil: 'networkidle' });
+      await page.getByRole('button', { name: 'View your Habit DNA' }).click();
+      await expect(page.locator('text=Habit DNA').first()).toBeVisible({ timeout: 10_000 });
+      await expect(page.locator('text=Upgrade to Plus')).not.toBeVisible();
+    } finally {
+      await ctx.close();
+    }
   });
 
   test('Groups — page accessible, no Plus Feature upgrade gate', async ({ browser }) => {
@@ -291,6 +384,17 @@ test.describe('Plus tier', () => {
 
   test('Organisation Mode — POST returns 403 for Plus', async () => {
     const res = await api('POST', '/api/organisations', sess, { name: 'Test Org' });
+    expect(res.status).toBe(403);
+  });
+
+  test('AI Goal Program — POST returns 403 for Plus (Pro-only)', async () => {
+    // Tier check runs before body parsing, so no goal fields are needed.
+    const res = await api('POST', '/api/goal-program/create', sess);
+    expect(res.status).toBe(403);
+  });
+
+  test('Deep AI Memory (memory_coaching) — POST returns 403 for Plus', async () => {
+    const res = await api('POST', '/api/ai-insight', sess, { mode: 'memory_coaching' });
     expect(res.status).toBe(403);
   });
 
@@ -342,7 +446,7 @@ test.describe('Free tier — all Plus+Pro features blocked', () => {
 
   test.afterAll(async () => {
     if (habitId) await deleteHabit(sess, habitId);
-    await resetAiLimit(sess, ACCT.free.id);
+    await resetAiLimit(ACCT.free.id);
   });
 
   test('Battles — POST returns 403 for Free', async () => {
@@ -413,7 +517,7 @@ test.describe('Free tier — all Plus+Pro features blocked', () => {
 
   test('AI coaching — daily limit is 1 (free tier rate-limit message)', async () => {
     // Set count to the Free daily limit so the next request returns 429
-    await exhaustAiLimit(sess, ACCT.free.id, 1);
+    await exhaustAiLimit(ACCT.free.id, 1);
     const res  = await api('POST', '/api/ai-insight', sess, { mode: 'coaching' });
     const body = await res.json() as { error?: string };
     expect(res.status).toBe(429);
@@ -482,7 +586,7 @@ test.describe('Pro tier', () => {
 
   test.afterAll(async () => {
     if (habitId) await deleteHabit(sess, habitId);
-    await resetAiLimit(sess, ACCT.pro.id);
+    await resetAiLimit(ACCT.pro.id);
     await resetWeeklyEmail(sess, ACCT.pro.id);
   });
 
