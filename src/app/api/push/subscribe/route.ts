@@ -3,9 +3,15 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(req: NextRequest) {
+  console.log("[push/subscribe] hit");
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  console.log("[push/subscribe] user:", user?.id ?? "NO USER");
+  if (!user) {
+    console.error("[push/subscribe] 401 no user");
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const { subscription, timezone } = await req.json() as {
     subscription: { endpoint: string; keys: { p256dh: string; auth: string } };
@@ -13,6 +19,11 @@ export async function POST(req: NextRequest) {
   };
 
   if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+    console.error("[push/subscribe] 400 invalid subscription", {
+      hasEndpoint: !!subscription?.endpoint,
+      hasP256dh:   !!subscription?.keys?.p256dh,
+      hasAuth:     !!subscription?.keys?.auth,
+    });
     return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
   }
 
@@ -28,7 +39,12 @@ export async function POST(req: NextRequest) {
     { onConflict: "user_id,endpoint" },
   );
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[push/subscribe] 500 upsert error:", error.message, error.details ?? "", error.code ?? "");
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  console.log("[push/subscribe] OK inserted for", user.id);
   return NextResponse.json({ ok: true });
 }
 
