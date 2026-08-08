@@ -279,20 +279,37 @@ function AuthForm() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setError(friendlyError(error.message));
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setError(friendlyError(error.message));
+        return;
+      }
+      // Check onboarding status — new/incomplete users go to /onboarding, others to
+      // dashboard. Raced against a short timeout (same fail-open-on-timeout shape as
+      // updateSession() in src/lib/supabase/proxy.ts) — this backend has seen Supabase
+      // requests take up to 87s, and an unguarded await here left the button stuck on
+      // "Signing in…" forever with no navigation. On timeout or error we default to
+      // /onboarding rather than blocking: worst case a returning user sees one
+      // redundant onboarding screen, which is recoverable — landing an incomplete new
+      // user on the dashboard instead would not be.
+      let onboardingCompleted = false;
+      try {
+        const { data: profile } = await Promise.race([
+          supabase.from("profiles").select("onboarding_completed").eq("id", data.user.id).single(),
+          new Promise<{ data: null }>((resolve) =>
+            setTimeout(() => resolve({ data: null }), 3_000)
+          ),
+        ]);
+        onboardingCompleted = profile?.onboarding_completed ?? false;
+      } catch {
+        onboardingCompleted = false; // fail open — never block a successful login on this lookup
+      }
+      router.push(onboardingCompleted ? nextUrl : "/onboarding");
+      router.refresh(); // ensure server components pick up the new session, not a stale cache
+    } finally {
       setLoading(false);
-      return;
     }
-    // Check onboarding status — new/incomplete users go to /onboarding, others to dashboard.
-    // Run immediately after login since signInWithPassword returns the user object.
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("onboarding_completed")
-      .eq("id", data.user.id)
-      .single();
-    router.push(profile?.onboarding_completed ? nextUrl : "/onboarding");
   };
 
   // ── Signup ────────────────────────────────────────────────────────────────
@@ -302,39 +319,42 @@ function AuthForm() {
     setLoading(true);
     setError(null);
 
-    const callbackUrl = new URL(`${window.location.origin}/auth/callback`);
-    callbackUrl.searchParams.set("next", nextUrl);
-    if (refCode) callbackUrl.searchParams.set("ref", refCode);
+    try {
+      const callbackUrl = new URL(`${window.location.origin}/auth/callback`);
+      callbackUrl.searchParams.set("next", nextUrl);
+      if (refCode) callbackUrl.searchParams.set("ref", refCode);
 
-    const res = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, emailRedirectTo: callbackUrl.toString() }),
-    });
-
-    const data = await res.json() as {
-      session?: { access_token: string; refresh_token: string } | null;
-      user?: Record<string, unknown> | null;
-      error?: string;
-    };
-
-    if (!res.ok) {
-      setError(data.error ?? "Something went wrong. Please try again.");
-      setLoading(false);
-      return;
-    }
-
-    posthog.capture("user_signed_up", { method: "email" });
-
-    if (data.session) {
-      await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
-      fetch("/api/welcome-email", {
+      const res = await fetch("/api/auth/signup", {
         method: "POST",
-        headers: { Authorization: `Bearer ${data.session.access_token}` },
-      }).catch(() => {});
-      router.push("/onboarding");
-    } else {
-      setStep("check-email");
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, emailRedirectTo: callbackUrl.toString() }),
+      });
+
+      const data = await res.json() as {
+        session?: { access_token: string; refresh_token: string } | null;
+        user?: Record<string, unknown> | null;
+        error?: string;
+      };
+
+      if (!res.ok) {
+        setError(data.error ?? "Something went wrong. Please try again.");
+        return;
+      }
+
+      posthog.capture("user_signed_up", { method: "email" });
+
+      if (data.session) {
+        await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
+        fetch("/api/welcome-email", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${data.session.access_token}` },
+        }).catch(() => {});
+        router.push("/onboarding");
+        router.refresh(); // ensure server components pick up the new session, not a stale cache
+      } else {
+        setStep("check-email");
+      }
+    } finally {
       setLoading(false);
     }
   };
