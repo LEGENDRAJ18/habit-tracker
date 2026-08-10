@@ -7,7 +7,7 @@ import {
   User, Mail, Lock, Trash2, AlertCircle, CheckCircle2,
   Loader2, Eye, EyeOff, X, Bell, Download, Crown, Zap, Palette,
   Check, RotateCcw, Target, SlidersHorizontal, CreditCard, Sparkles,
-  HelpCircle, ArrowRight, Smile, Gift, Copy, Share2,
+  HelpCircle, ArrowRight, Smile, Gift, Copy, Share2, ChevronDown, BookOpen,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { resolveUser } from "@/lib/supabase/resolve-user";
@@ -773,6 +773,143 @@ function InstallAppSection() {
   );
 }
 
+// ─── Feature Glossary ─────────────────────────────────────────────────────────
+
+type GlossaryTier = "free" | "plus" | "pro";
+
+const GLOSSARY_TIER_BADGE: Record<GlossaryTier, string> = {
+  free: "bg-slate-800 text-slate-300 border-slate-700",
+  plus: "bg-violet-900/50 text-violet-300 border-violet-700/50",
+  pro:  "bg-amber-900/40 text-amber-300 border-amber-700/40",
+};
+
+interface GlossaryEntry {
+  id: string;
+  title: string;
+  tier: GlossaryTier;
+  tierLabel: string;
+  summary: string;
+}
+
+// Tier requirements are pulled from the actual gating code (not marketing
+// copy) — see the routes/components named in each comment if these ever need
+// re-verifying against a quota or gate that's changed.
+const FEATURE_GLOSSARY: GlossaryEntry[] = [
+  {
+    id: "streak-freeze",
+    title: "🧊 Streak Freeze",
+    tier: "plus", tierLabel: "PLUS+", // api/streak-freeze/apply
+    summary: "One free pass each week that keeps your streak alive if you miss a day — so a single busy day doesn't wipe out weeks of progress.",
+  },
+  {
+    id: "skip-tokens",
+    title: "⏭️ Skip Tokens",
+    tier: "free", tierLabel: "ALL TIERS", // useHabits.ts skipHabitToday — Free 1/wk, Plus 3/wk, Pro unlimited
+    summary: "Mark a habit as intentionally skipped instead of broken — protects your streak with no XP earned. Free gets 1 a week, Plus gets 3, Pro is unlimited.",
+  },
+  {
+    id: "smart-timing",
+    title: "⚡ Smart Timing",
+    tier: "pro", tierLabel: "PRO",
+    summary: "Learns the hour you actually complete each habit and moves your reminder to that time instead of a generic one, so nudges arrive when you're most likely to act.",
+  },
+  {
+    id: "habit-dna",
+    title: "🧬 Habit DNA",
+    tier: "plus", tierLabel: "PLUS+", // Free sees a locked preview
+    summary: "A breakdown of your habit patterns — which ones stick, which fade, and what that says about how you build routines. Free sees a locked preview.",
+  },
+  {
+    id: "monthly-wrapped",
+    title: "🎉 Monthly Wrapped",
+    tier: "pro", tierLabel: "PRO",
+    summary: "A Spotify-Wrapped-style recap of your month — completions, streaks, top habit, and XP — built automatically at the start of each month.",
+  },
+  {
+    id: "xp-levels",
+    title: "⭐ XP & Levels",
+    tier: "free", tierLabel: "ALL TIERS",
+    summary: "Every habit you complete earns XP, which adds up over time and never resets — your Level is just the badge that XP total unlocks.",
+  },
+  {
+    id: "ai-coaching",
+    title: "🤖 AI Coaching",
+    tier: "free", tierLabel: "ALL TIERS", // api/ai-insight/route.ts — DAILY_LIMIT_FREE=1, DAILY_LIMIT_PLUS=5, Pro unlimited
+    summary: "Ask your AI coach for personalized insights on your habits and patterns — Free gets 1 question a day, Plus gets 5, Pro is unlimited.",
+  },
+  {
+    id: "goal-program",
+    title: "🎯 Goal Program",
+    tier: "pro", tierLabel: "PRO",
+    summary: "Turns one big goal into a phased, multi-week plan of habits with weekly milestones, built and adjusted by AI as you go.",
+  },
+  {
+    id: "voice-notes",
+    title: "🎙️ Voice Notes",
+    tier: "pro", tierLabel: "PRO",
+    summary: "Talk instead of type — describe how a habit went out loud, and AI transcribes it and gives you coaching feedback based on what you actually said.",
+  },
+  {
+    id: "group-habits",
+    title: "👥 Group Habits",
+    tier: "plus", tierLabel: "PLUS+",
+    summary: "Create or join a small group with friends, teammates, or students to track the same habits together and see who's showing up each day.",
+  },
+  {
+    id: "habit-battles",
+    title: "⚔️ Habit Battles",
+    tier: "plus", tierLabel: "PLUS+",
+    summary: "Challenge a friend to a head-to-head habit streak — whoever stays consistent longer wins, for accountability with a bit of friendly competition.",
+  },
+  {
+    id: "deep-ai-memory",
+    title: "🧠 Deep AI Memory",
+    tier: "pro", tierLabel: "PRO", // api/ai-insight/route.ts mode "memory_coaching"
+    summary: "Your AI coach remembers past conversations across sessions instead of starting fresh each time, so its advice builds on what it already knows about you.",
+  },
+];
+
+function GlossaryItem({ entry }: { entry: GlossaryEntry }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-b border-violet-900/20 last:border-0">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-3 px-5 py-3.5 text-left hover:bg-violet-950/20 transition-colors"
+      >
+        <span className="flex items-center gap-2 min-w-0">
+          <span className="text-sm font-medium text-slate-200 truncate">{entry.title}</span>
+          <span className={`flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${GLOSSARY_TIER_BADGE[entry.tier]}`}>
+            {entry.tierLabel}
+          </span>
+        </span>
+        <ChevronDown className={`w-4 h-4 text-slate-500 flex-shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="px-5 pb-4 text-xs text-slate-400 leading-relaxed">
+          {entry.summary}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FeatureGlossarySection() {
+  return (
+    <div>
+      <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
+        <BookOpen className="w-4 h-4 text-violet-400" />Feature Glossary
+      </h2>
+      <p className="text-sm text-slate-500 mb-4">What every feature does, in plain English — and which plan unlocks it.</p>
+      <div className="bg-[#0f0f1a] border border-violet-900/20 rounded-2xl overflow-hidden">
+        {FEATURE_GLOSSARY.map((entry) => (
+          <GlossaryItem key={entry.id} entry={entry} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function HelpTab() {
   return (
     <div className="space-y-6">
@@ -782,6 +919,9 @@ function HelpTab() {
         </h2>
         <p className="text-sm text-slate-500">Find answers, contact support, or browse the FAQ.</p>
       </div>
+
+      {/* Feature Glossary — plain-English reference for every feature and its tier */}
+      <FeatureGlossarySection />
 
       {/* XP & Levels explainer */}
       <LevelGuideSection />
