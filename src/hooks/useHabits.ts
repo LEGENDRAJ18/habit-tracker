@@ -10,6 +10,7 @@ import {
   loadQueue, clearQueue, enqueue, type OfflineOp, type AddHabitPayload,
 } from "@/lib/habitsCache";
 import { detectVerificationType, detectDefaultTargetValue } from "@/lib/habitVerification";
+import { toast } from "@/components/ui/Toast";
 
 // Computes habit strength from historical logs using the canonical formula:
 // base 10 + 5 per completion − 3 per missed day (min 5, max 100).
@@ -626,9 +627,9 @@ export function useHabits() {
     const currentStrength = habit?.habit_strength ?? 10;
     if (todayLogs.some((l) => l.habit_id === habitId)) return { error: null, log: null }; // already logged today
 
-    const user = await resolveUser();
-    if (!user) return { error: "Not authenticated", log: null };
-
+    // ── Optimistic complete — fires INSTANTLY before any await, same shape
+    // as toggleHabit's complete branch (user_id is an empty placeholder
+    // until auth resolves — only local state uses it before then) ──
     const now = new Date().toISOString();
     const tempId = `opt-${habitId}-${Date.now()}`;
     const newStrength = Math.min(100, currentStrength + 5);
@@ -636,7 +637,7 @@ export function useHabits() {
     const tempLog: HabitLog = {
       id: tempId,
       habit_id: habitId,
-      user_id: user.id,
+      user_id: "",
       completed_at: now,
       notes: null,
       outcome: "success",
@@ -655,6 +656,18 @@ export function useHabits() {
       return [{ habit_id: habitId, completed_at: now }, ...prev];
     });
     setHabits((prev) => prev.map((h) => (h.id === habitId ? { ...h, habit_strength: newStrength } : h)));
+
+    const user = await resolveUser();
+    if (!user) {
+      // Revert
+      setTodayLogs((prev) => prev.filter((l) => l.id !== tempId));
+      setHistoricalLogs((prev) => {
+        const dateStr = now.split("T")[0];
+        return prev.filter((l) => !(l.habit_id === habitId && l.completed_at.split("T")[0] === dateStr));
+      });
+      setHabits((prev) => prev.map((h) => (h.id === habitId ? { ...h, habit_strength: currentStrength } : h)));
+      return { error: "Not authenticated", log: null };
+    }
 
     const { data, error } = await supabase
       .from("habit_logs")
@@ -697,8 +710,14 @@ export function useHabits() {
   // "today's log" via stale todayLogs would see it as not-yet-completed and
   // insert a second completion instead of deleting the first.
   const undoCompletion = async (habitId: string, logId: string): Promise<void> => {
+    const removed = todayLogs.find((l) => l.id === logId) ?? null;
     setTodayLogs((prev) => prev.filter((l) => l.id !== logId));
-    await supabase.from("habit_logs").delete().eq("id", logId);
+    const { error } = await supabase.from("habit_logs").delete().eq("id", logId);
+    if (error) {
+      if (removed) setTodayLogs((prev) => [...prev, removed]);
+      toast("Couldn't undo — try again", "error", undefined, 3000);
+      return;
+    }
     void fetchData(true); // resync habit_strength + historicalLogs cleanly
   };
 
@@ -787,12 +806,12 @@ export function useHabits() {
 
   const completedCount = habits.filter((h) => isCompletedToday(h.id)).length;
 
-  const markFailed = async (habitId: string): Promise<void> => {
+  const markFailed = async (habitId: string): Promise<{ error: string | null }> => {
     // Idempotent — skip if already acted on today
-    if (todayLogs.some((l) => l.habit_id === habitId)) return;
+    if (todayLogs.some((l) => l.habit_id === habitId)) return { error: null };
 
     const user = await resolveUser();
-    if (!user) return;
+    if (!user) return { error: "Not authenticated" };
 
     const now    = new Date().toISOString();
     const tempId = `opt-fail-${habitId}-${Date.now()}`;
@@ -810,7 +829,11 @@ export function useHabits() {
       .from("habit_logs")
       .insert({ habit_id: habitId, user_id: user.id, outcome: "failed" });
 
-    if (error) setTodayLogs((prev) => prev.filter((l) => l.id !== tempId));
+    if (error) {
+      setTodayLogs((prev) => prev.filter((l) => l.id !== tempId));
+      return { error: error.message };
+    }
+    return { error: null };
   };
 
   // Build per-habit date sets once so getStreak stays O(1) per call

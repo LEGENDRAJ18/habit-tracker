@@ -1176,7 +1176,11 @@ export default function DashboardPage() {
                   });
                   if (res.ok) { refetch(); }
                 }}
-                onMarkFailed={() => void markFailed(habit.id)}
+                onMarkFailed={() => {
+                  void markFailed(habit.id).then(({ error }) => {
+                    if (error) toast(error, "error", undefined, 3500);
+                  });
+                }}
                 onToggle={async () => {
                   try {
                     await toggleHabit(habit.id);

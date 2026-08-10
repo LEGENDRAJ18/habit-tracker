@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { resolveUser } from "@/lib/supabase/resolve-user";
+import { toast } from "@/components/ui/Toast";
 
 const MOODS = [
   { value: 1, emoji: "😞", label: "Rough" },
@@ -100,15 +101,31 @@ export default function MoodCheckin({ onMoodSelected }: { onMoodSelected?: (mood
 
   async function saveMood(value: number) {
     if (saving) return;
-    setSelected(value);
     setSaving(true);
+
+    // Optimistic — select, report, and dismiss instantly; the insert happens
+    // in the background and rolls this all back (+ toasts) on failure.
+    setSelected(value);
+    setTodayMood(value);
+    onMoodSelected?.(value);
+    setDismissed(true);
+
     try {
       const user = await resolveUser();
-      if (!user) return;
-      await supabase.from("mood_logs").insert({ user_id: user.id, mood: value });
-      setTodayMood(value);
-      onMoodSelected?.(value);
-      setDismissed(true); // instant dismiss — same feel as deleting a habit
+      if (!user) {
+        setDismissed(false);
+        setTodayMood(null);
+        setSelected(null);
+        toast("Couldn't save your mood — try again", "error", undefined, 3000);
+        return;
+      }
+      const { error } = await supabase.from("mood_logs").insert({ user_id: user.id, mood: value });
+      if (error) {
+        setDismissed(false);
+        setTodayMood(null);
+        setSelected(null);
+        toast("Couldn't save your mood — try again", "error", undefined, 3000);
+      }
     } finally { setSaving(false); }
   }
 

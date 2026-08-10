@@ -282,14 +282,40 @@ export default function HabitCard({
 
   const handleVerified = async (result: VerificationResult) => {
     if (!onVerifiedComplete) { setShowVerifySheet(false); return; }
+
+    // "standard" habits show the sheet purely as a confirmation step (no real
+    // input to capture) — completeHabitWithVerification already updates
+    // todayLogs/historicalLogs/habit_strength optimistically before its own
+    // await and rolls itself back on failure, so there's no reason to keep
+    // the sheet open/spinning for the network round-trip. Counter/duration/
+    // photo/reflection types DO capture real input (or, for photo, a real
+    // upload) — those keep waiting, same as before.
+    const isStandard = (habit.verification_type ?? "standard") === "standard";
+
+    if (isStandard) {
+      // Same debounce handleToggle uses for rapid re-taps: the checkbox is
+      // now visible and checked (optimistically) the instant this fires, so
+      // without this a fast second tap could hit handleToggle and try to
+      // delete a temp/optimistic log id before the real one has replaced it
+      // — a silent no-op DELETE that leaves a phantom completion in the DB.
+      togglingRef.current = true;
+      setTimeout(() => { togglingRef.current = false; }, 800);
+      setShowVerifySheet(false);
+      playCompletionFeedback();
+      onCompleted?.({ xpMultiplier: result.xpMultiplier, photoBonus: result.photoBonus });
+    }
+
     const { error, logId } = await onVerifiedComplete(result);
-    setShowVerifySheet(false);
+
+    if (!isStandard) setShowVerifySheet(false);
     if (error) {
       toast(error, "error", undefined, 3500);
       return;
     }
-    playCompletionFeedback();
-    onCompleted?.({ xpMultiplier: result.xpMultiplier, photoBonus: result.photoBonus });
+    if (!isStandard) {
+      playCompletionFeedback();
+      onCompleted?.({ xpMultiplier: result.xpMultiplier, photoBonus: result.photoBonus });
+    }
 
     // 10-second undo window — undoes by the exact log id just created, not by
     // re-deriving "today's log" from (possibly stale) parent state.
