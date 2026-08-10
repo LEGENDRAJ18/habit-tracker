@@ -370,7 +370,7 @@ function TimePicker({ value, onChange }: { value: string; onChange: (v: string) 
             className={`flex flex-col items-center gap-0.5 py-2 rounded-xl border text-center transition-all ${
               value === p.value
                 ? "bg-violet-600/25 border-violet-500/60 text-violet-200"
-                : "bg-violet-950/20 border-violet-900/20 text-slate-500 hover:border-violet-700/40 hover:text-slate-300 hover:bg-violet-950/40"
+                : "bg-violet-950/30 hover:bg-violet-950/50 border-violet-900/25 hover:border-violet-700/40 text-slate-300 hover:text-white"
             }`}
           >
             <span className="text-sm leading-none">{p.emoji}</span>
@@ -382,7 +382,7 @@ function TimePicker({ value, onChange }: { value: string; onChange: (v: string) 
           className={`flex flex-col items-center gap-0.5 py-2 rounded-xl border text-center transition-all ${
             showCustom
               ? "bg-violet-600/25 border-violet-500/60 text-violet-200"
-              : "bg-violet-950/20 border-violet-900/20 text-slate-500 hover:border-violet-700/40 hover:text-slate-300 hover:bg-violet-950/40"
+              : "bg-violet-950/30 hover:bg-violet-950/50 border-violet-900/25 hover:border-violet-700/40 text-slate-300 hover:text-white"
           }`}
         >
           <span className="text-sm leading-none">⏰</span>
@@ -891,7 +891,7 @@ export default function AddHabitModal({
                                 ? "bg-violet-600/25 border-violet-500/60 text-violet-200"
                                 : isLocked
                                 ? "opacity-40 bg-violet-950/20 border-violet-900/20 text-slate-600 cursor-not-allowed"
-                                : "bg-violet-950/20 border-violet-900/20 text-slate-400 hover:border-violet-700/40 hover:text-slate-200"
+                                : "bg-violet-950/30 hover:bg-violet-950/50 border-violet-900/25 hover:border-violet-700/40 text-slate-300 hover:text-white"
                             }`}
                           >
                             {isLocked && <span className="text-[8px]">🔒</span>}
@@ -970,7 +970,7 @@ export default function AddHabitModal({
                                 className={`py-2 rounded-xl text-xs font-medium border transition-all capitalize ${
                                   frequency === freq
                                     ? "bg-violet-600/20 border-violet-600/50 text-violet-300"
-                                    : "bg-violet-950/20 border-violet-900/20 text-slate-500 hover:text-slate-300"
+                                    : "bg-violet-950/30 hover:bg-violet-950/50 border-violet-900/25 hover:border-violet-700/40 text-slate-300 hover:text-white"
                                 }`}
                               >{freq}</button>
                             ))}
@@ -986,14 +986,14 @@ export default function AddHabitModal({
                             className={`py-2 rounded-xl text-xs font-medium border transition-all ${
                               habitType === "standard"
                                 ? "bg-violet-600/20 border-violet-600/50 text-violet-300"
-                                : "bg-violet-950/20 border-violet-900/20 text-slate-500 hover:text-slate-300"
+                                : "bg-violet-950/30 hover:bg-violet-950/50 border-violet-900/25 hover:border-violet-700/40 text-slate-300 hover:text-white"
                             }`}
                           >✅ Do it</button>
                           <button type="button" onClick={() => setHabitType("limit")}
                             className={`py-2 rounded-xl text-xs font-medium border transition-all ${
                               habitType === "limit"
                                 ? "bg-red-900/20 border-red-700/40 text-red-300"
-                                : "bg-violet-950/20 border-violet-900/20 text-slate-500 hover:text-slate-300"
+                                : "bg-violet-950/30 hover:bg-violet-950/50 border-violet-900/25 hover:border-violet-700/40 text-slate-300 hover:text-white"
                             }`}
                           >🚫 Limit</button>
                         </div>
@@ -1216,7 +1216,7 @@ export default function AddHabitModal({
                           className={`aspect-square rounded-xl flex items-center justify-center text-xs font-bold transition-all ${
                             active
                               ? "bg-violet-600 text-white shadow-sm shadow-violet-900/40"
-                              : "bg-violet-950/40 border border-violet-900/25 text-slate-500 hover:border-violet-700/40 hover:text-slate-300"
+                              : "bg-violet-950/30 hover:bg-violet-950/50 border border-violet-900/25 hover:border-violet-700/40 text-slate-300 hover:text-white"
                           }`}
                         >
                           {d}

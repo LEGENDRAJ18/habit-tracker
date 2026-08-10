@@ -497,7 +497,7 @@ function AppearanceTab() {
 
   const optionBtn = (active: boolean) =>
     `flex-1 py-2.5 rounded-xl text-xs font-semibold border transition-all capitalize ${
-      active ? "border-transparent text-white" : "bg-transparent border-violet-900/20 text-slate-500 hover:text-slate-300 hover:border-violet-900/40"
+      active ? "border-transparent text-white" : "bg-violet-950/30 hover:bg-violet-950/50 border-violet-900/25 text-slate-300 hover:text-white hover:border-violet-700/40"
     }`;
 
   return (
