@@ -443,7 +443,7 @@ function getEmptyStateRecs(goals: string[]) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { habits, todayLogs, loading, isSyncing, error, completedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, isFailedToday, markFailed, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength, refetch, historicalLogs, completeHabitWithVerification, undoCompletion, addLaterReminder, skipHabitToday } =
+  const { habits, todayLogs, loading, isSyncing, error, completedCount, genuineCompletedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, isFailedToday, markFailed, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength, refetch, historicalLogs, completeHabitWithVerification, undoCompletion, addLaterReminder, skipHabitToday } =
     useHabits();
   const { tier, profileLoading, onboardingCompleted, goal, goals, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt, dreamUniversity, userMode, username, persona, welcomeSeen, markWelcomeSeen, notifPromptLastAskedAt, markNotifPromptAsked } = useProfile();
   const { xp, level, achievements, totalCompletions, justLeveledUp, xpLoading, isDailyAchieved, onHabitCompleted, onDailyOpen, checkMilestones, dismissLevelUp } = useXP();
@@ -592,12 +592,14 @@ export default function DashboardPage() {
     }
   }, []);
 
-  // Trigger all-done celebration when every habit becomes completed
+  // Trigger all-done celebration when every habit becomes completed.
+  // Uses genuineCompletedCount (excludes skips) — skipping a habit must
+  // never trigger a completion celebration, milestone, or bonus XP.
   useEffect(() => {
     if (loading || habits.length === 0) return;
     const prev = prevCompletedRef.current;
     if (prev !== null) {
-      if (prev === 0 && completedCount === 1) {
+      if (prev === 0 && genuineCompletedCount === 1) {
         if (!localStorage.getItem("habitai_first_ever_completion")) {
           localStorage.setItem("habitai_first_ever_completion", "1");
           posthog.capture("first_habit_completed");
@@ -607,7 +609,7 @@ export default function DashboardPage() {
           toast("💪 First habit of the day done! Keep the momentum!", "success", undefined, 3000);
         }
       }
-      if (prev < habits.length && completedCount === habits.length) {
+      if (prev < habits.length && genuineCompletedCount === habits.length) {
         setShowCelebration(true);
         setTimeout(() => setShowCelebration(false), 5200);
         // Speed Runner: all habits done before noon
@@ -621,8 +623,8 @@ export default function DashboardPage() {
         }
       }
     }
-    prevCompletedRef.current = completedCount;
-  }, [completedCount, habits.length, loading]);
+    prevCompletedRef.current = genuineCompletedCount;
+  }, [genuineCompletedCount, habits.length, loading]);
 
   // Per-habit streak info with freeze awareness
   const streakInfoMap = useMemo(() => {
@@ -661,10 +663,12 @@ export default function DashboardPage() {
     }
   }, [loading, isPaid, habits, hasBrokenStreak]);
 
-  // Check milestones whenever completed count or streak changes
+  // Check milestones whenever completed count or streak changes. Uses
+  // genuineCompletedCount — checkMilestones awards real bonus XP for
+  // "first habit today" / "all habits today", which a skip must not trigger.
   useEffect(() => {
     if (loading || habits.length === 0) return;
-    checkMilestones(completedCount, habits.length, bestStreak).then((newly) => {
+    checkMilestones(genuineCompletedCount, habits.length, bestStreak).then((newly) => {
       if (newly.has("streak_30")) {
         playSound("streak");
         setShareData({ type: "streak", value: 30 });
@@ -676,7 +680,7 @@ export default function DashboardPage() {
       }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [completedCount, bestStreak, loading]);
+  }, [genuineCompletedCount, bestStreak, loading]);
 
   // Play level-up sound when justLeveledUp fires
   useEffect(() => {
@@ -1466,7 +1470,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="inline-flex items-center gap-1.5 bg-amber-950/40 border border-amber-700/25 rounded-full px-2 py-1 ml-1.5">
                       <span className="text-sm leading-none">⚡</span>
-                      <span className="text-xs font-bold text-amber-300">{completedCount * 10} XP</span>
+                      <span className="text-xs font-bold text-amber-300">{genuineCompletedCount * 10} XP</span>
                     </div>
                     <p className="text-[10px] text-slate-600 pt-0.5">{completedCount}/{habits.length} habits done today</p>
                   </div>
@@ -1590,7 +1594,7 @@ export default function DashboardPage() {
           }}
           completedCount={completedCount}
           bestStreak={bestStreak}
-          xpToday={completedCount * 10}
+          xpToday={genuineCompletedCount * 10}
         />
       )}
 

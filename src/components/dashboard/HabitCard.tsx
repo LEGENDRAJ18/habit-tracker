@@ -331,6 +331,19 @@ export default function HabitCard({
     }
   };
 
+  // Same debounce as handleVerified's standard-completion path: skipHabitToday's
+  // optimistic temp log sets outcome: "success", which makes isCompletedToday
+  // true and the checkbox tappable-to-uncomplete immediately — without this,
+  // a fast second tap could hit handleToggle and try to delete the temp/
+  // optimistic log id before the real one has replaced it, a silent no-op
+  // DELETE that leaves a phantom completion in the DB.
+  const handleSkip = () => {
+    if (!onSkip) return;
+    togglingRef.current = true;
+    setTimeout(() => { togglingRef.current = false; }, 800);
+    onSkip();
+  };
+
   const handleDelete = () => {
     setDeleting(true);
     onDelete();
@@ -662,7 +675,7 @@ export default function HabitCard({
         <div className="px-4 pb-2.5 flex items-center gap-2 flex-wrap">
           {!completed && !failed && onSkip && (
             <button
-              onClick={() => onSkip()}
+              onClick={handleSkip}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border border-amber-700/40 bg-amber-950/20 text-amber-300 hover:bg-amber-950/40 hover:border-amber-600/50 active:scale-95 transition-all"
               title="Skip today — protects your streak, no XP earned"
             >
@@ -879,7 +892,7 @@ export default function HabitCard({
           <div className="w-full sm:max-w-xs sm:mx-4 bg-[#0f0f1a] border border-violet-900/30 rounded-t-3xl sm:rounded-3xl p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
             <p className="px-4 pt-3 pb-2 text-xs font-semibold text-slate-500 truncate">{habit.name}</p>
             <button
-              onClick={() => { setShowActionMenu(false); onSkip?.(); }}
+              onClick={() => { setShowActionMenu(false); handleSkip(); }}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-slate-200 hover:bg-white/5 transition-colors"
             >
               <SkipForward className="w-4 h-4 text-amber-400" /> Skip today

@@ -806,6 +806,17 @@ export function useHabits() {
 
   const completedCount = habits.filter((h) => isCompletedToday(h.id)).length;
 
+  // "Genuine" completion — same as isCompletedToday but excludes skips.
+  // isCompletedToday/completedCount intentionally still count a skip (it
+  // resolves the habit for the day and shows the checkbox checked); this
+  // stricter version is for anything that celebrates or rewards ACTUALLY
+  // doing the habit — completion modals, milestones, XP-today displays —
+  // which a skip must never satisfy.
+  const isGenuinelyCompletedToday = (habitId: string) =>
+    todayLogs.some((l) => l.habit_id === habitId && (l.outcome ?? "success") === "success" && l.completion_quality !== "skipped");
+
+  const genuineCompletedCount = habits.filter((h) => isGenuinelyCompletedToday(h.id)).length;
+
   const markFailed = async (habitId: string): Promise<{ error: string | null }> => {
     // Idempotent — skip if already acted on today
     if (todayLogs.some((l) => l.habit_id === habitId)) return { error: null };
@@ -1005,6 +1016,7 @@ export function useHabits() {
     isSyncing,
     error,
     completedCount,
+    genuineCompletedCount,
     addHabit,
     renameHabit,
     toggleHabit,
