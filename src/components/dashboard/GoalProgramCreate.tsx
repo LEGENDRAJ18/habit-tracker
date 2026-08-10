@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Sparkles, ArrowLeft, ArrowRight, Target, Flag } from "lucide-react";
+import { Loader2, Sparkles, ArrowLeft, ArrowRight, Target, Flag, AlertTriangle } from "lucide-react";
 import type { GoalCategory, GoalProgram, ProgramPhase } from "@/types";
-import { GOAL_CATEGORIES } from "@/lib/goalProgram";
+import { GOAL_CATEGORIES, CATEGORY_PLACEHOLDERS } from "@/lib/goalProgram";
 import { toast } from "@/components/ui/Toast";
 import posthog from "posthog-js";
 
@@ -13,6 +13,11 @@ interface ProgramPreview {
   phases: ProgramPhase[];
 }
 
+interface DynamicQuestion {
+  question: string;
+  options: string[];
+}
+
 const LOADING_TIPS = [
   "Designing your phases…",
   "Picking habits that actually move the needle…",
@@ -20,15 +25,48 @@ const LOADING_TIPS = [
   "Almost there…",
 ];
 
+const SKILL_OPTIONS = [
+  { value: "beginner",     label: "Beginner" },
+  { value: "intermediate", label: "Intermediate" },
+  { value: "advanced",     label: "Advanced" },
+] as const;
+
+const DURATION_OPTIONS = [
+  { value: "under_6mo", label: "Under 6 months" },
+  { value: "6mo_2yr",   label: "6 months–2 years" },
+  { value: "2_5yr",     label: "2–5 years" },
+  { value: "5yr_plus",  label: "5+ years" },
+] as const;
+
+// Skill level only makes sense where there's a skill to develop. For
+// ongoing situations (a habit, a mental-health struggle, a relationship),
+// "how long has this been going on" is the relevant fixed question instead.
+const CATEGORY_FIXED_QUESTION: Record<GoalCategory, { question: string; options: readonly { value: string; label: string }[] }> = {
+  sport:         { question: "What's your current skill level?",      options: SKILL_OPTIONS },
+  body:          { question: "What's your current skill level?",      options: SKILL_OPTIONS },
+  academic:      { question: "What's your current skill level?",      options: SKILL_OPTIONS },
+  build:         { question: "What's your current skill level?",      options: SKILL_OPTIONS },
+  finance:       { question: "What's your current skill level?",      options: SKILL_OPTIONS },
+  bad_habit:     { question: "How long have you had this habit?",     options: DURATION_OPTIONS },
+  mental_health: { question: "How long has this been affecting you?", options: DURATION_OPTIONS },
+  relationships: { question: "How long has this been going on?",      options: DURATION_OPTIONS },
+};
+
 export default function GoalProgramCreate({ onCreated }: { onCreated: (program: GoalProgram) => void }) {
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1);
   const [category, setCategory] = useState<GoalCategory | null>(null);
   const [description, setDescription] = useState("");
-  const [questions, setQuestions] = useState<string[]>([]);
+  const [questions, setQuestions] = useState<DynamicQuestion[]>([]);
   const [answers, setAnswers] = useState<string[]>([]);
+  const [customModes, setCustomModes] = useState<boolean[]>([]);
+  const [fixedAnswer, setFixedAnswer] = useState<string>("");
   const [preview, setPreview] = useState<ProgramPreview | null>(null);
   const [busy, setBusy] = useState(false);
   const [tipIdx, setTipIdx] = useState(0);
+  const [checkingFeasibility, setCheckingFeasibility] = useState(false);
+  const [feasibilityConcern, setFeasibilityConcern] = useState<string | null>(null);
+
+  const fixedQuestion = CATEGORY_FIXED_QUESTION[category ?? "sport"];
 
   const cycleTips = () => {
     const id = setInterval(() => setTipIdx((i) => (i + 1) % LOADING_TIPS.length), 1400);
@@ -46,17 +84,28 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
       });
       const data = await res.json();
       if (!res.ok) { toast(data.error ?? "Couldn't generate questions", "error"); return; }
-      const qs: string[] = data.questions ?? [];
+      const qs: DynamicQuestion[] = data.questions ?? [];
       setQuestions(qs);
       setAnswers(qs.map(() => ""));
+      // No options came back for a question — skip straight to free text for
+      // that one rather than rendering an empty chip row (same rule HabitChipPicker
+      // uses when there's nothing to pick from).
+      setCustomModes(qs.map((q) => q.options.length === 0));
       setStep(3);
     } finally {
       setBusy(false);
     }
   };
 
+  const buildAnswers = () => [
+    ...(fixedAnswer
+      ? [{ question: fixedQuestion.question, answer: fixedQuestion.options.find((o) => o.value === fixedAnswer)?.label ?? fixedAnswer }]
+      : []),
+    ...questions.map((q, i) => ({ question: q.question, answer: answers[i] ?? "" })),
+  ];
+
   const generateProgram = async () => {
-    setStep(4);
+    setStep(5);
     const tipTimer = cycleTips();
     try {
       const res = await fetch("/api/goal-program/create", {
@@ -66,15 +115,46 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
           mode: "generate",
           goalCategory: category,
           goalDescription: description,
-          answers: questions.map((q, i) => ({ question: q, answer: answers[i] ?? "" })),
+          answers: buildAnswers(),
         }),
       });
       const data = await res.json();
       if (!res.ok) { toast(data.error ?? "Couldn't generate your program", "error"); setStep(3); return; }
       setPreview(data.program);
-      setStep(5);
+      setStep(6);
     } finally {
       clearInterval(tipTimer);
+    }
+  };
+
+  // Runs before generation — flags an extremely aggressive timeframe (without
+  // blocking) so the user can choose to adjust it or proceed anyway. Fails
+  // open: if this check itself errors, proceed straight to generation rather
+  // than block program creation on a nice-to-have.
+  const runFeasibilityCheck = async () => {
+    setStep(4);
+    setCheckingFeasibility(true);
+    setFeasibilityConcern(null);
+    try {
+      const res = await fetch("/api/goal-program/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "feasibility",
+          goalCategory: category,
+          goalDescription: description,
+          answers: buildAnswers(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.concern) {
+        await generateProgram();
+        return;
+      }
+      setFeasibilityConcern(data.concern);
+      setCheckingFeasibility(false);
+    } catch {
+      await generateProgram();
     }
   };
 
@@ -101,7 +181,7 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
     <div className="space-y-5">
       {/* Step indicator */}
       <div className="flex items-center gap-1.5">
-        {[1, 2, 3, 4, 5].map((s) => (
+        {[1, 2, 3, 4, 5, 6].map((s) => (
           <div key={s} className={`h-1 flex-1 rounded-full transition-colors ${s <= step ? "bg-violet-500" : "bg-violet-950/60"}`} />
         ))}
       </div>
@@ -115,7 +195,7 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
             {GOAL_CATEGORIES.map((c) => (
               <button
                 key={c.id}
-                onClick={() => { setCategory(c.id); setStep(2); }}
+                onClick={() => { setCategory(c.id); setFixedAnswer(""); setStep(2); }}
                 className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-violet-900/25 bg-[#0f0f1a] hover:border-violet-600/50 hover:bg-violet-950/20 transition-all text-center"
               >
                 <span className="text-2xl">{c.emoji}</span>
@@ -140,7 +220,7 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
             onChange={(e) => setDescription(e.target.value)}
             rows={5}
             maxLength={600}
-            placeholder="e.g. I want to run a 5K in under 30 minutes by the end of the summer. I currently can jog about 10 minutes without stopping."
+            placeholder={category ? CATEGORY_PLACEHOLDERS[category] : "e.g. I want to run a 5K in under 30 minutes by the end of the summer. I currently can jog about 10 minutes without stopping."}
             className="w-full bg-violet-950/30 border border-violet-700/40 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-violet-500/70 resize-none"
           />
           <button
@@ -163,43 +243,152 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
           <h2 className="text-lg font-bold text-white mb-1">A few quick questions</h2>
           <p className="text-sm text-slate-500 mb-4">This helps tailor the program to your situation.</p>
           <div className="space-y-3">
+            <div>
+              <p className="text-xs font-semibold text-violet-300 mb-1.5">{fixedQuestion.question}</p>
+              <div className="flex flex-wrap gap-2">
+                {fixedQuestion.options.map((o) => (
+                  <button
+                    key={o.value}
+                    type="button"
+                    onClick={() => setFixedAnswer(o.value)}
+                    className={`px-3 py-2 rounded-full text-xs font-medium border transition-all ${
+                      fixedAnswer === o.value
+                        ? "border-violet-500/60 bg-violet-600/15 ring-1 ring-violet-500/25 text-violet-100"
+                        : "border-violet-900/30 bg-[#0f0f1a] text-slate-300 hover:border-violet-700/50 hover:bg-violet-950/30"
+                    }`}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             {questions.map((q, i) => (
               <div key={i}>
-                <p className="text-xs font-semibold text-violet-300 mb-1">{q}</p>
-                <input
-                  value={answers[i] ?? ""}
-                  onChange={(e) => setAnswers((prev) => prev.map((a, idx) => (idx === i ? e.target.value : a)))}
-                  className="w-full bg-violet-950/30 border border-violet-700/40 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-600 outline-none focus:border-violet-500/70"
-                  placeholder="Your answer…"
-                />
+                <p className="text-xs font-semibold text-violet-300 mb-1.5">{q.question}</p>
+                {!customModes[i] ? (
+                  <div className="flex flex-wrap gap-2">
+                    {q.options.map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setAnswers((prev) => prev.map((a, idx) => (idx === i ? opt : a)))}
+                        className={`px-3 py-2 rounded-full text-xs font-medium border transition-all ${
+                          answers[i] === opt
+                            ? "border-violet-500/60 bg-violet-600/15 ring-1 ring-violet-500/25 text-violet-100"
+                            : "border-violet-900/30 bg-[#0f0f1a] text-slate-300 hover:border-violet-700/50 hover:bg-violet-950/30"
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomModes((prev) => prev.map((c, idx) => (idx === i ? true : c)));
+                        setAnswers((prev) => prev.map((a, idx) => (idx === i ? "" : a)));
+                      }}
+                      className="px-3 py-2 rounded-full text-xs font-medium border border-dashed border-violet-800/40 text-slate-500 hover:text-slate-300 hover:border-violet-700/50 transition-all"
+                    >
+                      Something else…
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <input
+                      autoFocus
+                      value={answers[i] ?? ""}
+                      onChange={(e) => setAnswers((prev) => prev.map((a, idx) => (idx === i ? e.target.value : a)))}
+                      className="w-full bg-violet-950/30 border border-violet-700/40 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-600 outline-none focus:border-violet-500/70"
+                      placeholder="Your answer…"
+                    />
+                    {q.options.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomModes((prev) => prev.map((c, idx) => (idx === i ? false : c)));
+                          setAnswers((prev) => prev.map((a, idx) => (idx === i ? "" : a)));
+                        }}
+                        className="text-[11px] text-violet-500 hover:text-violet-400 transition-colors"
+                      >
+                        ← Pick from options instead
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
           <button
-            onClick={generateProgram}
-            className="w-full mt-4 py-3 rounded-2xl text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 transition-all flex items-center justify-center gap-1.5"
+            disabled={!fixedAnswer}
+            onClick={runFeasibilityCheck}
+            className="w-full mt-4 py-3 rounded-2xl text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
           >
             <Sparkles className="w-4 h-4" /> Generate my program
           </button>
         </div>
       )}
 
-      {/* Step 4 — loading */}
+      {/* Step 4 — feasibility check, then either straight through to
+          generation or a supportive heads-up if the timeframe is extreme */}
       {step === 4 && (
+        <div className="py-10 flex flex-col items-center justify-center text-center gap-4">
+          {checkingFeasibility ? (
+            <>
+              <div className="relative w-16 h-16">
+                <div className="absolute inset-0 rounded-full border-4 border-violet-900/40" />
+                <div className="absolute inset-0 rounded-full border-4 border-t-violet-500 animate-spin" />
+                <Sparkles className="absolute inset-0 m-auto w-6 h-6 text-violet-400" />
+              </div>
+              <h2 className="text-lg font-bold text-white">Checking your plan…</h2>
+            </>
+          ) : feasibilityConcern && (
+            <div className="w-full text-left space-y-4">
+              <div className="flex items-center gap-2 justify-center">
+                <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0" />
+                <h2 className="text-lg font-bold text-white">Quick gut check</h2>
+              </div>
+              <div className="bg-amber-950/20 border border-amber-700/30 rounded-2xl p-4">
+                <p className="text-sm text-slate-300 leading-relaxed">{feasibilityConcern}</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setFeasibilityConcern(null); setStep(2); }}
+                  className="flex-1 py-3 rounded-2xl text-sm font-semibold text-slate-400 border border-white/10 hover:bg-white/5 transition-colors"
+                >
+                  Adjust my timeframe
+                </button>
+                <button
+                  onClick={generateProgram}
+                  className="flex-1 py-3 rounded-2xl text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 transition-all flex items-center justify-center gap-1.5"
+                >
+                  Continue anyway
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Step 5 — loading */}
+      {step === 5 && (
         <div className="py-16 flex flex-col items-center justify-center text-center gap-4">
           <div className="relative w-16 h-16">
             <div className="absolute inset-0 rounded-full border-4 border-violet-900/40" />
             <div className="absolute inset-0 rounded-full border-4 border-t-violet-500 animate-spin" />
             <Sparkles className="absolute inset-0 m-auto w-6 h-6 text-violet-400" />
           </div>
-          <p className="text-sm font-medium text-slate-300">{LOADING_TIPS[tipIdx]}</p>
+          <div>
+            <h2 className="text-lg font-bold text-white mb-1">Building your program</h2>
+            <p className="text-sm font-medium text-slate-300">{LOADING_TIPS[tipIdx]}</p>
+          </div>
         </div>
       )}
 
-      {/* Step 5 — preview */}
-      {step === 5 && preview && (
+      {/* Step 6 — preview */}
+      {step === 6 && preview && (
         <div className="space-y-4">
           <div className="text-center">
+            <p className="text-xs font-semibold text-violet-400 uppercase tracking-wider mb-1.5">Your Program</p>
             <h2 className="text-xl font-bold text-white">{preview.program_name}</h2>
             <p className="text-sm text-slate-400 mt-1.5 leading-relaxed">{preview.program_overview}</p>
           </div>
@@ -238,7 +427,7 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
 
           <div className="flex gap-2">
             <button
-              onClick={() => setStep(1)}
+              onClick={() => { setFeasibilityConcern(null); setStep(1); }}
               className="flex-1 py-3 rounded-2xl text-sm font-semibold text-slate-400 border border-white/10 hover:bg-white/5 transition-colors"
             >
               Start over

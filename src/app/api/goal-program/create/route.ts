@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json() as {
-      mode?: "questions" | "generate" | "save";
+      mode?: "questions" | "feasibility" | "generate" | "save";
       goalCategory?: GoalCategory;
       goalDescription?: string;
       answers?: QAPair[];
@@ -47,11 +47,54 @@ export async function POST(request: NextRequest) {
 
     // ── Clarifying questions ────────────────────────────────────────────────
     if (mode === "questions") {
-      const systemPrompt = `You are an expert coach helping someone plan a multi-week habit program to reach a personal goal. Ask 3-4 short clarifying questions that will help you tailor the program to their exact situation (current level, time available, constraints, past attempts). Respond with valid JSON:
-{ "questions": ["question 1", "question 2", "question 3"] }`;
+      const systemPrompt = `You are an expert coach helping someone plan a multi-week habit program to reach a personal goal.
+
+First, carefully read their goal description below. Identify anything they've ALREADY told you — a deadline or timeframe, how much time they can spend, how often, past attempts, specific constraints, or their intended approach (e.g. quitting "cold turkey" vs. gradually, all at once vs. step by step). Treat all of that as already known — do not ask about it again.
+
+Then ask 3-4 short clarifying questions covering only what's genuinely still missing and needed to tailor the program (e.g. support systems, specific triggers, daily schedule, past attempts, constraints) — never a question whose answer is already stated in their description.
+
+If their stated timeframe or approach is unusually fast, abrupt, or all-at-once (e.g. stopping "immediately" or "within a day," rather than gradually over weeks), do NOT ask questions that assume a longer, gradual, multi-week routine (like "how much time can you dedicate each day"). Ask things relevant to that specific short window instead — like what might make them slip, who can support them, or what's different this time.
+
+Do NOT ask about their current skill/experience level — that's already captured separately.
+
+For EACH question, also provide 3-4 short suggested answers written in plain, everyday language — no jargon, no vague categories. Phrase both the question and the answers concretely and specifically. For example, instead of asking about "time constraints," ask "How much time do you have per session?" with answers like "Under 15 min", "15-30 min", "30-60 min", "1 hour+". Do NOT include a "something else" or "other" option in your answers — that's added automatically by the app.
+
+Respond with valid JSON exactly matching this schema:
+{ "questions": [ { "question": "question text", "options": ["short answer 1", "short answer 2", "short answer 3"] } ] }`;
       const userPrompt = `Goal category: ${categoryLabel(goalCategory)}\nGoal in their words: "${goalDescription}"`;
-      const result = await callOpenAIJSON(systemPrompt, userPrompt) as { questions?: string[] };
-      return NextResponse.json({ questions: result.questions ?? [] });
+      const result = await callOpenAIJSON(systemPrompt, userPrompt) as { questions?: Array<{ question?: string; options?: string[] }> };
+      const questions = (result.questions ?? [])
+        .filter((q) => !!q.question?.trim())
+        .map((q) => ({ question: q.question!.trim(), options: (q.options ?? []).filter((o) => !!o?.trim()) }));
+      return NextResponse.json({ questions });
+    }
+
+    // ── Feasibility check — runs after Step 3, before generation. Never
+    // blocks; only surfaces a supportive heads-up for an extreme timeframe.
+    if (mode === "feasibility") {
+      const qaText = answers.length > 0
+        ? answers.map((a) => `Q: ${a.question}\nA: ${a.answer}`).join("\n\n")
+        : "No additional answers provided.";
+
+      const systemPrompt = `You are a supportive, honest coach reviewing someone's goal and timeframe before their program is built. Your ONLY job is to flag if the stated timeframe is extremely aggressive or unrealistic for the goal — not to judge the goal itself, and not to be discouraging.
+
+If the timeframe is reasonable — even if ambitious — respond with no concern.
+
+If it's extremely aggressive (for example: quitting a long-standing habit "cold turkey" in a single day, learning a real skill in just a few days, or a major physical change in an unrealistically short window), write a short message (2-4 sentences) that:
+1. Acknowledges what they're going for, in a warm, non-judgmental way.
+2. Briefly explains in plain, general, practical language why that specific timeframe is unusually hard — NEVER give specific medical dosing, withdrawal management, or clinical treatment advice of any kind.
+3. If the goal is health-related (e.g. quitting smoking, vaping, drinking, or a similar habit), you may mention that gradually stepping down over 1-2 weeks is often more successful than stopping abruptly, in only general terms, and suggest they could also talk to a doctor if it's affecting their health — but do not go further into medical territory than that.
+4. Ends on an encouraging, practical note — never tell them not to try, never block them.
+
+Respond with valid JSON exactly matching this schema:
+{ "concern": "the message here, or null if the timeframe is reasonable" }`;
+      const userPrompt = `Goal category: ${categoryLabel(goalCategory)}
+Goal in their words: "${goalDescription}"
+
+Answers:
+${qaText}`;
+      const result = await callOpenAIJSON(systemPrompt, userPrompt) as { concern?: string | null };
+      return NextResponse.json({ concern: result.concern?.trim() || null });
     }
 
     // ── Full program generation (preview only — not persisted) ─────────────
@@ -72,7 +115,11 @@ export async function POST(request: NextRequest) {
         ? answers.map((a) => `Q: ${a.question}\nA: ${a.answer}`).join("\n\n")
         : "No additional answers provided.";
 
-      const systemPrompt = `You are an expert coach designing a multi-week, phased habit-building program to help someone reach a personal goal. Build a realistic, motivating, phased program (2-4 phases, each 2-6 weeks, total program length reasonable for the goal). Each phase has 2-4 milestones (one roughly per week) and 2-4 daily/weekly habits to build during that phase. Respond with valid JSON exactly matching this schema:
+      const systemPrompt = `You are an expert coach designing a multi-week, phased habit-building program to help someone reach a personal goal. Build a realistic, motivating, phased program (2-4 phases, each 2-6 weeks, total program length reasonable for the goal). Each phase has 2-4 milestones (one roughly per week) and 2-4 daily/weekly habits to build during that phase.
+
+Write every phase title, focus sentence, milestone, habit name, and explanation in simple, plain, everyday language — the kind a teenager would understand immediately. Avoid jargon, technical terms, or vague abstractions (for example, say "practice" instead of "techniques", say "why this helps" instead of "rationale"). Keep everything concrete and easy to picture.
+
+Respond with valid JSON exactly matching this schema:
 {
   "programName": "short punchy program name",
   "programOverview": "2-3 sentence overview of the approach and why it works",
