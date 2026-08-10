@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import DashboardNav from "@/components/dashboard/DashboardNav";
 import LeftSidebar from "@/components/dashboard/LeftSidebar";
 import BottomNav from "@/components/ui/BottomNav";
+import BackToDashboardButton from "@/components/ui/BackToDashboardButton";
 import UpgradeModal from "@/components/dashboard/UpgradeModal";
 import type { UpgradeReason } from "@/components/dashboard/UpgradeModal";
 import { UpgradeProvider } from "@/contexts/UpgradeContext";
@@ -15,6 +17,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { AIInsightProvider } from "@/contexts/AIInsightContext";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [upgradeReason, setUpgradeReason] = useState<UpgradeReason>("habits");
   const [upgradeFromPlus, setUpgradeFromPlus] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
@@ -41,6 +44,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <LeftSidebar />
           <div className="flex-1 min-w-0 route-enter">
             {children}
+            {pathname !== "/dashboard" && <BackToDashboardButton />}
           </div>
         </div>
         {showUpgrade && (

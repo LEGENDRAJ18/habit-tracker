@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import BottomNav from "@/components/ui/BottomNav";
+import BackToDashboardButton from "@/components/ui/BackToDashboardButton";
 
 interface Member {
   user_id: string;
@@ -505,6 +506,8 @@ export default function GroupsPage() {
             </p>
           </div>
         )}
+
+        <BackToDashboardButton />
       </main>
 
       <BottomNav />

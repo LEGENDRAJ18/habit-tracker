@@ -10,6 +10,7 @@ import {
 import posthog from "posthog-js";
 import { createClient } from "@/lib/supabase/client";
 import BottomNav from "@/components/ui/BottomNav";
+import BackToDashboardButton from "@/components/ui/BackToDashboardButton";
 import type { Plan } from "@/types";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
@@ -731,6 +732,8 @@ export default function BillingPage() {
             </div>
           ))}
         </div>
+
+        <BackToDashboardButton />
       </main>
 
       <style>{`

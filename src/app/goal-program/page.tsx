@@ -11,6 +11,7 @@ import FeatureUpgradeGate from "@/components/dashboard/FeatureUpgradeGate";
 import GoalProgramCreate from "@/components/dashboard/GoalProgramCreate";
 import GoalProgramDashboard from "@/components/dashboard/GoalProgramDashboard";
 import BottomNav from "@/components/ui/BottomNav";
+import BackToDashboardButton from "@/components/ui/BackToDashboardButton";
 
 export default function GoalProgramPage() {
   const { tier, profileLoading } = useProfile();
@@ -116,6 +117,8 @@ export default function GoalProgramPage() {
         ) : (
           <GoalProgramCreate onCreated={setProgram} />
         )}
+
+        <BackToDashboardButton />
       </main>
 
       <BottomNav />

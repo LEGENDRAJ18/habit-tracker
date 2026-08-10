@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import BottomNav from "@/components/ui/BottomNav";
+import BackToDashboardButton from "@/components/ui/BackToDashboardButton";
 import type { Plan } from "@/types";
 import FeatureUpgradeGate from "@/components/dashboard/FeatureUpgradeGate";
 
@@ -380,6 +381,8 @@ export default function OrganisationsPage() {
             ))}
           </div>
         </div>
+
+        <BackToDashboardButton />
       </main>
 
       <BottomNav />
