@@ -808,6 +808,18 @@ const FEATURE_GLOSSARY: GlossaryEntry[] = [
     summary: "Mark a habit as intentionally skipped instead of broken — protects your streak with no XP earned. Free gets 1 a week, Plus gets 3, Pro is unlimited.",
   },
   {
+    id: "habit-type-do-it",
+    title: "✅ Do It (Habit Type)",
+    tier: "free", tierLabel: "ALL TIERS",
+    summary: "The standard habit type — for building something new, like exercise or reading. Complete it each day and it counts toward your streak.",
+  },
+  {
+    id: "habit-type-limit",
+    title: "🚫 Limit (Habit Type)",
+    tier: "free", tierLabel: "ALL TIERS",
+    summary: "For habits you're cutting back on, like screen time or spending. Each day you self-report whether you stayed under the limit or went over.",
+  },
+  {
     id: "smart-timing",
     title: "⚡ Smart Timing",
     tier: "pro", tierLabel: "PRO",

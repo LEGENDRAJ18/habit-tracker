@@ -997,6 +997,9 @@ export default function AddHabitModal({
                             }`}
                           >🚫 Limit</button>
                         </div>
+                        <p className="text-[10px] text-slate-600 mt-1">
+                          Do it = build a new habit (like exercise). Limit = cut back on something (like screen time).
+                        </p>
                         {habitType === "limit" && (
                           <p className="text-[10px] text-slate-600 mt-1">
                             Self-reported — each day you tap ✓ or ✗ to log honestly.
