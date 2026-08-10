@@ -10,6 +10,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import BottomNav from "@/components/ui/BottomNav";
 import BackToDashboardButton from "@/components/ui/BackToDashboardButton";
+import HabitChipPicker from "@/components/dashboard/HabitChipPicker";
 
 interface Member {
   user_id: string;
@@ -319,11 +320,12 @@ export default function GroupsPage() {
                 maxLength={50}
                 className="w-full bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600"
               />
-              <input
-                value={habitName} onChange={(e) => setHabitName(e.target.value)}
-                placeholder="Shared habit (e.g. Morning run 30 min)"
+              <HabitChipPicker
+                label="Shared habit"
+                value={habitName}
+                onChange={setHabitName}
+                placeholder="e.g. Morning run 30 min"
                 maxLength={80}
-                className="w-full bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600"
               />
               {/* Emoji picker */}
               <div>

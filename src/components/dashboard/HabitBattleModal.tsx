@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { X, Swords, Loader2, Trophy, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import type { Plan } from "@/types";
 import FeatureUpgradeGate from "./FeatureUpgradeGate";
+import HabitChipPicker from "./HabitChipPicker";
 import posthog from "posthog-js";
 import CenteredModal from "@/components/ui/CenteredModal";
 
@@ -253,18 +254,13 @@ export default function HabitBattleModal({ tier, friends, onClose, onUpgrade }: 
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold block mb-1">Habit to battle on</label>
-                    <input
-                      type="text"
-                      value={habitName}
-                      onChange={(e) => setHabitName(e.target.value)}
-                      placeholder='e.g. "Run 3x this week"'
-                      maxLength={80}
-                      required
-                      className="w-full bg-[#0f0f1a] border border-violet-800/40 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-600 outline-none focus:border-violet-500/70"
-                    />
-                  </div>
+                  <HabitChipPicker
+                    label="Habit to battle on"
+                    value={habitName}
+                    onChange={setHabitName}
+                    placeholder='e.g. "Run 3x this week"'
+                    maxLength={80}
+                  />
                   <div>
                     <label className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold block mb-1">Duration</label>
                     <select
@@ -278,7 +274,7 @@ export default function HabitBattleModal({ tier, friends, onClose, onUpgrade }: 
                     </select>
                   </div>
                   <div className="flex gap-2 pt-1">
-                    <button type="submit" disabled={creating}
+                    <button type="submit" disabled={creating || !habitName.trim() || !opponentId}
                       className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-60 text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2">
                       {creating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Swords className="w-3.5 h-3.5" />}
                       Send Challenge
