@@ -1155,6 +1155,7 @@ export default function DashboardPage() {
                 streak={info.streak}
                 strength={getHabitStrength(habit.id)}
                 isProtected={info.freezeApplied}
+                freezeAvailable={freezeAvailable}
                 stackAfterName={stackParent?.name}
                 tier={tier}
                 logId={todayLogs.find((l) => l.habit_id === habit.id)?.id ?? null}
@@ -1221,6 +1222,12 @@ export default function DashboardPage() {
                   void skipHabitToday(habit.id).then(({ error }) => {
                     if (error) toast(error, "error", undefined, 3500);
                     else toast(`"${habit.name}" skipped for today`, "success", undefined, 2500);
+                  });
+                }}
+                onFreezeStreak={() => {
+                  void applyFreeze().then(({ error }) => {
+                    if (error) toast(error, "error", undefined, 3500);
+                    else toast("Streak freeze applied — protected for one missed day", "success", undefined, 2500);
                   });
                 }}
                 onLater={() => { void addLaterReminder(habit.id, habit.name); }}

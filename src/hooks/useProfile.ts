@@ -341,16 +341,18 @@ export function useProfile() {
     ) >= 7;
 
   const applyFreeze = useCallback(
-    async () => {
+    async (): Promise<{ error: string | null }> => {
       const user = await resolveUser();
-      if (!user) return;
+      if (!user) return { error: "Not signed in" };
       // Tier + weekly-eligibility check now happens server-side (atomic,
       // can't be raced) — see /api/streak-freeze/apply.
       const res = await fetch("/api/streak-freeze/apply", { method: "POST" });
-      if (!res.ok) return;
-      const data = await res.json() as { last_freeze_used?: string; freeze_protected_date?: string };
-      if (data.last_freeze_used)      setLastFreezeUsed(data.last_freeze_used);
-      if (data.freeze_protected_date) setFreezeProtectedDate(data.freeze_protected_date);
+      const body = await res.json().catch(() => null) as
+        { error?: string; last_freeze_used?: string; freeze_protected_date?: string } | null;
+      if (!res.ok) return { error: body?.error ?? "Couldn't apply streak freeze." };
+      if (body?.last_freeze_used)      setLastFreezeUsed(body.last_freeze_used);
+      if (body?.freeze_protected_date) setFreezeProtectedDate(body.freeze_protected_date);
+      return { error: null };
     },
     []
   );

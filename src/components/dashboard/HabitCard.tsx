@@ -21,12 +21,15 @@ interface Props {
   logId?: string | null;
   allLogs?: Array<{ habit_id: string; completed_at: string }>;
   failed?: boolean;
+  /** Whether this user still has their weekly streak freeze available (Plus/Pro only). */
+  freezeAvailable?: boolean;
   onToggle: () => void;
   onDelete: () => void;
   onCompleted?: (opts?: { xpMultiplier?: number; photoBonus?: boolean }) => void;
   onVerifiedComplete?: (result: VerificationResult) => Promise<{ error: string | null; logId?: string | null }>;
   onUndoComplete?: (logId: string) => void;
   onSkip?: () => void;
+  onFreezeStreak?: () => void;
   onLater?: () => void;
   onMarkFailed?: () => void;
   onRename?: (newName: string, validityScore: "valid" | "partial" | "invalid") => Promise<void>;
@@ -156,9 +159,9 @@ function getTimeEmoji(whenTime: string | null): string | null {
 }
 
 export default function HabitCard({
-  habit, completed, failed = false, streak, strength, isProtected, stackAfterName, isEditing,
+  habit, completed, failed = false, streak, strength, isProtected, freezeAvailable, stackAfterName, isEditing,
   tier, logId = null, allLogs = [], onToggle, onDelete, onCompleted, onVerifiedComplete, onUndoComplete,
-  onSkip, onLater, onMarkFailed, onRename,
+  onSkip, onFreezeStreak, onLater, onMarkFailed, onRename,
   onSmartTimingToggle, onUpgradePro, onCommitment, onStartTimer, isTourTarget, highlighted = false,
 }: Props) {
   const isLimit = habit.habit_type === "limit";
@@ -178,6 +181,9 @@ export default function HabitCard({
   const [swipeX, setSwipeX]         = useState(0);
   const [showVerifySheet, setShowVerifySheet] = useState(false);
   const [showActionMenu, setShowActionMenu]   = useState(false);
+  const [freezeHintDismissed, setFreezeHintDismissed] = useState(
+    () => typeof window !== "undefined" ? localStorage.getItem("habitai_freeze_hint_dismissed") === "1" : true
+  );
   const swipeXRef   = useRef(0);
   const touchRef    = useRef({ startX: 0, startY: 0, locked: false });
   const togglingRef = useRef(false);
@@ -622,6 +628,58 @@ export default function HabitCard({
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
+
+      {/* Quick actions — Skip today / Freeze streak — always visible, one tap,
+          no long-press menu required. Both fire the same handlers the
+          long-press action menu already uses below; no new logic here. */}
+      {!editMode && ((!completed && !failed && onSkip) || ((tier === "plus" || tier === "pro") && onFreezeStreak)) && (
+        <div className="px-4 pb-2.5 flex items-center gap-2 flex-wrap">
+          {!completed && !failed && onSkip && (
+            <button
+              onClick={() => onSkip()}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border border-amber-700/40 bg-amber-950/20 text-amber-300 hover:bg-amber-950/40 hover:border-amber-600/50 active:scale-95 transition-all"
+              title="Skip today — protects your streak, no XP earned"
+            >
+              <SkipForward className="w-3.5 h-3.5" />
+              Skip today
+            </button>
+          )}
+          {(tier === "plus" || tier === "pro") && onFreezeStreak && (
+            <button
+              onClick={() => onFreezeStreak()}
+              disabled={!freezeAvailable}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                freezeAvailable
+                  ? "border-blue-700/40 bg-blue-950/20 text-blue-300 hover:bg-blue-950/40 hover:border-blue-600/50 active:scale-95"
+                  : "border-slate-800/30 bg-slate-900/20 text-slate-600 cursor-default"
+              }`}
+              title={freezeAvailable ? "Freeze streak — protects your streak for one missed day, limited uses per week" : "You've already used your streak freeze this week"}
+            >
+              <Snowflake className="w-3.5 h-3.5" />
+              Freeze streak
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Freeze explainer — tiny dismissible inline hint (matches the app's
+          existing localStorage-dismiss convention, e.g. InstallBanner); the
+          button's title= above already covers hover, this covers tap/mobile
+          where there's no hover to reveal it. */}
+      {!editMode && (tier === "plus" || tier === "pro") && onFreezeStreak && !freezeHintDismissed && (
+        <div className="px-4 pb-2.5 -mt-1 flex items-start gap-1.5">
+          <p className="text-[10px] text-slate-600 flex-1 min-w-0 leading-snug">
+            Freeze protects your streak for one missed day · limited uses per week
+          </p>
+          <button
+            onClick={() => { setFreezeHintDismissed(true); localStorage.setItem("habitai_freeze_hint_dismissed", "1"); }}
+            className="flex-shrink-0 text-slate-700 hover:text-slate-400 p-0.5"
+            title="Dismiss"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
 
       {/* Focus Timer button — shown when habit has a duration set */}
       {habit.duration_minutes && onStartTimer && !editMode && (
