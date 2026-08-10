@@ -20,6 +20,85 @@ function daysAgo(n: number): string {
   return new Date(Date.now() - n * 86400000).toISOString().split("T")[0];
 }
 
+const WENT_WELL_OPTIONS = [
+  "Stayed consistent",
+  "Built a routine",
+  "Felt more confident",
+  "Saw real progress",
+  "Had good support",
+];
+
+const WAS_HARD_OPTIONS = [
+  "Hard to find time",
+  "Lost motivation",
+  "Life got busy",
+  "Didn't see progress yet",
+  "Forgot / lost track",
+];
+
+// Tap-to-pick chip field with an "Other" fallback that reveals free text only
+// when tapped — same mechanics as the Goal Program creation flow's dynamic
+// questions and HabitChipPicker.
+function CheckinChipField({
+  label, options, value, onChange, customMode, onToggleCustom,
+}: {
+  label: string;
+  options: string[];
+  value: string;
+  onChange: (v: string) => void;
+  customMode: boolean;
+  onToggleCustom: (v: boolean) => void;
+}) {
+  return (
+    <div className="mb-3">
+      <label className="text-xs font-semibold text-slate-400 mb-1.5 block">{label}</label>
+      {!customMode ? (
+        <div className="flex flex-wrap gap-2">
+          {options.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => onChange(opt)}
+              className={`px-3 py-2 rounded-full text-xs font-medium border transition-all ${
+                value === opt
+                  ? "border-violet-500/60 bg-violet-600/15 ring-1 ring-violet-500/25 text-violet-100"
+                  : "border-violet-900/30 bg-[#0f0f1a] text-slate-300 hover:border-violet-700/50 hover:bg-violet-950/30"
+              }`}
+            >
+              {opt}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => { onToggleCustom(true); onChange(""); }}
+            className="px-3 py-2 rounded-full text-xs font-medium border border-dashed border-violet-800/40 text-slate-500 hover:text-slate-300 hover:border-violet-700/50 transition-all"
+          >
+            Other…
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          <textarea
+            autoFocus
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            rows={2}
+            maxLength={300}
+            className="w-full bg-violet-950/30 border border-violet-700/40 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-600 outline-none focus:border-violet-500/70 resize-none"
+          />
+          <button
+            type="button"
+            onClick={() => { onToggleCustom(false); onChange(""); }}
+            className="text-[11px] text-violet-500 hover:text-violet-400 transition-colors"
+          >
+            ← Pick from options instead
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function GoalProgramDashboard({
   program, checkins, habits, historicalLogs, isCompletedToday, onProgramUpdated,
 }: Props) {
@@ -28,6 +107,8 @@ export default function GoalProgramDashboard({
   const [rating, setRating] = useState(0);
   const [wentWell, setWentWell] = useState("");
   const [wasHard, setWasHard] = useState("");
+  const [wentWellCustom, setWentWellCustom] = useState(false);
+  const [wasHardCustom, setWasHardCustom] = useState(false);
   const [checkinSubmitting, setCheckinSubmitting] = useState(false);
   const [statusBusy, setStatusBusy] = useState(false);
 
@@ -98,7 +179,7 @@ export default function GoalProgramDashboard({
       if (!res.ok) { toast(data.error ?? "Couldn't submit check-in", "error"); return; }
       toast("Check-in saved", "success", undefined, 2500);
       setShowCheckin(false);
-      setRating(0); setWentWell(""); setWasHard("");
+      setRating(0); setWentWell(""); setWasHard(""); setWentWellCustom(false); setWasHardCustom(false);
       // Optimistically prepend — parent re-fetches on next load
       checkins.unshift(data.checkin);
     } finally {
@@ -257,12 +338,22 @@ export default function GoalProgramDashboard({
                 </button>
               ))}
             </div>
-            <label className="text-xs font-semibold text-slate-400 mb-1 block">What went well?</label>
-            <textarea value={wentWell} onChange={(e) => setWentWell(e.target.value)} rows={2} maxLength={300}
-              className="w-full bg-violet-950/30 border border-violet-700/40 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-600 outline-none focus:border-violet-500/70 resize-none mb-3" />
-            <label className="text-xs font-semibold text-slate-400 mb-1 block">What was hard?</label>
-            <textarea value={wasHard} onChange={(e) => setWasHard(e.target.value)} rows={2} maxLength={300}
-              className="w-full bg-violet-950/30 border border-violet-700/40 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-600 outline-none focus:border-violet-500/70 resize-none mb-4" />
+            <CheckinChipField
+              label="What went well?"
+              options={WENT_WELL_OPTIONS}
+              value={wentWell}
+              onChange={setWentWell}
+              customMode={wentWellCustom}
+              onToggleCustom={setWentWellCustom}
+            />
+            <CheckinChipField
+              label="What was hard?"
+              options={WAS_HARD_OPTIONS}
+              value={wasHard}
+              onChange={setWasHard}
+              customMode={wasHardCustom}
+              onToggleCustom={setWasHardCustom}
+            />
             <div className="flex gap-2">
               <button onClick={() => setShowCheckin(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-slate-400 border border-white/10 hover:bg-white/5 transition-colors">Cancel</button>
               <button disabled={checkinSubmitting} onClick={submitCheckin} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 transition-all disabled:opacity-60 flex items-center justify-center gap-1.5">
