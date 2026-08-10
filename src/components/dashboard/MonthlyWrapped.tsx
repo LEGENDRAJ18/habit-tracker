@@ -118,9 +118,9 @@ export default function MonthlyWrapped({ tier, onClose }: Props) {
   return (
     <CenteredModal onClose={onClose} backdrop="bg-black/85 backdrop-blur-sm">
       <div
-        className="modal-center-enter w-full max-w-sm bg-[#09090f] border border-violet-700/25 rounded-3xl shadow-2xl overflow-hidden"
+        className="modal-center-enter w-full max-w-sm bg-[#09090f] border border-violet-700/25 rounded-3xl shadow-2xl overflow-hidden flex flex-col"
         style={{
-          height: "min(620px, 90vh)",
+          height: "min(620px, 90dvh)",
           boxShadow: "0 0 0 1px rgba(139,92,246,0.06), 0 32px 64px rgba(0,0,0,0.7)",
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
@@ -128,7 +128,7 @@ export default function MonthlyWrapped({ tier, onClose }: Props) {
         onTouchEnd={onTouchEnd}
       >
         {/* Top bar */}
-        <div className="relative px-5 py-4 flex items-center justify-between border-b border-white/[0.04]">
+        <div className="relative px-5 py-4 flex items-center justify-between border-b border-white/[0.04] flex-shrink-0">
           <div className="absolute inset-0 bg-gradient-to-r from-violet-600/6 to-transparent pointer-events-none" />
           <div className="relative flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-violet-400" />
@@ -141,7 +141,7 @@ export default function MonthlyWrapped({ tier, onClose }: Props) {
 
         {/* Progress dots */}
         {data && (
-          <div className="flex items-center justify-center gap-1.5 py-2.5">
+          <div className="flex items-center justify-center gap-1.5 py-2.5 flex-shrink-0">
             {Array.from({ length: totalSlides }).map((_, i) => (
               <button
                 key={i}
@@ -154,8 +154,12 @@ export default function MonthlyWrapped({ tier, onClose }: Props) {
           </div>
         )}
 
-        {/* Slides area */}
-        <div className="relative" style={{ height: "calc(100% - 112px)" }}>
+        {/* Slides area — flex-1 + min-h-0 lets this shrink to the space actually
+            left over (instead of relying on a hardcoded height calc that didn't
+            account for the real combined height of the bars above/below it, which
+            was clipping the footer); overflow-y-auto means tall slide content
+            scrolls internally instead of spilling into and clipping the footer. */}
+        <div className="relative flex-1 min-h-0 overflow-y-auto">
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
@@ -356,9 +360,10 @@ export default function MonthlyWrapped({ tier, onClose }: Props) {
           )}
         </div>
 
-        {/* Navigation bar */}
+        {/* Navigation bar — flex-shrink-0 so it's never squeezed or pushed off
+            by the scrollable slides area above it; always fully visible. */}
         {!loading && isPro && data && (
-          <div className="px-5 pb-4 flex items-center justify-between border-t border-white/[0.04] pt-3">
+          <div className="px-5 pb-4 flex items-center justify-between border-t border-white/[0.04] pt-3 flex-shrink-0">
             <button
               onClick={goBack}
               disabled={slide === 0}
