@@ -487,6 +487,7 @@ function HabitStep({
             onChange={(e) => setCustom(e.target.value)}
             placeholder="e.g. Drink 2L of water daily"
             maxLength={80}
+            spellCheck="true" autoCorrect="on"
             className="w-full px-4 py-3 bg-[#13131f] border border-violet-900/30 rounded-xl text-white text-sm placeholder-slate-700 focus:border-violet-500/60 focus:outline-none focus:ring-2 focus:ring-violet-500/10 transition-all"
           />
         )}

@@ -482,6 +482,7 @@ function ReflectionVerification({ habit, submitting, onConfirm, onClose }: {
           maxLength={280}
           rows={3}
           placeholder="A sentence or two…"
+          spellCheck="true" autoCorrect="on"
           className="w-full bg-violet-950/30 border border-violet-700/40 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-violet-500/70 resize-none"
         />
       )}

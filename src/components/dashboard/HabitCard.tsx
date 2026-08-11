@@ -539,6 +539,7 @@ export default function HabitCard({
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   maxLength={100}
+                  spellCheck="true" autoCorrect="on"
                   className="flex-1 min-w-0 bg-violet-950/40 border border-violet-700/50 rounded-lg px-2 py-1 text-sm text-white outline-none focus:border-violet-500/70"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleRename();

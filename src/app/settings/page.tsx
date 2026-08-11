@@ -249,6 +249,7 @@ function GoalsTab({ initialGoals }: { initialGoals: string[] }) {
         </div>
         {hasCustom && (
           <input value={customGoal} onChange={(e) => setCustomGoal(e.target.value)} placeholder="Describe your goal…" maxLength={80}
+            spellCheck="true" autoCorrect="on"
             className="w-full bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none focus:ring-2 focus:ring-violet-600/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 transition-all" />
         )}
         {status?.ok  && <Success msg={status.ok} />}
@@ -374,7 +375,7 @@ function AccountTab({
         <div className={cardCls}>
           <form onSubmit={handleSaveName} className="space-y-4">
             <Field label="Display name">
-              <Input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" maxLength={60} />
+              <Input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" maxLength={60} spellCheck="true" autoCorrect="on" />
             </Field>
             <Field label="Email address" hint="Your current email address.">
               <Input type="email" value={email} readOnly disabled className="opacity-50 cursor-not-allowed" />

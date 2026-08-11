@@ -218,6 +218,7 @@ export default function OrganisationsPage() {
                     value={name} onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Year 10 Science Class"
                     maxLength={60}
+                    spellCheck="true" autoCorrect="on"
                     className="w-full bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600"
                   />
                   <textarea
@@ -225,6 +226,7 @@ export default function OrganisationsPage() {
                     placeholder="Optional description…"
                     rows={2}
                     maxLength={200}
+                    spellCheck="true" autoCorrect="on"
                     className="w-full bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 resize-none"
                   />
                   {error && <p className="text-xs text-red-400 flex items-center gap-1.5"><AlertCircle className="w-3.5 h-3.5" />{error}</p>}

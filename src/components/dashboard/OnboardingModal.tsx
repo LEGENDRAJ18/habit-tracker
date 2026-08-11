@@ -442,6 +442,7 @@ export default function OnboardingModal({ onComplete }: Props) {
                 onKeyDown={(e) => { if (e.key === "Enter") next(); }}
                 placeholder="e.g. Oxford, Harvard, MIT…"
                 maxLength={80}
+                spellCheck="true" autoCorrect="on"
                 className="w-full bg-violet-950/40 border border-violet-700/40 focus:border-violet-500/60 focus:outline-none focus:ring-2 focus:ring-violet-500/20 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 mb-4 transition-all"
               />
               {dreamUni.trim() && (
@@ -786,6 +787,7 @@ export default function OnboardingModal({ onComplete }: Props) {
               {hasCustom && (
                 <input autoFocus value={customGoal} onChange={(e) => setCustomGoal(e.target.value)}
                   placeholder="Describe your goal…" maxLength={80}
+                  spellCheck="true" autoCorrect="on"
                   className="w-full bg-violet-950/40 border border-violet-700/40 focus:border-violet-500/60 focus:outline-none focus:ring-2 focus:ring-violet-500/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 mb-4 mt-2 transition-all"
                 />
               )}
@@ -856,6 +858,7 @@ export default function OnboardingModal({ onComplete }: Props) {
               {hasCustom && (
                 <input autoFocus value={customGoal} onChange={(e) => setCustomGoal(e.target.value)}
                   placeholder="Describe your goal…" maxLength={80}
+                  spellCheck="true" autoCorrect="on"
                   className="w-full bg-violet-950/40 border border-violet-700/40 focus:border-violet-500/60 focus:outline-none focus:ring-2 focus:ring-violet-500/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 mb-4 mt-2 transition-all"
                 />
               )}

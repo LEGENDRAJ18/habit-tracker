@@ -716,6 +716,7 @@ export default function AddHabitModal({
                   onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="e.g. Meditate for 10 minutes"
                   required maxLength={100} autoFocus
+                  spellCheck="true" autoCorrect="on"
                   className={`${inputCls} ${
                     duplicate              ? "border-amber-600/50" :
                     aiValidation.status === "blocked" ? "border-red-600/50" :
@@ -1017,6 +1018,7 @@ export default function AddHabitModal({
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="e.g. mindfulness"
                       maxLength={200} className={inputCls}
+                      spellCheck="true" autoCorrect="on"
                     />
                   </div>
 

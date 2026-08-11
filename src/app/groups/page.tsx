@@ -318,6 +318,7 @@ export default function GroupsPage() {
                 value={name} onChange={(e) => setName(e.target.value)}
                 placeholder="Group name (e.g. Morning Squad)"
                 maxLength={50}
+                spellCheck="true" autoCorrect="on"
                 className="w-full bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600"
               />
               <HabitChipPicker

@@ -82,6 +82,7 @@ export default function HabitChipPicker({ label, value, onChange, placeholder, m
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             maxLength={maxLength}
+            spellCheck="true" autoCorrect="on"
             className="w-full bg-violet-950/30 border border-violet-900/30 focus:border-violet-600/60 focus:outline-none rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 transition-all"
           />
           {habits.length > 0 && (

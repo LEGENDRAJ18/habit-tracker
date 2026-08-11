@@ -84,6 +84,7 @@ function CheckinChipField({
             onChange={(e) => onChange(e.target.value)}
             rows={2}
             maxLength={300}
+            spellCheck="true" autoCorrect="on"
             className="w-full bg-violet-950/30 border border-violet-700/40 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-600 outline-none focus:border-violet-500/70 resize-none"
           />
           <button

@@ -111,6 +111,7 @@ export default function CommitmentModal({
                     placeholder={"I will wake up at 6am for 30 days. Hold me accountable. 💪"}
                     maxLength={200}
                     rows={3}
+                    spellCheck="true" autoCorrect="on"
                     className="w-full bg-[#0f0f1a] border border-violet-800/40 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-violet-500/70 resize-none"
                   />
                   <p className="text-[10px] text-slate-600 text-right mt-1">{text.length}/200</p>
