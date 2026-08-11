@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Sparkles, ArrowLeft, ArrowRight, Target, Flag, AlertTriangle } from "lucide-react";
+import { Loader2, Sparkles, ArrowLeft, ArrowRight, Target, Flag, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import type { GoalCategory, GoalProgram, ProgramPhase } from "@/types";
 import { GOAL_CATEGORIES, CATEGORY_PLACEHOLDERS } from "@/lib/goalProgram";
+import { useGoalValidation } from "@/hooks/useGoalValidation";
 import { toast } from "@/components/ui/Toast";
 import posthog from "posthog-js";
 
@@ -67,6 +68,7 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
   const [feasibilityConcern, setFeasibilityConcern] = useState<string | null>(null);
 
   const fixedQuestion = CATEGORY_FIXED_QUESTION[category ?? "sport"];
+  const goalValidation = useGoalValidation(description, 700);
 
   const cycleTips = () => {
     const id = setInterval(() => setTipIdx((i) => (i + 1) % LOADING_TIPS.length), 1400);
@@ -221,8 +223,40 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
             rows={5}
             maxLength={600}
             placeholder={category ? CATEGORY_PLACEHOLDERS[category] : "e.g. I want to run a 5K in under 30 minutes by the end of the summer. I currently can jog about 10 minutes without stopping."}
-            className="w-full bg-violet-950/30 border border-violet-700/40 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-violet-500/70 resize-none"
+            spellCheck="true" autoCorrect="on"
+            className={`w-full bg-violet-950/30 border rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-violet-500/70 resize-none ${
+              goalValidation.status === "not_a_goal" ? "border-red-600/50" :
+              goalValidation.status === "too_vague"  ? "border-amber-600/50" :
+              goalValidation.status === "good"       ? "border-emerald-600/40" : "border-violet-700/40"
+            }`}
           />
+
+          {/* AI goal-quality feedback — guidance only, never blocks Continue */}
+          {goalValidation.status === "validating" && (
+            <div className="mt-1.5 flex items-center gap-1.5 px-1 py-1">
+              <Sparkles className="w-3 h-3 animate-pulse text-violet-500 flex-shrink-0" />
+              <span className="text-[10px] text-slate-500">Checking…</span>
+            </div>
+          )}
+          {goalValidation.status === "good" && (
+            <div className="mt-1.5 flex items-start gap-2 bg-emerald-950/40 border border-emerald-600/30 rounded-lg px-3 py-2">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
+              <p className="text-[11px] font-semibold text-emerald-300 leading-snug">{goalValidation.message}</p>
+            </div>
+          )}
+          {goalValidation.status === "too_vague" && (
+            <div className="mt-1.5 flex items-start gap-2 bg-amber-950/40 border border-amber-600/30 rounded-lg px-3 py-2">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
+              <p className="text-[11px] font-semibold text-amber-300 leading-snug">{goalValidation.message}</p>
+            </div>
+          )}
+          {goalValidation.status === "not_a_goal" && (
+            <div className="mt-1.5 flex items-start gap-2 bg-red-950/40 border border-red-600/30 rounded-lg px-3 py-2">
+              <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5" />
+              <p className="text-[11px] font-semibold text-red-300 leading-snug">{goalValidation.message}</p>
+            </div>
+          )}
+
           <button
             disabled={!description.trim() || busy}
             onClick={goToQuestions}
@@ -300,6 +334,7 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
                       onChange={(e) => setAnswers((prev) => prev.map((a, idx) => (idx === i ? e.target.value : a)))}
                       className="w-full bg-violet-950/30 border border-violet-700/40 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-600 outline-none focus:border-violet-500/70"
                       placeholder="Your answer…"
+                      spellCheck="true" autoCorrect="on"
                     />
                     {q.options.length > 0 && (
                       <button
