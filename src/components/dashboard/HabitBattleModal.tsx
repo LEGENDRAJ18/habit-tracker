@@ -263,15 +263,22 @@ export default function HabitBattleModal({ tier, friends, onClose, onUpgrade }: 
                   />
                   <div>
                     <label className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold block mb-1">Duration</label>
-                    <select
-                      value={duration}
-                      onChange={(e) => setDuration(Number(e.target.value))}
-                      className="w-full bg-[#0f0f1a] border border-violet-800/40 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-violet-500/70"
-                    >
+                    <div className="flex flex-wrap gap-1.5">
                       {[3, 5, 7, 14, 21, 30].map((d) => (
-                        <option key={d} value={d}>{d} days</option>
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() => setDuration(d)}
+                          className={`px-3 py-2 rounded-xl text-xs font-medium border transition-all ${
+                            duration === d
+                              ? "border-violet-500/60 bg-violet-600/15 ring-1 ring-violet-500/25 text-violet-100"
+                              : "border-violet-900/30 bg-[#0f0f1a] text-slate-300 hover:border-violet-700/50 hover:bg-violet-950/30"
+                          }`}
+                        >
+                          {d} days
+                        </button>
                       ))}
-                    </select>
+                    </div>
                   </div>
                   <div className="flex gap-2 pt-1">
                     <button type="submit" disabled={creating || !habitName.trim() || !opponentId}

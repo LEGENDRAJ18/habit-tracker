@@ -324,7 +324,10 @@ export default function GroupsPage() {
               <HabitChipPicker
                 label="Shared habit"
                 value={habitName}
-                onChange={setHabitName}
+                onChange={(v) => {
+                  setHabitName(v);
+                  if (!name.trim() && v.trim()) setName(`${v.trim()} Squad`.slice(0, 50));
+                }}
                 placeholder="e.g. Morning run 30 min"
                 maxLength={80}
               />

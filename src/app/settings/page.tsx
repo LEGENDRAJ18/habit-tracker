@@ -1418,12 +1418,18 @@ function AvatarTab() {
     })();
   }, [loaded, supabase]);
 
-  const handleSave = async () => {
+  const handleSelect = async (id: AvatarId) => {
+    if (id === selected || saving) return;
     setSaving(true); setStatus(null);
     const user = await resolveUser();
     if (!user) { setSaving(false); return; }
-    const { error } = await supabase.from("profiles").update({ avatar_id: selected }).eq("id", user.id);
-    setStatus(error ? { err: friendlyError(error.message) } : { ok: "Avatar saved!" });
+    const { error } = await supabase.from("profiles").update({ avatar_id: id }).eq("id", user.id);
+    if (error) {
+      setStatus({ err: friendlyError(error.message) });
+    } else {
+      setSelected(id);
+      setStatus({ ok: "Avatar saved!" });
+    }
     setSaving(false);
   };
 
@@ -1449,12 +1455,13 @@ function AvatarTab() {
           {AVATARS.map((av) => (
             <button
               key={av.id}
-              onClick={() => setSelected(av.id)}
+              onClick={() => void handleSelect(av.id)}
+              disabled={saving}
               className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
                 selected === av.id
                   ? "border-violet-500/60 bg-violet-600/15 ring-1 ring-violet-500/25"
                   : "border-violet-900/20 bg-[#0c0c18] hover:border-violet-700/40 hover:bg-violet-950/30"
-              }`}
+              } ${saving ? "opacity-60 cursor-not-allowed" : ""}`}
             >
               <AvatarDisplay avatarId={av.id} size="md" />
               <span className={`text-[11px] font-medium ${selected === av.id ? "text-violet-200" : "text-slate-500"}`}>
@@ -1470,15 +1477,6 @@ function AvatarTab() {
         </div>
         {status?.ok  && <Success msg={status.ok} />}
         {status?.err && <Err msg={status.err} />}
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="flex items-center gap-2 px-5 py-2.5 text-white font-semibold text-sm rounded-xl transition-all disabled:opacity-50"
-          style={{ backgroundColor: "var(--a-600, #7c3aed)" }}
-        >
-          {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-          Save avatar
-        </button>
       </div>
     </div>
   );

@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import {
   X, Loader2, Plus, ArrowRight,
   CheckCircle2, AlertTriangle, XCircle, Sparkles,
-  Crown, ChevronDown, ChevronLeft, CalendarDays,
+  Crown, ChevronLeft, CalendarDays,
 } from "lucide-react";
 import type { Habit, Plan } from "@/types";
 import { useHabitValidation } from "@/hooks/useHabitValidation";
@@ -299,61 +299,6 @@ function detectFrequencyFromName(name: string): "daily" | "weekly" | null {
 }
 
 function toDateStr(d: Date) { return d.toISOString().split("T")[0]; }
-
-// ─── custom select ────────────────────────────────────────────────────────────
-
-interface SelectItem { value: string; label: string }
-
-function CustomSelect({
-  value, onChange, items, placeholder, emptyLabel = "— None —",
-}: {
-  value: string; onChange: (v: string) => void;
-  items: SelectItem[]; placeholder: string; emptyLabel?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  const currentLabel = items.find((i) => i.value === value)?.label ?? "";
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full bg-violet-950/30 border border-violet-900/30 hover:border-violet-800/50 focus:border-violet-600/60 focus:outline-none rounded-xl px-3 py-2 text-sm text-left flex items-center justify-between transition-all"
-      >
-        <span className={`truncate text-sm ${currentLabel ? "text-white" : "text-slate-600"}`}>
-          {currentLabel || placeholder}
-        </span>
-        <ChevronDown className={`w-3.5 h-3.5 text-slate-500 flex-shrink-0 ml-1 transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && (
-        <div className="absolute top-full left-0 right-0 z-[70] mt-1 bg-[#1a1a2e] border border-violet-800/40 rounded-xl overflow-hidden shadow-2xl shadow-black/60 max-h-48 overflow-y-auto">
-          <button type="button" onClick={() => { onChange(""); setOpen(false); }}
-            className="w-full px-3 py-2 text-sm text-slate-500 hover:bg-violet-950/60 hover:text-slate-300 text-left transition-colors"
-          >{emptyLabel}</button>
-          {items.map((item) => (
-            <button key={item.value} type="button"
-              onClick={() => { onChange(item.value); setOpen(false); }}
-              className={`w-full px-3 py-2 text-sm text-left transition-colors ${
-                item.value === value ? "bg-violet-600/25 text-violet-200 font-medium" : "text-slate-300 hover:bg-violet-950/60 hover:text-white"
-              }`}
-            >{item.label}</button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ─── compact time picker — 4 presets + custom in a single row ─────────────────
 
@@ -834,10 +779,22 @@ export default function AddHabitModal({
                   </div>
                   <div>
                     <label className={labelCls}>📍 Where?</label>
-                    <CustomSelect value={whereLocation} onChange={setWhereLocation}
-                      items={WHERE_OPTIONS.map((o) => ({ value: o, label: o }))}
-                      placeholder="Location…"
-                    />
+                    <div className="flex flex-wrap gap-1.5">
+                      {WHERE_OPTIONS.map((loc) => (
+                        <button
+                          key={loc}
+                          type="button"
+                          onClick={() => setWhereLocation(whereLocation === loc ? "" : loc)}
+                          className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-all ${
+                            whereLocation === loc
+                              ? "bg-violet-600/25 border-violet-500/60 text-violet-200"
+                              : "bg-violet-950/30 hover:bg-violet-950/50 border-violet-900/25 hover:border-violet-700/40 text-slate-300 hover:text-white"
+                          }`}
+                        >
+                          {loc}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <div>
                     <label className={labelCls}>
@@ -856,10 +813,25 @@ export default function AddHabitModal({
                         >change</button>
                       </div>
                     ) : (
-                      <CustomSelect value={howLong} onChange={(v) => { setHowLong(v); if (durationDetectedFromName) setDurationOverridden(true); }}
-                        items={HOW_LONG_OPTIONS.map((o) => ({ value: o, label: o }))}
-                        placeholder="Duration…" emptyLabel="— No duration —"
-                      />
+                      <div className="flex flex-wrap gap-1.5">
+                        {HOW_LONG_OPTIONS.map((opt) => (
+                          <button
+                            key={opt}
+                            type="button"
+                            onClick={() => {
+                              setHowLong(howLong === opt ? "" : opt);
+                              if (durationDetectedFromName) setDurationOverridden(true);
+                            }}
+                            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-all ${
+                              howLong === opt
+                                ? "bg-violet-600/25 border-violet-500/60 text-violet-200"
+                                : "bg-violet-950/30 hover:bg-violet-950/50 border-violet-900/25 hover:border-violet-700/40 text-slate-300 hover:text-white"
+                            }`}
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
 

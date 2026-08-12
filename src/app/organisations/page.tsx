@@ -61,11 +61,13 @@ export default function OrganisationsPage() {
       if (!user) { router.push("/auth/login"); return; }
 
       const [profileResult, orgsResult] = await Promise.all([
-        supabase.from("profiles").select("subscription_tier").eq("id", user.id).single(),
+        supabase.from("profiles").select("subscription_tier, username").eq("id", user.id).single(),
         fetch("/api/organisations"),
       ]);
 
       setTier((profileResult.data?.subscription_tier as Plan) ?? "free");
+      const username = profileResult.data?.username as string | undefined;
+      if (username && !name.trim()) setName(`${username}'s Organisation`.slice(0, 60));
 
       if (orgsResult.ok) {
         const data = await orgsResult.json() as { ownOrgs: Org[]; memberOrg: Org | null };
