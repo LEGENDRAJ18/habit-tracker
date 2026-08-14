@@ -288,6 +288,7 @@ export function useHabits() {
       name,
       description:             description || null,
       frequency,
+      day_of_week:             null,
       created_at:              now,
       stack_after_id:          stackAfterId    ?? null,
       habit_strength:          10,

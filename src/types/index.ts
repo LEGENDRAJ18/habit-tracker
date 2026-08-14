@@ -6,6 +6,7 @@ export interface Habit {
   name: string;
   description: string | null;
   frequency: "daily" | "weekly";
+  day_of_week: number | null;
   created_at: string;
   stack_after_id: string | null;
   habit_strength: number;
