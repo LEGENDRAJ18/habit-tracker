@@ -7,7 +7,7 @@ import { resolveUser } from "@/lib/supabase/resolve-user";
 import type { Habit, HabitLog, CompletionQuality } from "@/types";
 import {
   saveHabitsCache, loadHabitsCache,
-  loadQueue, clearQueue, enqueue, type OfflineOp, type AddHabitPayload,
+  loadQueue, saveQueue, enqueue, type QueuedOp, type AddHabitPayload,
 } from "@/lib/habitsCache";
 import { detectVerificationType, detectDefaultTargetValue } from "@/lib/habitVerification";
 import { toast } from "@/components/ui/Toast";
@@ -216,29 +216,47 @@ export function useHabits() {
     const flushQueue = async () => {
       const queue = loadQueue();
       if (queue.length === 0) return;
-      clearQueue();
 
       const user = await resolveUser();
       if (!user) return;
 
-      for (const op of queue as OfflineOp[]) {
+      const stillQueued: QueuedOp[] = [];
+      let hasRepeatedFailure = false;
+
+      for (const item of queue as QueuedOp[]) {
+        const { op } = item;
+        let error: unknown = null;
         try {
           if (op.type === "toggle_complete") {
-            await supabase
+            ({ error } = await supabase
               .from("habit_logs")
               .insert({ habit_id: op.habitId, user_id: op.userId })
               .select()
-              .single();
+              .single());
           } else if (op.type === "toggle_uncomplete") {
-            await supabase.from("habit_logs").delete().eq("id", op.logId);
+            ({ error } = await supabase.from("habit_logs").delete().eq("id", op.logId));
           } else if (op.type === "delete_habit") {
-            await supabase.from("habits").delete().eq("id", op.habitId);
+            ({ error } = await supabase.from("habits").delete().eq("id", op.habitId));
           } else if (op.type === "add_habit") {
-            await supabase.from("habits").insert(op.payload).select().single();
+            ({ error } = await supabase.from("habits").insert(op.payload).select().single());
           }
-        } catch {
-          // If an op fails after reconnect, skip it — state already reflects the intent
+        } catch (err) {
+          error = err;
         }
+
+        if (error) {
+          // Don't discard on failure — keep it queued so it retries on the
+          // next "online" event instead of silently losing the completion.
+          const attempts = item.attempts + 1;
+          stillQueued.push({ op, attempts });
+          if (attempts >= 3) hasRepeatedFailure = true;
+        }
+      }
+
+      saveQueue(stillQueued);
+
+      if (hasRepeatedFailure) {
+        toast("Some progress couldn't be saved — check your connection and try again.", "error", undefined, 5000);
       }
 
       // Re-fetch to reconcile server state with what we applied offline

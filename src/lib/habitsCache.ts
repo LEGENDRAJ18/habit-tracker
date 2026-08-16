@@ -93,13 +93,30 @@ export type OfflineOp =
   | { type: "delete_habit";      habitId: string }
   | { type: "add_habit";         tempId: string; payload: AddHabitPayload };
 
-export function loadQueue(): OfflineOp[] {
+// A queued op plus how many flush attempts have failed for it, so a flaky
+// reconnect doesn't quietly drop it — only 3+ failed attempts warn the user.
+export type QueuedOp = { op: OfflineOp; attempts: number };
+
+export function loadQueue(): QueuedOp[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(KEY_QUEUE);
-    return raw ? (JSON.parse(raw) as OfflineOp[]) : [];
+    return raw ? (JSON.parse(raw) as QueuedOp[]) : [];
   } catch {
     return [];
+  }
+}
+
+export function saveQueue(queue: QueuedOp[]) {
+  if (typeof window === "undefined") return;
+  try {
+    if (queue.length === 0) {
+      localStorage.removeItem(KEY_QUEUE);
+    } else {
+      localStorage.setItem(KEY_QUEUE, JSON.stringify(queue));
+    }
+  } catch {
+    // Storage quota exceeded — ignore
   }
 }
 
@@ -107,7 +124,7 @@ export function enqueue(op: OfflineOp) {
   if (typeof window === "undefined") return;
   try {
     const q = loadQueue();
-    q.push(op);
+    q.push({ op, attempts: 0 });
     localStorage.setItem(KEY_QUEUE, JSON.stringify(q));
   } catch {
     // ignore
