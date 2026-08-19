@@ -1,10 +1,14 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { APP_ROUTES } from "@/components/layout/ConditionalAppShell";
 
 export default function OfflineIndicator() {
   const online = useOnlineStatus();
-  if (online) return null;
+  const pathname = usePathname();
+  const isApp = APP_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"));
+  if (online || !isApp) return null;
 
   return (
     <div
