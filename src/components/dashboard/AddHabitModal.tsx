@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import {
   X, Loader2, Plus, ArrowRight,
   CheckCircle2, AlertTriangle, XCircle, Sparkles,
-  Crown, ChevronLeft, CalendarDays,
+  Crown, ChevronLeft, CalendarDays, Clock,
 } from "lucide-react";
 import type { Habit, Plan } from "@/types";
 import { useHabitValidation } from "@/hooks/useHabitValidation";
@@ -996,8 +996,8 @@ export default function AddHabitModal({
 
                   {/* Reminder time — available to all users */}
                   <div>
-                    <label className={labelCls}>
-                      🔔 Remind me at <span className="text-slate-600 font-normal">(optional)</span>
+                    <label className={`${labelCls} flex items-center gap-1`}>
+                      <Clock className="w-3.5 h-3.5" /> Remind me at <span className="text-slate-600 font-normal">(optional)</span>
                     </label>
                     <input
                       type="time"
