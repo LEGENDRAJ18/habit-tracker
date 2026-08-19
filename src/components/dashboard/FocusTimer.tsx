@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { X, Pause, Play, Plus, Crown, RotateCcw } from "lucide-react";
+import { X, Pause, Play, Plus, Crown, RotateCcw, Check } from "lucide-react";
 import type { Habit, Plan } from "@/types";
 import { useFocusTimer, type TimerPhase } from "@/hooks/useFocusTimer";
 import { playSound } from "@/lib/sounds";
@@ -229,7 +229,9 @@ export default function FocusTimer({ habit, tier, isCompleted, minimized, onMini
     setSessionLogged(true);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setCelebrating(true);
-    playSound("levelup");
+    // "milestone" (not "levelup", which is reserved for account level-ups
+    // elsewhere) — a short, distinct cheerful jingle for "session done".
+    playSound("milestone");
 
     // Auto-mark habit complete if not already done
     if (!isCompleted) {
@@ -300,7 +302,24 @@ export default function FocusTimer({ habit, tier, isCompleted, minimized, onMini
 
   // ── Minimized mini-bar ───────────────────────────────────────────────────
   if (minimized) {
-    if (!state.isRunning || state.isComplete || state.isGivenUp) return null;
+    // Session finished while minimized — stay visible (don't just vanish)
+    // until the user taps it, so they still see it even if they looked away.
+    if (state.isComplete) {
+      return (
+        <button
+          onClick={onMaximize}
+          className="fixed top-0 inset-x-0 z-[90] flex items-center gap-2.5 px-4 bg-emerald-950/95 border-b border-emerald-700/40 backdrop-blur-sm"
+          style={{ height: "calc(env(safe-area-inset-top, 0px) + 36px)", paddingTop: "env(safe-area-inset-top, 0px)" }}
+        >
+          <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" strokeWidth={3} />
+          <span className="text-xs font-semibold text-emerald-300 truncate flex-1 min-w-0 text-left">
+            Session complete — {habit.name}
+          </span>
+          <span className="text-[10px] text-emerald-400/70 flex-shrink-0">Tap to view</span>
+        </button>
+      );
+    }
+    if (!state.isRunning || state.isGivenUp) return null;
     const elapsed = state.total - state.remaining;
     const pct = state.total > 0 ? (elapsed / state.total) * 100 : 0;
     const barColor = state.phase !== "focus" ? "bg-emerald-500" : isPro ? "bg-amber-500" : "bg-violet-500";

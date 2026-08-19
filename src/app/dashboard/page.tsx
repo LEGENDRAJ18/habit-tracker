@@ -1715,7 +1715,8 @@ export default function DashboardPage() {
           }}
           onXP={() => {
             const validity = focusHabit.validity_score ?? "valid";
-            playSound("complete");
+            // No playSound() here — FocusTimer already plays its own
+            // completion sound; this used to double up with it.
             onHabitCompleted(validity, focusHabit.how_long, focusHabit.xp_value ?? 10, getStreak(focusHabit.id)).then(({ luckyBonus }) => {
               if (luckyBonus) toast("🎰 Lucky bonus! +20 XP", "success", undefined, 2500);
               toast("⚡ XP earned! Tap your level to see progress.", "success", undefined, 2000);

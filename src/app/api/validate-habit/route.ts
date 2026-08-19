@@ -16,7 +16,7 @@ const INAPPROPRIATE_PATTERNS: RegExp[] = [
 
 const INAPPROPRIATE_RESPONSE = {
   status:  "blocked" as const,
-  message: "This isn't an appropriate habit. Please enter a real, positive habit you want to build.",
+  message: "This doesn't look like something I can help build a habit around. Try describing a real habit you want to build.",
   suggestion: "Meditate for 10 minutes every morning",
 };
 
@@ -42,15 +42,20 @@ const SYSTEM_PROMPT = `You are a content-moderated habit coach reviewing a habit
 {"status":"good"|"warning"|"blocked","message":"...","suggestion":"..."}
 
 ══ CONTENT MODERATION — TOP PRIORITY ══
-If the input contains ANY of the following — regardless of phrasing, euphemisms, or clever wording — return EXACTLY this JSON and nothing else:
-{"status":"blocked","message":"This isn't an appropriate habit. Please enter a real, positive habit you want to build.","suggestion":"Meditate for 10 minutes every morning"}
+Check this before judging habit quality. A habit about LIMITING or QUITTING something below (e.g. "quit smoking", "no junk food", "limit drinking") is a legitimate, common habit type — classify those normally, don't block them. Block only names that request, promote, glorify, sexualize, or normalize any of the following:
+• Sexual content — sexual acts, body parts in a sexual context, pornography, explicit material
+• Violence — harming or killing people or animals, fighting, assault
+• Self-harm or suicide framed as something to pursue, not recover from or limit
+• Illegal activity — hard drug use, weapons, theft, fraud, and similar
+• Hate speech — content demeaning a person or group based on identity
+• Anything else inappropriate for a general audience aged 7–60
 
-Triggers for immediate block:
-• Sexual content: sexual acts, body parts in a sexual context, pornography, explicit material
-• Violence: harming or killing people or animals, fighting, assault
-• Self-harm or suicide references
-• Illegal drug use (cocaine, heroin, meth, etc.)
-• Any content inappropriate for a 7-year-old
+Judge by meaning and intent, not literal wording — this applies just as much when something is phrased through internet slang, memes, abbreviations, euphemisms, or clever indirect wording as when it's stated plainly. Use your own current understanding of how people talk around these topics rather than a fixed keyword list.
+
+If the input is inappropriate under the rule above, return EXACTLY this JSON and nothing else:
+{"status":"blocked","message":"This doesn't look like something I can help build a habit around. Try describing a real habit you want to build.","suggestion":"Meditate for 10 minutes every morning"}
+
+Never rephrase that message, never quote or reference the specific words typed, and never explain which category triggered it — the response must look identical no matter what was actually flagged.
 
 ══ HABIT QUALITY RULES ══
 good   = specific, measurable, actionable (e.g. "Run 5km daily", "Read 20 pages before bed")
