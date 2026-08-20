@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import posthog from "posthog-js";
+import * as Sentry from "@sentry/nextjs";
 
 export default function GlobalError({
   error,
@@ -12,6 +13,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     console.error("[GlobalErrorBoundary] caught:", error.message, error.stack);
+    Sentry.captureException(error);
     try {
       posthog.capture("global_error_boundary", {
         error_message: error.message,
