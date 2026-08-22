@@ -81,7 +81,7 @@ function InviteSection({ parentId }: { parentId: string }) {
         <span className="text-xl leading-none">👨‍👩‍👧</span>
         <div>
           <p className="text-sm font-bold text-emerald-300">Invite your child</p>
-          <p className="text-xs text-slate-500">Share the link — they sign up and link their account</p>
+          <p className="text-xs text-slate-400">Share the link — they sign up and link their account</p>
         </div>
       </div>
 
@@ -131,19 +131,19 @@ function EncourageModal({ child, onClose }: { child: LinkedChild; onClose: () =>
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div className="w-full max-w-sm bg-[#0f0f1a] border border-violet-800/30 rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute top-4 right-4 text-slate-600 hover:text-slate-300" aria-label="Close">
+        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-300" aria-label="Close">
           <X className="w-4 h-4" />
         </button>
         <div className="text-center mb-5">
           <div className="text-4xl mb-3">💬</div>
           <h3 className="text-base font-bold text-white">Send encouragement</h3>
-          <p className="text-xs text-slate-500 mt-1">to {child.username ? `@${child.username}` : "your child"}</p>
+          <p className="text-xs text-slate-400 mt-1">to {child.username ? `@${child.username}` : "your child"}</p>
         </div>
         {sent ? (
           <div className="text-center py-4">
             <div className="text-3xl mb-2">✅</div>
             <p className="text-sm text-emerald-300 font-semibold">Message noted!</p>
-            <p className="text-xs text-slate-500 mt-1">Your child will see this on their next app visit</p>
+            <p className="text-xs text-slate-400 mt-1">Your child will see this on their next app visit</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -184,7 +184,7 @@ function ChildCard({ child, onEncourage }: { child: LinkedChild; onEncourage: ()
         </div>
         <div className="text-right flex-shrink-0">
           <p className="text-xl font-black text-white leading-none">{pct}%</p>
-          <p className="text-[10px] text-slate-600 mt-0.5">{child.completedToday}/{child.totalHabits} habits</p>
+          <p className="text-[10px] text-slate-400 mt-0.5">{child.completedToday}/{child.totalHabits} habits</p>
         </div>
       </div>
 
@@ -203,7 +203,7 @@ function ChildCard({ child, onEncourage }: { child: LinkedChild; onEncourage: ()
       )}
 
       <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 text-xs text-slate-500 flex-1">
+        <div className="flex items-center gap-1.5 text-xs text-slate-400 flex-1">
           <span>🔥</span>
           <span>{child.streak} day streak</span>
         </div>
@@ -328,7 +328,7 @@ export default function ParentDashboard() {
 
         {/* Header */}
         <div className="mb-8">
-          <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">{today}</p>
+          <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">{today}</p>
           <div className="flex items-center gap-3 mb-1">
             <h1 className="text-2xl font-bold text-white">Your Children 👨‍👩‍👧</h1>
             {!loading && children.length > 0 && (
@@ -341,7 +341,7 @@ export default function ParentDashboard() {
               </span>
             )}
           </div>
-          <p className="text-sm text-slate-500">Monitor your {children.length > 1 ? "children's" : "child's"} habit completions in real-time</p>
+          <p className="text-sm text-slate-400">Monitor your {children.length > 1 ? "children's" : "child's"} habit completions in real-time</p>
         </div>
 
         {loading ? (
@@ -356,7 +356,7 @@ export default function ParentDashboard() {
             <div className="bg-[#0f0f1a] border border-violet-900/20 rounded-2xl p-8 text-center">
               <div className="text-5xl mb-4">👨‍👩‍👧</div>
               <h2 className="text-lg font-bold text-white mb-2">No children linked yet</h2>
-              <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+              <p className="text-sm text-slate-400 mb-6 leading-relaxed">
                 Generate an invite link below and share it with your child. Once they sign up and accept, you&apos;ll see their habit progress here in real-time.
               </p>
               <div className="space-y-2 text-left max-w-xs mx-auto">
@@ -390,7 +390,7 @@ export default function ParentDashboard() {
             {userId && (
               <div className="pt-2">
                 <details className="group">
-                  <summary className="flex items-center gap-2 cursor-pointer text-sm text-slate-500 hover:text-slate-300 transition-colors list-none">
+                  <summary className="flex items-center gap-2 cursor-pointer text-sm text-slate-400 hover:text-slate-300 transition-colors list-none">
                     <Users className="w-4 h-4" />
                     Invite another child
                     <ChevronRight className="w-3.5 h-3.5 ml-auto group-open:rotate-90 transition-transform" />
@@ -416,7 +416,7 @@ export default function ParentDashboard() {
                 ].map(({ label, value, color }) => (
                   <div key={label} className="text-center">
                     <p className={`text-xl font-bold leading-none ${color}`}>{value}</p>
-                    <p className="text-[10px] text-slate-600 mt-1 leading-snug">{label}</p>
+                    <p className="text-[10px] text-slate-400 mt-1 leading-snug">{label}</p>
                   </div>
                 ))}
               </div>

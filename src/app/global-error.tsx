@@ -30,7 +30,7 @@ export default function GlobalError({
         <div>
           <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>⚡</div>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "#fff", marginBottom: "0.5rem" }}>Something went wrong</h1>
-          <p style={{ color: "#64748b", fontSize: "0.9rem", marginBottom: "1.5rem", lineHeight: 1.6 }}>
+          <p style={{ color: "#94a3b8", fontSize: "0.9rem", marginBottom: "1.5rem", lineHeight: 1.6 }}>
             An unexpected error occurred. Refreshing usually fixes it.
           </p>
           <button

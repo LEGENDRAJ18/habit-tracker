@@ -148,11 +148,11 @@ export default function MoodCheckin({ onMoodSelected }: { onMoodSelected?: (mood
         <div>
           <p className="text-sm font-semibold text-white">How are you feeling?</p>
           {todayLabel && (
-            <p className="text-xs text-slate-500 mt-0.5">Today: <span className="text-violet-300">{todayLabel}</span></p>
+            <p className="text-xs text-slate-400 mt-0.5">Today: <span className="text-violet-300">{todayLabel}</span></p>
           )}
         </div>
         {daysLogged > 0 && (
-          <span className="text-[10px] text-slate-600 bg-slate-800/50 px-2 py-0.5 rounded-full">{daysLogged} days tracked</span>
+          <span className="text-[10px] text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded-full">{daysLogged} days tracked</span>
         )}
       </div>
 
@@ -173,13 +173,13 @@ export default function MoodCheckin({ onMoodSelected }: { onMoodSelected?: (mood
             }`}
           >
             <span className="text-2xl leading-none">{emoji}</span>
-            <span className={`text-[9px] font-medium leading-none ${selected === value ? "text-violet-300" : "text-slate-600"}`}>{label}</span>
+            <span className={`text-[9px] font-medium leading-none ${selected === value ? "text-violet-300" : "text-slate-400"}`}>{label}</span>
           </button>
         ))}
       </div>
 
       {todayMood && (
-        <p className="text-[11px] text-slate-600 text-center">Mood logged for today ✓</p>
+        <p className="text-[11px] text-slate-400 text-center">Mood logged for today ✓</p>
       )}
 
       {/* Correlations */}
@@ -199,7 +199,7 @@ export default function MoodCheckin({ onMoodSelected }: { onMoodSelected?: (mood
       )}
 
       {daysLogged > 0 && daysLogged < 14 && (
-        <p className="text-[10px] text-slate-500 text-center mt-2">
+        <p className="text-[10px] text-slate-400 text-center mt-2">
           {14 - daysLogged} more days until AI mood insights unlock
         </p>
       )}

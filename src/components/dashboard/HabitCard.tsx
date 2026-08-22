@@ -557,7 +557,7 @@ export default function HabitCard({
                 </button>
                 <button
                   onClick={() => { setEditMode(false); setEditName(habit.name); setEditReminderTime(habit.preferred_reminder_time ?? ""); }}
-                  className="flex-shrink-0 p-1 text-slate-500 hover:text-slate-300 transition-colors"
+                  className="flex-shrink-0 p-1 text-slate-400 hover:text-slate-300 transition-colors"
                   title="Cancel"
                   aria-label="Cancel edit"
                 >
@@ -566,7 +566,7 @@ export default function HabitCard({
               </div>
               {/* Reminder time inline edit */}
               <div className="flex items-center gap-1.5 pl-0.5">
-                <span className="text-[10px] text-slate-600">🔔 Remind at</span>
+                <span className="text-[10px] text-slate-400">🔔 Remind at</span>
                 <input
                   type="time"
                   value={editReminderTime}
@@ -577,7 +577,7 @@ export default function HabitCard({
                   <button
                     type="button"
                     onClick={() => setEditReminderTime("")}
-                    className="text-[10px] text-slate-600 hover:text-slate-400"
+                    className="text-[10px] text-slate-400 hover:text-slate-400"
                     title="Clear reminder"
                   >
                     clear
@@ -591,7 +591,7 @@ export default function HabitCard({
                 <span className="text-sm leading-none flex-shrink-0">{getTimeEmoji(habit.when_time)}</span>
               )}
               <p className={`text-sm font-medium truncate transition-all duration-300 ${
-                completed ? "text-slate-500 line-through" : "text-slate-100"
+                completed ? "text-slate-400 line-through" : "text-slate-100"
               }`}>
                 {habit.name}
               </p>
@@ -608,7 +608,7 @@ export default function HabitCard({
           )}
 
           {!editMode && habit.description && (
-            <p className={`text-xs truncate mt-0.5 transition-colors duration-300 ${completed ? "text-slate-700" : "text-slate-600"}`}>
+            <p className={`text-xs truncate mt-0.5 transition-colors duration-300 ${completed ? "text-slate-400" : "text-slate-400"}`}>
               {habit.description}
             </p>
           )}
@@ -630,7 +630,7 @@ export default function HabitCard({
             </span>
           )}
           {!editMode && isLimit && !completed && !failed && (
-            <span className="text-[10px] text-slate-600 mt-0.5 block">You track this honestly.</span>
+            <span className="text-[10px] text-slate-400 mt-0.5 block">You track this honestly.</span>
           )}
           {!editMode && !completed && !failed && validity && validity !== "valid" && (
             <span className={`inline-flex items-center gap-1 text-[10px] border px-1.5 py-0.5 rounded-full mt-0.5 ${
@@ -664,7 +664,7 @@ export default function HabitCard({
 
         {/* Delete */}
         <button onClick={handleDelete}
-          className="flex-shrink-0 transition-all p-1 rounded-lg text-slate-700 hover:text-red-400 opacity-40 sm:opacity-0 sm:group-hover:opacity-100"
+          className="flex-shrink-0 transition-all p-1 rounded-lg text-slate-400 hover:text-red-400 opacity-40 sm:opacity-0 sm:group-hover:opacity-100"
           title="Delete habit"
           aria-label="Delete habit"
         >
@@ -694,7 +694,7 @@ export default function HabitCard({
               className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all ${
                 freezeAvailable
                   ? "border-blue-700/40 bg-blue-950/20 text-blue-300 hover:bg-blue-950/40 hover:border-blue-600/50 active:scale-95"
-                  : "border-slate-800/30 bg-slate-900/20 text-slate-600 cursor-default"
+                  : "border-slate-800/30 bg-slate-900/20 text-slate-400 cursor-default"
               }`}
               title={freezeAvailable ? "Freeze streak — protects your streak for one missed day, limited uses per week" : "You've already used your streak freeze this week"}
             >
@@ -711,12 +711,12 @@ export default function HabitCard({
           where there's no hover to reveal it. */}
       {!editMode && (tier === "plus" || tier === "pro") && onFreezeStreak && !freezeHintDismissed && (
         <div className="px-4 pb-2.5 -mt-1 flex items-start gap-1.5">
-          <p className="text-[10px] text-slate-600 flex-1 min-w-0 leading-snug">
+          <p className="text-[10px] text-slate-400 flex-1 min-w-0 leading-snug">
             Freeze protects your streak for one missed day · limited uses per week
           </p>
           <button
             onClick={() => { setFreezeHintDismissed(true); localStorage.setItem("habitai_freeze_hint_dismissed", "1"); }}
-            className="flex-shrink-0 text-slate-700 hover:text-slate-400 p-0.5"
+            className="flex-shrink-0 text-slate-400 hover:text-slate-400 p-0.5"
             title="Dismiss"
             aria-label="Dismiss"
           >
@@ -752,17 +752,17 @@ export default function HabitCard({
       {(habit.when_time || habit.where_location || habit.how_long || habit.preferred_reminder_time) && (
         <div className="hidden sm:flex items-center gap-2.5 px-4 pb-1.5 flex-wrap">
           {habit.where_location && (
-            <span className="text-[11px] text-slate-600 flex items-center gap-1">
+            <span className="text-[11px] text-slate-400 flex items-center gap-1">
               <span>📍</span>{habit.where_location}
             </span>
           )}
           {habit.when_time && (
-            <span className="text-[11px] text-slate-600 flex items-center gap-1">
+            <span className="text-[11px] text-slate-400 flex items-center gap-1">
               <span>⏰</span>{formatTime(habit.when_time)}
             </span>
           )}
           {habit.how_long && (
-            <span className="text-[11px] text-slate-600 flex items-center gap-1">
+            <span className="text-[11px] text-slate-400 flex items-center gap-1">
               <span>⏱</span>{habit.how_long}
             </span>
           )}
@@ -778,12 +778,12 @@ export default function HabitCard({
       {tier === "pro" && onSmartTimingToggle && (
         <div className="hidden sm:flex items-center justify-between px-4 pb-2">
           <div className="flex items-center gap-1.5">
-            <Zap className={`w-3 h-3 flex-shrink-0 ${habit.smart_timing ? "text-amber-400" : "text-slate-600"}`} />
-            <span className={`text-[10px] font-medium ${habit.smart_timing ? "text-amber-300" : "text-slate-600"}`}>
+            <Zap className={`w-3 h-3 flex-shrink-0 ${habit.smart_timing ? "text-amber-400" : "text-slate-400"}`} />
+            <span className={`text-[10px] font-medium ${habit.smart_timing ? "text-amber-300" : "text-slate-400"}`}>
               Smart timing
             </span>
             {habit.smart_timing && habit.preferred_reminder_time && (
-              <span className="text-[10px] text-slate-600">
+              <span className="text-[10px] text-slate-400">
                 · {(() => {
                   const [h] = habit.preferred_reminder_time.split(":").map(Number);
                   return `${h % 12 || 12}:00 ${h >= 12 ? "PM" : "AM"}`;
@@ -860,7 +860,7 @@ export default function HabitCard({
             />
           </div>
           <div className={`flex items-center justify-between mt-0.5 transition-opacity duration-150 ${showStrTooltip ? "opacity-100" : "opacity-0"}`}>
-            <span className="text-[9px] text-slate-600 font-semibold uppercase tracking-wider">
+            <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">
               Habit Strength · {strengthLabel(strength)}
             </span>
             <span className={`text-[9px] font-bold ${strengthTextColor(strength)}`}>{strength}/100</span>
@@ -895,7 +895,7 @@ export default function HabitCard({
           onClick={(e) => { if (e.target === e.currentTarget) setShowActionMenu(false); }}
         >
           <div className="w-full sm:max-w-xs sm:mx-4 bg-[#0f0f1a] border border-violet-900/30 rounded-t-3xl sm:rounded-3xl p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-            <p className="px-4 pt-3 pb-2 text-xs font-semibold text-slate-500 truncate">{habit.name}</p>
+            <p className="px-4 pt-3 pb-2 text-xs font-semibold text-slate-400 truncate">{habit.name}</p>
             <button
               onClick={() => { setShowActionMenu(false); handleSkip(); }}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-slate-200 hover:bg-white/5 transition-colors"
@@ -916,7 +916,7 @@ export default function HabitCard({
             </button>
             <button
               onClick={() => setShowActionMenu(false)}
-              className="w-full px-4 py-2.5 mt-1 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+              className="w-full px-4 py-2.5 mt-1 text-xs text-slate-400 hover:text-slate-300 transition-colors"
             >
               Cancel
             </button>

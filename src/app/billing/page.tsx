@@ -194,7 +194,7 @@ function PricingCard({ plan, currentTier, annual, checkoutLoading, portalLoading
             <p className={`text-lg font-extrabold leading-none ${isPro ? "text-amber-200" : isPlus ? "text-violet-200" : "text-slate-200"}`}>
               {isFree ? "Free" : isPlus ? "Plus" : "Pro"}
             </p>
-            <p className="text-[11px] text-slate-500 mt-0.5">
+            <p className="text-[11px] text-slate-400 mt-0.5">
               {isFree ? "Everything to start" : isPlus ? "For staying consistent" : "For serious transformation"}
             </p>
             {isCurrent && (
@@ -209,7 +209,7 @@ function PricingCard({ plan, currentTier, annual, checkoutLoading, portalLoading
         {isFree ? (
           <div className="flex items-end gap-1.5">
             <span className="text-4xl font-black text-white leading-none">$0</span>
-            <span className="text-sm text-slate-500 mb-1">/ forever</span>
+            <span className="text-sm text-slate-400 mb-1">/ forever</span>
           </div>
         ) : (
           <div>
@@ -224,12 +224,12 @@ function PricingCard({ plan, currentTier, annual, checkoutLoading, portalLoading
                 Billed {fmtPrice(displayMonthly * 10)}/yr · 2 months free 🎉
               </p>
             ) : (
-              <p className="text-[11px] text-slate-600 mt-1">
+              <p className="text-[11px] text-slate-400 mt-1">
                 or {fmtPrice(annualMonthly(monthlyBase))}/mo billed annually
               </p>
             )}
             {!currencyLoading && (
-              <p className="text-[10px] text-slate-700 mt-0.5">Prices in {currency} · Charged in USD</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">Prices in {currency} · Charged in USD</p>
             )}
           </div>
         )}
@@ -290,7 +290,7 @@ function PricingCard({ plan, currentTier, annual, checkoutLoading, portalLoading
             Manage subscription
           </button>
         ) : isCurrent && isFree ? (
-          <div className="w-full py-3.5 bg-slate-800/50 text-slate-500 text-sm font-semibold rounded-xl text-center">
+          <div className="w-full py-3.5 bg-slate-800/50 text-slate-400 text-sm font-semibold rounded-xl text-center">
             Current plan
           </div>
         ) : canUpgrade ? (
@@ -315,7 +315,7 @@ function PricingCard({ plan, currentTier, annual, checkoutLoading, portalLoading
               )}
             </button>
             {isPlus && (
-              <p className="text-center text-[10px] text-slate-600 mt-2">No credit card needed · Cancel before day 7 and pay nothing</p>
+              <p className="text-center text-[10px] text-slate-400 mt-2">No credit card needed · Cancel before day 7 and pay nothing</p>
             )}
           </div>
         ) : null}
@@ -331,7 +331,7 @@ function CompRow({ label, free, plus, pro }: { label: string; free: string | boo
     typeof v === "boolean" ? (
       v
         ? <Check className="w-4 h-4 text-emerald-400 mx-auto" />
-        : <span className="text-slate-700 text-lg leading-none mx-auto block text-center">—</span>
+        : <span className="text-slate-400 text-lg leading-none mx-auto block text-center">—</span>
     ) : (
       <span className="text-xs text-slate-300 text-center block">{v}</span>
     );
@@ -436,10 +436,10 @@ export default function BillingPage() {
       {/* Header */}
       <div className="sticky top-0 z-40 bg-[#09090f]/90 backdrop-blur-xl border-b border-violet-900/20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
-          <Link href="/dashboard" className="flex items-center gap-1.5 text-slate-500 hover:text-white text-xs transition-colors">
+          <Link href="/dashboard" className="flex items-center gap-1.5 text-slate-400 hover:text-white text-xs transition-colors">
             <ArrowLeft className="w-3.5 h-3.5" />Dashboard
           </Link>
-          <span className="text-slate-700">/</span>
+          <span className="text-slate-400">/</span>
           <span className="text-sm font-semibold text-white">Pricing</span>
         </div>
       </div>
@@ -462,7 +462,7 @@ export default function BillingPage() {
 
           {/* Annual / Monthly toggle — only shown when annual price IDs are configured */}
           {(process.env.NEXT_PUBLIC_STRIPE_PLUS_ANNUAL_PRICE_ID || process.env.NEXT_PUBLIC_STRIPE_PRO_ANNUAL_PRICE_ID) && <div className="flex items-center justify-center gap-3 mt-8">
-            <span className={`text-sm font-semibold transition-colors ${!annual ? "text-white" : "text-slate-500"}`}>Monthly</span>
+            <span className={`text-sm font-semibold transition-colors ${!annual ? "text-white" : "text-slate-400"}`}>Monthly</span>
             <button
               onClick={() => setAnnual((v) => !v)}
               role="switch"
@@ -485,7 +485,7 @@ export default function BillingPage() {
                 transition: "left 0.2s",
               }} />
             </button>
-            <span className={`text-sm font-semibold transition-colors ${annual ? "text-white" : "text-slate-500"}`}>
+            <span className={`text-sm font-semibold transition-colors ${annual ? "text-white" : "text-slate-400"}`}>
               Annual
             </span>
             {annual && (
@@ -494,7 +494,7 @@ export default function BillingPage() {
               </span>
             )}
             {!annual && (
-              <span className="text-[11px] font-bold text-slate-600 border border-slate-800 px-2.5 py-1 rounded-full">
+              <span className="text-[11px] font-bold text-slate-400 border border-slate-800 px-2.5 py-1 rounded-full">
                 Save 2 months →
               </span>
             )}
@@ -530,21 +530,21 @@ export default function BillingPage() {
         </div>
 
         {/* ── Trust signals ────────────────────────────────────────────────── */}
-        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 mt-10 text-xs text-slate-600">
+        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 mt-10 text-xs text-slate-400">
           <span className="flex items-center gap-2">
-            <Shield className="w-3.5 h-3.5 text-slate-700" />
+            <Shield className="w-3.5 h-3.5 text-slate-400" />
             Secure checkout via Stripe
           </span>
           <span className="flex items-center gap-2">
-            <Clock className="w-3.5 h-3.5 text-slate-700" />
+            <Clock className="w-3.5 h-3.5 text-slate-400" />
             Cancel anytime
           </span>
           <span className="flex items-center gap-2">
-            <CreditCard className="w-3.5 h-3.5 text-slate-700" />
+            <CreditCard className="w-3.5 h-3.5 text-slate-400" />
             No hidden fees
           </span>
           <span className="flex items-center gap-2">
-            <CheckCircle2 className="w-3.5 h-3.5 text-slate-700" />
+            <CheckCircle2 className="w-3.5 h-3.5 text-slate-400" />
             7-day money-back guarantee
           </span>
         </div>
@@ -557,7 +557,7 @@ export default function BillingPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-violet-900/20">
-                    <th className="text-left py-4 px-5 text-xs font-semibold text-slate-500 uppercase tracking-wider w-1/2">Feature</th>
+                    <th className="text-left py-4 px-5 text-xs font-semibold text-slate-400 uppercase tracking-wider w-1/2">Feature</th>
                     <th className="py-4 px-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">Free</th>
                     <th className="py-4 px-3 text-center text-xs font-bold text-violet-400 uppercase tracking-wider">Plus</th>
                     <th className="py-4 px-3 text-center text-xs font-bold text-amber-400 uppercase tracking-wider">Pro</th>
@@ -565,7 +565,7 @@ export default function BillingPage() {
                 </thead>
                 <tbody className="px-5">
                   <tr className="border-t border-violet-900/15">
-                    <td className="py-2.5 px-5 text-xs font-bold text-slate-600 uppercase tracking-wider" colSpan={4}>Core</td>
+                    <td className="py-2.5 px-5 text-xs font-bold text-slate-400 uppercase tracking-wider" colSpan={4}>Core</td>
                   </tr>
                   <tr className="border-t border-violet-900/15">
                     <td className="py-3 px-5 text-sm text-slate-400">Habits</td>
@@ -604,7 +604,7 @@ export default function BillingPage() {
                     <td className="py-3 px-3 text-center"><Check className="w-4 h-4 text-emerald-400 mx-auto" /></td>
                   </tr>
                   <tr className="border-t border-violet-900/15">
-                    <td className="py-2.5 px-5 text-xs font-bold text-slate-600 uppercase tracking-wider" colSpan={4}>AI &amp; Insights</td>
+                    <td className="py-2.5 px-5 text-xs font-bold text-slate-400 uppercase tracking-wider" colSpan={4}>AI &amp; Insights</td>
                   </tr>
                   <tr className="border-t border-violet-900/15">
                     <td className="py-3 px-5 text-sm text-slate-400">AI habit suggestions</td>
@@ -626,67 +626,67 @@ export default function BillingPage() {
                   </tr>
                   <tr className="border-t border-violet-900/15">
                     <td className="py-3 px-5 text-sm text-slate-400">Habit DNA card</td>
-                    <td className="py-3 px-3 text-center"><span className="text-xs text-slate-500">Basic preview</span></td>
+                    <td className="py-3 px-3 text-center"><span className="text-xs text-slate-400">Basic preview</span></td>
                     <td className="py-3 px-3 text-center"><span className="text-xs text-violet-300 font-semibold">Full + shareable</span></td>
                     <td className="py-3 px-3 text-center"><span className="text-xs text-amber-300 font-semibold">Full + shareable</span></td>
                   </tr>
                   <tr className="border-t border-violet-900/15">
                     <td className="py-3 px-5 text-sm text-slate-400">Deep AI Memory</td>
-                    <td className="py-3 px-3 text-center"><span className="text-slate-700 text-lg leading-none block text-center">—</span></td>
-                    <td className="py-3 px-3 text-center"><span className="text-slate-700 text-lg leading-none block text-center">—</span></td>
+                    <td className="py-3 px-3 text-center"><span className="text-slate-400 text-lg leading-none block text-center">—</span></td>
+                    <td className="py-3 px-3 text-center"><span className="text-slate-400 text-lg leading-none block text-center">—</span></td>
                     <td className="py-3 px-3 text-center"><Check className="w-4 h-4 text-emerald-400 mx-auto" /></td>
                   </tr>
                   <tr className="border-t border-violet-900/15">
                     <td className="py-3 px-5 text-sm text-slate-400">Weekly AI email report</td>
-                    <td className="py-3 px-3 text-center"><span className="text-slate-700 text-lg leading-none block text-center">—</span></td>
-                    <td className="py-3 px-3 text-center"><span className="text-slate-700 text-lg leading-none block text-center">—</span></td>
+                    <td className="py-3 px-3 text-center"><span className="text-slate-400 text-lg leading-none block text-center">—</span></td>
+                    <td className="py-3 px-3 text-center"><span className="text-slate-400 text-lg leading-none block text-center">—</span></td>
                     <td className="py-3 px-3 text-center"><Check className="w-4 h-4 text-emerald-400 mx-auto" /></td>
                   </tr>
                   <tr className="border-t border-violet-900/15">
                     <td className="py-3 px-5 text-sm text-slate-400">Voice check-ins</td>
-                    <td className="py-3 px-3 text-center"><span className="text-slate-700 text-lg leading-none block text-center">—</span></td>
-                    <td className="py-3 px-3 text-center"><span className="text-slate-700 text-lg leading-none block text-center">—</span></td>
+                    <td className="py-3 px-3 text-center"><span className="text-slate-400 text-lg leading-none block text-center">—</span></td>
+                    <td className="py-3 px-3 text-center"><span className="text-slate-400 text-lg leading-none block text-center">—</span></td>
                     <td className="py-3 px-3 text-center"><Check className="w-4 h-4 text-emerald-400 mx-auto" /></td>
                   </tr>
                   <tr className="border-t border-violet-900/15">
                     <td className="py-3 px-5 text-sm text-slate-400">Monthly Wrapped report</td>
-                    <td className="py-3 px-3 text-center"><span className="text-slate-700 text-lg leading-none block text-center">—</span></td>
-                    <td className="py-3 px-3 text-center"><span className="text-slate-700 text-lg leading-none block text-center">—</span></td>
+                    <td className="py-3 px-3 text-center"><span className="text-slate-400 text-lg leading-none block text-center">—</span></td>
+                    <td className="py-3 px-3 text-center"><span className="text-slate-400 text-lg leading-none block text-center">—</span></td>
                     <td className="py-3 px-3 text-center"><Check className="w-4 h-4 text-emerald-400 mx-auto" /></td>
                   </tr>
                   <tr className="border-t border-violet-900/15">
-                    <td className="py-2.5 px-5 text-xs font-bold text-slate-600 uppercase tracking-wider" colSpan={4}>Social &amp; Teams</td>
+                    <td className="py-2.5 px-5 text-xs font-bold text-slate-400 uppercase tracking-wider" colSpan={4}>Social &amp; Teams</td>
                   </tr>
                   <tr className="border-t border-violet-900/15">
                     <td className="py-3 px-5 text-sm text-slate-400">Habit Battles</td>
-                    <td className="py-3 px-3 text-center"><span className="text-slate-700 text-lg leading-none block text-center">—</span></td>
+                    <td className="py-3 px-3 text-center"><span className="text-slate-400 text-lg leading-none block text-center">—</span></td>
                     <td className="py-3 px-3 text-center"><Check className="w-4 h-4 text-emerald-400 mx-auto" /></td>
                     <td className="py-3 px-3 text-center"><Check className="w-4 h-4 text-emerald-400 mx-auto" /></td>
                   </tr>
                   <tr className="border-t border-violet-900/15">
                     <td className="py-3 px-5 text-sm text-slate-400">Group habits</td>
-                    <td className="py-3 px-3 text-center"><span className="text-slate-700 text-lg leading-none block text-center">—</span></td>
+                    <td className="py-3 px-3 text-center"><span className="text-slate-400 text-lg leading-none block text-center">—</span></td>
                     <td className="py-3 px-3 text-center"><Check className="w-4 h-4 text-emerald-400 mx-auto" /></td>
                     <td className="py-3 px-3 text-center"><Check className="w-4 h-4 text-emerald-400 mx-auto" /></td>
                   </tr>
                   <tr className="border-t border-violet-900/15">
                     <td className="py-3 px-5 text-sm text-slate-400">Public Commitment Contracts</td>
-                    <td className="py-3 px-3 text-center"><span className="text-slate-700 text-lg leading-none block text-center">—</span></td>
+                    <td className="py-3 px-3 text-center"><span className="text-slate-400 text-lg leading-none block text-center">—</span></td>
                     <td className="py-3 px-3 text-center"><Check className="w-4 h-4 text-emerald-400 mx-auto" /></td>
                     <td className="py-3 px-3 text-center"><Check className="w-4 h-4 text-emerald-400 mx-auto" /></td>
                   </tr>
                   <tr className="border-t border-violet-900/15">
                     <td className="py-3 px-5 text-sm text-slate-400">Organisation / School mode</td>
-                    <td className="py-3 px-3 text-center"><span className="text-slate-700 text-lg leading-none block text-center">—</span></td>
-                    <td className="py-3 px-3 text-center"><span className="text-slate-700 text-lg leading-none block text-center">—</span></td>
+                    <td className="py-3 px-3 text-center"><span className="text-slate-400 text-lg leading-none block text-center">—</span></td>
+                    <td className="py-3 px-3 text-center"><span className="text-slate-400 text-lg leading-none block text-center">—</span></td>
                     <td className="py-3 px-3 text-center"><Check className="w-4 h-4 text-emerald-400 mx-auto" /></td>
                   </tr>
                   <tr className="border-t border-violet-900/15">
-                    <td className="py-2.5 px-5 text-xs font-bold text-slate-600 uppercase tracking-wider" colSpan={4}>Support</td>
+                    <td className="py-2.5 px-5 text-xs font-bold text-slate-400 uppercase tracking-wider" colSpan={4}>Support</td>
                   </tr>
                   <tr className="border-t border-violet-900/15">
                     <td className="py-3 px-5 text-sm text-slate-400">Support level</td>
-                    <td className="py-3 px-3 text-center"><span className="text-xs text-slate-500">Community</span></td>
+                    <td className="py-3 px-3 text-center"><span className="text-xs text-slate-400">Community</span></td>
                     <td className="py-3 px-3 text-center"><span className="text-xs text-violet-300 font-semibold">Priority email</span></td>
                     <td className="py-3 px-3 text-center"><span className="text-xs text-amber-300 font-semibold">Priority + early access</span></td>
                   </tr>
@@ -703,7 +703,7 @@ export default function BillingPage() {
               <CreditCard className="w-4 h-4 text-violet-400" />
               <p className="text-sm font-semibold text-white">Manage subscription</p>
             </div>
-            <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+            <p className="text-xs text-slate-400 mb-4 leading-relaxed">
               Update your payment method, view invoices, or cancel through Stripe.
             </p>
             <button
@@ -719,7 +719,7 @@ export default function BillingPage() {
 
         {/* ── FAQ ─────────────────────────────────────────────────────────── */}
         <div className="mt-12 space-y-3">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-5">Common questions</p>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-5">Common questions</p>
           {[
             { q: "Can I switch between plans?", a: "Yes. Upgrade instantly anytime. Downgrades take effect at the end of your current billing period — no surprise charges." },
             { q: "What happens when I cancel?", a: "Your plan stays active until the end of the period. After that you drop to Free — all your habits and history are preserved." },
@@ -728,7 +728,7 @@ export default function BillingPage() {
           ].map(({ q, a }) => (
             <div key={q} className="bg-[#0f0f1a] border border-violet-900/15 rounded-2xl px-5 py-4">
               <p className="text-sm font-semibold text-white mb-1.5">{q}</p>
-              <p className="text-xs text-slate-500 leading-relaxed">{a}</p>
+              <p className="text-xs text-slate-400 leading-relaxed">{a}</p>
             </div>
           ))}
         </div>

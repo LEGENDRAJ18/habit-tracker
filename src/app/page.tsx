@@ -62,18 +62,18 @@ function AppMockup() {
           <div className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
           <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/70" />
-          <span className="flex-1 text-center text-[11px] text-slate-600 font-medium">habitAI — Dashboard</span>
+          <span className="flex-1 text-center text-[11px] text-slate-400 font-medium">habitAI — Dashboard</span>
         </div>
         <div className="p-4 sm:p-5">
           {/* Header row */}
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-[11px] text-slate-500 mb-0.5">Good morning 👋</p>
+              <p className="text-[11px] text-slate-400 mb-0.5">Good morning 👋</p>
               <p className="text-sm font-bold text-white">Today&apos;s Habits</p>
             </div>
             <div className="text-right">
-              <p className="text-xl font-black text-violet-400 leading-none">3<span className="text-slate-600 text-sm font-normal">/4</span></p>
-              <p className="text-[10px] text-slate-600 mt-0.5">completed</p>
+              <p className="text-xl font-black text-violet-400 leading-none">3<span className="text-slate-400 text-sm font-normal">/4</span></p>
+              <p className="text-[10px] text-slate-400 mt-0.5">completed</p>
             </div>
           </div>
           {/* Progress bar */}
@@ -82,7 +82,7 @@ function AppMockup() {
           </div>
           {/* XP row */}
           <div className="flex items-center justify-between mb-3 px-0.5">
-            <span className="text-[10px] text-slate-600">Level 7 · Committed</span>
+            <span className="text-[10px] text-slate-400">Level 7 · Committed</span>
             <span className="text-[10px] text-violet-400 font-semibold">+30 XP today ⚡</span>
           </div>
           {/* Habit list */}
@@ -98,7 +98,7 @@ function AppMockup() {
                 }`}>
                   {h.done && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
                 </div>
-                <span className={`text-xs flex-1 text-left font-medium ${h.done ? "text-slate-500 line-through" : "text-slate-200"}`}>
+                <span className={`text-xs flex-1 text-left font-medium ${h.done ? "text-slate-400 line-through" : "text-slate-200"}`}>
                   {h.name}
                 </span>
                 <span className="text-[11px] text-orange-400 font-semibold">🔥{h.streak}</span>
@@ -189,7 +189,7 @@ function Hero() {
             </div>
 
             {/* Trust line */}
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2 text-sm text-slate-600">
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2 text-sm text-slate-400">
               {["Free forever", "7-day Plus trial", "Takes 60 seconds"].map((t) => (
                 <span key={t} className="flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5 text-violet-600 flex-shrink-0" />{t}
@@ -227,8 +227,8 @@ function VerificationMockup() {
       <div className="flex items-center justify-center gap-4 py-2">
         <button className="w-9 h-9 rounded-full bg-violet-950/60 border border-violet-700/40 text-violet-300 text-lg font-bold flex items-center justify-center">−</button>
         <div className="text-center">
-          <p className="text-3xl font-black text-white leading-none">6<span className="text-slate-600 text-lg font-normal"> / 8</span></p>
-          <p className="text-[10px] text-slate-600 mt-1 uppercase tracking-wide">glasses</p>
+          <p className="text-3xl font-black text-white leading-none">6<span className="text-slate-400 text-lg font-normal"> / 8</span></p>
+          <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wide">glasses</p>
         </div>
         <button className="w-9 h-9 rounded-full bg-violet-600 text-white text-lg font-bold flex items-center justify-center">+</button>
       </div>
@@ -372,7 +372,7 @@ function ProblemSection() {
               <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-800/40 to-transparent" />
               <div className="text-lg mb-3">❌</div>
               <h3 className="text-sm font-bold text-white mb-2">{title}</h3>
-              <p className="text-sm text-slate-500 leading-relaxed">{desc}</p>
+              <p className="text-sm text-slate-400 leading-relaxed">{desc}</p>
             </div>
           ))}
         </div>
@@ -469,7 +469,7 @@ function SolutionSection() {
               <p className="text-sm text-slate-400 leading-relaxed mb-5 flex-1">{desc}</p>
               <ul className="space-y-2">
                 {bullets.map((b) => (
-                  <li key={b} className="flex items-center gap-2 text-sm text-slate-500">
+                  <li key={b} className="flex items-center gap-2 text-sm text-slate-400">
                     <Check className="w-3.5 h-3.5 text-violet-500 flex-shrink-0" />
                     {b}
                   </li>
@@ -500,7 +500,7 @@ function GoalProgramMockup() {
       <div>
         <div className="flex items-center justify-between mb-1.5">
           <p className="text-[11px] text-slate-400 font-semibold">Phase 1: Break the pattern</p>
-          <p className="text-[10px] text-slate-600">3 / 4 weeks</p>
+          <p className="text-[10px] text-slate-400">3 / 4 weeks</p>
         </div>
         <div className="w-full h-1.5 bg-amber-950/60 rounded-full overflow-hidden">
           <div className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full" style={{ width: "75%" }} />
@@ -620,7 +620,7 @@ function DNAMockup() {
         {[["142", "Completions", "text-violet-400"], ["21d", "Streak", "text-orange-400"], ["2.4k", "XP", "text-amber-400"]].map(([v, l, c]) => (
           <div key={l} className="rounded-xl p-2 text-center" style={{ background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.05)" }}>
             <p className={`text-sm font-black ${c}`}>{v}</p>
-            <p className="text-[8px] text-slate-600 uppercase tracking-wide mt-0.5">{l}</p>
+            <p className="text-[8px] text-slate-400 uppercase tracking-wide mt-0.5">{l}</p>
           </div>
         ))}
       </div>
@@ -654,7 +654,7 @@ function BattlesMockup() {
         </div>
         <div className="flex-1 px-3">
           <div className="flex items-center justify-center gap-1 mb-2">
-            <span className="text-[10px] text-slate-500">5 days left</span>
+            <span className="text-[10px] text-slate-400">5 days left</span>
           </div>
           <div className="h-2.5 rounded-full overflow-hidden flex" style={{ background: "rgba(109,40,217,0.1)" }}>
             <div className="h-full rounded-l-full" style={{ width: "60%", background: "linear-gradient(90deg, #7c3aed, #a855f7)" }} />
@@ -673,7 +673,7 @@ function BattlesMockup() {
           <p className="text-[10px] text-red-400">6 done</p>
         </div>
       </div>
-      <p className="text-[10px] text-slate-500 text-center">Habit: Morning Run · 7-day challenge</p>
+      <p className="text-[10px] text-slate-400 text-center">Habit: Morning Run · 7-day challenge</p>
     </div>
   );
 }
@@ -698,7 +698,7 @@ function WrappedMockup() {
           142
         </p>
         <p className="text-sm text-slate-300 font-semibold">habit check-ins</p>
-        <p className="text-xs text-slate-500 mt-1">in April 🎉</p>
+        <p className="text-xs text-slate-400 mt-1">in April 🎉</p>
       </div>
     </div>
   );
@@ -976,7 +976,7 @@ function AboutSection() {
           <p className="text-base text-slate-300 leading-relaxed mb-4">
             HabitAI was built by a teenager from New Zealand who got tired of doom scrolling and couldn&apos;t find an app that actually helped. So he built one.
           </p>
-          <p className="text-sm text-slate-500 leading-relaxed mb-6">
+          <p className="text-sm text-slate-400 leading-relaxed mb-6">
             No VC funding. No corporate agenda. Just a genuine tool built to solve a real problem — for people who actually want to change, not just track.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
@@ -1023,7 +1023,7 @@ function FinalCta() {
               <ArrowRight className="w-5 h-5" />
             </Link>
 
-            <p className="text-sm text-slate-600">No credit card required</p>
+            <p className="text-sm text-slate-400">No credit card required</p>
 
             {/* Feature pills */}
             <div className="flex flex-wrap justify-center gap-3 mt-8">
@@ -1052,7 +1052,7 @@ function FinalCta() {
 
 function FooterHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h4 className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest mb-4">
+    <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-4">
       {children}
     </h4>
   );
@@ -1065,7 +1065,7 @@ function FooterLink({ href, children, external }: { href: string; children: Reac
         href={href}
         target={external ? "_blank" : undefined}
         rel={external ? "noopener noreferrer" : undefined}
-        className="text-sm text-slate-500 hover:text-violet-400 transition-colors duration-150"
+        className="text-sm text-slate-400 hover:text-violet-400 transition-colors duration-150"
       >
         {children}
       </Link>
@@ -1097,7 +1097,7 @@ function Footer() {
               habit<span className="text-violet-400">AI</span>
             </span>
           </Link>
-          <p className="text-sm text-slate-600 max-w-sm leading-relaxed">
+          <p className="text-sm text-slate-400 max-w-sm leading-relaxed">
             AI-powered habit coaching for people serious about change. Build better habits — one day at a time.
           </p>
         </div>
@@ -1130,8 +1130,8 @@ function Footer() {
           <div>
             <FooterHeading>Company</FooterHeading>
             <div className="mb-4">
-              <p className="text-sm text-slate-500 font-medium mb-1.5">About HabitAI</p>
-              <p className="text-xs text-slate-600 leading-relaxed">
+              <p className="text-sm text-slate-400 font-medium mb-1.5">About HabitAI</p>
+              <p className="text-xs text-slate-400 leading-relaxed">
                 HabitAI was created by a 16-year-old developer from Wellington, New Zealand. Operated by a small independent team. 🇳🇿
               </p>
             </div>
@@ -1139,7 +1139,7 @@ function Footer() {
               <li>
                 <a
                   href="mailto:support@habitai.app"
-                  className="text-sm text-slate-500 hover:text-violet-400 transition-colors duration-150"
+                  className="text-sm text-slate-400 hover:text-violet-400 transition-colors duration-150"
                 >
                   support@habitai.app
                 </a>
@@ -1149,7 +1149,7 @@ function Footer() {
                   href="https://discord.gg/MqKSw3Unsq"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-violet-400 transition-colors duration-150"
+                  className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-violet-400 transition-colors duration-150"
                 >
                   <DiscordIcon />
                   Discord community
@@ -1161,7 +1161,7 @@ function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="border-t border-violet-900/20 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+        <div className="border-t border-violet-900/20 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
           <p>© {year} HabitAI · Made by Mannraj Jubbal</p>
           <p className="order-last sm:order-none">
             Made with ❤️ in Wellington, NZ 🇳🇿

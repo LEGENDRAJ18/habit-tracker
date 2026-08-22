@@ -114,12 +114,12 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
         {/* Header */}
         <div className="flex items-start justify-between px-5 pt-5 pb-1 flex-shrink-0">
           <div>
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">XP & Level</p>
+            <p className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">XP & Level</p>
             <h2 className="text-xl font-black text-white mt-0.5">{levelEmoji(level)} Lv {level} · {levelName(level)}</h2>
           </div>
           <button
             onClick={dismiss}
-            className="mt-1 w-7 h-7 rounded-full bg-slate-800/80 flex items-center justify-center text-slate-500 hover:text-white transition-colors flex-shrink-0"
+            className="mt-1 w-7 h-7 rounded-full bg-slate-800/80 flex items-center justify-center text-slate-400 hover:text-white transition-colors flex-shrink-0"
             aria-label="Close"
           >
             <X className="w-3.5 h-3.5" />
@@ -156,18 +156,18 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                 <span className="text-2xl font-black text-white leading-none">{pct}%</span>
-                <span className="text-[10px] text-slate-500 mt-0.5">to Lv {nextLv}</span>
+                <span className="text-[10px] text-slate-400 mt-0.5">to Lv {nextLv}</span>
               </div>
             </div>
 
             <div className="flex-1 space-y-3 min-w-0">
               <div>
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">XP Progress</p>
+                <p className="text-[10px] text-slate-400 uppercase tracking-wider font-medium">XP Progress</p>
                 <p className="text-base font-bold text-white mt-0.5 tabular-nums">{xpInto.toLocaleString()} / {xpSpan.toLocaleString()} XP</p>
                 <p className="text-xs text-violet-400">{xpToNext.toLocaleString()} XP to Lv {nextLv}</p>
               </div>
               <div>
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">All-Time XP</p>
+                <p className="text-[10px] text-slate-400 uppercase tracking-wider font-medium">All-Time XP</p>
                 <p className="text-xl font-black text-amber-400 leading-none mt-0.5 tabular-nums">{xp.toLocaleString()}</p>
               </div>
               {daysToUp !== null && daysToUp < 365 && (
@@ -201,10 +201,10 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
               <Flame className="w-4 h-4 text-orange-400" />
             </div>
             <div className="flex-1 text-left">
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">Current Streak</p>
+              <p className="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Current Streak</p>
               <p className="text-sm font-bold text-orange-400 mt-0.5">{bestStreak} day{bestStreak !== 1 ? "s" : ""}</p>
             </div>
-            <div className="flex items-center gap-1 text-[11px] text-slate-600 group-hover:text-violet-400 transition-colors flex-shrink-0">
+            <div className="flex items-center gap-1 text-[11px] text-slate-400 group-hover:text-violet-400 transition-colors flex-shrink-0">
               <Calendar className="w-3.5 h-3.5" />
               <span>View calendar</span>
               <ChevronRight className="w-3 h-3" />
@@ -220,7 +220,7 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
             <div className="space-y-2">
               {weekDays.map((d, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <span className={`text-[11px] font-medium w-7 flex-shrink-0 ${d.isFuture ? "text-slate-700" : "text-slate-500"}`}>{d.label}</span>
+                  <span className={`text-[11px] font-medium w-7 flex-shrink-0 ${d.isFuture ? "text-slate-400" : "text-slate-400"}`}>{d.label}</span>
                   <div className="flex-1 h-1.5 bg-violet-950/40 rounded-full overflow-hidden">
                     {!d.isFuture && d.xp > 0 && (
                       <div
@@ -229,7 +229,7 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
                       />
                     )}
                   </div>
-                  <span className={`text-[11px] font-semibold w-14 text-right flex-shrink-0 tabular-nums ${d.isFuture ? "text-slate-700" : d.xp > 0 ? "text-violet-400" : "text-slate-700"}`}>
+                  <span className={`text-[11px] font-semibold w-14 text-right flex-shrink-0 tabular-nums ${d.isFuture ? "text-slate-400" : d.xp > 0 ? "text-violet-400" : "text-slate-400"}`}>
                     {d.isFuture ? "—" : d.xp > 0 ? `+${d.xp}` : "—"}
                   </span>
                 </div>
@@ -240,7 +240,7 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
           {/* Recent achievements */}
           {recentAch.length > 0 && (
             <div>
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium mb-3">Achievements</p>
+              <p className="text-[10px] text-slate-400 uppercase tracking-wider font-medium mb-3">Achievements</p>
               <div className="space-y-2">
                 {recentAch.map((id) => {
                   const m = ACHIEVEMENT_META[id];
@@ -250,7 +250,7 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
                       <span className="text-xl leading-none">{m.emoji}</span>
                       <div>
                         <p className="text-xs font-bold text-white">{m.title}</p>
-                        <p className="text-[11px] text-slate-500 mt-0.5">{m.desc}</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">{m.desc}</p>
                       </div>
                     </div>
                   );
@@ -262,7 +262,7 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
           {/* Total completions */}
           <div className="flex items-center justify-between bg-slate-900/20 rounded-xl px-4 py-3 border border-slate-800/30">
             <div>
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">Total Completions</p>
+              <p className="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Total Completions</p>
               <p className="text-sm font-bold text-white mt-0.5 tabular-nums">{totalCompletions.toLocaleString()} habits completed</p>
             </div>
             <span className="text-2xl leading-none">🎯</span>
@@ -270,7 +270,7 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
 
           {/* How XP & Levels Work */}
           <div className="border-t border-slate-800/40 pt-4 space-y-4">
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">How XP &amp; Levels Work</p>
+            <p className="text-[10px] text-slate-400 uppercase tracking-wider font-medium">How XP &amp; Levels Work</p>
 
             {/* Concept */}
             <div className="bg-violet-950/30 border border-violet-800/20 rounded-xl p-3">
@@ -282,7 +282,7 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
 
             {/* XP earn rates */}
             <div>
-              <p className="text-[10px] text-slate-600 uppercase tracking-wider font-medium mb-2">Ways to earn XP</p>
+              <p className="text-[10px] text-slate-400 uppercase tracking-wider font-medium mb-2">Ways to earn XP</p>
               {[
                 { icon: "✅", label: "Habit done (valid)",         xp: "+10 XP" },
                 { icon: "⚠️", label: "Habit done (partial)",       xp: "+5 XP"  },
@@ -304,7 +304,7 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
 
             {/* Level ladder */}
             <div>
-              <p className="text-[10px] text-slate-600 uppercase tracking-wider font-medium mb-2">Level ladder</p>
+              <p className="text-[10px] text-slate-400 uppercase tracking-wider font-medium mb-2">Level ladder</p>
               <div className="rounded-xl overflow-hidden border border-violet-900/20">
                 {([
                   { lvl: 1,  xpNeeded: 0,      name: "Beginner",  emoji: "🌱" },
@@ -330,11 +330,11 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
                       }`}
                     >
                       <span className="w-5 flex-shrink-0 leading-none">{row.emoji}</span>
-                      <span className={`font-bold w-12 flex-shrink-0 ${isCurrent ? "text-violet-300" : "text-slate-500"}`}>
+                      <span className={`font-bold w-12 flex-shrink-0 ${isCurrent ? "text-violet-300" : "text-slate-400"}`}>
                         Lv {row.lvl}
                       </span>
-                      <span className={`flex-1 ${isCurrent ? "text-white" : "text-slate-600"}`}>{row.name}</span>
-                      <span className={`font-semibold text-right flex-shrink-0 tabular-nums ${isCurrent ? "text-violet-300" : "text-slate-600"}`}>
+                      <span className={`flex-1 ${isCurrent ? "text-white" : "text-slate-400"}`}>{row.name}</span>
+                      <span className={`font-semibold text-right flex-shrink-0 tabular-nums ${isCurrent ? "text-violet-300" : "text-slate-400"}`}>
                         {row.xpNeeded.toLocaleString()} XP
                       </span>
                       {isCurrent && (
@@ -344,7 +344,7 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
                   );
                 })}
               </div>
-              <p className="text-[10px] text-slate-600 text-center mt-1.5">Level 11+ costs 3,000 XP per level · 500 levels total</p>
+              <p className="text-[10px] text-slate-400 text-center mt-1.5">Level 11+ costs 3,000 XP per level · 500 levels total</p>
             </div>
           </div>
         </div>

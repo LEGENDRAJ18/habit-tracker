@@ -47,12 +47,12 @@ export default function StreakBrokenModal({ onUpgrade, onDismiss, brokenHabitNam
           <div className="text-center mb-5">
             <div className="text-5xl mb-3 leading-none">💔</div>
             <h2 className="text-xl font-bold text-white mb-1">Streak lost.</h2>
-            <p className="text-xs text-slate-500 leading-relaxed mb-1">
+            <p className="text-xs text-slate-400 leading-relaxed mb-1">
               That stings. But one missed day doesn&apos;t define you.
             </p>
             {brokenHabitName && (
-              <p className="text-xs text-slate-600">
-                <span className="text-slate-500 font-medium">{brokenHabitName}</span>
+              <p className="text-xs text-slate-400">
+                <span className="text-slate-400 font-medium">{brokenHabitName}</span>
               </p>
             )}
           </div>
@@ -72,7 +72,7 @@ export default function StreakBrokenModal({ onUpgrade, onDismiss, brokenHabitNam
                   <Loader2 className="w-4 h-4 text-violet-500 animate-spin flex-shrink-0" />
                   <div>
                     <p className="text-xs font-semibold text-violet-300">AI analyzing your pattern…</p>
-                    <p className="text-[10px] text-slate-500 mt-0.5">Building your recovery plan</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Building your recovery plan</p>
                   </div>
                 </div>
               ) : aiAnalysis ? (
@@ -126,7 +126,7 @@ export default function StreakBrokenModal({ onUpgrade, onDismiss, brokenHabitNam
 
           <button
             onClick={onDismiss}
-            className="w-full py-2 text-slate-500 hover:text-slate-300 text-sm transition-colors"
+            className="w-full py-2 text-slate-400 hover:text-slate-300 text-sm transition-colors"
           >
             {isPaid ? "Start fresh today →" : "Maybe later"}
           </button>

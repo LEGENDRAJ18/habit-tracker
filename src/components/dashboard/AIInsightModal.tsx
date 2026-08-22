@@ -79,7 +79,7 @@ export default function AIInsightModal({ onClose, onUpgrade, tier }: Props) {
                 <p className="text-[11px] text-violet-400/70">Powered by GPT-4o mini</p>
               </div>
             </div>
-            <button onClick={onClose} className="text-slate-500 hover:text-white p-1.5 rounded-lg hover:bg-violet-950/50 transition-colors" aria-label="Close">
+            <button onClick={onClose} className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-violet-950/50 transition-colors" aria-label="Close">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -96,7 +96,7 @@ export default function AIInsightModal({ onClose, onUpgrade, tier }: Props) {
               </div>
               <div className="text-center">
                 <p className="text-sm font-medium text-white">Analyzing your habits…</p>
-                <p className="text-xs text-slate-500 mt-1">GPT-4o mini is reviewing your patterns</p>
+                <p className="text-xs text-slate-400 mt-1">GPT-4o mini is reviewing your patterns</p>
               </div>
             </div>
           )}
@@ -107,7 +107,7 @@ export default function AIInsightModal({ onClose, onUpgrade, tier }: Props) {
               <AlertCircle className="w-8 h-8 text-amber-400" />
               <div className="text-center">
                 <p className="text-sm font-medium text-slate-300 mb-1">AI is taking a break</p>
-                <p className="text-xs text-slate-500">Try again in a moment — it&apos;ll be back shortly.</p>
+                <p className="text-xs text-slate-400">Try again in a moment — it&apos;ll be back shortly.</p>
               </div>
               <button
                 onClick={() => { setError(null); setFetched(false); }}
@@ -184,7 +184,7 @@ export default function AIInsightModal({ onClose, onUpgrade, tier }: Props) {
                         <ExternalLink className="w-3 h-3 text-amber-500 flex-shrink-0 mt-0.5 group-hover:text-amber-400" />
                         <div className="min-w-0">
                           <p className="text-xs font-semibold text-amber-300 group-hover:text-amber-200">{r.name}</p>
-                          <p className="text-[10px] text-slate-500 mt-0.5">{r.desc}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">{r.desc}</p>
                         </div>
                       </a>
                     ))}
@@ -193,7 +193,7 @@ export default function AIInsightModal({ onClose, onUpgrade, tier }: Props) {
               )}
 
               {/* Insight count */}
-              <p className="text-center text-[10px] text-slate-600">
+              <p className="text-center text-[10px] text-slate-400">
                 {isPro ? (
                   <span className="flex items-center justify-center gap-1">
                     <Crown className="w-3 h-3 text-amber-400" />

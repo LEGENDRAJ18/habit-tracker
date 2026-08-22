@@ -64,7 +64,7 @@ export default function CommitmentModal({
               </div>
               <h2 className="text-sm font-bold text-white">Public Commitment</h2>
             </div>
-            <button onClick={onClose} className="text-slate-500 hover:text-white p-1 rounded-lg hover:bg-violet-950/40 transition-colors" aria-label="Close">
+            <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-violet-950/40 transition-colors" aria-label="Close">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -88,10 +88,10 @@ export default function CommitmentModal({
               {/* Toggle */}
               <div className="flex items-center justify-between p-3 bg-[#0f0f1a] border border-violet-900/20 rounded-xl">
                 <div className="flex items-center gap-2.5">
-                  {isPublic ? <Globe className="w-4 h-4 text-violet-400" /> : <Lock className="w-4 h-4 text-slate-500" />}
+                  {isPublic ? <Globe className="w-4 h-4 text-violet-400" /> : <Lock className="w-4 h-4 text-slate-400" />}
                   <div>
                     <p className="text-sm font-semibold text-white">{isPublic ? "Public" : "Private"}</p>
-                    <p className="text-[11px] text-slate-500">{isPublic ? "Friends can see this habit" : "Only you can see this"}</p>
+                    <p className="text-[11px] text-slate-400">{isPublic ? "Friends can see this habit" : "Only you can see this"}</p>
                   </div>
                 </div>
                 <button
@@ -104,7 +104,7 @@ export default function CommitmentModal({
 
               {isPublic && (
                 <div>
-                  <label className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold block mb-1.5">Commitment message <span className="normal-case text-slate-600">(optional)</span></label>
+                  <label className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block mb-1.5">Commitment message <span className="normal-case text-slate-400">(optional)</span></label>
                   <textarea
                     value={text}
                     onChange={(e) => setText(e.target.value)}
@@ -114,7 +114,7 @@ export default function CommitmentModal({
                     spellCheck="true" autoCorrect="on"
                     className="w-full bg-[#0f0f1a] border border-violet-800/40 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-violet-500/70 resize-none"
                   />
-                  <p className="text-[10px] text-slate-600 text-right mt-1">{text.length}/200</p>
+                  <p className="text-[10px] text-slate-400 text-right mt-1">{text.length}/200</p>
                 </div>
               )}
 
@@ -125,7 +125,7 @@ export default function CommitmentModal({
                     <p className="text-xs text-slate-400 leading-relaxed">Your friends will be able to see this habit on your profile.</p>
                   </div>
                   <div className="flex items-center gap-2 bg-[#0f0f1a] border border-violet-900/30 rounded-lg px-2.5 py-1.5">
-                    <span className="text-[10px] text-slate-500 truncate flex-1 font-mono">
+                    <span className="text-[10px] text-slate-400 truncate flex-1 font-mono">
                       {typeof window !== "undefined" ? window.location.origin : "https://habitaiapp.com"}/share/{habitId}
                     </span>
                     <button

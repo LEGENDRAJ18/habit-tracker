@@ -71,7 +71,7 @@ function CheckinChipField({
           <button
             type="button"
             onClick={() => { onToggleCustom(true); onChange(""); }}
-            className="px-3 py-2 rounded-full text-xs font-medium border border-dashed border-violet-800/40 text-slate-500 hover:text-slate-300 hover:border-violet-700/50 transition-all"
+            className="px-3 py-2 rounded-full text-xs font-medium border border-dashed border-violet-800/40 text-slate-400 hover:text-slate-300 hover:border-violet-700/50 transition-all"
           >
             Other…
           </button>
@@ -212,10 +212,10 @@ export default function GoalProgramDashboard({
         <div className="flex items-start justify-between gap-3">
           <div>
             <h1 className="text-lg font-bold text-white">{program.program_name}</h1>
-            <p className="text-xs text-slate-500 mt-1">Phase {program.current_phase} of {program.phases.length} · Week {program.current_week}{phase ? ` of ${phase.weeks}` : ""}</p>
+            <p className="text-xs text-slate-400 mt-1">Phase {program.current_phase} of {program.phases.length} · Week {program.current_week}{phase ? ` of ${phase.weeks}` : ""}</p>
           </div>
           {program.status === "active" ? (
-            <button disabled={statusBusy} onClick={() => updateStatus("paused")} className="flex-shrink-0 flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-300 transition-colors">
+            <button disabled={statusBusy} onClick={() => updateStatus("paused")} className="flex-shrink-0 flex items-center gap-1 text-[11px] text-slate-400 hover:text-slate-300 transition-colors">
               <Pause className="w-3 h-3" /> Pause
             </button>
           ) : program.status === "paused" ? (
@@ -227,7 +227,7 @@ export default function GoalProgramDashboard({
         <div className="mt-3 w-full h-2 bg-violet-950/60 rounded-full overflow-hidden">
           <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all duration-700" style={{ width: `${progressPct}%` }} />
         </div>
-        <p className="text-[10px] text-slate-500 mt-1">{progressPct}% through the program</p>
+        <p className="text-[10px] text-slate-400 mt-1">{progressPct}% through the program</p>
       </div>
 
       {program.status === "paused" && (
@@ -245,7 +245,7 @@ export default function GoalProgramDashboard({
             <p className="text-xs text-slate-400 mt-1">Your program habits have been under 60% for the last 3 days. Consider pausing until you have more bandwidth, or check in below for a nudge.</p>
             <div className="flex gap-2 mt-2">
               <button onClick={() => updateStatus("paused")} className="text-xs font-semibold text-amber-300 hover:text-amber-200">Pause program</button>
-              <span className="text-slate-700">·</span>
+              <span className="text-slate-400">·</span>
               <button onClick={() => setShowCheckin(true)} className="text-xs font-semibold text-amber-300 hover:text-amber-200">Check in</button>
             </div>
           </div>
@@ -321,7 +321,7 @@ export default function GoalProgramDashboard({
         <button
           disabled={statusBusy}
           onClick={() => updateStatus("abandoned")}
-          className="w-full flex items-center justify-center gap-1.5 py-2 text-xs text-slate-600 hover:text-red-400 transition-colors"
+          className="w-full flex items-center justify-center gap-1.5 py-2 text-xs text-slate-400 hover:text-red-400 transition-colors"
         >
           <Ban className="w-3 h-3" /> Abandon program
         </button>
@@ -331,11 +331,11 @@ export default function GoalProgramDashboard({
         <CenteredModal onClose={() => setShowCheckin(false)}>
           <div className="w-full max-w-sm bg-[#0f0f1a] border border-violet-900/30 rounded-3xl p-5 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-base font-bold text-white mb-3">Week {program.current_week} check-in</h3>
-            <p className="text-xs text-slate-500 mb-1.5">How did this week go?</p>
+            <p className="text-xs text-slate-400 mb-1.5">How did this week go?</p>
             <div className="flex gap-1.5 mb-4">
               {[1, 2, 3, 4, 5].map((n) => (
                 <button key={n} onClick={() => setRating(n)} aria-label={`Rate ${n} star${n > 1 ? "s" : ""}`}>
-                  <Star className={`w-7 h-7 transition-colors ${n <= rating ? "text-amber-400 fill-amber-400" : "text-slate-700"}`} />
+                  <Star className={`w-7 h-7 transition-colors ${n <= rating ? "text-amber-400 fill-amber-400" : "text-slate-400"}`} />
                 </button>
               ))}
             </div>

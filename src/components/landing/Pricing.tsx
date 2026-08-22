@@ -102,7 +102,7 @@ function FeatureRow({ item, bright }: { item: FeatureItem; bright?: boolean }) {
 
 function PriceDisclaimer({ currency }: { currency: string }) {
   return (
-    <p className="text-[10px] text-slate-600 mt-1.5 leading-relaxed">
+    <p className="text-[10px] text-slate-400 mt-1.5 leading-relaxed">
       Prices shown in {currency} · Charged in USD by Stripe
     </p>
   );
@@ -130,7 +130,7 @@ export default function Pricing() {
           <p className="text-lg text-slate-400 max-w-xl mx-auto mb-4">
             No hidden fees. No surprise charges. Upgrade or cancel at any time.
           </p>
-          <div className="flex items-center justify-center gap-1.5 text-xs text-slate-600">
+          <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400">
             <span>Display currency:</span>
             <CurrencySelector />
           </div>
@@ -148,9 +148,9 @@ export default function Pricing() {
             <p className="text-sm font-semibold text-slate-300 mb-2">Everything to start</p>
             <div className="mb-1">
               <span className="text-4xl font-extrabold text-white">$0</span>
-              <span className="text-slate-500 ml-2 text-sm">/ forever</span>
+              <span className="text-slate-400 ml-2 text-sm">/ forever</span>
             </div>
-            <p className="text-xs text-slate-500 mb-6">Unlimited habits, real verification, AI insights — free forever.</p>
+            <p className="text-xs text-slate-400 mb-6">Unlimited habits, real verification, AI insights — free forever.</p>
 
             <Link
               href="/auth/signup"
@@ -183,7 +183,7 @@ export default function Pricing() {
               <span className="text-slate-400 text-sm">{loading ? "" : plus.suffix} / mo</span>
             </div>
             <PriceDisclaimer currency={currency} />
-            <p className="text-xs text-slate-500 mt-3 mb-4">Streak freeze, unlimited battles, group habits, DNA card — built to keep you accountable.</p>
+            <p className="text-xs text-slate-400 mt-3 mb-4">Streak freeze, unlimited battles, group habits, DNA card — built to keep you accountable.</p>
 
             <PaidPlanButton plan="Plus" priceId={process.env.NEXT_PUBLIC_STRIPE_PLUS_PRICE_ID!} />
 
@@ -211,7 +211,7 @@ export default function Pricing() {
               <span className="text-slate-400 text-sm">{loading ? "" : pro.suffix} / mo</span>
             </div>
             <PriceDisclaimer currency={currency} />
-            <p className="text-xs text-slate-500 mt-3 mb-4">The AI Goal Program, unlimited coaching, Deep Memory — the full system for lasting change.</p>
+            <p className="text-xs text-slate-400 mt-3 mb-4">The AI Goal Program, unlimited coaching, Deep Memory — the full system for lasting change.</p>
 
             <PaidPlanButton plan="Pro" priceId={process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID!} primary />
 
@@ -222,7 +222,7 @@ export default function Pricing() {
         </div>
 
         {/* Footer note */}
-        <p className="text-center text-sm text-slate-500 mt-10">
+        <p className="text-center text-sm text-slate-400 mt-10">
           7-day Plus trial included · No credit card needed · Pro charged immediately
         </p>
       </div>

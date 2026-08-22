@@ -69,7 +69,7 @@ function CellValue({ value, highlight, proOnly }: { value: Cell; highlight?: boo
   if (value === "no") {
     return (
       <div className="flex justify-center">
-        <Minus className="w-4 h-4 text-slate-700" />
+        <Minus className="w-4 h-4 text-slate-400" />
       </div>
     );
   }
@@ -123,7 +123,7 @@ function ConsentModal({ plan, loading, onConfirm, onCancel, plusPrice, proPrice,
         <div className="relative bg-gradient-to-br from-violet-900/50 to-purple-900/20 px-5 pt-5 pb-4 border-b border-violet-800/30">
           <button
             onClick={onCancel}
-            className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50"
+            className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -195,7 +195,7 @@ function ConsentModal({ plan, loading, onConfirm, onCancel, plusPrice, proPrice,
           </label>
 
           {/* Currency disclaimer */}
-          <p className="text-[10px] text-slate-600 leading-relaxed">
+          <p className="text-[10px] text-slate-400 leading-relaxed">
             Prices shown in {currency} · Charged in USD by Stripe
           </p>
 
@@ -211,7 +211,7 @@ function ConsentModal({ plan, loading, onConfirm, onCancel, plusPrice, proPrice,
             </button>
             <button
               onClick={onCancel}
-              className="w-full py-2 text-slate-500 hover:text-slate-300 text-sm transition-colors"
+              className="w-full py-2 text-slate-400 hover:text-slate-300 text-sm transition-colors"
             >
               Cancel
             </button>
@@ -281,7 +281,7 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
         <div className="relative bg-gradient-to-br from-violet-900/60 to-purple-900/30 px-6 pt-6 pb-5 border-b border-violet-800/30 flex-shrink-0">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50"
+            className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -313,13 +313,13 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
             {!fromPlus && (
               <div className="bg-[#0a0a14] border border-violet-900/20 rounded-xl p-4 flex flex-col">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <Zap className="w-3.5 h-3.5 text-slate-500" />
+                  <Zap className="w-3.5 h-3.5 text-slate-400" />
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Free</span>
                 </div>
-                <p className="text-[10px] text-slate-600 mb-2 font-medium">The Foundation</p>
+                <p className="text-[10px] text-slate-400 mb-2 font-medium">The Foundation</p>
                 <div className="mb-4">
                   <span className="text-2xl font-extrabold text-white">$0</span>
-                  <span className="text-slate-600 text-xs ml-1">/ mo</span>
+                  <span className="text-slate-400 text-xs ml-1">/ mo</span>
                 </div>
                 <ul className="space-y-1 mb-4">
                   {[
@@ -331,8 +331,8 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
                     { f: "Habit Battles", ok: false },
                     { f: "Group habits", ok: false },
                   ].map(({ f, ok }) => (
-                    <li key={f} className={`flex items-center gap-1.5 text-[10px] ${ok ? "text-slate-400" : "text-slate-600"}`}>
-                      {ok ? <Check className="w-3 h-3 text-slate-500 flex-shrink-0" /> : <Minus className="w-3 h-3 text-slate-700 flex-shrink-0" />}
+                    <li key={f} className={`flex items-center gap-1.5 text-[10px] ${ok ? "text-slate-400" : "text-slate-400"}`}>
+                      {ok ? <Check className="w-3 h-3 text-slate-400 flex-shrink-0" /> : <Minus className="w-3 h-3 text-slate-400 flex-shrink-0" />}
                       {f}
                     </li>
                   ))}
@@ -340,7 +340,7 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
                 <div className="mt-auto">
                   <button
                     onClick={onClose}
-                    className="w-full py-2 border border-violet-900/40 text-slate-500 text-xs font-semibold rounded-lg transition-all hover:text-slate-300 hover:border-violet-800/50"
+                    className="w-full py-2 border border-violet-900/40 text-slate-400 text-xs font-semibold rounded-lg transition-all hover:text-slate-300 hover:border-violet-800/50"
                   >
                     Current plan
                   </button>
@@ -365,8 +365,8 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
                   <span className="text-2xl font-extrabold text-white">Free</span>
                   <span className="text-violet-300 text-xs ml-1 font-semibold">7-day trial</span>
                 </div>
-                <p className="text-[10px] text-slate-500 mb-1">then {plusPrice} / mo</p>
-                <p className="text-[9px] text-slate-700 mb-3">Prices shown in {currency} · Charged in USD</p>
+                <p className="text-[10px] text-slate-400 mb-1">then {plusPrice} / mo</p>
+                <p className="text-[9px] text-slate-400 mb-3">Prices shown in {currency} · Charged in USD</p>
                 <ul className="space-y-1 mb-4">
                   {[
                     { f: "Everything in Free", ok: true },
@@ -380,8 +380,8 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
                     { f: "University Goal Mode", ok: false },
                     { f: "Monthly Wrapped", ok: false },
                   ].map(({ f, ok }) => (
-                    <li key={f} className={`flex items-center gap-1.5 text-[10px] ${ok ? "text-slate-400" : "text-slate-600"}`}>
-                      {ok ? <Check className="w-3 h-3 text-violet-500 flex-shrink-0" /> : <Minus className="w-3 h-3 text-slate-700 flex-shrink-0" />}
+                    <li key={f} className={`flex items-center gap-1.5 text-[10px] ${ok ? "text-slate-400" : "text-slate-400"}`}>
+                      {ok ? <Check className="w-3 h-3 text-violet-500 flex-shrink-0" /> : <Minus className="w-3 h-3 text-slate-400 flex-shrink-0" />}
                       {f}
                     </li>
                   ))}
@@ -425,8 +425,8 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
                 <span className="text-2xl font-extrabold text-white">{proPrice}</span>
                 <span className="text-slate-400 text-xs ml-1">/ mo</span>
               </div>
-              <p className="text-[10px] text-slate-500 mb-1">Billed immediately · 7-day money-back guarantee</p>
-              <p className="text-[9px] text-slate-700 mb-3">Prices shown in {currency} · Charged in USD</p>
+              <p className="text-[10px] text-slate-400 mb-1">Billed immediately · 7-day money-back guarantee</p>
+              <p className="text-[9px] text-slate-400 mb-3">Prices shown in {currency} · Charged in USD</p>
               <ul className="space-y-1 mb-4">
                 {[
                   { f: "Everything in Plus" },
@@ -465,8 +465,8 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
           {!fromPlus && (
             <div className="border border-violet-900/25 rounded-xl overflow-hidden">
               <div className="grid grid-cols-[1fr_72px_72px_72px] bg-[#0a0a14] border-b border-violet-900/20 px-4 py-2.5">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Feature</p>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Free</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Feature</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Free</p>
                 <p className="text-[10px] font-bold text-violet-400 uppercase tracking-wider text-center">Plus</p>
                 <p className="text-[10px] font-bold text-amber-400 uppercase tracking-wider text-center">Pro</p>
               </div>
@@ -487,13 +487,13 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
             </div>
           )}
 
-          <p className="text-center text-xs text-slate-600 mt-4">
+          <p className="text-center text-xs text-slate-400 mt-4">
             Plus: 7-day free trial · No credit card needed
           </p>
 
-          <p className="text-center text-[11px] text-slate-700 mt-3">
+          <p className="text-center text-[11px] text-slate-400 mt-3">
             By subscribing you agree to our{" "}
-            <Link href="/payment-policy" className="text-slate-600 hover:text-slate-400 underline underline-offset-2 transition-colors" target="_blank">
+            <Link href="/payment-policy" className="text-slate-400 hover:text-slate-400 underline underline-offset-2 transition-colors" target="_blank">
               Payment Policy
             </Link>
             {" "}· Plus: free for 7 days, then billed monthly · Pro: billed immediately
@@ -501,7 +501,7 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
 
           <button
             onClick={onClose}
-            className="w-full py-2.5 text-slate-500 hover:text-slate-300 text-sm transition-colors mt-2"
+            className="w-full py-2.5 text-slate-400 hover:text-slate-300 text-sm transition-colors mt-2"
           >
             Maybe later
           </button>

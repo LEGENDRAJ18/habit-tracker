@@ -134,7 +134,7 @@ export default function MonthlyWrapped({ tier, onClose }: Props) {
             <Sparkles className="w-4 h-4 text-violet-400" />
             <span className="text-sm font-bold text-white">{monthLabel} Wrapped</span>
           </div>
-          <button onClick={onClose} className="relative text-slate-600 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors" aria-label="Close">
+          <button onClick={onClose} className="relative text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors" aria-label="Close">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -196,7 +196,7 @@ export default function MonthlyWrapped({ tier, onClose }: Props) {
             <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
               <p className="text-5xl mb-4">📊</p>
               <p className="text-base font-bold text-white mb-2">No data for {monthLabel}</p>
-              <p className="text-sm text-slate-500 leading-relaxed">Keep tracking your habits — your first Wrapped appears next month.</p>
+              <p className="text-sm text-slate-400 leading-relaxed">Keep tracking your habits — your first Wrapped appears next month.</p>
               <button onClick={onClose} className="mt-5 px-6 py-2.5 border border-violet-700/40 text-violet-300 font-semibold rounded-xl text-sm hover:border-violet-600 transition-all">
                 Close
               </button>
@@ -218,7 +218,7 @@ export default function MonthlyWrapped({ tier, onClose }: Props) {
                     background: "linear-gradient(135deg, #a78bfa, #e879f9)",
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                   }}>Wrapped</p>
-                  <p className="text-sm text-slate-500 mt-4">{data.uniqueHabits} habit{data.uniqueHabits !== 1 ? "s" : ""} tracked</p>
+                  <p className="text-sm text-slate-400 mt-4">{data.uniqueHabits} habit{data.uniqueHabits !== 1 ? "s" : ""} tracked</p>
                 </div>
               </Slide>
 
@@ -234,7 +234,7 @@ export default function MonthlyWrapped({ tier, onClose }: Props) {
                     {data.totalCompletions}
                   </p>
                   <p className="text-xl text-slate-300 font-semibold">habit check-ins</p>
-                  <p className="text-sm text-slate-500 mt-2">in {monthName} 🎉</p>
+                  <p className="text-sm text-slate-400 mt-2">in {monthName} 🎉</p>
                 </div>
               </Slide>
 
@@ -287,7 +287,7 @@ export default function MonthlyWrapped({ tier, onClose }: Props) {
                     <Trophy className="w-9 h-9 text-amber-400 mx-auto mb-3" style={{ filter: "drop-shadow(0 0 10px rgba(251,191,36,0.4))" }} />
                     <p className="text-xl font-bold text-white leading-snug">{data.topHabit}</p>
                   </div>
-                  <p className="text-xs text-slate-600">Your most consistent habit of the month</p>
+                  <p className="text-xs text-slate-400">Your most consistent habit of the month</p>
                 </div>
               </Slide>
 
@@ -328,7 +328,7 @@ export default function MonthlyWrapped({ tier, onClose }: Props) {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-slate-500 text-sm">Keep building habits to discover your personality tags!</p>
+                    <p className="text-slate-400 text-sm">Keep building habits to discover your personality tags!</p>
                   )}
                 </div>
               </Slide>
@@ -368,7 +368,7 @@ export default function MonthlyWrapped({ tier, onClose }: Props) {
             <button
               onClick={goBack}
               disabled={slide === 0}
-              className="flex items-center gap-1 text-slate-500 hover:text-white disabled:opacity-0 text-sm font-medium transition-all"
+              className="flex items-center gap-1 text-slate-400 hover:text-white disabled:opacity-0 text-sm font-medium transition-all"
             >
               <ChevronLeft className="w-4 h-4" /> Back
             </button>

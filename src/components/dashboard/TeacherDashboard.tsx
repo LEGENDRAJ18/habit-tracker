@@ -53,7 +53,7 @@ function InviteCodeSection({ inviteCode, userId }: { inviteCode: string | null; 
         <span className="text-xl leading-none">🔗</span>
         <div>
           <p className="text-sm font-bold text-amber-300">Your class invite code</p>
-          <p className="text-xs text-slate-500">Students enter this to join your class</p>
+          <p className="text-xs text-slate-400">Students enter this to join your class</p>
         </div>
       </div>
 
@@ -81,7 +81,7 @@ function InviteCodeSection({ inviteCode, userId }: { inviteCode: string | null; 
           <button
             onClick={() => void generate()}
             disabled={loading}
-            className="w-full py-2 border border-amber-900/40 text-slate-600 hover:text-slate-400 text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5"
+            className="w-full py-2 border border-amber-900/40 text-slate-400 hover:text-slate-400 text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5"
           >
             <RefreshCw className={`w-3 h-3 ${loading ? "animate-spin" : ""}`} />
             Generate new code
@@ -115,7 +115,7 @@ function MemberRow({ member, rank }: { member: ClassMember; rank?: number }) {
         {medalEmoji ? (
           <span className="text-sm leading-none">{medalEmoji}</span>
         ) : (
-          <span className="text-xs text-slate-700 font-bold">{rank}</span>
+          <span className="text-xs text-slate-400 font-bold">{rank}</span>
         )}
       </div>
       <AvatarDisplay avatarId={member.avatar_id ?? "ghost"} size="sm" />
@@ -134,7 +134,7 @@ function MemberRow({ member, rank }: { member: ClassMember; rank?: number }) {
       </div>
       <div className="text-right flex-shrink-0">
         <p className={`text-sm font-bold ${p === 100 ? "text-emerald-400" : "text-slate-400"}`}>{p}%</p>
-        <p className="text-[10px] text-slate-600">{member.completedToday}/{member.totalHabits}</p>
+        <p className="text-[10px] text-slate-400">{member.completedToday}/{member.totalHabits}</p>
       </div>
       <div className="flex items-center gap-1 flex-shrink-0 text-xs text-orange-400">
         <span>🔥</span>
@@ -297,11 +297,11 @@ export default function TeacherDashboard() {
 
         {/* Header */}
         <div className="mb-8">
-          <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">{today}</p>
+          <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">{today}</p>
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white">🏫 {className_}</h1>
-              <p className="text-sm text-slate-500 mt-0.5">Your class habit dashboard</p>
+              <p className="text-sm text-slate-400 mt-0.5">Your class habit dashboard</p>
             </div>
             <ExportButton members={members} />
           </div>
@@ -322,7 +322,7 @@ export default function TeacherDashboard() {
                   <div key={label} className="bg-[#0c0c18] border border-violet-900/20 rounded-xl px-3 py-3 text-center">
                     <Icon className={`w-4 h-4 mx-auto mb-1.5 ${color}`} />
                     <p className={`text-lg font-bold leading-none ${color}`}>{value}</p>
-                    <p className="text-[10px] text-slate-600 mt-1 uppercase tracking-wider">{label}</p>
+                    <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">{label}</p>
                   </div>
                 ))}
               </div>
@@ -362,7 +362,7 @@ export default function TeacherDashboard() {
                   <Users className="w-4 h-4 text-violet-400" />
                   Members
                 </p>
-                <span className="text-xs text-slate-600">{members.length} students</span>
+                <span className="text-xs text-slate-400">{members.length} students</span>
               </div>
 
               <div className="px-5 pb-2">
@@ -376,7 +376,7 @@ export default function TeacherDashboard() {
                   <div className="py-10 text-center">
                     <div className="text-4xl mb-3">🎓</div>
                     <p className="text-sm text-slate-400 mb-1">No students yet</p>
-                    <p className="text-xs text-slate-600 max-w-xs mx-auto">Share your invite code (right panel) for students to join your class</p>
+                    <p className="text-xs text-slate-400 max-w-xs mx-auto">Share your invite code (right panel) for students to join your class</p>
                   </div>
                 ) : (
                   members.map((member, i) => (
@@ -401,7 +401,7 @@ export default function TeacherDashboard() {
                 <div className="flex items-center gap-2 mb-3">
                   <Trophy className="w-4 h-4 text-amber-400" />
                   <p className="text-sm font-semibold text-white">Top performers</p>
-                  <span className="text-xs text-slate-600 ml-auto">this week</span>
+                  <span className="text-xs text-slate-400 ml-auto">this week</span>
                 </div>
                 <div className="space-y-3">
                   {top3.map((m, i) => (
@@ -412,7 +412,7 @@ export default function TeacherDashboard() {
                         <p className="text-xs font-semibold text-white truncate">
                           {m.username ? `@${m.username}` : "Anonymous"}
                         </p>
-                        <p className="text-[10px] text-slate-600">{m.completionRate}% · 🔥{m.streak}d</p>
+                        <p className="text-[10px] text-slate-400">{m.completionRate}% · 🔥{m.streak}d</p>
                       </div>
                     </div>
                   ))}

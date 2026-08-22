@@ -46,7 +46,7 @@ export default function VerificationSheet({ habit, onClose, onConfirm }: Props) 
   const header = (
     <div className="flex items-center justify-between px-5 pt-1 pb-3">
       <p className="text-sm font-semibold text-white truncate pr-2">{habit.name}</p>
-      <button onClick={onClose} className="flex-shrink-0 p-1 text-slate-500 hover:text-slate-300 transition-colors" aria-label="Close">
+      <button onClick={onClose} className="flex-shrink-0 p-1 text-slate-400 hover:text-slate-300 transition-colors" aria-label="Close">
         <X className="w-4 h-4" />
       </button>
     </div>
@@ -271,7 +271,7 @@ function DurationVerification({ habit, submitting, onConfirm, onClose }: {
           >
             <Play className="w-4 h-4" /> Start timer ({minutes} min)
           </button>
-          <button onClick={onClose} className="w-full py-2 text-xs text-slate-500 hover:text-slate-300 transition-colors">
+          <button onClick={onClose} className="w-full py-2 text-xs text-slate-400 hover:text-slate-300 transition-colors">
             Not yet
           </button>
         </div>
@@ -285,7 +285,7 @@ function DurationVerification({ habit, submitting, onConfirm, onClose }: {
     return (
       <div className="space-y-4 text-center">
         <p className="text-5xl font-bold text-white tabular-nums tracking-tight">{mm}:{ss}</p>
-        <p className="text-xs text-slate-500">Auto-completes when the timer ends</p>
+        <p className="text-xs text-slate-400">Auto-completes when the timer ends</p>
         <div className="flex gap-2">
           <button
             onClick={togglePause}

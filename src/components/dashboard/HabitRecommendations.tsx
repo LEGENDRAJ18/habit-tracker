@@ -173,7 +173,7 @@ export default function HabitRecommendations({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-slate-200 truncate">{rec.name}</p>
-                  <p className="text-xs text-slate-600 truncate mt-0.5">{rec.description}</p>
+                  <p className="text-xs text-slate-400 truncate mt-0.5">{rec.description}</p>
                 </div>
                 <button
                   onClick={() => handleAdd(rec)}
@@ -209,7 +209,7 @@ export default function HabitRecommendations({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-slate-200 truncate">{rec.name}</p>
-                  <p className="text-xs text-slate-600 truncate mt-0.5">{rec.description}</p>
+                  <p className="text-xs text-slate-400 truncate mt-0.5">{rec.description}</p>
                 </div>
                 <div className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold text-violet-300 border border-violet-700/35">Add</div>
               </div>
@@ -252,7 +252,7 @@ export default function HabitRecommendations({
             <p className="text-sm font-medium text-slate-300 group-hover:text-slate-200 transition-colors">
               Set your goal to get personalised habit suggestions
             </p>
-            <p className="text-xs text-slate-600 mt-0.5">Tap to update your profile →</p>
+            <p className="text-xs text-slate-400 mt-0.5">Tap to update your profile →</p>
           </div>
         </button>
       </section>
@@ -270,7 +270,7 @@ export default function HabitRecommendations({
           <Sparkles className="w-4 h-4 text-violet-400" />
           <h2 className="text-sm font-semibold text-slate-300">Recommended for you</h2>
         </div>
-        <span className="hidden sm:inline-flex items-center gap-1 text-xs text-slate-600 bg-[#0c0c18] border border-violet-900/15 px-2.5 py-0.5 rounded-full">
+        <span className="hidden sm:inline-flex items-center gap-1 text-xs text-slate-400 bg-[#0c0c18] border border-violet-900/15 px-2.5 py-0.5 rounded-full">
           Based on&nbsp;<span className="text-violet-400 font-medium">
             {goals.length === 1 ? goals[0] : `${goals.length} goals`}
           </span>
@@ -294,7 +294,7 @@ export default function HabitRecommendations({
               {/* Text */}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-slate-200 truncate">{rec.name}</p>
-                <p className="text-xs text-slate-600 truncate mt-0.5">{rec.description}</p>
+                <p className="text-xs text-slate-400 truncate mt-0.5">{rec.description}</p>
               </div>
 
               {/* Add button */}

@@ -67,13 +67,13 @@ function ModesMockup({ mode }: { mode: typeof MODES_LANDING[0] }) {
           {[["87%", "Today"], ["21d", "Streak"], ["2.4k", "XP"]].map(([v, l]) => (
             <div key={l} className="bg-black/30 border border-white/[0.05] rounded-xl p-2 text-center">
               <p className="text-sm font-black text-indigo-300">{v}</p>
-              <p className="text-[9px] text-slate-600 mt-0.5">{l}</p>
+              <p className="text-[9px] text-slate-400 mt-0.5">{l}</p>
             </div>
           ))}
         </div>
         <div className="bg-indigo-950/40 border border-indigo-700/25 rounded-xl px-3 py-2.5">
           <p className="text-[11px] text-indigo-300 font-semibold mb-0.5">🎓 Your Oxford journey</p>
-          <p className="text-[10px] text-slate-500">Day 47 · 500 days until application deadline</p>
+          <p className="text-[10px] text-slate-400">Day 47 · 500 days until application deadline</p>
           <div className="mt-1.5 h-1 bg-indigo-950/60 rounded-full overflow-hidden">
             <div className="h-full w-[9%] bg-indigo-500 rounded-full" />
           </div>
@@ -107,7 +107,7 @@ function ModesMockup({ mode }: { mode: typeof MODES_LANDING[0] }) {
             <div className="flex items-center gap-2 mb-1.5">
               <span className="text-sm">{light}</span>
               <span className="text-xs font-semibold text-white">{name}</span>
-              <span className="ml-auto text-xs text-slate-500">{done} habits</span>
+              <span className="ml-auto text-xs text-slate-400">{done} habits</span>
             </div>
             <div className="h-1.5 bg-black/30 rounded-full overflow-hidden">
               <div className={`h-full rounded-full ${pct === 100 ? "bg-emerald-500" : pct > 0 ? "bg-amber-500" : "bg-red-700/50"}`} style={{ width: `${Math.max(pct, 2)}%` }} />
@@ -129,7 +129,7 @@ function ModesMockup({ mode }: { mode: typeof MODES_LANDING[0] }) {
           {[["24", "Students"], ["67%", "Class avg"], ["8", "100% today"]].map(([v, l]) => (
             <div key={l} className="bg-black/30 border border-white/[0.05] rounded-xl p-2 text-center">
               <p className="text-sm font-black text-amber-300">{v}</p>
-              <p className="text-[9px] text-slate-600 mt-0.5">{l}</p>
+              <p className="text-[9px] text-slate-400 mt-0.5">{l}</p>
             </div>
           ))}
         </div>
@@ -203,7 +203,7 @@ export default function ModesSection() {
               className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-sm font-semibold transition-all duration-200 ${
                 active === i
                   ? `${m.border} ${m.color}`
-                  : "border-violet-900/20 text-slate-500 hover:text-slate-300 hover:border-violet-700/30"
+                  : "border-violet-900/20 text-slate-400 hover:text-slate-300 hover:border-violet-700/30"
               }`}
               style={active === i ? { background: m.glow === "bg-indigo-500/8" ? "rgba(99,102,241,0.08)" : m.glow === "bg-emerald-500/8" ? "rgba(16,185,129,0.08)" : m.glow === "bg-amber-500/8" ? "rgba(245,158,11,0.08)" : "rgba(139,92,246,0.08)" } : undefined}
             >

@@ -192,7 +192,7 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
       {step === 1 && (
         <div>
           <h2 className="text-lg font-bold text-white mb-1">What do you want to achieve?</h2>
-          <p className="text-sm text-slate-500 mb-4">Pick the area closest to your goal.</p>
+          <p className="text-sm text-slate-400 mb-4">Pick the area closest to your goal.</p>
           <div className="grid grid-cols-2 gap-3">
             {GOAL_CATEGORIES.map((c) => (
               <button
@@ -211,11 +211,11 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
       {/* Step 2 — description */}
       {step === 2 && (
         <div>
-          <button onClick={() => setStep(1)} className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 mb-3 transition-colors">
+          <button onClick={() => setStep(1)} className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-300 mb-3 transition-colors">
             <ArrowLeft className="w-3.5 h-3.5" /> Back
           </button>
           <h2 className="text-lg font-bold text-white mb-1">Tell me about your goal</h2>
-          <p className="text-sm text-slate-500 mb-4">Be specific — timeframe, current level, what &ldquo;done&rdquo; looks like.</p>
+          <p className="text-sm text-slate-400 mb-4">Be specific — timeframe, current level, what &ldquo;done&rdquo; looks like.</p>
           <textarea
             autoFocus
             value={description}
@@ -235,7 +235,7 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
           {goalValidation.status === "validating" && (
             <div className="mt-1.5 flex items-center gap-1.5 px-1 py-1">
               <Sparkles className="w-3 h-3 animate-pulse text-violet-500 flex-shrink-0" />
-              <span className="text-[10px] text-slate-500">Checking…</span>
+              <span className="text-[10px] text-slate-400">Checking…</span>
             </div>
           )}
           {goalValidation.status === "good" && (
@@ -271,11 +271,11 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
       {/* Step 3 — clarifying questions */}
       {step === 3 && (
         <div>
-          <button onClick={() => setStep(2)} className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 mb-3 transition-colors">
+          <button onClick={() => setStep(2)} className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-300 mb-3 transition-colors">
             <ArrowLeft className="w-3.5 h-3.5" /> Back
           </button>
           <h2 className="text-lg font-bold text-white mb-1">A few quick questions</h2>
-          <p className="text-sm text-slate-500 mb-4">This helps tailor the program to your situation.</p>
+          <p className="text-sm text-slate-400 mb-4">This helps tailor the program to your situation.</p>
           <div className="space-y-3">
             <div>
               <p className="text-xs font-semibold text-violet-300 mb-1.5">{fixedQuestion.question}</p>
@@ -321,7 +321,7 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
                         setCustomModes((prev) => prev.map((c, idx) => (idx === i ? true : c)));
                         setAnswers((prev) => prev.map((a, idx) => (idx === i ? "" : a)));
                       }}
-                      className="px-3 py-2 rounded-full text-xs font-medium border border-dashed border-violet-800/40 text-slate-500 hover:text-slate-300 hover:border-violet-700/50 transition-all"
+                      className="px-3 py-2 rounded-full text-xs font-medium border border-dashed border-violet-800/40 text-slate-400 hover:text-slate-300 hover:border-violet-700/50 transition-all"
                     >
                       Something else…
                     </button>
@@ -436,9 +436,9 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
                     {phase.phase}
                   </span>
                   <p className="text-sm font-bold text-white">{phase.title}</p>
-                  <span className="text-[10px] text-slate-500 ml-auto flex-shrink-0">{phase.weeks} wk{phase.weeks > 1 ? "s" : ""}</span>
+                  <span className="text-[10px] text-slate-400 ml-auto flex-shrink-0">{phase.weeks} wk{phase.weeks > 1 ? "s" : ""}</span>
                 </div>
-                <p className="text-xs text-slate-500 mb-3">{phase.focus}</p>
+                <p className="text-xs text-slate-400 mb-3">{phase.focus}</p>
 
                 <div className="flex flex-wrap gap-1.5 mb-3">
                   {phase.habits.map((h) => (
@@ -451,7 +451,7 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
                 <div className="space-y-1">
                   {phase.milestones.map((m, i) => (
                     <div key={i} className="flex items-center gap-1.5 text-xs text-slate-400">
-                      <Flag className="w-3 h-3 text-slate-600 flex-shrink-0" />
+                      <Flag className="w-3 h-3 text-slate-400 flex-shrink-0" />
                       {m.text}
                     </div>
                   ))}

@@ -33,7 +33,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
     <div className="space-y-1.5">
       <label className="block text-xs font-medium text-slate-400">{label}</label>
       {children}
-      {hint && <p className="text-[11px] text-slate-600">{hint}</p>}
+      {hint && <p className="text-[11px] text-slate-400">{hint}</p>}
     </div>
   );
 }
@@ -68,7 +68,7 @@ function ToggleRow({ label, sub, value, onChange }: { label: string; sub?: strin
     <div className="flex items-center justify-between gap-4">
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-white">{label}</p>
-        {sub && <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">{sub}</p>}
+        {sub && <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">{sub}</p>}
       </div>
       <button
         onClick={() => onChange(!value)}
@@ -103,13 +103,13 @@ function DeleteModal({ onConfirm, onCancel, loading }: { onConfirm: () => void; 
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
       <div className="relative bg-[#0f0f1a] border border-red-900/40 rounded-2xl p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-        <button onClick={onCancel} className="absolute top-4 right-4 text-slate-600 hover:text-slate-300" aria-label="Close"><X className="w-4 h-4" /></button>
+        <button onClick={onCancel} className="absolute top-4 right-4 text-slate-400 hover:text-slate-300" aria-label="Close"><X className="w-4 h-4" /></button>
         <div className="w-12 h-12 rounded-full bg-red-950/50 border border-red-800/40 flex items-center justify-center mx-auto mb-4">
           <Trash2 className="w-5 h-5 text-red-400" />
         </div>
         <h2 className="text-lg font-bold text-white text-center mb-1">Delete account?</h2>
         <p className="text-sm text-slate-400 text-center mb-5 leading-relaxed">This permanently deletes all your habits, streaks, and data. There is no undo.</p>
-        <p className="text-xs text-slate-500 mb-2">Type <span className="font-bold text-slate-300">DELETE</span> to confirm</p>
+        <p className="text-xs text-slate-400 mb-2">Type <span className="font-bold text-slate-300">DELETE</span> to confirm</p>
         <Input type="text" value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="DELETE" autoFocus />
         <div className="flex gap-3 mt-4">
           <button onClick={onCancel} className="flex-1 py-2.5 border border-violet-900/30 text-slate-400 hover:text-white rounded-xl text-sm transition-colors">Cancel</button>
@@ -155,7 +155,7 @@ function CsvExportSection() {
     <div className="flex items-center justify-between gap-4 py-4 border-t border-violet-900/20">
       <div>
         <p className="text-sm font-medium text-white">Export Data</p>
-        <p className="text-[11px] text-slate-500 mt-0.5">Download your full habit history as CSV</p>
+        <p className="text-[11px] text-slate-400 mt-0.5">Download your full habit history as CSV</p>
       </div>
       <button onClick={handleExport} disabled={exporting}
         className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-600/30 text-amber-300 text-xs font-semibold rounded-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed">
@@ -225,7 +225,7 @@ function GoalsTab({ initialGoals }: { initialGoals: string[] }) {
         <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
           <Target className="w-4 h-4 text-violet-400" />My Goals
         </h2>
-        <p className="text-sm text-slate-500">Your AI coaching adapts to these. Pick everything you&apos;re working towards.</p>
+        <p className="text-sm text-slate-400">Your AI coaching adapts to these. Pick everything you&apos;re working towards.</p>
       </div>
       <div className={cardCls} style={{ padding: "1.25rem" }}>
         <div className="grid grid-cols-2 gap-2">
@@ -313,7 +313,7 @@ function UsernameSection() {
         <form onSubmit={handleSave} className="space-y-4">
           <Field label="Your @username" hint="3–20 chars: lowercase letters, numbers, underscores. Friends search for you by this.">
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-medium select-none">@</span>
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium select-none">@</span>
               <Input
                 type="text"
                 value={username}
@@ -422,7 +422,7 @@ function AccountTab({
               <Field label="New password" hint="Minimum 8 characters.">
                 <div className="relative">
                   <Input type={showPw ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" />
-                  <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300" aria-label={showPw ? "Hide password" : "Show password"}>
+                  <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300" aria-label={showPw ? "Hide password" : "Show password"}>
                     {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
@@ -456,7 +456,7 @@ function AccountTab({
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-medium text-white">Retake the getting started tour</p>
-              <p className="text-[11px] text-slate-500 mt-0.5">See the guided walkthrough of the app again</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">See the guided walkthrough of the app again</p>
             </div>
             <button onClick={() => { localStorage.setItem(TOUR_FORCE_KEY, "1"); localStorage.removeItem(TOUR_DONE_KEY); router.push("/dashboard"); }}
               className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-violet-400 hover:text-violet-300 px-3 py-1.5 border border-violet-800/40 hover:border-violet-600/50 rounded-xl transition-all bg-violet-950/30 hover:bg-violet-950/50">
@@ -473,7 +473,7 @@ function AccountTab({
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-white">Delete account</p>
-              <p className="text-xs text-slate-500 mt-0.5">Permanently deletes all your habits, streaks, and data. Cannot be undone.</p>
+              <p className="text-xs text-slate-400 mt-0.5">Permanently deletes all your habits, streaks, and data. Cannot be undone.</p>
             </div>
             <button onClick={onDeleteClick} className="flex items-center gap-2 px-4 py-2 bg-red-950/50 hover:bg-red-950/80 border border-red-800/40 text-red-400 text-sm font-medium rounded-xl transition-all flex-shrink-0">
               <Trash2 className="w-3.5 h-3.5" />Delete account
@@ -507,14 +507,14 @@ function AppearanceTab() {
         <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
           <Palette className="w-4 h-4 text-violet-400" />Appearance
         </h2>
-        <p className="text-sm text-slate-500">Customize how HabitAI looks for you.</p>
+        <p className="text-sm text-slate-400">Customize how HabitAI looks for you.</p>
       </div>
 
       {/* Theme color */}
       <div className={cardCls}>
         <div>
           <p className="text-sm font-semibold text-white mb-1">Theme Color</p>
-          <p className="text-xs text-slate-500 mb-4">Changes buttons, nav highlights, progress bars, checkmarks, and badges across the entire app. The HabitAI logo stays purple.</p>
+          <p className="text-xs text-slate-400 mb-4">Changes buttons, nav highlights, progress bars, checkmarks, and badges across the entire app. The HabitAI logo stays purple.</p>
           <div className="grid grid-cols-4 gap-2.5">
             {(Object.entries(ACCENT_PALETTE) as [AccentColor, typeof ACCENT_PALETTE[AccentColor]][]).map(([key, p]) => (
               <button key={key} onClick={() => setAccent(key)} title={p.name}
@@ -522,7 +522,7 @@ function AppearanceTab() {
                   accent === key ? "border-white/20 bg-white/5" : "border-violet-900/20 hover:bg-white/3 hover:border-violet-900/40"
                 }`}>
                 <div className="w-7 h-7 rounded-full" style={{ backgroundColor: p.swatch, boxShadow: accent === key ? `0 0 16px ${p.swatch}99, 0 0 6px ${p.swatch}66` : "none" }} />
-                <span className={`text-[10px] font-medium ${accent === key ? "text-white" : "text-slate-500"}`}>{p.name}</span>
+                <span className={`text-[10px] font-medium ${accent === key ? "text-white" : "text-slate-400"}`}>{p.name}</span>
                 {accent === key && (
                   <div className="absolute top-1.5 right-1.5 w-3.5 h-3.5 rounded-full bg-white flex items-center justify-center">
                     <Check className="w-2 h-2 text-black" strokeWidth={3} />
@@ -536,7 +536,7 @@ function AppearanceTab() {
         {/* Dashboard layout */}
         <div className="border-t border-violet-900/20 pt-5">
           <p className="text-sm font-semibold text-white mb-1">Dashboard Layout</p>
-          <p className="text-xs text-slate-500 mb-3">Adjusts spacing and card size on the dashboard.</p>
+          <p className="text-xs text-slate-400 mb-3">Adjusts spacing and card size on the dashboard.</p>
           <div className="flex gap-2.5">
             {(["compact", "comfortable", "spacious"] as DashboardLayout[]).map((l) => (
               <button key={l} onClick={() => setDashboardLayout(l)} className={optionBtn(dashboardLayout === l)}
@@ -578,7 +578,7 @@ function AccessibilityTab() {
         <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
           <SlidersHorizontal className="w-4 h-4 text-violet-400" />Accessibility
         </h2>
-        <p className="text-sm text-slate-500">Adjust the app to better suit your needs.</p>
+        <p className="text-sm text-slate-400">Adjust the app to better suit your needs.</p>
       </div>
       <div className={cardCls}>
         <div className="space-y-4">
@@ -647,7 +647,7 @@ function ReferralSection() {
         {loading ? (
           <div className="flex items-center gap-2 py-2">
             <Loader2 className="w-4 h-4 text-violet-500 animate-spin" />
-            <span className="text-sm text-slate-500">Loading your link…</span>
+            <span className="text-sm text-slate-400">Loading your link…</span>
           </div>
         ) : data?.link ? (
           <div className="space-y-3">
@@ -692,18 +692,18 @@ function ReferralSection() {
                 ].map(({ label, value, color }) => (
                   <div key={label} className="bg-violet-950/30 border border-violet-900/20 rounded-xl p-2.5 text-center">
                     <p style={{ color }} className="text-lg font-bold">{value}</p>
-                    <p className="text-[10px] text-slate-600 mt-0.5">{label}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">{label}</p>
                   </div>
                 ))}
               </div>
             )}
 
-            <p className="text-[10px] text-slate-600 leading-relaxed">
+            <p className="text-[10px] text-slate-400 leading-relaxed">
               Referral code: <span className="font-mono text-violet-600">{data.code}</span>
             </p>
           </div>
         ) : (
-          <p className="text-xs text-slate-600">Could not load referral link — try refreshing.</p>
+          <p className="text-xs text-slate-400">Could not load referral link — try refreshing.</p>
         )}
       </div>
     </div>
@@ -896,7 +896,7 @@ function GlossaryItem({ entry }: { entry: GlossaryEntry }) {
             {entry.tierLabel}
           </span>
         </span>
-        <ChevronDown className={`w-4 h-4 text-slate-500 flex-shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
         <div className="px-5 pb-4 text-xs text-slate-400 leading-relaxed">
@@ -913,7 +913,7 @@ function FeatureGlossarySection() {
       <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
         <BookOpen className="w-4 h-4 text-violet-400" />Feature Glossary
       </h2>
-      <p className="text-sm text-slate-500 mb-4">What every feature does, in plain English — and which plan unlocks it.</p>
+      <p className="text-sm text-slate-400 mb-4">What every feature does, in plain English — and which plan unlocks it.</p>
       <div className="bg-[#0f0f1a] border border-violet-900/20 rounded-2xl overflow-hidden">
         {FEATURE_GLOSSARY.map((entry) => (
           <GlossaryItem key={entry.id} entry={entry} />
@@ -930,7 +930,7 @@ function HelpTab() {
         <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
           <HelpCircle className="w-4 h-4 text-violet-400" />Help &amp; Support
         </h2>
-        <p className="text-sm text-slate-500">Find answers, contact support, or browse the FAQ.</p>
+        <p className="text-sm text-slate-400">Find answers, contact support, or browse the FAQ.</p>
       </div>
 
       {/* Feature Glossary — plain-English reference for every feature and its tier */}
@@ -947,7 +947,7 @@ function HelpTab() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-white mb-0.5">How to use HabitAI</p>
-            <p className="text-xs text-slate-500 leading-relaxed mb-4">
+            <p className="text-xs text-slate-400 leading-relaxed mb-4">
               Complete interactive guide: every feature, every page, every button explained — Getting Started, Dashboard, AI Coach, Battles, Plans and more.
             </p>
             <Link
@@ -969,7 +969,7 @@ function HelpTab() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-white mb-0.5">Help Center &amp; FAQ</p>
-            <p className="text-xs text-slate-500 leading-relaxed mb-4">
+            <p className="text-xs text-slate-400 leading-relaxed mb-4">
               Find answers to common questions about habits, streaks, XP, AI coaching, billing, and more.
             </p>
             <Link
@@ -986,7 +986,7 @@ function HelpTab() {
 
       <div className={cardCls} style={{ padding: "1.25rem" }}>
         <p className="text-sm font-semibold text-white mb-1">Contact Support</p>
-        <p className="text-xs text-slate-500 leading-relaxed mb-4">
+        <p className="text-xs text-slate-400 leading-relaxed mb-4">
           Need something specific? Email us and we&apos;ll respond within 24 hours.
         </p>
         <a
@@ -1005,7 +1005,7 @@ function HelpTab() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-white mb-0.5">Give Feedback</p>
-            <p className="text-xs text-slate-500 leading-relaxed mb-4">
+            <p className="text-xs text-slate-400 leading-relaxed mb-4">
               Share what you love, what&apos;s broken, or what you&apos;d like to see next. Takes 2 minutes and directly shapes the roadmap.
             </p>
             <a
@@ -1088,11 +1088,11 @@ function LevelGuideSection() {
               <span className="text-xl leading-none">{levelEmoji(curLevel)}</span>
               <div>
                 <p className="text-sm font-bold text-white">Level {curLevel} · {levelName(curLevel)}</p>
-                <p className="text-[11px] text-slate-500">{xp.toLocaleString()} XP total</p>
+                <p className="text-[11px] text-slate-400">{xp.toLocaleString()} XP total</p>
               </div>
             </div>
             {curLevel < 11 && (
-              <p className="text-xs text-slate-500 text-right">
+              <p className="text-xs text-slate-400 text-right">
                 <span className="text-violet-300 font-semibold">{intoLevel}</span> / {span} XP<br />
                 <span className="text-[10px]">to level {curLevel + 1}</span>
               </p>
@@ -1146,8 +1146,8 @@ function LevelGuideSection() {
                 <span className={`font-bold w-14 flex-shrink-0 ${isCurrentLevel ? "text-violet-300" : "text-slate-400"}`}>
                   Level {row.lvl}
                 </span>
-                <span className={`flex-1 ${isCurrentLevel ? "text-white font-medium" : "text-slate-500"}`}>{row.name}</span>
-                <span className={`font-semibold text-right ${isCurrentLevel ? "text-violet-300" : "text-slate-600"}`}>
+                <span className={`flex-1 ${isCurrentLevel ? "text-white font-medium" : "text-slate-400"}`}>{row.name}</span>
+                <span className={`font-semibold text-right ${isCurrentLevel ? "text-violet-300" : "text-slate-400"}`}>
                   {row.xp.toLocaleString()} XP
                 </span>
                 {isCurrentLevel && (
@@ -1157,7 +1157,7 @@ function LevelGuideSection() {
             );
           })}
         </div>
-        <p className="text-[10px] text-slate-600 text-center mt-1">Level 11+ costs 3,000 XP per level</p>
+        <p className="text-[10px] text-slate-400 text-center mt-1">Level 11+ costs 3,000 XP per level</p>
       </div>
 
       {/* Identity Score */}
@@ -1165,7 +1165,7 @@ function LevelGuideSection() {
         <p className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
           <Target className="w-3.5 h-3.5" /> Identity Score
         </p>
-        <p className="text-[11px] text-slate-500 leading-relaxed">
+        <p className="text-[11px] text-slate-400 leading-relaxed">
           Your Identity Score (shown on Analytics) measures how consistently you show up across all your habits.
           100% means you completed every habit every possible day. It weighs recent days more than older ones.
         </p>
@@ -1176,7 +1176,7 @@ function LevelGuideSection() {
         <p className="text-xs font-semibold text-orange-300 flex items-center gap-1.5">
           🔥 Streak System
         </p>
-        <p className="text-[11px] text-slate-500 leading-relaxed">
+        <p className="text-[11px] text-slate-400 leading-relaxed">
           Your streak counts consecutive days where you completed at least one habit.
           Missing a day resets it to zero — but you get one streak freeze per week to protect it.
           Streaks above 7 and 30 days award bonus XP.
@@ -1251,26 +1251,26 @@ function PlanTab({
         <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
           <CreditCard className="w-4 h-4 text-violet-400" />Your Plan
         </h2>
-        <p className="text-sm text-slate-500">Manage your subscription and billing.</p>
+        <p className="text-sm text-slate-400">Manage your subscription and billing.</p>
       </div>
 
       {/* Current plan card */}
       <div className={cardCls} style={{ padding: "1.25rem" }}>
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
-            <p className="text-xs text-slate-500 mb-1">Current plan</p>
+            <p className="text-xs text-slate-400 mb-1">Current plan</p>
             <div className="flex items-center gap-2">
               <span className={`text-lg font-bold text-white`}>{plan.label}</span>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${plan.badge}`}>{plan.label.toUpperCase()}</span>
             </div>
           </div>
           {isPaid && (
-            <Link href="/billing" className="text-xs text-slate-500 hover:text-violet-300 transition-colors border border-violet-900/30 hover:border-violet-700/40 px-3 py-1.5 rounded-xl">
+            <Link href="/billing" className="text-xs text-slate-400 hover:text-violet-300 transition-colors border border-violet-900/30 hover:border-violet-700/40 px-3 py-1.5 rounded-xl">
               Manage billing →
             </Link>
           )}
         </div>
-        <p className="text-xs text-slate-500">{plan.desc}</p>
+        <p className="text-xs text-slate-400">{plan.desc}</p>
 
         {!isPaid && (
           <div className="mt-4 pt-4 border-t border-violet-900/20 space-y-3">
@@ -1295,8 +1295,8 @@ function PlanTab({
                 <span className="text-sm font-bold text-amber-300 mt-1">{proPrice}/mo</span>
               </Link>
             </div>
-            <p className="text-[11px] text-slate-600 text-center">Plus: 7-day free trial · Cancel anytime · Pro: no trial period</p>
-            <p className="text-[10px] text-slate-700 text-center">Prices shown in {currency} · Charged in USD by Stripe</p>
+            <p className="text-[11px] text-slate-400 text-center">Plus: 7-day free trial · Cancel anytime · Pro: no trial period</p>
+            <p className="text-[10px] text-slate-400 text-center">Prices shown in {currency} · Charged in USD by Stripe</p>
           </div>
         )}
       </div>
@@ -1314,7 +1314,7 @@ function PlanTab({
                 <Zap className="w-2.5 h-2.5" />Plus
               </span>
             </div>
-            <p className="text-xs text-slate-500">Daily email reminders for your habits. Available on Plus and Pro plans.</p>
+            <p className="text-xs text-slate-400">Daily email reminders for your habits. Available on Plus and Pro plans.</p>
           </div>
         )
       )}
@@ -1330,7 +1330,7 @@ function PlanTab({
                 <Crown className="w-2.5 h-2.5" />Pro
               </span>
             </div>
-            <p className="text-xs text-slate-500 mb-4">Download your full habit history as a CSV file.</p>
+            <p className="text-xs text-slate-400 mb-4">Download your full habit history as a CSV file.</p>
             <CsvExportSection />
           </div>
         ) : (
@@ -1342,7 +1342,7 @@ function PlanTab({
                 <Crown className="w-2.5 h-2.5" />Pro
               </span>
             </div>
-            <p className="text-xs text-slate-500">Download your full habit history as CSV. Exclusive to Pro.</p>
+            <p className="text-xs text-slate-400">Download your full habit history as CSV. Exclusive to Pro.</p>
           </div>
         )
       )}
@@ -1370,7 +1370,7 @@ function PlanTab({
                     <Zap className="w-2.5 h-2.5" />Plus
                   </span>
                 </div>
-                <p className="text-xs text-slate-500">Every Sunday — personalised summary of your week. Available on Plus and Pro plans.</p>
+                <p className="text-xs text-slate-400">Every Sunday — personalised summary of your week. Available on Plus and Pro plans.</p>
               </div>
             )}
             <div className="pt-4">
@@ -1439,7 +1439,7 @@ function AvatarTab() {
         <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
           <Smile className="w-4 h-4 text-violet-400" />Profile Picture
         </h2>
-        <p className="text-sm text-slate-500">Choose an animated avatar that represents you.</p>
+        <p className="text-sm text-slate-400">Choose an animated avatar that represents you.</p>
       </div>
       <div className={cardCls}>
         {/* Current preview */}
@@ -1447,7 +1447,7 @@ function AvatarTab() {
           <AvatarDisplay avatarId={selected} size="lg" />
           <div>
             <p className="text-sm font-bold text-white">{AVATARS.find(a => a.id === selected)?.name}</p>
-            <p className="text-xs text-slate-500">Your current avatar</p>
+            <p className="text-xs text-slate-400">Your current avatar</p>
           </div>
         </div>
         {/* Grid of options */}
@@ -1464,7 +1464,7 @@ function AvatarTab() {
               } ${saving ? "opacity-60 cursor-not-allowed" : ""}`}
             >
               <AvatarDisplay avatarId={av.id} size="md" />
-              <span className={`text-[11px] font-medium ${selected === av.id ? "text-violet-200" : "text-slate-500"}`}>
+              <span className={`text-[11px] font-medium ${selected === av.id ? "text-violet-200" : "text-slate-400"}`}>
                 {av.name}
               </span>
               {selected === av.id && (
@@ -1535,7 +1535,7 @@ function ModeTab() {
         <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
           <span className="text-base leading-none">🎓</span>Your Mode
         </h2>
-        <p className="text-sm text-slate-500">Your dashboard, AI coaching, and habit suggestions all adapt to your selected mode. Switch anytime — your data is never lost.</p>
+        <p className="text-sm text-slate-400">Your dashboard, AI coaching, and habit suggestions all adapt to your selected mode. Switch anytime — your data is never lost.</p>
       </div>
 
       <div className={cardCls} style={{ padding: "1.25rem" }}>
@@ -1567,7 +1567,7 @@ function ModeTab() {
                       Active
                     </span>
                   )}
-                  {saving && !isActive && <Loader2 className="w-3.5 h-3.5 text-slate-600 animate-spin flex-shrink-0" />}
+                  {saving && !isActive && <Loader2 className="w-3.5 h-3.5 text-slate-400 animate-spin flex-shrink-0" />}
                 </div>
               </button>
             );
@@ -1705,7 +1705,7 @@ function NotificationsTab() {
         <h2 className="text-base font-semibold text-white mb-1 flex items-center gap-2">
           <Bell className="w-4 h-4 text-violet-400" />Notifications
         </h2>
-        <p className="text-sm text-slate-500">Control when and how HabitAI reminds you to build your habits.</p>
+        <p className="text-sm text-slate-400">Control when and how HabitAI reminds you to build your habits.</p>
       </div>
 
       {/* Sound effects */}
@@ -1739,7 +1739,7 @@ function NotificationsTab() {
             <Bell className="w-5 h-5 text-violet-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-white">Push notifications are off</p>
-              <p className="text-xs text-slate-500 mt-0.5">Enable to receive reminders, streak alerts, and weekly motivation directly to your device.</p>
+              <p className="text-xs text-slate-400 mt-0.5">Enable to receive reminders, streak alerts, and weekly motivation directly to your device.</p>
               {typeof window !== "undefined" && "Notification" in window && Notification.permission === "denied" && (
                 <p className="text-[11px] text-amber-400 mt-2 leading-relaxed">
                   Notifications were blocked. Go to your browser settings → Site Settings → Notifications → find this site and allow it.
@@ -1770,7 +1770,7 @@ function NotificationsTab() {
                 ].map((step, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <span className="w-4 h-4 rounded-full bg-violet-900/50 text-violet-400 text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
-                    <p className="text-[11px] text-slate-500 leading-relaxed">{step}</p>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">{step}</p>
                   </div>
                 ))}
               </div>
@@ -1788,7 +1788,7 @@ function NotificationsTab() {
                 ].map((step, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <span className="w-4 h-4 rounded-full bg-emerald-900/50 text-emerald-400 text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
-                    <p className="text-[11px] text-slate-500 leading-relaxed">{step}</p>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">{step}</p>
                   </div>
                 ))}
               </div>
@@ -1802,7 +1802,7 @@ function NotificationsTab() {
                 ].map((step, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <span className="w-4 h-4 rounded-full bg-violet-900/50 text-violet-400 text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
-                    <p className="text-[11px] text-slate-500 leading-relaxed">{step}</p>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">{step}</p>
                   </div>
                 ))}
               </div>
@@ -1828,7 +1828,7 @@ function NotificationsTab() {
             <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
             <p className="text-xs text-emerald-300 font-medium">Push notifications are enabled on this device</p>
             {(saving || saved) && (
-              <span className="ml-auto text-[10px] text-slate-500">
+              <span className="ml-auto text-[10px] text-slate-400">
                 {saving ? "Saving…" : "✓ Saved"}
               </span>
             )}
@@ -1962,7 +1962,7 @@ function NotificationsTab() {
         {prefs.quiet_hours_enabled && (
           <div className="grid grid-cols-2 gap-4 pt-1">
             <div>
-              <p className="text-xs text-slate-500 mb-1.5">Start</p>
+              <p className="text-xs text-slate-400 mb-1.5">Start</p>
               <input
                 type="time"
                 value={prefs.quiet_hours_start ?? "22:00"}
@@ -1971,7 +1971,7 @@ function NotificationsTab() {
               />
             </div>
             <div>
-              <p className="text-xs text-slate-500 mb-1.5">End</p>
+              <p className="text-xs text-slate-400 mb-1.5">End</p>
               <input
                 type="time"
                 value={prefs.quiet_hours_end ?? "07:00"}
@@ -1981,7 +1981,7 @@ function NotificationsTab() {
             </div>
           </div>
         )}
-        <p className="text-[11px] text-slate-600 leading-snug -mt-1">
+        <p className="text-[11px] text-slate-400 leading-snug -mt-1">
           Tip: Set reminder times on individual habits by editing them in your dashboard.
         </p>
       </div>
@@ -1991,7 +1991,7 @@ function NotificationsTab() {
         <h3 className="text-sm font-bold text-white flex items-center gap-2">
           👁️ Preview notifications
         </h3>
-        <p className="text-xs text-slate-500 -mt-1">This is what your notifications will look like.</p>
+        <p className="text-xs text-slate-400 -mt-1">This is what your notifications will look like.</p>
         <div className="space-y-2">
           {[
             {
@@ -2041,7 +2041,7 @@ function NotificationsTab() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-white leading-tight">{n.title}</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">{n.body}</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">{n.body}</p>
                 </div>
               </div>
             ))}
@@ -2167,7 +2167,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <h1 className="text-base font-bold text-white leading-none">Settings</h1>
-              {name && <p className="text-[11px] text-slate-500 mt-0.5">{email}</p>}
+              {name && <p className="text-[11px] text-slate-400 mt-0.5">{email}</p>}
             </div>
           </div>
         </div>
@@ -2177,7 +2177,7 @@ export default function SettingsPage() {
           {TABS.map((t) => (
             <button key={t.id} onClick={() => setActiveTab(t.id)}
               className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 ${
-                activeTab === t.id ? "bg-[#0f0f1a] shadow-sm" : "text-slate-500 hover:text-slate-300"
+                activeTab === t.id ? "bg-[#0f0f1a] shadow-sm" : "text-slate-400 hover:text-slate-300"
               }`}
               style={activeTab === t.id ? { color: "var(--a-300, #c4b5fd)" } : undefined}
             >

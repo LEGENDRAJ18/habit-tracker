@@ -74,7 +74,7 @@ function MiniPreview({
 
         {/* Name + desc */}
         <p className="text-sm font-bold text-white mb-0.5">{name}</p>
-        <p className="text-[10px] text-slate-500 mb-3 leading-relaxed">{description}</p>
+        <p className="text-[10px] text-slate-400 mb-3 leading-relaxed">{description}</p>
 
         {/* Divider */}
         <div className="h-px bg-gradient-to-r from-transparent via-violet-700/30 to-transparent mb-3" />
@@ -101,7 +101,7 @@ function MiniPreview({
           ].map((s) => (
             <div key={s.label} className="bg-violet-950/50 border border-violet-900/30 rounded-lg py-1.5 px-1">
               <p className="text-[10px] font-semibold text-white">{s.value}</p>
-              <p className="text-[8px] text-slate-600 uppercase tracking-wide">{s.label}</p>
+              <p className="text-[8px] text-slate-400 uppercase tracking-wide">{s.label}</p>
             </div>
           ))}
         </div>
@@ -229,7 +229,7 @@ export default function ShareAchievement({
           </div>
           <button
             onClick={onClose}
-            className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50"
+            className="text-slate-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -241,7 +241,7 @@ export default function ShareAchievement({
           {generating && (
             <div className="flex flex-col items-center justify-center py-8 gap-3">
               <Loader2 className="w-6 h-6 text-violet-400 animate-spin" />
-              <p className="text-xs text-slate-500">Creating your share link…</p>
+              <p className="text-xs text-slate-400">Creating your share link…</p>
             </div>
           )}
 
@@ -268,7 +268,7 @@ export default function ShareAchievement({
 
               {/* Share link */}
               <div className="flex items-center gap-2 bg-violet-950/40 border border-violet-800/30 rounded-xl px-3 py-2.5">
-                <span className="flex-1 text-xs text-slate-500 truncate font-mono">
+                <span className="flex-1 text-xs text-slate-400 truncate font-mono">
                   {shareLink}
                 </span>
                 <button

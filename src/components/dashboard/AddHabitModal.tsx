@@ -320,7 +320,7 @@ function TimePicker({ value, onChange }: { value: string; onChange: (v: string) 
           >
             <span className="text-sm leading-none">{p.emoji}</span>
             <span className="text-[9px] font-semibold mt-0.5 leading-none">{p.label}</span>
-            <span className="text-[8px] text-slate-600 leading-none mt-0.5">{p.sub}</span>
+            <span className="text-[8px] text-slate-400 leading-none mt-0.5">{p.sub}</span>
           </button>
         ))}
         <button type="button" onClick={() => setShowCustom((v) => !v)}
@@ -332,7 +332,7 @@ function TimePicker({ value, onChange }: { value: string; onChange: (v: string) 
         >
           <span className="text-sm leading-none">⏰</span>
           <span className="text-[9px] font-semibold mt-0.5 leading-none">Custom</span>
-          <span className="text-[8px] text-slate-600 leading-none mt-0.5">exact time</span>
+          <span className="text-[8px] text-slate-400 leading-none mt-0.5">exact time</span>
         </button>
       </div>
       {showCustom && (
@@ -623,7 +623,7 @@ export default function AddHabitModal({
                 {step === "details" ? "Add New Habit" : "Choose Your Days"}
               </h2>
               {hasTwoSteps && (
-                <p className="text-[10px] text-slate-500 mt-0.5">
+                <p className="text-[10px] text-slate-400 mt-0.5">
                   {step === "details" ? "Step 1 of 2 — Habit Details" : "Step 2 of 2 — When to do it"}
                 </p>
               )}
@@ -680,7 +680,7 @@ export default function AddHabitModal({
                 {!duplicate && aiValidation.status === "validating" && (
                   <div className="mt-1.5 flex items-center gap-1.5 px-1 py-1">
                     <Sparkles className="w-3 h-3 animate-pulse text-violet-500 flex-shrink-0" />
-                    <span className="text-[10px] text-slate-500">Checking…</span>
+                    <span className="text-[10px] text-slate-400">Checking…</span>
                   </div>
                 )}
                 {!duplicate && aiValidation.status === "good" && (
@@ -731,9 +731,9 @@ export default function AddHabitModal({
                     <span className="text-sm leading-none">{difficulty.emoji}</span>
                     <p className="text-[11px] flex-1">
                       <span className={`font-bold ${difficulty.color}`}>{difficulty.label}</span>
-                      <span className="text-slate-500"> habit · earns </span>
+                      <span className="text-slate-400"> habit · earns </span>
                       <span className={`font-bold ${difficulty.color}`}>{difficulty.xp} XP</span>
-                      <span className="text-slate-500"> per completion</span>
+                      <span className="text-slate-400"> per completion</span>
                     </p>
                   </div>
                 )}
@@ -741,7 +741,7 @@ export default function AddHabitModal({
                 {/* Sub-type suggestion chips — make a generic activity specific */}
                 {subTypeGroup && !duplicate && aiValidation.status !== "blocked" && (
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                    <span className="text-[10px] text-slate-500">{subTypeGroup.emoji} Make it specific:</span>
+                    <span className="text-[10px] text-slate-400">{subTypeGroup.emoji} Make it specific:</span>
                     {subTypeGroup.options.map((opt) => (
                       <button key={opt.name} type="button" onClick={() => handleNameChange(opt.name)}
                         className="px-2 py-0.5 rounded-full text-[10px] font-medium border border-violet-700/35 bg-violet-950/40 text-violet-300 hover:text-violet-200 hover:border-violet-600/50 transition-all"
@@ -767,7 +767,7 @@ export default function AddHabitModal({
                           <p className="text-xs font-semibold text-violet-300 leading-tight">
                             {TIME_PERIODS.find((p) => p.value === timeDetectedFromName)?.label ?? timeDetectedFromName}
                           </p>
-                          <p className="text-[10px] text-slate-500 mt-0.5">detected from your habit name</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">detected from your habit name</p>
                         </div>
                         <button type="button" onClick={() => setTimeOverridden(true)}
                           className="text-[10px] text-violet-400 hover:text-violet-300 flex-shrink-0 underline underline-offset-2 transition-colors"
@@ -806,7 +806,7 @@ export default function AddHabitModal({
                         <span className="text-base leading-none flex-shrink-0">⏱</span>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-violet-300 leading-tight">{durationDetectedFromName}</p>
-                          <p className="text-[10px] text-slate-500 mt-0.5">detected from your habit name</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">detected from your habit name</p>
                         </div>
                         <button type="button" onClick={() => setDurationOverridden(true)}
                           className="text-[10px] text-violet-400 hover:text-violet-300 flex-shrink-0 underline underline-offset-2 transition-colors"
@@ -842,7 +842,7 @@ export default function AddHabitModal({
                       {durationDetectedFromName && !durationOverridden && durationMinutes && (
                         <span className="ml-1.5 text-violet-400 font-normal normal-case tracking-normal">auto-set</span>
                       )}
-                      {(!durationDetectedFromName || durationOverridden) && <span className="text-slate-600 font-normal"> (optional)</span>}
+                      {(!durationDetectedFromName || durationOverridden) && <span className="text-slate-400 font-normal"> (optional)</span>}
                     </label>
                     <div className="flex flex-wrap gap-1">
                       {DURATION_PRESETS.map((min) => {
@@ -863,7 +863,7 @@ export default function AddHabitModal({
                               isSelected
                                 ? "bg-violet-600/25 border-violet-500/60 text-violet-200"
                                 : isLocked
-                                ? "opacity-40 bg-violet-950/20 border-violet-900/20 text-slate-600 cursor-not-allowed"
+                                ? "opacity-40 bg-violet-950/20 border-violet-900/20 text-slate-400 cursor-not-allowed"
                                 : "bg-violet-950/30 hover:bg-violet-950/50 border-violet-900/25 hover:border-violet-700/40 text-slate-300 hover:text-white"
                             }`}
                           >
@@ -882,7 +882,7 @@ export default function AddHabitModal({
                       </p>
                     )}
                     {!tier || tier === "free" ? (
-                      <p className="mt-1 text-[10px] text-slate-600">Free: up to 30 min. <span className="text-violet-400 cursor-pointer hover:text-violet-300" onClick={onUpgradePro}>Plus/Pro for longer →</span></p>
+                      <p className="mt-1 text-[10px] text-slate-400">Free: up to 30 min. <span className="text-violet-400 cursor-pointer hover:text-violet-300" onClick={onUpgradePro}>Plus/Pro for longer →</span></p>
                     ) : null}
                   </div>
                 </div>
@@ -929,7 +929,7 @@ export default function AddHabitModal({
                             <span className="text-base leading-none flex-shrink-0">{frequencyDetectedFromName === "daily" ? "📆" : "🗓"}</span>
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-semibold text-violet-300 leading-tight capitalize">{frequencyDetectedFromName}</p>
-                              <p className="text-[10px] text-slate-500 mt-0.5">detected from your habit name</p>
+                              <p className="text-[10px] text-slate-400 mt-0.5">detected from your habit name</p>
                             </div>
                             <button type="button" onClick={() => setFrequencyOverridden(true)}
                               className="text-[10px] text-violet-400 hover:text-violet-300 flex-shrink-0 underline underline-offset-2 transition-colors"
@@ -970,11 +970,11 @@ export default function AddHabitModal({
                             }`}
                           >🚫 Limit</button>
                         </div>
-                        <p className="text-[10px] text-slate-600 mt-1">
+                        <p className="text-[10px] text-slate-400 mt-1">
                           Do it = build a new habit (like exercise). Limit = cut back on something (like screen time).
                         </p>
                         {habitType === "limit" && (
-                          <p className="text-[10px] text-slate-600 mt-1">
+                          <p className="text-[10px] text-slate-400 mt-1">
                             Self-reported — each day you tap ✓ or ✗ to log honestly.
                           </p>
                         )}
@@ -984,7 +984,7 @@ export default function AddHabitModal({
 
                   <div>
                     <label className={labelCls}>
-                      Description <span className="text-slate-600 font-normal">(optional)</span>
+                      Description <span className="text-slate-400 font-normal">(optional)</span>
                     </label>
                     <input type="text" value={description}
                       onChange={(e) => setDescription(e.target.value)}
@@ -997,7 +997,7 @@ export default function AddHabitModal({
                   {/* Reminder time — available to all users */}
                   <div>
                     <label className={`${labelCls} flex items-center gap-1`}>
-                      <Clock className="w-3.5 h-3.5" /> Remind me at <span className="text-slate-600 font-normal">(optional)</span>
+                      <Clock className="w-3.5 h-3.5" /> Remind me at <span className="text-slate-400 font-normal">(optional)</span>
                     </label>
                     <input
                       type="time"
@@ -1023,7 +1023,7 @@ export default function AddHabitModal({
                             <Crown className="w-2 h-2" />PRO
                           </span>
                         </div>
-                        <p className="text-[10px] text-slate-500 leading-snug">
+                        <p className="text-[10px] text-slate-400 leading-snug">
                           AI learns your best time and reminds you automatically.
                         </p>
                         <button type="button" onClick={onUpgradePro}
@@ -1035,7 +1035,7 @@ export default function AddHabitModal({
                     ) : uniqueSuggestions.length > 0 ? (
                       <>
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[10px] text-slate-500">Need inspiration?</span>
+                          <span className="text-[10px] text-slate-400">Need inspiration?</span>
                           {uniqueSuggestions.length > CHIPS_PER_PAGE && (
                             <button type="button"
                               onClick={() => setSuggestionOffset((o) => (o + CHIPS_PER_PAGE) % uniqueSuggestions.length)}
@@ -1060,7 +1060,7 @@ export default function AddHabitModal({
                         {tier === "pro" ? (
                           <>
                             <div className="flex items-center justify-between mb-1.5">
-                              <span className="text-[10px] text-slate-500">Need inspiration?</span>
+                              <span className="text-[10px] text-slate-400">Need inspiration?</span>
                               {uniqueSuggestions.length > CHIPS_PER_PAGE && (
                                 <button type="button"
                                   onClick={() => setSuggestionOffset((o) => (o + CHIPS_PER_PAGE) % uniqueSuggestions.length)}
@@ -1169,7 +1169,7 @@ export default function AddHabitModal({
                     <span className="text-xl leading-none">{o.emoji}</span>
                     <div>
                       <p className="text-sm font-semibold leading-tight">{o.label}</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">{o.sub}</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">{o.sub}</p>
                     </div>
                   </button>
                 ))}
@@ -1178,7 +1178,7 @@ export default function AddHabitModal({
               {/* Day-of-week toggles — only shown for "Pick days" */}
               {schedulePreset === "custom" && (
                 <div className="space-y-2">
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Select days of week</p>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Select days of week</p>
                   <div className="grid grid-cols-7 gap-1.5">
                     {DOW_LABELS.map((d, i) => {
                       const dow = DOW_MAP[i] ?? 0;

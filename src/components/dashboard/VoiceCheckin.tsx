@@ -107,7 +107,7 @@ export default function VoiceCheckin({ habitId, habitName, habitLogId, tier, onC
   if (!isPro && stage === "idle") return (
     <button
       onClick={() => {}}
-      className="flex items-center gap-1.5 text-[11px] text-slate-600 hover:text-slate-500 transition-colors mt-1.5 touch-manipulation cursor-default"
+      className="flex items-center gap-1.5 text-[11px] text-slate-400 hover:text-slate-400 transition-colors mt-1.5 touch-manipulation cursor-default"
       title="Voice check-ins — Pro feature"
     >
       <Mic className="w-3 h-3" />
@@ -117,7 +117,7 @@ export default function VoiceCheckin({ habitId, habitName, habitLogId, tier, onC
 
   if (stage === "unsupported") {
     return (
-      <p className="text-[10px] text-slate-600 mt-1.5">
+      <p className="text-[10px] text-slate-400 mt-1.5">
         Voice check-ins require Chrome or Edge — not supported in this browser.
       </p>
     );
@@ -150,7 +150,7 @@ export default function VoiceCheckin({ habitId, habitName, habitLogId, tier, onC
         </div>
         <button
           onClick={() => { stopRecording(); setStage("idle"); setExpanded(false); transcriptRef.current = ""; }}
-          className="text-slate-600 hover:text-slate-400 p-1 touch-manipulation"
+          className="text-slate-400 hover:text-slate-400 p-1 touch-manipulation"
           aria-label="Cancel recording"
         >
           <X className="w-3.5 h-3.5" />
@@ -182,14 +182,14 @@ export default function VoiceCheckin({ habitId, habitName, habitLogId, tier, onC
       {stage === "processing" && (
         <div className="flex items-center justify-center gap-2 py-3">
           <Loader2 className="w-4 h-4 text-violet-500 animate-spin" />
-          <span className="text-xs text-slate-500">Getting AI coaching…</span>
+          <span className="text-xs text-slate-400">Getting AI coaching…</span>
         </div>
       )}
 
       {stage === "done" && (
         <div className="space-y-2">
           {transcript && (
-            <p className="text-[11px] text-slate-500 italic leading-relaxed border-l-2 border-violet-800/40 pl-2">&ldquo;{transcript}&rdquo;</p>
+            <p className="text-[11px] text-slate-400 italic leading-relaxed border-l-2 border-violet-800/40 pl-2">&ldquo;{transcript}&rdquo;</p>
           )}
           {coaching && (
             <div className="bg-violet-950/40 border border-violet-700/20 rounded-xl p-2.5">

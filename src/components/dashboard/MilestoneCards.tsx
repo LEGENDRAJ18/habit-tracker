@@ -106,7 +106,7 @@ export default function MilestoneCards({
 
   return (
     <div className={sidebar ? "" : "mt-8"}>
-      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
         Daily Milestones
       </p>
       <div className={sidebar ? "space-y-2" : "grid grid-cols-2 sm:grid-cols-4 gap-2.5"}>
@@ -126,10 +126,10 @@ export default function MilestoneCards({
               style={m.achieved ? { boxShadow: `0 0 16px ${cs.glow}` } : undefined}
             >
               <span className={`text-lg leading-none flex-shrink-0 ${m.achieved ? "" : "opacity-30"}`}>
-                {m.achieved ? m.emoji : <Lock className="w-4 h-4 text-slate-700" />}
+                {m.achieved ? m.emoji : <Lock className="w-4 h-4 text-slate-400" />}
               </span>
               <div className="flex-1 min-w-0">
-                <p className={`text-[11px] font-semibold truncate ${m.achieved ? "text-white" : "text-slate-500"}`}>
+                <p className={`text-[11px] font-semibold truncate ${m.achieved ? "text-white" : "text-slate-400"}`}>
                   {m.title}
                 </p>
                 {!m.achieved && pct > 0 && (
@@ -140,7 +140,7 @@ export default function MilestoneCards({
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
                 <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
-                  m.achieved ? `${cs.badgeBg} ${cs.badgeText}` : "bg-slate-800/60 text-slate-600"
+                  m.achieved ? `${cs.badgeBg} ${cs.badgeText}` : "bg-slate-800/60 text-slate-400"
                 }`}>
                   +{m.xp}
                 </span>
@@ -148,7 +148,7 @@ export default function MilestoneCards({
                   <button
                     onClick={() => onShare(m.shareType!, m.shareValue!)}
                     aria-label={`Share ${m.title}`}
-                    className={`p-1 rounded-lg text-slate-600 ${cs.hoverText} hover:bg-violet-950/40 transition-all`}
+                    className={`p-1 rounded-lg text-slate-400 ${cs.hoverText} hover:bg-violet-950/40 transition-all`}
                   >
                     <Share2 className="w-3 h-3" />
                   </button>
@@ -167,7 +167,7 @@ export default function MilestoneCards({
               style={m.achieved ? { boxShadow: `0 0 20px ${cs.glow}` } : undefined}
             >
               <span className={`absolute top-2.5 right-2.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
-                m.achieved ? `${cs.badgeBg} ${cs.badgeText}` : "bg-slate-800/60 text-slate-600"
+                m.achieved ? `${cs.badgeBg} ${cs.badgeText}` : "bg-slate-800/60 text-slate-400"
               }`}>
                 +{m.xp} XP
               </span>
@@ -177,14 +177,14 @@ export default function MilestoneCards({
                 ) : (
                   <div className="relative inline-flex">
                     <span className="text-2xl leading-none opacity-30">{m.emoji}</span>
-                    <Lock className="absolute -bottom-0.5 -right-0.5 w-3 h-3 text-slate-600" />
+                    <Lock className="absolute -bottom-0.5 -right-0.5 w-3 h-3 text-slate-400" />
                   </div>
                 )}
               </div>
-              <p className={`text-xs font-semibold leading-tight mb-0.5 ${m.achieved ? "text-white" : "text-slate-500"}`}>
+              <p className={`text-xs font-semibold leading-tight mb-0.5 ${m.achieved ? "text-white" : "text-slate-400"}`}>
                 {m.title}
               </p>
-              <p className={`text-[10px] leading-tight ${m.achieved ? "text-slate-400" : "text-slate-700"}`}>
+              <p className={`text-[10px] leading-tight ${m.achieved ? "text-slate-400" : "text-slate-400"}`}>
                 {m.desc}
               </p>
               {!m.achieved && pct > 0 && (
@@ -202,7 +202,7 @@ export default function MilestoneCards({
                     <button
                       onClick={() => onShare(m.shareType!, m.shareValue!)}
                       aria-label={`Share ${m.title}`}
-                      className={`flex items-center gap-0.5 text-[10px] text-slate-600 ${cs.hoverText} transition-colors`}
+                      className={`flex items-center gap-0.5 text-[10px] text-slate-400 ${cs.hoverText} transition-colors`}
                     >
                       <Share2 className="w-2.5 h-2.5" />
                       Share

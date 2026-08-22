@@ -55,21 +55,21 @@ function BattleCard({ battle, onAction, actioning }: { battle: BattleWithNames; 
           battle.status === "active"    ? "text-violet-300 border-violet-600/40 bg-violet-950/40" :
           battle.status === "pending"   ? "text-amber-300 border-amber-600/30 bg-amber-950/20" :
           battle.status === "completed" ? (iWon ? "text-emerald-300 border-emerald-600/30 bg-emerald-950/20" : "text-slate-400 border-slate-700/30 bg-slate-900/20") :
-          "text-slate-500 border-slate-700/20"
+          "text-slate-400 border-slate-700/20"
         }`}>
           {battle.status === "completed" ? (iWon ? "🏆 Won!" : "Finished") : battle.status}
         </span>
       </div>
 
-      <p className="text-xs text-slate-500 mb-3">
+      <p className="text-xs text-slate-400 mb-3">
         vs <span className="text-slate-300 font-medium">@{opponentName}</span> · {battle.duration_days}-day battle
       </p>
 
       {(battle.status === "active" || battle.status === "completed") && (
         <div className="mb-3">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] text-slate-500">You: <span className="text-violet-400 font-bold">{myCompletions}</span></span>
-            <span className="text-[10px] text-slate-500">@{opponentName}: <span className="text-slate-400 font-bold">{theirCompletions}</span></span>
+            <span className="text-[10px] text-slate-400">You: <span className="text-violet-400 font-bold">{myCompletions}</span></span>
+            <span className="text-[10px] text-slate-400">@{opponentName}: <span className="text-slate-400 font-bold">{theirCompletions}</span></span>
           </div>
           <div className="flex gap-1 h-2">
             <div className="flex-1 bg-violet-950/50 rounded-full overflow-hidden">
@@ -99,7 +99,7 @@ function BattleCard({ battle, onAction, actioning }: { battle: BattleWithNames; 
         </div>
       )}
       {battle.status === "pending" && battle.is_challenger && (
-        <p className="text-xs text-slate-500 text-center">Waiting for response…</p>
+        <p className="text-xs text-slate-400 text-center">Waiting for response…</p>
       )}
       {battle.status === "active" && (
         <button
@@ -203,7 +203,7 @@ export default function HabitBattleModal({ tier, friends, onClose, onUpgrade }: 
                 <p className="text-[11px] text-violet-400/70">Challenge friends to 7-day duels</p>
               </div>
             </div>
-            <button onClick={onClose} className="text-slate-500 hover:text-white p-1.5 rounded-lg hover:bg-violet-950/50 transition-colors" aria-label="Close">
+            <button onClick={onClose} className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-violet-950/50 transition-colors" aria-label="Close">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -241,7 +241,7 @@ export default function HabitBattleModal({ tier, friends, onClose, onUpgrade }: 
                     </div>
                   )}
                   <div>
-                    <label className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold block mb-1">Opponent</label>
+                    <label className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block mb-1">Opponent</label>
                     <select
                       value={opponentId}
                       onChange={(e) => setOpponentId(e.target.value)}
@@ -262,7 +262,7 @@ export default function HabitBattleModal({ tier, friends, onClose, onUpgrade }: 
                     maxLength={80}
                   />
                   <div>
-                    <label className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold block mb-1">Duration</label>
+                    <label className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block mb-1">Duration</label>
                     <div className="flex flex-wrap gap-1.5">
                       {[3, 5, 7, 14, 21, 30].map((d) => (
                         <button
@@ -327,7 +327,7 @@ export default function HabitBattleModal({ tier, friends, onClose, onUpgrade }: 
               {battles.length === 0 && !showForm && (
                 <div className="text-center py-8">
                   <Swords className="w-10 h-10 text-violet-800/50 mx-auto mb-3" />
-                  <p className="text-sm text-slate-500">No battles yet — challenge a friend above!</p>
+                  <p className="text-sm text-slate-400">No battles yet — challenge a friend above!</p>
                 </div>
               )}
             </div>

@@ -55,7 +55,7 @@ export default function StatsBar({ xp, level, bestStreak, totalCompletions, side
         className={`bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-5`}
         style={style.glow ? { boxShadow: style.glow } : undefined}
       >
-        <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-3">Your Progress</p>
+        <p className="text-[10px] text-slate-400 uppercase tracking-wider mb-3">Your Progress</p>
 
         {/* Badge + name */}
         <div className="flex items-center gap-3 mb-4">
@@ -65,7 +65,7 @@ export default function StatsBar({ xp, level, bestStreak, totalCompletions, side
           </div>
           <div>
             <p className={`text-sm font-bold ${style.text}`}>{name}</p>
-            <p className="text-[11px] text-slate-600">Lv {level}</p>
+            <p className="text-[11px] text-slate-400">Lv {level}</p>
           </div>
         </div>
 
@@ -73,7 +73,7 @@ export default function StatsBar({ xp, level, bestStreak, totalCompletions, side
         <div className="mb-4">
           <div className="flex justify-between text-[10px] mb-1.5">
             <span className={style.text}>{displayInto.toLocaleString()} XP</span>
-            <span className="text-slate-600">{span.toLocaleString()} total</span>
+            <span className="text-slate-400">{span.toLocaleString()} total</span>
           </div>
           <div className="w-full h-2.5 bg-violet-950/60 rounded-full overflow-hidden">
             <div
@@ -81,7 +81,7 @@ export default function StatsBar({ xp, level, bestStreak, totalCompletions, side
               style={{ width: `${pct}%` }}
             />
           </div>
-          <p className="text-[10px] text-slate-600 mt-1.5">
+          <p className="text-[10px] text-slate-400 mt-1.5">
             Lv {level + 1} — {(span - displayInto).toLocaleString()} XP to next level
           </p>
         </div>
@@ -106,7 +106,7 @@ export default function StatsBar({ xp, level, bestStreak, totalCompletions, side
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline justify-between mb-1">
           <span className={`text-xs font-semibold ${style.text}`}>{name}</span>
-          <span className="text-[10px] text-slate-600 tabular-nums">
+          <span className="text-[10px] text-slate-400 tabular-nums">
             {displayInto.toLocaleString()} / {span.toLocaleString()} XP
           </span>
         </div>
@@ -116,20 +116,20 @@ export default function StatsBar({ xp, level, bestStreak, totalCompletions, side
             style={{ width: `${pct}%` }}
           />
         </div>
-        <p className="text-[10px] text-slate-600 mt-0.5">Lv {level + 1} — {(span - displayInto).toLocaleString()} XP to next level</p>
+        <p className="text-[10px] text-slate-400 mt-0.5">Lv {level + 1} — {(span - displayInto).toLocaleString()} XP to next level</p>
       </div>
       <div className="flex items-center gap-4 flex-shrink-0">
-        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+        <div className="flex items-center gap-1.5 text-xs text-slate-400">
           <Flame className="w-3.5 h-3.5 text-orange-400" />
           <span className="font-semibold text-slate-300 tabular-nums">{displayStreak}</span>
           <span>best</span>
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+        <div className="flex items-center gap-1.5 text-xs text-slate-400">
           <Zap className="w-3.5 h-3.5 text-violet-400" />
           <span className="font-semibold text-slate-300 tabular-nums">{totalCompletions.toLocaleString()}</span>
           <span className="hidden sm:inline">done</span>
         </div>
-        <div className="flex items-center gap-1 text-xs text-slate-500">
+        <div className="flex items-center gap-1 text-xs text-slate-400">
           <span className={`font-semibold tabular-nums ${style.text}`}>{displayXP.toLocaleString()}</span>
           <span>XP</span>
         </div>
@@ -143,7 +143,7 @@ function StatPill({ icon, value, label, color }: { icon: React.ReactNode; value:
     <div className="bg-violet-950/30 rounded-xl px-2 py-2 text-center">
       {icon && <div className={`flex justify-center mb-0.5 ${color}`}>{icon}</div>}
       <p className={`text-xs font-bold tabular-nums ${color}`}>{value}</p>
-      <p className="text-[9px] text-slate-600">{label}</p>
+      <p className="text-[9px] text-slate-400">{label}</p>
     </div>
   );
 }

@@ -174,7 +174,7 @@ function StudentPack({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
             <span className="text-2xl leading-none">🎓</span>
             <div>
               <p className="text-sm font-bold text-emerald-300">Pack loaded!</p>
-              <p className="text-xs text-slate-500">{STUDENT_HABITS.length} habits added to your dashboard</p>
+              <p className="text-xs text-slate-400">{STUDENT_HABITS.length} habits added to your dashboard</p>
             </div>
           </div>
           <div className="space-y-1.5">
@@ -222,7 +222,7 @@ function StudentPack({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
                 <span className="text-base leading-none">{h.emoji}</span>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-white">{h.name}</p>
-                  <p className="text-[10px] text-slate-600">{h.desc}</p>
+                  <p className="text-[10px] text-slate-400">{h.desc}</p>
                 </div>
                 {h.duration_minutes && (
                   <span className="text-[9px] font-semibold text-violet-400/70 bg-violet-950/50 border border-violet-800/30 px-1.5 py-0.5 rounded-full flex-shrink-0">
@@ -241,7 +241,7 @@ function StudentPack({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
         {loading ? "Loading…" : "Load Student Success Pack"}
       </button>
       <button type="button" onClick={onSkip}
-        className="w-full py-2.5 text-slate-500 hover:text-slate-300 text-sm transition-colors"
+        className="w-full py-2.5 text-slate-400 hover:text-slate-300 text-sm transition-colors"
       >
         Skip — I{"'"}ll set up my own habits
       </button>
@@ -341,7 +341,7 @@ export default function OnboardingModal({ onComplete }: Props) {
       <div className="w-full max-w-md relative">
         {step > 1 && step < finalStep && (
           <button type="button" onClick={back}
-            className="flex items-center gap-1.5 text-slate-500 hover:text-slate-300 text-sm mb-6 transition-colors"
+            className="flex items-center gap-1.5 text-slate-400 hover:text-slate-300 text-sm mb-6 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back
           </button>
@@ -377,7 +377,7 @@ export default function OnboardingModal({ onComplete }: Props) {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-white">{title}</p>
-                      <p className="text-xs text-slate-500 mt-0.5 leading-snug">{desc}</p>
+                      <p className="text-xs text-slate-400 mt-0.5 leading-snug">{desc}</p>
                     </div>
                   </div>
                 ))}
@@ -516,7 +516,7 @@ export default function OnboardingModal({ onComplete }: Props) {
                     <span className="text-xl leading-none flex-shrink-0">{emoji}</span>
                     <div>
                       <p className="text-sm font-semibold text-white">{title}</p>
-                      <p className="text-xs text-slate-500 mt-0.5 leading-snug">{desc}</p>
+                      <p className="text-xs text-slate-400 mt-0.5 leading-snug">{desc}</p>
                     </div>
                   </div>
                 ))}
@@ -566,7 +566,7 @@ export default function OnboardingModal({ onComplete }: Props) {
                     <span className="text-xl leading-none flex-shrink-0 mt-0.5">{icon}</span>
                     <div>
                       <p className="text-sm font-semibold text-white">{label}</p>
-                      <p className="text-xs text-slate-500 mt-0.5 leading-snug">{desc}</p>
+                      <p className="text-xs text-slate-400 mt-0.5 leading-snug">{desc}</p>
                     </div>
                   </div>
                 ))}
@@ -598,7 +598,7 @@ export default function OnboardingModal({ onComplete }: Props) {
                   <div key={label} className="bg-[#0f0f1a] border border-violet-900/20 rounded-xl px-4 py-3.5 text-center">
                     <div className="text-2xl mb-1.5 leading-none">{emoji}</div>
                     <p className="text-lg font-extrabold text-white leading-none">{stat}</p>
-                    <p className="text-[11px] text-slate-500 mt-1 leading-snug">{label}</p>
+                    <p className="text-[11px] text-slate-400 mt-1 leading-snug">{label}</p>
                   </div>
                 ))}
               </div>
@@ -630,7 +630,7 @@ export default function OnboardingModal({ onComplete }: Props) {
                   <div key={label} className="bg-[#0f0f1a] border border-violet-900/20 rounded-xl px-4 py-3.5 text-center">
                     <div className="text-2xl mb-1.5 leading-none">{emoji}</div>
                     <p className="text-lg font-extrabold text-white leading-none">{stat}</p>
-                    <p className="text-[11px] text-slate-500 mt-1 leading-snug">{label}</p>
+                    <p className="text-[11px] text-slate-400 mt-1 leading-snug">{label}</p>
                   </div>
                 ))}
               </div>
@@ -799,7 +799,7 @@ export default function OnboardingModal({ onComplete }: Props) {
                   {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <>I&apos;m ready. Let&apos;s go! <ChevronRight className="w-5 h-5" /></>}
                 </button>
                 {!canFinish && (
-                  <p className="text-[11px] text-slate-600 text-center mt-2">
+                  <p className="text-[11px] text-slate-400 text-center mt-2">
                     {selectedIds.length === 0 ? "Pick at least one goal to continue" : "Enter your custom goal above"}
                   </p>
                 )}
@@ -870,7 +870,7 @@ export default function OnboardingModal({ onComplete }: Props) {
                   {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <>I&apos;m ready. Let&apos;s go! <ChevronRight className="w-5 h-5" /></>}
                 </button>
                 {!canFinish && (
-                  <p className="text-[11px] text-slate-600 text-center mt-2">
+                  <p className="text-[11px] text-slate-400 text-center mt-2">
                     {selectedIds.length === 0 ? "Pick at least one goal to continue" : "Enter your custom goal above"}
                   </p>
                 )}

@@ -221,9 +221,9 @@ export default function HabitTemplatesModal({ onClose, existingHabits, canAddMor
         <div className="flex items-center justify-between px-6 py-4 border-b border-violet-900/20 flex-shrink-0">
           <div>
             <h2 className="text-base font-semibold text-white">Browse templates</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Tap Add to instantly create a habit</p>
+            <p className="text-xs text-slate-400 mt-0.5">Tap Add to instantly create a habit</p>
           </div>
-          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-violet-950/50" aria-label="Close">
+          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-violet-950/50" aria-label="Close">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -241,7 +241,7 @@ export default function HabitTemplatesModal({ onClose, existingHabits, canAddMor
               <button
                 onClick={() => { fetchedRef.current = false; void loadSuggestions(true); }}
                 disabled={suggestionsLoading}
-                className="flex items-center gap-1 text-[10px] text-slate-500 hover:text-violet-400 transition-colors disabled:opacity-40"
+                className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-violet-400 transition-colors disabled:opacity-40"
                 title="Refresh suggestions"
               >
                 <RefreshCw className={`w-3 h-3 ${suggestionsLoading ? "animate-spin" : ""}`} />
@@ -271,18 +271,18 @@ export default function HabitTemplatesModal({ onClose, existingHabits, canAddMor
                       <span className="text-lg flex-shrink-0 mt-0.5">{s.emoji}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-slate-200 leading-snug">{s.name}</p>
-                        <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">{s.reason}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">{s.reason}</p>
                       </div>
                       {renderAddButton(s.name)}
                     </div>
                   );
                 })}
                 {aiNotAlreadyAdded.length === 0 && (
-                  <p className="text-xs text-slate-500 text-center py-2">You&apos;ve added all of today&apos;s AI picks!</p>
+                  <p className="text-xs text-slate-400 text-center py-2">You&apos;ve added all of today&apos;s AI picks!</p>
                 )}
               </div>
             ) : (
-              <p className="text-xs text-slate-500 text-center py-3">Couldn&apos;t load suggestions — using popular templates below.</p>
+              <p className="text-xs text-slate-400 text-center py-3">Couldn&apos;t load suggestions — using popular templates below.</p>
             )}
           </div>
 
@@ -319,7 +319,7 @@ export default function HabitTemplatesModal({ onClose, existingHabits, canAddMor
 
         {/* Footer */}
         <div className="border-t border-violet-900/20 px-6 py-3.5 flex-shrink-0">
-          <p className="text-xs text-slate-600 text-center">
+          <p className="text-xs text-slate-400 text-center">
             {!canAddMore
               ? "You've hit the free plan limit. Upgrade to add more habits."
               : "AI picks refresh daily based on your goals and progress."}

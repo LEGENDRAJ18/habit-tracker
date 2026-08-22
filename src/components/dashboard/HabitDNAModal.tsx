@@ -84,7 +84,7 @@ function ConsistencyRing({ value, daysOfData }: { value: number; daysOfData: num
           {displayed}%
         </p>
         <p className="text-[10px] text-violet-400/60 font-bold uppercase tracking-widest mt-1.5">consistency</p>
-        {daysOfData > 0 && <p className="text-[9px] text-slate-600 mt-0.5">{daysOfData}d tracked</p>}
+        {daysOfData > 0 && <p className="text-[9px] text-slate-400 mt-0.5">{daysOfData}d tracked</p>}
       </div>
     </div>
   );
@@ -103,7 +103,7 @@ function StatChip({ value, label, colorClass, delay }: {
       }}
     >
       <p className={`text-xl font-black leading-none ${colorClass}`}>{value}</p>
-      <p className="text-[9px] text-slate-600 uppercase tracking-wider font-semibold text-center">{label}</p>
+      <p className="text-[9px] text-slate-400 uppercase tracking-wider font-semibold text-center">{label}</p>
     </div>
   );
 }
@@ -377,7 +377,7 @@ export default function HabitDNAModal({ habits, logs, tier, totalXP, onClose, on
             </div>
             <button
               onClick={onClose}
-              className="text-slate-600 hover:text-white p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+              className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-white/5 transition-colors"
               aria-label="Close"
             >
               <X className="w-4 h-4" />
@@ -401,7 +401,7 @@ export default function HabitDNAModal({ habits, logs, tier, totalXP, onClose, on
                 <Sparkles className="w-5 h-5 text-violet-400" />
               </div>
               <p className="text-sm font-bold text-white mb-1">Not enough data yet</p>
-              <p className="text-xs text-slate-500 leading-relaxed">
+              <p className="text-xs text-slate-400 leading-relaxed">
                 Habit DNA unlocks after 30 days of tracking.<br />
                 You&apos;re at {dna.daysOfData} day{dna.daysOfData !== 1 ? "s" : ""} — keep building!
               </p>
@@ -415,7 +415,7 @@ export default function HabitDNAModal({ habits, logs, tier, totalXP, onClose, on
                   }}
                 />
               </div>
-              <p className="text-[10px] text-slate-600 mt-2">{dna.daysOfData} / 30 days</p>
+              <p className="text-[10px] text-slate-400 mt-2">{dna.daysOfData} / 30 days</p>
             </div>
           )}
 
@@ -454,7 +454,7 @@ export default function HabitDNAModal({ habits, logs, tier, totalXP, onClose, on
                   {[["142", "Completions", "text-violet-400"], ["21d", "Best Streak", "text-orange-400"], ["2.4k", "XP Earned", "text-amber-400"]].map(([v, l, c]) => (
                     <div key={l} className="rounded-2xl p-3 text-center" style={{ background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.05)" }}>
                       <p className={`text-xl font-black ${c}`}>{v}</p>
-                      <p className="text-[9px] text-slate-600 uppercase tracking-wider mt-1">{l}</p>
+                      <p className="text-[9px] text-slate-400 uppercase tracking-wider mt-1">{l}</p>
                     </div>
                   ))}
                 </div>
@@ -515,7 +515,7 @@ export default function HabitDNAModal({ habits, logs, tier, totalXP, onClose, on
                 }}
               >
                 <ConsistencyRing value={dna.overallConsistency} daysOfData={dna.daysOfData} />
-                <p className="text-[10px] text-slate-600 mt-2">
+                <p className="text-[10px] text-slate-400 mt-2">
                   across all {habits.length} habit{habits.length !== 1 ? "s" : ""}
                 </p>
               </div>

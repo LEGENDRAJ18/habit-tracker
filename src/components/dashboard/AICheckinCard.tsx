@@ -59,7 +59,7 @@ export default function AICheckinCard({ missedHabitName, onDismiss }: Props) {
           </div>
           <button
             onClick={onDismiss}
-            className="text-slate-600 hover:text-slate-400 transition-colors p-0.5 flex-shrink-0"
+            className="text-slate-400 hover:text-slate-400 transition-colors p-0.5 flex-shrink-0"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -68,7 +68,7 @@ export default function AICheckinCard({ missedHabitName, onDismiss }: Props) {
         {loading && (
           <div className="flex items-center gap-2 mt-3 pl-9.5">
             <Loader2 className="w-3.5 h-3.5 text-violet-500 animate-spin flex-shrink-0" />
-            <span className="text-xs text-slate-500">Generating your tip…</span>
+            <span className="text-xs text-slate-400">Generating your tip…</span>
           </div>
         )}
 

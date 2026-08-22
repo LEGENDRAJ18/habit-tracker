@@ -134,7 +134,7 @@ export default function LevelUpModal({ newLevel, onDismiss, onShare }: Props) {
             G.O.A.T.
           </h2>
           <p className="text-base font-semibold text-yellow-300 mb-2">Greatest Of All Time</p>
-          <p className="text-xs text-slate-500 mb-6 leading-relaxed">
+          <p className="text-xs text-slate-400 mb-6 leading-relaxed">
             Less than 0.001% of users will ever reach this screen.<br />
             You are a habit legend.
           </p>
@@ -246,7 +246,7 @@ export default function LevelUpModal({ newLevel, onDismiss, onShare }: Props) {
         </p>
         <h2 className="text-2xl font-extrabold text-white mb-0.5">You are now Lv {newLevel}</h2>
         <p className={`text-base font-bold ${style.text} mb-1`}>{name}</p>
-        <p className="text-xs text-slate-500 mb-3">Keep going. Every level is proof you showed up.</p>
+        <p className="text-xs text-slate-400 mb-3">Keep going. Every level is proof you showed up.</p>
 
         {/* Reward unlocked at this level */}
         {justUnlocked && (
@@ -266,14 +266,14 @@ export default function LevelUpModal({ newLevel, onDismiss, onShare }: Props) {
 
         {/* XP to next level */}
         {newLevel < 500 && (
-          <p className="text-[11px] text-slate-600 mb-2">
-            Next level · <span className="text-slate-500 font-medium">{xpToNext} XP</span> to go
+          <p className="text-[11px] text-slate-400 mb-2">
+            Next level · <span className="text-slate-400 font-medium">{xpToNext} XP</span> to go
           </p>
         )}
 
         {/* Next reward teaser */}
         {nextReward && (
-          <p className="text-[10px] text-slate-600 mb-4">
+          <p className="text-[10px] text-slate-400 mb-4">
             Next reward: {nextReward.icon} Lv {nextReward.level} — {nextReward.name}
           </p>
         )}

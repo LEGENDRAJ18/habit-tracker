@@ -41,7 +41,7 @@ export default function FocusStatsWidget() {
           {fmtMin(stats.dailyTotal)} focused today 🔥
         </p>
         {weekTotal > 0 && (
-          <p className="text-[10px] text-slate-500 mt-0.5">
+          <p className="text-[10px] text-slate-400 mt-0.5">
             {fmtMin(weekTotal)} this week
             {stats.personalBest > 0 && ` · best day ${fmtMin(stats.personalBest)}`}
           </p>

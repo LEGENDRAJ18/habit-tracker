@@ -40,7 +40,7 @@ export default function LeftSidebar() {
           </div>
           <p className="text-xs font-semibold text-white leading-none">Join Community</p>
         </div>
-        <p className="text-[10px] text-slate-500 leading-relaxed mb-2">
+        <p className="text-[10px] text-slate-400 leading-relaxed mb-2">
           Tips, streaks &amp; accountability
         </p>
         <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#8891F7] group-hover:text-[#a5adf9] transition-colors">
@@ -63,7 +63,7 @@ export default function LeftSidebar() {
             </div>
             <p className="text-xs font-semibold text-white leading-none">AI Goal Program</p>
           </div>
-          <p className="text-[10px] text-slate-500 leading-relaxed">A phased plan built around your goal</p>
+          <p className="text-[10px] text-slate-400 leading-relaxed">A phased plan built around your goal</p>
         </Link>
       ) : (
         <button
@@ -79,7 +79,7 @@ export default function LeftSidebar() {
               <Crown className="w-2.5 h-2.5" />PRO
             </span>
           </div>
-          <p className="text-[10px] text-slate-600 leading-relaxed flex items-center gap-1">
+          <p className="text-[10px] text-slate-400 leading-relaxed flex items-center gap-1">
             <Lock className="w-2.5 h-2.5" /> Unlock a personalized, phased habit plan
           </p>
         </button>
@@ -98,7 +98,7 @@ export default function LeftSidebar() {
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
                 isActive
                   ? "text-white font-bold"
-                  : "text-slate-600 hover:text-slate-300 hover:bg-white/5 font-medium"
+                  : "text-slate-400 hover:text-slate-300 hover:bg-white/5 font-medium"
               }`}
               style={isActive ? {
                 backgroundColor: "rgba(var(--a-r), var(--a-g), var(--a-b), 0.2)",
@@ -127,10 +127,10 @@ export default function LeftSidebar() {
                 Go Pro for maximum results
               </p>
             </div>
-            <p className="text-[10px] text-slate-500 mb-1 leading-relaxed">
+            <p className="text-[10px] text-slate-400 mb-1 leading-relaxed">
               Unlock everything — {proPrice}/mo
             </p>
-            <p className="text-[9px] text-slate-700 mb-3">Prices in {currency} · Charged in USD</p>
+            <p className="text-[9px] text-slate-400 mb-3">Prices in {currency} · Charged in USD</p>
             <button
               onClick={() => openUpgradeModal("pro_feature", true)}
               className="w-full py-1.5 rounded-lg text-[11px] font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 transition-all shadow-md shadow-orange-900/20 flex items-center justify-center gap-1"

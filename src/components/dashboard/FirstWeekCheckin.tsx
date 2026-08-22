@@ -98,7 +98,7 @@ export default function FirstWeekCheckin({ goals, habitCount, completionCount, o
         {done && (
           <button
             onClick={onDismiss}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-600 hover:text-slate-300 hover:bg-emerald-950/50 transition-all flex-shrink-0"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-300 hover:bg-emerald-950/50 transition-all flex-shrink-0"
             aria-label="Dismiss"
           >
             <X className="w-3.5 h-3.5" />

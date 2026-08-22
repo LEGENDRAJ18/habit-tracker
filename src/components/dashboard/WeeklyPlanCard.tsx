@@ -67,7 +67,7 @@ export default function WeeklyPlanCard() {
         <button
           onClick={generatePlan}
           disabled={generating || loading}
-          className="p-1.5 rounded-lg text-slate-500 hover:text-violet-400 hover:bg-violet-950/40 transition-all disabled:opacity-40"
+          className="p-1.5 rounded-lg text-slate-400 hover:text-violet-400 hover:bg-violet-950/40 transition-all disabled:opacity-40"
           title="Regenerate plan"
           aria-label="Regenerate plan"
         >
@@ -97,7 +97,7 @@ export default function WeeklyPlanCard() {
         </div>
       ) : !plan ? (
         <div className="text-center py-3">
-          <p className="text-xs text-slate-500 mb-3 leading-relaxed">
+          <p className="text-xs text-slate-400 mb-3 leading-relaxed">
             Get a personalised action plan for this week based on your habits and goals.
           </p>
           <button
@@ -125,7 +125,7 @@ export default function WeeklyPlanCard() {
             ))}
           </ol>
           {generating && (
-            <div className="flex items-center gap-1.5 mt-3 text-[11px] text-slate-500">
+            <div className="flex items-center gap-1.5 mt-3 text-[11px] text-slate-400">
               <Loader2 className="w-3 h-3 animate-spin" />
               Regenerating…
             </div>

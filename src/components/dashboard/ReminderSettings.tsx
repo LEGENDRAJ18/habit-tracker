@@ -54,7 +54,7 @@ export default function ReminderSettings({ enabled, hour, minute, onSave }: Prop
         </div>
         <div>
           <p className="text-sm font-semibold text-white leading-none">Email Reminders</p>
-          <p className="text-xs text-slate-500 mt-0.5">Daily nudge to complete your habits</p>
+          <p className="text-xs text-slate-400 mt-0.5">Daily nudge to complete your habits</p>
         </div>
       </div>
 
@@ -78,7 +78,7 @@ export default function ReminderSettings({ enabled, hour, minute, onSave }: Prop
       {/* Time picker */}
       {localEnabled && (
         <div className="mb-4">
-          <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">Reminder time</p>
+          <p className="text-xs text-slate-400 mb-2 uppercase tracking-wider">Reminder time</p>
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
               <input
@@ -93,7 +93,7 @@ export default function ReminderSettings({ enabled, hour, minute, onSave }: Prop
               {formatDisplay(localHour, localMinute)}
             </div>
           </div>
-          <p className="text-[11px] text-slate-600 mt-2">
+          <p className="text-[11px] text-slate-400 mt-2">
             We&apos;ll send your reminder at approximately this time each day.
           </p>
         </div>
@@ -101,7 +101,7 @@ export default function ReminderSettings({ enabled, hour, minute, onSave }: Prop
 
       {/* Disabled hint */}
       {!localEnabled && (
-        <div className="flex items-center gap-2 text-xs text-slate-600 mb-4">
+        <div className="flex items-center gap-2 text-xs text-slate-400 mb-4">
           <BellOff className="w-3.5 h-3.5" />
           Reminders are off — you won&apos;t receive any emails
         </div>
@@ -114,7 +114,7 @@ export default function ReminderSettings({ enabled, hour, minute, onSave }: Prop
         className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${
           hasChanges && !saving
             ? "bg-violet-600 hover:bg-violet-500 text-white"
-            : "bg-slate-800/50 text-slate-600 cursor-not-allowed"
+            : "bg-slate-800/50 text-slate-400 cursor-not-allowed"
         }`}
       >
         {saving ? (

@@ -397,11 +397,11 @@ export default function FocusTimer({ habit, tier, isCompleted, minimized, onMini
               {/* Stats row */}
               <div className="grid grid-cols-2 gap-3 mb-7" style={{ animation: "ftSlideUp 0.5s 0.4s both" }}>
                 <div className="bg-violet-950/50 border border-violet-800/30 rounded-2xl px-4 py-3">
-                  <p className="text-xs text-slate-500 mb-1">Focus time</p>
+                  <p className="text-xs text-slate-400 mb-1">Focus time</p>
                   <p className="text-xl font-bold text-violet-300">{durationMinutes} min</p>
                 </div>
                 <div className="bg-amber-950/30 border border-amber-800/30 rounded-2xl px-4 py-3">
-                  <p className="text-xs text-slate-500 mb-1">XP earned</p>
+                  <p className="text-xs text-slate-400 mb-1">XP earned</p>
                   <p className="text-xl font-bold text-amber-300">{xpEarned > 0 ? `+${xpEarned}` : "0"} XP</p>
                 </div>
               </div>
@@ -457,7 +457,7 @@ export default function FocusTimer({ habit, tier, isCompleted, minimized, onMini
             </button>
             <button
               onClick={onClose}
-              className="w-full py-2.5 text-slate-500 hover:text-slate-300 text-sm transition-colors"
+              className="w-full py-2.5 text-slate-400 hover:text-slate-300 text-sm transition-colors"
             >
               Close
             </button>
@@ -519,12 +519,12 @@ export default function FocusTimer({ habit, tier, isCompleted, minimized, onMini
                 {habit.name}
               </h2>
               {habit.description && (
-                <p className="text-xs text-slate-500 mt-0.5 truncate">{habit.description}</p>
+                <p className="text-xs text-slate-400 mt-0.5 truncate">{habit.description}</p>
               )}
             </div>
             <button
               onClick={state.isRunning || state.isPaused ? onMinimize : onClose}
-              className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 hover:text-white hover:bg-violet-950/60 transition-all flex-shrink-0"
+              className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-violet-950/60 transition-all flex-shrink-0"
               aria-label={state.isRunning || state.isPaused ? "Minimize timer" : "Close timer"}
             >
               <X className="w-4.5 h-4.5" />
@@ -535,7 +535,7 @@ export default function FocusTimer({ habit, tier, isCompleted, minimized, onMini
           <div className="flex flex-col items-center gap-2">
             {isPomodoroMode && (
               <div className="flex flex-col items-center gap-1.5">
-                <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
+                <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
                   Round {state.round} of {state.totalRounds}
                 </p>
                 <RoundDots round={state.round} total={state.totalRounds} isPro={isPro} />
@@ -567,7 +567,7 @@ export default function FocusTimer({ habit, tier, isCompleted, minimized, onMini
                 {fmt(state.remaining)}
               </span>
               {/* Duration label */}
-              <span className="text-[11px] text-slate-600 mt-1.5 tracking-wide">
+              <span className="text-[11px] text-slate-400 mt-1.5 tracking-wide">
                 {state.phase === "focus"
                   ? isPomodoroMode
                     ? "Pomodoro focus"
@@ -640,7 +640,7 @@ export default function FocusTimer({ habit, tier, isCompleted, minimized, onMini
               {!showGiveUpConfirm ? (
                 <button
                   onClick={() => setShowGiveUpConfirm(true)}
-                  className="w-full py-2 text-slate-600 hover:text-red-400 text-xs transition-colors font-medium"
+                  className="w-full py-2 text-slate-400 hover:text-red-400 text-xs transition-colors font-medium"
                 >
                   Give Up
                 </button>

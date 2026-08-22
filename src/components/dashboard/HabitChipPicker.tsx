@@ -43,10 +43,10 @@ export default function HabitChipPicker({ label, value, onChange, placeholder, m
 
   return (
     <div>
-      <label className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold block mb-1.5">{label}</label>
+      <label className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block mb-1.5">{label}</label>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-xs text-slate-600 py-2">
+        <div className="flex items-center gap-2 text-xs text-slate-400 py-2">
           <Loader2 className="w-3.5 h-3.5 animate-spin" />Loading your habits…
         </div>
       ) : !customMode ? (
@@ -68,7 +68,7 @@ export default function HabitChipPicker({ label, value, onChange, placeholder, m
           <button
             type="button"
             onClick={() => { setCustomMode(true); onChange(""); }}
-            className="px-3 py-2 rounded-full text-xs font-medium border border-dashed border-violet-800/40 text-slate-500 hover:text-slate-300 hover:border-violet-700/50 transition-all"
+            className="px-3 py-2 rounded-full text-xs font-medium border border-dashed border-violet-800/40 text-slate-400 hover:text-slate-300 hover:border-violet-700/50 transition-all"
           >
             Something else…
           </button>

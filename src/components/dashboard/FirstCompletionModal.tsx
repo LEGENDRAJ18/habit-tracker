@@ -81,7 +81,7 @@ export default function FirstCompletionModal({ onDismiss }: Props) {
           >
             Keep the momentum →
           </button>
-          <p className="text-[10px] text-slate-700 mt-3">Tap anywhere to dismiss</p>
+          <p className="text-[10px] text-slate-400 mt-3">Tap anywhere to dismiss</p>
         </div>
       </div>
     </div>

@@ -147,13 +147,13 @@ function QuickStats({
       <div className="relative overflow-hidden bg-gradient-to-br from-violet-900/35 to-[#0c0c18] border border-violet-700/30 rounded-xl px-3 py-2.5 text-center">
         <CheckCircle2 className="w-3.5 h-3.5 text-violet-400 mx-auto mb-1" />
         <p className="text-lg font-bold leading-none text-violet-300 tabular-nums" style={{ animation: "countUp 0.5s ease-out both" }}>{pct}%</p>
-        <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider font-medium">Today · done</p>
+        <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-medium">Today · done</p>
       </div>
 
       <div className="relative overflow-hidden bg-gradient-to-br from-orange-900/35 to-[#0c0c18] border border-orange-700/30 rounded-xl px-3 py-2.5 text-center">
         <Flame className="w-3.5 h-3.5 text-orange-400 mx-auto mb-1" />
         <p className="text-lg font-bold leading-none text-orange-400 tabular-nums" style={{ animation: "countUp 0.5s ease-out both" }}>{bestStreak}d</p>
-        <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider font-medium">Streak · best</p>
+        <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-medium">Streak · best</p>
       </div>
 
       <button
@@ -168,7 +168,7 @@ function QuickStats({
             <p className="text-lg font-bold leading-none text-amber-400 tabular-nums" style={{ animation: "countUp 0.5s ease-out both" }}>{totalXP.toLocaleString()}</p>
           </>
         )}
-        <p className="text-[10px] text-slate-500 group-hover:text-amber-300 mt-1 uppercase tracking-wider font-medium transition-colors">XP · tap ›</p>
+        <p className="text-[10px] text-slate-400 group-hover:text-amber-300 mt-1 uppercase tracking-wider font-medium transition-colors">XP · tap ›</p>
       </button>
     </div>
   );
@@ -202,7 +202,7 @@ function XPLevelBar({ xp, level, onClick }: { xp: number; level: number; onClick
           />
         </div>
       </div>
-      <span className="text-[13px] text-slate-600 group-hover:text-violet-400 transition-colors flex-shrink-0 leading-none">›</span>
+      <span className="text-[13px] text-slate-400 group-hover:text-violet-400 transition-colors flex-shrink-0 leading-none">›</span>
     </button>
   );
 }
@@ -260,7 +260,7 @@ function ProgressRing({ completed, total, tier }: { completed: number; total: nu
       {/* Center label */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
         <span className={`text-lg font-bold leading-none ${palette.text}`}>{pct}%</span>
-        <span className="text-[10px] text-slate-600 leading-none mt-0.5">done</span>
+        <span className="text-[10px] text-slate-400 leading-none mt-0.5">done</span>
       </div>
     </div>
   );
@@ -297,14 +297,14 @@ function WeeklyProgressBar({ logs }: { logs: Pick<{ habit_id: string; completed_
                 ? "bg-violet-600 text-white shadow-sm shadow-violet-900/40"
                 : d.isToday
                 ? "bg-violet-950/60 border border-violet-700/40 text-violet-500"
-                : "bg-slate-900/40 text-slate-700"
+                : "bg-slate-900/40 text-slate-400"
             }`}
           >
             {d.label}
           </div>
         ))}
       </div>
-      <span className="text-[10px] text-slate-600 font-medium whitespace-nowrap">{activeDays}/7 this week</span>
+      <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">{activeDays}/7 this week</span>
     </div>
   );
 }
@@ -370,15 +370,15 @@ function AllDoneCelebration({
           <div className="grid grid-cols-3 gap-2 mb-5">
             <div className="bg-violet-950/40 rounded-xl py-2.5 border border-violet-800/20">
               <p className="text-lg font-bold text-violet-300 leading-none">{completedCount}</p>
-              <p className="text-[9px] text-slate-600 mt-0.5 uppercase tracking-wider">Done</p>
+              <p className="text-[9px] text-slate-400 mt-0.5 uppercase tracking-wider">Done</p>
             </div>
             <div className="bg-orange-950/30 rounded-xl py-2.5 border border-orange-800/20">
               <p className="text-lg font-bold text-orange-300 leading-none">{bestStreak}d</p>
-              <p className="text-[9px] text-slate-600 mt-0.5 uppercase tracking-wider">Streak</p>
+              <p className="text-[9px] text-slate-400 mt-0.5 uppercase tracking-wider">Streak</p>
             </div>
             <div className="bg-amber-950/30 rounded-xl py-2.5 border border-amber-800/20">
               <p className="text-lg font-bold text-amber-300 leading-none">+{xpToday}</p>
-              <p className="text-[9px] text-slate-600 mt-0.5 uppercase tracking-wider">XP Today</p>
+              <p className="text-[9px] text-slate-400 mt-0.5 uppercase tracking-wider">XP Today</p>
             </div>
           </div>
 
@@ -826,7 +826,7 @@ export default function DashboardPage() {
         <div className="absolute -top-12 -right-12 w-64 h-64 bg-violet-600/8 rounded-full blur-3xl pointer-events-none" />
         <div className="relative">
           {/* Greeting */}
-          <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">{today}</p>
+          <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">{today}</p>
           <div className="flex items-center gap-2 flex-wrap mb-1">
             <h1 className="text-2xl font-bold text-white">{getGreeting()} 👋</h1>
             {!loading && (
@@ -837,10 +837,10 @@ export default function DashboardPage() {
                   className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full transition-opacity hover:opacity-75 ${
                     bestStreak > 0
                       ? "text-orange-300 bg-orange-950/40 border border-orange-700/30"
-                      : "text-slate-500 bg-slate-900/40 border border-slate-700/30"
+                      : "text-slate-400 bg-slate-900/40 border border-slate-700/30"
                   }`}
                 >
-                  <Flame className={`w-3 h-3 flex-shrink-0 ${bestStreak > 0 ? "text-orange-400" : "text-slate-600"}`} />
+                  <Flame className={`w-3 h-3 flex-shrink-0 ${bestStreak > 0 ? "text-orange-400" : "text-slate-400"}`} />
                   {bestStreak}d streak
                 </button>
                 {xpLoading ? (
@@ -920,7 +920,7 @@ export default function DashboardPage() {
                 onClick={() => setShowTemplates(true)}
                 aria-label="Browse habit templates"
                 title="Browse templates"
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-violet-800/30 text-slate-500 hover:text-violet-300 hover:border-violet-700/50 hover:bg-violet-950/20 transition-all text-xs font-medium"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-violet-800/30 text-slate-400 hover:text-violet-300 hover:border-violet-700/50 hover:bg-violet-950/20 transition-all text-xs font-medium"
               >
                 <span>✨</span>
                 <span className="hidden sm:inline">Templates</span>
@@ -946,7 +946,7 @@ export default function DashboardPage() {
                       Streak Protected
                     </span>
                   )}
-                  <span className={`text-xs ${freezeAvailable ? "text-slate-500" : "text-slate-600"}`}>
+                  <span className={`text-xs ${freezeAvailable ? "text-slate-400" : "text-slate-400"}`}>
                     {freezeAvailable ? "1 freeze available this week" : "0 freezes left this week"}
                   </span>
                 </div>
@@ -1049,7 +1049,7 @@ export default function DashboardPage() {
                 <h2 className="text-xl font-bold text-white mb-1">
                   Here are 3 habits that will make the biggest difference
                 </h2>
-                <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+                <p className="text-sm text-slate-400 mb-6 leading-relaxed">
                   Chosen for your goals — one click to add any of them.
                 </p>
 
@@ -1066,7 +1066,7 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-white">{rec.name}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{rec.desc}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">{rec.desc}</p>
                       </div>
                       <div className="w-7 h-7 rounded-lg bg-violet-600/0 group-hover:bg-violet-600/20 flex items-center justify-center transition-all flex-shrink-0">
                         <Plus className="w-3.5 h-3.5 text-violet-400 opacity-0 group-hover:opacity-100 transition-all" />
@@ -1077,7 +1077,7 @@ export default function DashboardPage() {
 
                 <button
                   onClick={handleAddClick}
-                  className="text-sm text-slate-600 hover:text-slate-400 transition-colors underline underline-offset-2"
+                  className="text-sm text-slate-400 hover:text-slate-400 transition-colors underline underline-offset-2"
                 >
                   Or add a custom habit →
                 </button>
@@ -1112,7 +1112,7 @@ export default function DashboardPage() {
             {/* Search bar — desktop only; mobile uses no filter */}
             {habits.length >= 3 && (
               <div className="hidden sm:block relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-600 pointer-events-none" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                 <input
                   type="text"
                   value={search}
@@ -1129,7 +1129,7 @@ export default function DashboardPage() {
                   <button
                     onClick={() => setSearch("")}
                     aria-label="Clear search"
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400 transition-colors"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-400 transition-colors"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -1139,7 +1139,7 @@ export default function DashboardPage() {
 
             {/* Empty filter state */}
             {search.trim() && filteredHabits.length === 0 && (
-              <p className="text-sm text-slate-500 text-center py-8">
+              <p className="text-sm text-slate-400 text-center py-8">
                 No habits match &ldquo;{search}&rdquo;
               </p>
             )}
@@ -1372,7 +1372,7 @@ export default function DashboardPage() {
                   <Crown className="w-2.5 h-2.5" />PRO
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">AI-suggested habits tailored to your goals and completion patterns.</p>
+              <p className="text-xs text-slate-400 mt-0.5">AI-suggested habits tailored to your goals and completion patterns.</p>
             </div>
             <button
               onClick={() => openUpgradeModal("pro_feature", tier === "plus")}
@@ -1416,10 +1416,10 @@ export default function DashboardPage() {
               </button>
               <p className="text-[10px] text-center mt-2">
                 {tier === "pro"
-                  ? <span className="text-slate-600">Unlimited insights · Pro</span>
+                  ? <span className="text-slate-400">Unlimited insights · Pro</span>
                   : isPaid
-                  ? <span className="text-slate-600">5 insights / day · Plus</span>
-                  : <span className="text-slate-600">1 insight / day · Free</span>}
+                  ? <span className="text-slate-400">5 insights / day · Plus</span>
+                  : <span className="text-slate-400">1 insight / day · Free</span>}
               </p>
             </div>
           </div>
@@ -1472,7 +1472,7 @@ export default function DashboardPage() {
                       <span className="text-sm leading-none">⚡</span>
                       <span className="text-xs font-bold text-amber-300">{genuineCompletedCount * 10} XP</span>
                     </div>
-                    <p className="text-[10px] text-slate-600 pt-0.5">{completedCount}/{habits.length} habits done today</p>
+                    <p className="text-[10px] text-slate-400 pt-0.5">{completedCount}/{habits.length} habits done today</p>
                   </div>
                 </div>
                 <p className="relative text-[11px] text-violet-300/80 mt-3 font-medium">{motivational}</p>
@@ -1533,8 +1533,8 @@ export default function DashboardPage() {
           ) : (
             <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-3">
-                <ClipboardList className="w-4 h-4 text-slate-600" />
-                <p className="text-sm font-semibold text-slate-500">Your Week Plan</p>
+                <ClipboardList className="w-4 h-4 text-slate-400" />
+                <p className="text-sm font-semibold text-slate-400">Your Week Plan</p>
                 <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-300 bg-amber-900/25 border border-amber-600/25 px-1.5 py-0.5 rounded-full ml-auto">
                   <Crown className="w-2.5 h-2.5" />PRO
                 </span>
