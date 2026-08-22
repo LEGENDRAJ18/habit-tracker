@@ -281,6 +281,7 @@ export function useHabits() {
     xpValue?: number | null,
     difficulty?: number | null,
     habitType?: "standard" | "limit",
+    dayOfWeek?: number | null,
   ): Promise<{ error: string | null }> => {
     // resolveUser() checks token expiry at every layer and refreshes via
     // getUser()/refreshSession() if expired, so the token is guaranteed fresh
@@ -306,7 +307,7 @@ export function useHabits() {
       name,
       description:             description || null,
       frequency,
-      day_of_week:             null,
+      day_of_week:             frequency === "weekly" ? dayOfWeek ?? null : null,
       created_at:              now,
       stack_after_id:          stackAfterId    ?? null,
       habit_strength:          10,
@@ -332,6 +333,7 @@ export function useHabits() {
         name,
         description:             description || null,
         frequency,
+        day_of_week:             frequency === "weekly" ? dayOfWeek ?? null : null,
         stack_after_id:          stackAfterId    ?? null,
         when_time:               whenTime        ?? null,
         where_location:          whereLocation   ?? null,
@@ -356,6 +358,7 @@ export function useHabits() {
       name,
       description:             description || null,
       frequency,
+      day_of_week:             frequency === "weekly" ? dayOfWeek ?? null : null,
       stack_after_id:          stackAfterId    ?? null,
       when_time:               whenTime        ?? null,
       where_location:          whereLocation   ?? null,

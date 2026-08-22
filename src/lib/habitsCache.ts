@@ -74,6 +74,7 @@ export type AddHabitPayload = {
   name:                    string;
   description:             string | null;
   frequency:               "daily" | "weekly";
+  day_of_week:             number | null;
   stack_after_id:          string | null;
   when_time:               string | null;
   where_location:          string | null;

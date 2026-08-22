@@ -370,6 +370,7 @@ interface Props {
     xpValue?: number | null,
     difficulty?: number | null,
     habitType?: "standard" | "limit",
+    dayOfWeek?: number | null,
   ) => Promise<{ error: string | null }>;
   onSchedule?: (
     name: string, description: string, frequency: "daily" | "weekly",
@@ -392,6 +393,9 @@ export default function AddHabitModal({
   const [name, setName]                   = useState("");
   const [description, setDescription]     = useState("");
   const [frequency, setFrequency]         = useState<"daily" | "weekly">("daily");
+  // Which single day a "weekly" habit is due. Defaults to today so it's
+  // never left unselected — a weekly habit needs a day to be meaningful.
+  const [dayOfWeek, setDayOfWeek]         = useState<number>(() => new Date().getDay());
   const [whenTime, setWhenTime]           = useState("");
   const [whereLocation, setWhereLocation] = useState("");
   const [howLong, setHowLong]             = useState("");
@@ -547,6 +551,7 @@ export default function AddHabitModal({
         null, whenTime || null, whereLocation || null, howLong || null, getValidity(),
         reminderTime || null, durationMinutes,
         difficulty.xp, difficulty.level, habitType,
+        frequency === "weekly" ? dayOfWeek : null,
       );
       // Outer safety net: auth resolve ≤6.5s + DB insert ≤6s = ≤12.5s worst case.
       // 20s gives comfortable headroom without blocking the UI indefinitely.
@@ -950,6 +955,31 @@ export default function AddHabitModal({
                           </div>
                         )}
                       </div>
+
+                      {/* Which day — weekly habits only, locked to a single day */}
+                      {frequency === "weekly" && (
+                        <div>
+                          <label className={labelCls}>Which day?</label>
+                          <div className="grid grid-cols-7 gap-1.5">
+                            {DOW_LABELS.map((d, i) => {
+                              const dow = DOW_MAP[i] ?? 0;
+                              const active = dayOfWeek === dow;
+                              return (
+                                <button key={i} type="button"
+                                  onClick={() => setDayOfWeek(dow)}
+                                  className={`aspect-square rounded-xl flex items-center justify-center text-xs font-bold transition-all ${
+                                    active
+                                      ? "bg-violet-600 text-white shadow-sm shadow-violet-900/40"
+                                      : "bg-violet-950/30 hover:bg-violet-950/50 border border-violet-900/25 hover:border-violet-700/40 text-slate-300 hover:text-white"
+                                  }`}
+                                >
+                                  {d}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Habit type — standard positive action vs. self-reported limit */}
                       <div>
