@@ -120,6 +120,7 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
           <button
             onClick={dismiss}
             className="mt-1 w-7 h-7 rounded-full bg-slate-800/80 flex items-center justify-center text-slate-500 hover:text-white transition-colors flex-shrink-0"
+            aria-label="Close"
           >
             <X className="w-3.5 h-3.5" />
           </button>

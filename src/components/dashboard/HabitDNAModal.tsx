@@ -378,6 +378,7 @@ export default function HabitDNAModal({ habits, logs, tier, totalXP, onClose, on
             <button
               onClick={onClose}
               className="text-slate-600 hover:text-white p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+              aria-label="Close"
             >
               <X className="w-4 h-4" />
             </button>

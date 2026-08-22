@@ -103,7 +103,7 @@ function DeleteModal({ onConfirm, onCancel, loading }: { onConfirm: () => void; 
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
       <div className="relative bg-[#0f0f1a] border border-red-900/40 rounded-2xl p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-        <button onClick={onCancel} className="absolute top-4 right-4 text-slate-600 hover:text-slate-300"><X className="w-4 h-4" /></button>
+        <button onClick={onCancel} className="absolute top-4 right-4 text-slate-600 hover:text-slate-300" aria-label="Close"><X className="w-4 h-4" /></button>
         <div className="w-12 h-12 rounded-full bg-red-950/50 border border-red-800/40 flex items-center justify-center mx-auto mb-4">
           <Trash2 className="w-5 h-5 text-red-400" />
         </div>
@@ -422,7 +422,7 @@ function AccountTab({
               <Field label="New password" hint="Minimum 8 characters.">
                 <div className="relative">
                   <Input type={showPw ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" />
-                  <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+                  <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300" aria-label={showPw ? "Hide password" : "Show password"}>
                     {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>

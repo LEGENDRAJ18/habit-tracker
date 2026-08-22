@@ -326,7 +326,7 @@ function DayDetailPanel({ detail, logs, onClose }: {
           <div className={`w-2 h-2 rounded-full flex-shrink-0 ${allDone ? "bg-emerald-400" : noneDone ? "bg-red-500" : "bg-amber-400"}`} />
           <p className="text-sm font-semibold text-white">{fmtDate(detail.date)}</p>
         </div>
-        <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50">
+        <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50" aria-label="Close">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -668,6 +668,7 @@ function PlanAheadSection({ habits, goals, tier, scheduled, onAdd, onRemove, onC
                     <button
                       onClick={() => onRemove(s.id)}
                       className="text-slate-700 hover:text-red-400 transition-colors p-1"
+                      aria-label="Remove"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
@@ -1266,13 +1267,14 @@ export default function CalendarPage() {
 
             {/* Month navigator */}
             <div className="flex items-center justify-between bg-[#0c0c18] border border-violet-900/20 rounded-2xl px-4 py-3">
-              <button onClick={prevMonth} className="p-1.5 rounded-lg text-slate-500 hover:text-violet-300 hover:bg-violet-950/60 transition-all">
+              <button onClick={prevMonth} className="p-1.5 rounded-lg text-slate-500 hover:text-violet-300 hover:bg-violet-950/60 transition-all" aria-label="Previous month">
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <h2 className="text-sm font-bold text-white">{monthLabel}</h2>
               <button
                 onClick={nextMonth}
                 disabled={canGoNext}
+                aria-label="Next month"
                 className="p-1.5 rounded-lg text-slate-500 hover:text-violet-300 hover:bg-violet-950/60 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <ChevronRight className="w-4 h-4" />

@@ -311,7 +311,7 @@ export default function GroupsPage() {
           <div className="bg-[#0f0f1a] border border-violet-700/30 rounded-2xl p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-white">Create Group</h3>
-              <button onClick={() => setShowCreate(false)}><X className="w-4 h-4 text-slate-500" /></button>
+              <button onClick={() => setShowCreate(false)} aria-label="Close"><X className="w-4 h-4 text-slate-500" /></button>
             </div>
             <div className="space-y-3">
               <input
@@ -361,7 +361,7 @@ export default function GroupsPage() {
           <div className="bg-[#0f0f1a] border border-violet-700/30 rounded-2xl p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-white">Join with Code</h3>
-              <button onClick={() => setShowJoin(false)}><X className="w-4 h-4 text-slate-500" /></button>
+              <button onClick={() => setShowJoin(false)} aria-label="Close"><X className="w-4 h-4 text-slate-500" /></button>
             </div>
             <div className="space-y-3">
               <input

@@ -203,7 +203,7 @@ export default function HabitBattleModal({ tier, friends, onClose, onUpgrade }: 
                 <p className="text-[11px] text-violet-400/70">Challenge friends to 7-day duels</p>
               </div>
             </div>
-            <button onClick={onClose} className="text-slate-500 hover:text-white p-1.5 rounded-lg hover:bg-violet-950/50 transition-colors">
+            <button onClick={onClose} className="text-slate-500 hover:text-white p-1.5 rounded-lg hover:bg-violet-950/50 transition-colors" aria-label="Close">
               <X className="w-4 h-4" />
             </button>
           </div>

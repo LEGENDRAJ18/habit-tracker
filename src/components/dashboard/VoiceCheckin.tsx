@@ -151,6 +151,7 @@ export default function VoiceCheckin({ habitId, habitName, habitLogId, tier, onC
         <button
           onClick={() => { stopRecording(); setStage("idle"); setExpanded(false); transcriptRef.current = ""; }}
           className="text-slate-600 hover:text-slate-400 p-1 touch-manipulation"
+          aria-label="Cancel recording"
         >
           <X className="w-3.5 h-3.5" />
         </button>

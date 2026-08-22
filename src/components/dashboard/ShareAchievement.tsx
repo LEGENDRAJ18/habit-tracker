@@ -230,6 +230,7 @@ export default function ShareAchievement({
           <button
             onClick={onClose}
             className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50"
+            aria-label="Close"
           >
             <X className="w-4 h-4" />
           </button>

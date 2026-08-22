@@ -334,7 +334,7 @@ export default function GoalProgramDashboard({
             <p className="text-xs text-slate-500 mb-1.5">How did this week go?</p>
             <div className="flex gap-1.5 mb-4">
               {[1, 2, 3, 4, 5].map((n) => (
-                <button key={n} onClick={() => setRating(n)}>
+                <button key={n} onClick={() => setRating(n)} aria-label={`Rate ${n} star${n > 1 ? "s" : ""}`}>
                   <Star className={`w-7 h-7 transition-colors ${n <= rating ? "text-amber-400 fill-amber-400" : "text-slate-700"}`} />
                 </button>
               ))}

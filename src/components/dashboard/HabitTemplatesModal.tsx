@@ -223,7 +223,7 @@ export default function HabitTemplatesModal({ onClose, existingHabits, canAddMor
             <h2 className="text-base font-semibold text-white">Browse templates</h2>
             <p className="text-xs text-slate-500 mt-0.5">Tap Add to instantly create a habit</p>
           </div>
-          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-violet-950/50">
+          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-violet-950/50" aria-label="Close">
             <X className="w-4 h-4" />
           </button>
         </div>

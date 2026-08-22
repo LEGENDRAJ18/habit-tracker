@@ -124,6 +124,7 @@ function ConsentModal({ plan, loading, onConfirm, onCancel, plusPrice, proPrice,
           <button
             onClick={onCancel}
             className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50"
+            aria-label="Close"
           >
             <X className="w-4 h-4" />
           </button>
@@ -281,6 +282,7 @@ export default function UpgradeModal({ onClose, reason = "habits", fromPlus = fa
           <button
             onClick={onClose}
             className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50"
+            aria-label="Close"
           >
             <X className="w-4 h-4" />
           </button>

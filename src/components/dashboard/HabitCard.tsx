@@ -551,6 +551,7 @@ export default function HabitCard({
                   disabled={editSaving}
                   className="flex-shrink-0 p-1 text-emerald-400 hover:text-emerald-300 transition-colors"
                   title="Save"
+                  aria-label="Save habit name"
                 >
                   {editSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                 </button>
@@ -558,6 +559,7 @@ export default function HabitCard({
                   onClick={() => { setEditMode(false); setEditName(habit.name); setEditReminderTime(habit.preferred_reminder_time ?? ""); }}
                   className="flex-shrink-0 p-1 text-slate-500 hover:text-slate-300 transition-colors"
                   title="Cancel"
+                  aria-label="Cancel edit"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -664,6 +666,7 @@ export default function HabitCard({
         <button onClick={handleDelete}
           className="flex-shrink-0 transition-all p-1 rounded-lg text-slate-700 hover:text-red-400 opacity-40 sm:opacity-0 sm:group-hover:opacity-100"
           title="Delete habit"
+          aria-label="Delete habit"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -715,6 +718,7 @@ export default function HabitCard({
             onClick={() => { setFreezeHintDismissed(true); localStorage.setItem("habitai_freeze_hint_dismissed", "1"); }}
             className="flex-shrink-0 text-slate-700 hover:text-slate-400 p-0.5"
             title="Dismiss"
+            aria-label="Dismiss"
           >
             <X className="w-3 h-3" />
           </button>

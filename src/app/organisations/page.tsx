@@ -213,7 +213,7 @@ export default function OrganisationsPage() {
               <div className="bg-[#0f0f1a] border border-violet-700/30 rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-bold text-white">Create Organisation</h3>
-                  <button onClick={() => setShowCreate(false)}><X className="w-4 h-4 text-slate-500" /></button>
+                  <button onClick={() => setShowCreate(false)} aria-label="Close"><X className="w-4 h-4 text-slate-500" /></button>
                 </div>
                 <div className="space-y-3">
                   <input
@@ -246,7 +246,7 @@ export default function OrganisationsPage() {
               <div className="bg-[#0f0f1a] border border-violet-700/30 rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-bold text-white">Join with Code</h3>
-                  <button onClick={() => setShowJoin(false)}><X className="w-4 h-4 text-slate-500" /></button>
+                  <button onClick={() => setShowJoin(false)} aria-label="Close"><X className="w-4 h-4 text-slate-500" /></button>
                 </div>
                 <div className="space-y-3">
                   <input
@@ -337,6 +337,7 @@ export default function OrganisationsPage() {
                                 disabled={kicking === m.user_id}
                                 className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-red-950/40 text-slate-600 hover:text-red-400 transition-colors disabled:opacity-40"
                                 title="Remove member"
+                                aria-label="Remove member"
                               >
                                 {kicking === m.user_id ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
                               </button>

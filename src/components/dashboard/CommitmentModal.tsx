@@ -64,7 +64,7 @@ export default function CommitmentModal({
               </div>
               <h2 className="text-sm font-bold text-white">Public Commitment</h2>
             </div>
-            <button onClick={onClose} className="text-slate-500 hover:text-white p-1 rounded-lg hover:bg-violet-950/40 transition-colors">
+            <button onClick={onClose} className="text-slate-500 hover:text-white p-1 rounded-lg hover:bg-violet-950/40 transition-colors" aria-label="Close">
               <X className="w-4 h-4" />
             </button>
           </div>

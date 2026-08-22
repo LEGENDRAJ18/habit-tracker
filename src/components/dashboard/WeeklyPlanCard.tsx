@@ -69,6 +69,7 @@ export default function WeeklyPlanCard() {
           disabled={generating || loading}
           className="p-1.5 rounded-lg text-slate-500 hover:text-violet-400 hover:bg-violet-950/40 transition-all disabled:opacity-40"
           title="Regenerate plan"
+          aria-label="Regenerate plan"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${generating ? "animate-spin" : ""}`} />
         </button>

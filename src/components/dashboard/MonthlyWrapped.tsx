@@ -134,7 +134,7 @@ export default function MonthlyWrapped({ tier, onClose }: Props) {
             <Sparkles className="w-4 h-4 text-violet-400" />
             <span className="text-sm font-bold text-white">{monthLabel} Wrapped</span>
           </div>
-          <button onClick={onClose} className="relative text-slate-600 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors">
+          <button onClick={onClose} className="relative text-slate-600 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors" aria-label="Close">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -146,6 +146,7 @@ export default function MonthlyWrapped({ tier, onClose }: Props) {
               <button
                 key={i}
                 onClick={() => { setDir(i > slide ? "forward" : "backward"); setSlide(i); }}
+                aria-label={`Go to slide ${i + 1}`}
                 className={`rounded-full transition-all duration-300 ${
                   i === slide ? "w-5 h-1.5 bg-violet-500" : "w-1.5 h-1.5 bg-violet-900/50 hover:bg-violet-800/60"
                 }`}

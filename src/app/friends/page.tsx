@@ -141,7 +141,7 @@ function FriendCompareModal({
             <BarChart2 className="w-4 h-4 text-violet-400" />
             <h2 className="text-sm font-bold text-white">Head to Head</h2>
           </div>
-          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50">
+          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50" aria-label="Close">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -387,7 +387,7 @@ function ShareModal({ onClose }: { onClose: () => void }) {
       >
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-base font-bold text-white">Invite friends to HabitAI</h2>
-          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50">
+          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-violet-950/50" aria-label="Close">
             <X className="w-4 h-4" />
           </button>
         </div>

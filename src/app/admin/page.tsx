@@ -168,6 +168,7 @@ export default function AdminPage() {
             <button
               onClick={() => { setLoading(true); fetchStats(); }}
               title="Refresh now"
+              aria-label="Refresh now"
               className="p-2.5 rounded-xl bg-violet-900/30 hover:bg-violet-900/50 border
                          border-violet-800/30 hover:border-violet-600/40 transition-all"
             >
