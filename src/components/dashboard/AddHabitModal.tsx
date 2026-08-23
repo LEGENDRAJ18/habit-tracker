@@ -346,6 +346,81 @@ function TimePicker({ value, onChange }: { value: string; onChange: (v: string) 
   );
 }
 
+// ─── reminder time picker — hour / minute / AM-PM chips, no native input ──────
+
+const REMINDER_HOURS   = Array.from({ length: 12 }, (_, i) => i + 1); // 1..12
+const REMINDER_MINUTES = [0, 15, 30, 45];
+
+function parseReminderTime(value: string): { hour: number; minute: number; period: "AM" | "PM" } | null {
+  if (!value) return null;
+  const [hStr, mStr] = value.split(":");
+  const h24 = parseInt(hStr, 10);
+  const minute = parseInt(mStr, 10);
+  if (Number.isNaN(h24) || Number.isNaN(minute)) return null;
+  const period = h24 >= 12 ? "PM" : "AM";
+  const hour = h24 % 12 === 0 ? 12 : h24 % 12;
+  return { hour, minute, period };
+}
+
+function buildReminderTime(hour: number, minute: number, period: "AM" | "PM"): string {
+  const h24 = (hour % 12) + (period === "PM" ? 12 : 0);
+  return `${String(h24).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+function formatReminderTime(value: string): string {
+  const p = parseReminderTime(value);
+  if (!p) return value;
+  return `${p.hour}:${String(p.minute).padStart(2, "0")} ${p.period}`;
+}
+
+function ReminderTimePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const parsed  = parseReminderTime(value);
+  const hour    = parsed?.hour   ?? 9;
+  const minute  = parsed?.minute ?? 0;
+  const period  = parsed?.period ?? "AM";
+  const set = (h: number, m: number, p: "AM" | "PM") => onChange(buildReminderTime(h, m, p));
+
+  const chipCls = (active: boolean) =>
+    `rounded-lg flex items-center justify-center text-xs font-bold transition-all ${
+      active
+        ? "bg-violet-600 text-white shadow-sm shadow-violet-900/40"
+        : "bg-violet-950/30 hover:bg-violet-950/50 border border-violet-900/25 hover:border-violet-700/40 text-slate-300 hover:text-white"
+    }`;
+
+  return (
+    <div className="space-y-1">
+      <div className="grid grid-cols-6 gap-1">
+        {REMINDER_HOURS.map((h) => (
+          <button key={h} type="button"
+            onClick={() => set(h, minute, period)}
+            className={`${chipCls(!!parsed && hour === h)} aspect-square`}
+          >
+            {h}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-6 gap-1">
+        {REMINDER_MINUTES.map((m) => (
+          <button key={m} type="button"
+            onClick={() => set(hour, m, period)}
+            className={`${chipCls(!!parsed && minute === m)} py-1.5 text-[11px]`}
+          >
+            :{String(m).padStart(2, "0")}
+          </button>
+        ))}
+        {(["AM", "PM"] as const).map((p) => (
+          <button key={p} type="button"
+            onClick={() => set(hour, minute, p)}
+            className={`${chipCls(!!parsed && period === p)} py-1.5 text-[11px]`}
+          >
+            {p}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── props ────────────────────────────────────────────────────────────────────
 
 const DURATION_PRESETS = [5, 10, 15, 20, 25, 30, 45, 60];
@@ -1051,16 +1126,16 @@ export default function AddHabitModal({
                   <div>
                     <label className={`${labelCls} flex items-center gap-1`}>
                       <Clock className="w-3.5 h-3.5" /> Remind me at <span className="text-slate-400 font-normal">(optional)</span>
+                      {reminderTime && (
+                        <button type="button" onClick={() => setReminderTime("")}
+                          className="ml-auto text-[10px] text-violet-400 hover:text-violet-300 underline underline-offset-2 transition-colors"
+                        >clear</button>
+                      )}
                     </label>
-                    <input
-                      type="time"
-                      value={reminderTime}
-                      onChange={(e) => setReminderTime(e.target.value)}
-                      className={`${inputCls} [color-scheme:dark]`}
-                    />
+                    <ReminderTimePicker value={reminderTime} onChange={setReminderTime} />
                     {reminderTime && (
                       <p className="mt-1 text-[10px] text-violet-400">
-                        You&apos;ll get a push notification at {reminderTime} if this habit isn&apos;t done yet.
+                        {`You'll get a push notification at ${formatReminderTime(reminderTime)} if this habit isn't done yet.`}
                       </p>
                     )}
                   </div>
