@@ -826,7 +826,14 @@ export function useHabits() {
   const isFailedToday = (habitId: string) =>
     todayLogs.some((l) => l.habit_id === habitId && l.outcome === "failed");
 
-  const completedCount = habits.filter((h) => isCompletedToday(h.id)).length;
+  // Habits actually due today — daily habits always qualify; weekly habits
+  // only qualify on their saved day_of_week. Completion stats (and anything
+  // that treats "all done today" as 100%) are computed against this, not the
+  // full habits list, so a weekly habit not due today can't hold the count
+  // below 100% or block the "everything done" celebration.
+  const todaysHabits = habits.filter((h) => h.frequency !== "weekly" || h.day_of_week === new Date().getDay());
+
+  const completedCount = todaysHabits.filter((h) => isCompletedToday(h.id)).length;
 
   // "Genuine" completion — same as isCompletedToday but excludes skips.
   // isCompletedToday/completedCount intentionally still count a skip (it
@@ -837,7 +844,7 @@ export function useHabits() {
   const isGenuinelyCompletedToday = (habitId: string) =>
     todayLogs.some((l) => l.habit_id === habitId && (l.outcome ?? "success") === "success" && l.completion_quality !== "skipped");
 
-  const genuineCompletedCount = habits.filter((h) => isGenuinelyCompletedToday(h.id)).length;
+  const genuineCompletedCount = todaysHabits.filter((h) => isGenuinelyCompletedToday(h.id)).length;
 
   const markFailed = async (habitId: string): Promise<{ error: string | null }> => {
     // Idempotent — skip if already acted on today
@@ -1032,6 +1039,7 @@ export function useHabits() {
 
   return {
     habits,
+    todaysHabits,
     todayLogs,
     historicalLogs,
     loading,

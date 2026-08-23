@@ -443,7 +443,7 @@ function getEmptyStateRecs(goals: string[]) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { habits, todayLogs, loading, isSyncing, error, completedCount, genuineCompletedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, isFailedToday, markFailed, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength, refetch, historicalLogs, completeHabitWithVerification, undoCompletion, addLaterReminder, skipHabitToday } =
+  const { habits, todaysHabits, todayLogs, loading, isSyncing, error, completedCount, genuineCompletedCount, toggleHabit, deleteHabit, removeHabitOptimistic, restoreHabit, commitDeleteHabit, isCompletedToday, isFailedToday, markFailed, addHabit, renameHabit, getStreakInfo, hasBrokenStreak, getStreak, getHabitStrength, refetch, historicalLogs, completeHabitWithVerification, undoCompletion, addLaterReminder, skipHabitToday } =
     useHabits();
   const { tier, profileLoading, onboardingCompleted, goal, goals, freezeAvailable, freezeProtectedDate, applyFreeze, signedUpAt, dreamUniversity, userMode, username, persona, welcomeSeen, markWelcomeSeen, notifPromptLastAskedAt, markNotifPromptAsked } = useProfile();
   const { xp, level, achievements, totalCompletions, justLeveledUp, xpLoading, isDailyAchieved, onHabitCompleted, onDailyOpen, checkMilestones, dismissLevelUp } = useXP();
@@ -596,7 +596,7 @@ export default function DashboardPage() {
   // Uses genuineCompletedCount (excludes skips) — skipping a habit must
   // never trigger a completion celebration, milestone, or bonus XP.
   useEffect(() => {
-    if (loading || habits.length === 0) return;
+    if (loading || todaysHabits.length === 0) return;
     const prev = prevCompletedRef.current;
     if (prev !== null) {
       if (prev === 0 && genuineCompletedCount === 1) {
@@ -609,7 +609,7 @@ export default function DashboardPage() {
           toast("💪 First habit of the day done! Keep the momentum!", "success", undefined, 3000);
         }
       }
-      if (prev < habits.length && genuineCompletedCount === habits.length) {
+      if (prev < todaysHabits.length && genuineCompletedCount === todaysHabits.length) {
         setShowCelebration(true);
         setTimeout(() => setShowCelebration(false), 5200);
         // Speed Runner: all habits done before noon
@@ -624,7 +624,7 @@ export default function DashboardPage() {
       }
     }
     prevCompletedRef.current = genuineCompletedCount;
-  }, [genuineCompletedCount, habits.length, loading]);
+  }, [genuineCompletedCount, todaysHabits.length, loading]);
 
   // Per-habit streak info with freeze awareness
   const streakInfoMap = useMemo(() => {
@@ -667,8 +667,8 @@ export default function DashboardPage() {
   // genuineCompletedCount — checkMilestones awards real bonus XP for
   // "first habit today" / "all habits today", which a skip must not trigger.
   useEffect(() => {
-    if (loading || habits.length === 0) return;
-    checkMilestones(genuineCompletedCount, habits.length, bestStreak).then((newly) => {
+    if (loading || todaysHabits.length === 0) return;
+    checkMilestones(genuineCompletedCount, todaysHabits.length, bestStreak).then((newly) => {
       if (newly.has("streak_30")) {
         playSound("streak");
         setShareData({ type: "streak", value: 30 });
@@ -778,9 +778,9 @@ export default function DashboardPage() {
   const filteredHabits = useMemo(
     () =>
       search.trim()
-        ? habits.filter((h) => h.name.toLowerCase().includes(search.toLowerCase().trim()))
-        : habits,
-    [habits, search],
+        ? todaysHabits.filter((h) => h.name.toLowerCase().includes(search.toLowerCase().trim()))
+        : todaysHabits,
+    [todaysHabits, search],
   );
 
   // ── Mode-specific dashboard routing ───────────────────────────────────────
@@ -930,11 +930,11 @@ export default function DashboardPage() {
           {/* Row 2: subtitle + progress ring */}
           <div className="flex items-end justify-between">
             <div>
-              {habits.length > 0 && (
+              {todaysHabits.length > 0 && (
                 <p className="text-sm text-slate-400">
-                  {completedCount === habits.length
+                  {completedCount === todaysHabits.length
                     ? "All done! Amazing work today 🎉"
-                    : `${habits.length - completedCount} remaining`}
+                    : `${todaysHabits.length - completedCount} remaining`}
                 </p>
               )}
               {/* Streak protection info for paid users */}
@@ -952,19 +952,19 @@ export default function DashboardPage() {
                 </div>
               )}
             </div>
-            {habits.length > 0 && (
+            {todaysHabits.length > 0 && (
               <div className="hidden sm:block">
-                <ProgressRing completed={completedCount} total={habits.length} tier={tier} />
+                <ProgressRing completed={completedCount} total={todaysHabits.length} tier={tier} />
               </div>
             )}
           </div>
 
           {/* Progress bar */}
-          {habits.length > 0 && (
+          {todaysHabits.length > 0 && (
             <div data-tour="progress-bar" className="mt-4 w-full h-1.5 bg-violet-950/60 rounded-full overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-500 rounded-full transition-all duration-700"
-                style={{ width: habits.length > 0 ? `${Math.round((completedCount / habits.length) * 100)}%` : "0%" }}
+                style={{ width: todaysHabits.length > 0 ? `${Math.round((completedCount / todaysHabits.length) * 100)}%` : "0%" }}
               />
             </div>
           )}
@@ -1144,6 +1144,15 @@ export default function DashboardPage() {
               </p>
             )}
 
+            {/* Nothing due today — user has habits, just none scheduled (e.g.
+                only weekly habits whose day hasn't come around yet). Distinct
+                from the habits.length === 0 onboarding empty state above. */}
+            {!search.trim() && todaysHabits.length === 0 && (
+              <p className="text-sm text-slate-400 text-center py-8">
+                Nothing scheduled for today
+              </p>
+            )}
+
             {filteredHabits.map((habit, index) => {
               const info = streakInfoMap.get(habit.id) ?? { streak: 0, freezeApplied: false, newFreezeUsed: false };
               const stackParent = habit.stack_after_id ? habits.find((h) => h.id === habit.stack_after_id) : undefined;
@@ -1312,7 +1321,7 @@ export default function DashboardPage() {
             )}
             <QuickStats
               completedCount={completedCount}
-              totalHabits={habits.length}
+              totalHabits={todaysHabits.length}
               bestStreak={bestStreak}
               totalXP={xp}
               xpLoading={xpLoading}
@@ -1324,10 +1333,10 @@ export default function DashboardPage() {
 
         {/* Daily milestones — hidden on xl+ (right sidebar handles it) */}
         <div data-tour="daily-milestones" className="xl:hidden">
-          {!loading && habits.length > 0 && (
+          {!loading && todaysHabits.length > 0 && (
             <MilestoneCards
               completedCount={completedCount}
-              totalHabits={habits.length}
+              totalHabits={todaysHabits.length}
               bestStreak={bestStreak}
               isDailyAchieved={isDailyAchieved}
               hasStreak7={achievements.includes("streak_7")}
@@ -1425,8 +1434,8 @@ export default function DashboardPage() {
           </div>
 
           {/* Today's Progress card */}
-          {!loading && habits.length > 0 && (() => {
-            const pct = Math.round((completedCount / habits.length) * 100);
+          {!loading && todaysHabits.length > 0 && (() => {
+            const pct = Math.round((completedCount / todaysHabits.length) * 100);
             const r = 26;
             const circ = 2 * Math.PI * r;
             const offset = circ * (1 - pct / 100);
@@ -1472,7 +1481,7 @@ export default function DashboardPage() {
                       <span className="text-sm leading-none">⚡</span>
                       <span className="text-xs font-bold text-amber-300">{genuineCompletedCount * 10} XP</span>
                     </div>
-                    <p className="text-[10px] text-slate-400 pt-0.5">{completedCount}/{habits.length} habits done today</p>
+                    <p className="text-[10px] text-slate-400 pt-0.5">{completedCount}/{todaysHabits.length} habits done today</p>
                   </div>
                 </div>
                 <p className="relative text-[11px] text-violet-300/80 mt-3 font-medium">{motivational}</p>
@@ -1512,11 +1521,11 @@ export default function DashboardPage() {
           })()}
 
           {/* Milestones */}
-          {!loading && habits.length > 0 && (
+          {!loading && todaysHabits.length > 0 && (
             <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-4">
               <MilestoneCards
                 completedCount={completedCount}
-                totalHabits={habits.length}
+                totalHabits={todaysHabits.length}
                 bestStreak={bestStreak}
                 isDailyAchieved={isDailyAchieved}
                 hasStreak7={achievements.includes("streak_7")}
