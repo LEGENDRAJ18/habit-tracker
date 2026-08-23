@@ -7,6 +7,7 @@ export type GoalValidationStatus = "idle" | "validating" | "good" | "too_vague" 
 export interface GoalValidation {
   status: GoalValidationStatus;
   message: string;
+  correction?: string;
 }
 
 const IDLE: GoalValidation = { status: "idle", message: "" };

@@ -39,7 +39,7 @@ function detectDurationContext(name: string): boolean {
 // ─── AI system prompt ─────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `You are a content-moderated habit coach reviewing a habit name for a general-audience app used by people aged 7–60. Reply with ONLY valid JSON, no extra keys:
-{"status":"good"|"warning"|"blocked","message":"...","suggestion":"..."}
+{"status":"good"|"warning"|"blocked","message":"...","suggestion":"...","correction":"..."}
 
 ══ CONTENT MODERATION — TOP PRIORITY ══
 Check this before judging habit quality. A habit about LIMITING or QUITTING something below (e.g. "quit smoking", "no junk food", "limit drinking") is a legitimate, common habit type — classify those normally, don't block them. Block only names that request, promote, glorify, sexualize, or normalize any of the following:
@@ -56,6 +56,9 @@ If the input is inappropriate under the rule above, return EXACTLY this JSON and
 {"status":"blocked","message":"This doesn't look like something I can help build a habit around. Try describing a real habit you want to build.","suggestion":"Meditate for 10 minutes every morning"}
 
 Never rephrase that message, never quote or reference the specific words typed, and never explain which category triggered it — the response must look identical no matter what was actually flagged.
+
+══ SPELLING / TYPOS ══
+If the habit name has a clear typo or misspelling (e.g. "wellingotn" → "Wellington", "tprctise" → "practice"), include a "correction" field containing the FULL habit name rewritten with the typo(s) fixed and nothing else changed. Judge quality and moderation against the corrected meaning, not the misspelled surface form. Omit "correction" entirely (don't include the key) if there are no clear typos — never "correct" unusual-but-valid words, brand names, abbreviations, or intentional phrasing.
 
 ══ HABIT QUALITY RULES ══
 good   = specific, measurable, actionable (e.g. "Run 5km daily", "Read 20 pages before bed")
@@ -87,12 +90,14 @@ NEVER approve a habit with a generic message. Every response must reference the 
 "exercise" → {"status":"warning","message":"'Exercise' doesn't say what type, how long, or how often — all three gaps mean nothing to track.","suggestion":"Do 30 minutes of cardio every morning"}
 "read" → {"status":"warning","message":"'Read' is missing how much and when, which makes it impossible to build into a consistent routine.","suggestion":"Read 20 pages every night before bed"}
 "drink water" → {"status":"warning","message":"'Drink water' needs a target amount and time to be trackable. How much, and when?","suggestion":"Drink 2 glasses of water every morning"}
-"journal" → {"status":"warning","message":"'Journal' doesn't say how long or when, so there's no clear habit to measure.","suggestion":"Write a 5-minute journal entry before bed"}`;
+"journal" → {"status":"warning","message":"'Journal' doesn't say how long or when, so there's no clear habit to measure.","suggestion":"Write a 5-minute journal entry before bed"}
+"wellingotn under 17 cricket prctise" → {"status":"warning","message":"'Wellington under 17 cricket practice' doesn't say how long each session is — add a duration to make it trackable.","suggestion":"Wellington under 17 cricket practice for 1 hour every week","correction":"Wellington under 17 cricket practice"}`;
 
 export interface ValidationResponse {
   status: "good" | "warning" | "blocked";
   message: string;
   suggestion?: string;
+  correction?: string;
 }
 
 const GENERIC_WORDS = new Set([

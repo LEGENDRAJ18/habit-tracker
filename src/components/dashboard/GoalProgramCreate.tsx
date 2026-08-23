@@ -239,21 +239,48 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
             </div>
           )}
           {goalValidation.status === "good" && (
-            <div className="mt-1.5 flex items-start gap-2 bg-emerald-950/40 border border-emerald-600/30 rounded-lg px-3 py-2">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
-              <p className="text-[11px] font-semibold text-emerald-300 leading-snug">{goalValidation.message}</p>
+            <div className="mt-1.5 bg-emerald-950/40 border border-emerald-600/30 rounded-lg px-3 py-2">
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <p className="text-[11px] font-semibold text-emerald-300 leading-snug">{goalValidation.message}</p>
+              </div>
+              {goalValidation.correction && (
+                <button type="button" onClick={() => setDescription(goalValidation.correction!)}
+                  className="mt-1.5 ml-5 text-[10px] text-violet-400 hover:text-violet-300 flex items-center gap-1 transition-colors"
+                >
+                  ✨ Fix: &ldquo;{goalValidation.correction}&rdquo;
+                </button>
+              )}
             </div>
           )}
           {goalValidation.status === "too_vague" && (
-            <div className="mt-1.5 flex items-start gap-2 bg-amber-950/40 border border-amber-600/30 rounded-lg px-3 py-2">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
-              <p className="text-[11px] font-semibold text-amber-300 leading-snug">{goalValidation.message}</p>
+            <div className="mt-1.5 bg-amber-950/40 border border-amber-600/30 rounded-lg px-3 py-2">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
+                <p className="text-[11px] font-semibold text-amber-300 leading-snug">{goalValidation.message}</p>
+              </div>
+              {goalValidation.correction && (
+                <button type="button" onClick={() => setDescription(goalValidation.correction!)}
+                  className="mt-1.5 ml-5 text-[10px] text-violet-400 hover:text-violet-300 flex items-center gap-1 transition-colors"
+                >
+                  ✨ Fix: &ldquo;{goalValidation.correction}&rdquo;
+                </button>
+              )}
             </div>
           )}
           {goalValidation.status === "not_a_goal" && (
-            <div className="mt-1.5 flex items-start gap-2 bg-red-950/40 border border-red-600/30 rounded-lg px-3 py-2">
-              <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5" />
-              <p className="text-[11px] font-semibold text-red-300 leading-snug">{goalValidation.message}</p>
+            <div className="mt-1.5 bg-red-950/40 border border-red-600/30 rounded-lg px-3 py-2">
+              <div className="flex items-start gap-2">
+                <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5" />
+                <p className="text-[11px] font-semibold text-red-300 leading-snug">{goalValidation.message}</p>
+              </div>
+              {goalValidation.correction && (
+                <button type="button" onClick={() => setDescription(goalValidation.correction!)}
+                  className="mt-1.5 ml-5 text-[10px] text-violet-400 hover:text-violet-300 flex items-center gap-1 transition-colors"
+                >
+                  ✨ Fix: &ldquo;{goalValidation.correction}&rdquo;
+                </button>
+              )}
             </div>
           )}
 

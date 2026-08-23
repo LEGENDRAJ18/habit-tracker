@@ -689,12 +689,21 @@ export default function AddHabitModal({
                   </div>
                 )}
                 {!duplicate && aiValidation.status === "good" && (
-                  <div className="mt-1.5 flex items-start gap-2 bg-emerald-950/40 border border-emerald-600/30 rounded-lg px-3 py-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                    <div className="min-w-0">
-                      <p className="text-[11px] font-semibold text-emerald-300 leading-snug">{aiValidation.message}</p>
-                      {durationBonus > 0 && <p className="text-[10px] text-emerald-500 mt-0.5">+{durationBonus} XP bonus 🎯</p>}
+                  <div className="mt-1.5 bg-emerald-950/40 border border-emerald-600/30 rounded-lg px-3 py-2">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-semibold text-emerald-300 leading-snug">{aiValidation.message}</p>
+                        {durationBonus > 0 && <p className="text-[10px] text-emerald-500 mt-0.5">+{durationBonus} XP bonus 🎯</p>}
+                      </div>
                     </div>
+                    {aiValidation.correction && (
+                      <button type="button" onClick={() => setName(aiValidation.correction!)}
+                        className="mt-1.5 ml-5 text-[10px] text-violet-400 hover:text-violet-300 flex items-center gap-1 transition-colors"
+                      >
+                        ✨ Fix: &ldquo;{aiValidation.correction}&rdquo;
+                      </button>
+                    )}
                   </div>
                 )}
                 {!duplicate && aiValidation.status === "warning" && (
@@ -703,6 +712,13 @@ export default function AddHabitModal({
                       <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
                       <p className="text-[11px] font-semibold text-amber-300 leading-snug">{aiValidation.message}</p>
                     </div>
+                    {aiValidation.correction && (
+                      <button type="button" onClick={() => setName(aiValidation.correction!)}
+                        className="mt-1.5 ml-5 text-[10px] text-violet-400 hover:text-violet-300 flex items-center gap-1 transition-colors"
+                      >
+                        ✨ Fix: &ldquo;{aiValidation.correction}&rdquo;
+                      </button>
+                    )}
                     {aiValidation.suggestion && (
                       <button type="button" onClick={() => setName(aiValidation.suggestion!)}
                         className="mt-1.5 ml-5 text-[10px] text-violet-400 hover:text-violet-300 flex items-center gap-1 transition-colors"
@@ -719,6 +735,13 @@ export default function AddHabitModal({
                       <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5" />
                       <p className="text-[11px] font-semibold text-red-300 leading-snug">{aiValidation.message}</p>
                     </div>
+                    {aiValidation.correction && (
+                      <button type="button" onClick={() => setName(aiValidation.correction!)}
+                        className="mt-1.5 ml-5 text-[10px] text-violet-400 hover:text-violet-300 flex items-center gap-1 transition-colors"
+                      >
+                        ✨ Fix: &ldquo;{aiValidation.correction}&rdquo;
+                      </button>
+                    )}
                     {aiValidation.suggestion && (
                       <button type="button" onClick={() => setName(aiValidation.suggestion!)}
                         className="mt-1.5 ml-5 text-[10px] text-violet-400 hover:text-violet-300 flex items-center gap-1 transition-colors"

@@ -8,6 +8,7 @@ export interface HabitValidation {
   status: ValidationStatus;
   message: string;
   suggestion?: string;
+  correction?: string;
 }
 
 const IDLE: HabitValidation = { status: "idle", message: "" };

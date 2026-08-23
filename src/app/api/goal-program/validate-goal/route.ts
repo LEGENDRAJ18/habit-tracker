@@ -4,10 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 export interface GoalValidationResponse {
   status: "good" | "too_vague" | "not_a_goal";
   message: string;
+  correction?: string;
 }
 
 const SYSTEM_PROMPT = `You are a supportive coach reviewing what someone typed as their goal for a multi-week habit-building program, for a general-audience app used by people aged 7–60. Reply with ONLY valid JSON, no extra keys:
-{"status":"good"|"too_vague"|"not_a_goal","message":"..."}
+{"status":"good"|"too_vague"|"not_a_goal","message":"...","correction":"..."}
 
 ══ CONTENT MODERATION — TOP PRIORITY ══
 Check this before classifying anything else. A goal about OVERCOMING or RECOVERING from something below (e.g. "quit smoking", "stop self-harming", "get help for my drinking") is legitimate — classify those normally. Block only input that requests, promotes, glorifies, sexualizes, or seeks to normalize any of the following:
@@ -31,6 +32,9 @@ not_a_goal = not coherent as a personal goal at all — nonsense, a random phras
 
 Typos and misspellings (like "exercize" for "exercise") should still be understood — classify based on intent, not spelling.
 
+══ SPELLING / TYPOS ══
+If the goal text has a clear typo or misspelling, include a "correction" field containing the FULL goal text rewritten with the typo(s) fixed and nothing else changed. Classify status/message against the corrected meaning. Omit "correction" entirely (don't include the key) if there are no clear typos — never "correct" unusual-but-valid words or intentional phrasing.
+
 ══ MESSAGE REQUIREMENTS — MANDATORY ══
 Every message MUST:
 1. Be specific to what they actually typed, never generic.
@@ -44,7 +48,8 @@ Every message MUST:
 "exercize" → {"status":"too_vague","message":"'Exercize' is a start, but there's no timeframe or sense of what you're working toward yet. Add a deadline and what success looks like."}
 "get fit" → {"status":"too_vague","message":"'Get fit' is the right idea, but too open-ended to plan around. What does 'fit' mean for you, and by when?"}
 "watching people swear" → {"status":"not_a_goal","message":"This reads like something you're observing, not a goal for yourself. What do YOU want to achieve?"}
-"asdfgh" → {"status":"not_a_goal","message":"This doesn't look like a goal yet. Try describing something real you want to work toward."}`;
+"asdfgh" → {"status":"not_a_goal","message":"This doesn't look like a goal yet. Try describing something real you want to work toward."}
+"I want to qiut smokign cigarettes within 30 days" → {"status":"good","message":"This works — a clear target (quit smoking) and a timeframe (30 days). Enough to build a real plan around.","correction":"I want to quit smoking cigarettes within 30 days"}`;
 
 // Used only if OPENAI_API_KEY is missing or the AI call fails — a rough
 // structural fallback so the feature degrades gracefully instead of breaking.
