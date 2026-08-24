@@ -889,27 +889,58 @@ export function useHabits() {
     return map;
   }, [historicalLogs]);
 
+  // For daily habits every calendar day is a valid occurrence, so "current"
+  // is always today and the cycle length is 1 day — identical to the old
+  // hard-coded logic. For weekly habits, "current" is the most recent date
+  // matching the habit's day_of_week — which may BE today (if today is the
+  // scheduled day and hasn't elapsed yet) or may already be in the past
+  // (scheduled day already came and went this week).
+  //
+  // "previous" is the grace value that still counts as "streak not yet
+  // broken": when today IS the scheduled day, that's last cycle's occurrence
+  // (haven't done today's yet, but today isn't over) — same as "yesterday"
+  // for daily. When today is NOT the scheduled day, `current` itself has
+  // already fully elapsed, so there's no separate grace value — `previous`
+  // collapses to `current`, meaning only an exact match keeps the streak
+  // alive (matches "yesterday" being the true elapsed occurrence for daily).
+  const getOccurrenceWindow = useCallback((habit: Pick<Habit, "frequency" | "day_of_week">) => {
+    const now = new Date();
+    if (habit.frequency !== "weekly") {
+      const today     = now.toISOString().split("T")[0];
+      const yesterday = new Date(now.getTime() - 86400000).toISOString().split("T")[0];
+      return { current: today, previous: yesterday, cycleDays: 1 };
+    }
+    const dow                = habit.day_of_week ?? now.getDay();
+    const daysSinceScheduled = (now.getDay() - dow + 7) % 7;
+    const currentDate = new Date(now.getTime() - daysSinceScheduled * 86400000);
+    const current      = currentDate.toISOString().split("T")[0];
+    const previous      = daysSinceScheduled === 0
+      ? new Date(currentDate.getTime() - 7 * 86400000).toISOString().split("T")[0]
+      : current;
+    return { current, previous, cycleDays: 7 };
+  }, []);
+
   const getStreak = useCallback(
     (habitId: string): number => {
-      const dates     = habitDateSets.get(habitId) ?? [];
+      const dates = habitDateSets.get(habitId) ?? [];
       if (dates.length === 0) return 0;
 
-      const today     = new Date().toISOString().split("T")[0];
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+      const habit = habits.find((h) => h.id === habitId);
+      const { current, previous, cycleDays } = getOccurrenceWindow(habit ?? { frequency: "daily", day_of_week: null });
 
-      if (dates[0] !== today && dates[0] !== yesterday) return 0;
+      if (dates[0] !== current && dates[0] !== previous) return 0;
 
       let streak = 1;
       for (let i = 1; i < dates.length; i++) {
         const prev     = new Date(dates[i - 1]);
         const curr     = new Date(dates[i]);
         const diffDays = Math.round((prev.getTime() - curr.getTime()) / 86400000);
-        if (diffDays === 1) streak++;
+        if (diffDays === cycleDays) streak++;
         else break;
       }
       return streak;
     },
-    [habitDateSets],
+    [habitDateSets, habits, getOccurrenceWindow],
   );
 
   const getStreakInfo = useCallback(
@@ -922,20 +953,29 @@ export function useHabits() {
       const dates = habitDateSets.get(habitId) ?? [];
       if (dates.length === 0) return { streak: 0, freezeApplied: false, newFreezeUsed: false };
 
-      const today      = new Date().toISOString().split("T")[0];
-      const yesterday  = new Date(Date.now() -     86400000).toISOString().split("T")[0];
-      const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toISOString().split("T")[0];
+      const habit = habits.find((h) => h.id === habitId);
+      const { current, previous, cycleDays } = getOccurrenceWindow(habit ?? { frequency: "daily", day_of_week: null });
+
+      // The occurrence that a freeze can cover (the last one to have fully
+      // elapsed) is always `previous` — for daily/scheduled-today weekly
+      // that's last cycle's date; otherwise `previous` already collapsed to
+      // `current`, which IS the elapsed, missed occurrence. "twoAgo" is the
+      // occurrence before that, whose presence in `dates` means exactly one
+      // cycle was skipped and a freeze can bridge the gap.
+      const missedOccurrence = previous;
+      const twoAgo = new Date(new Date(missedOccurrence + "T00:00:00Z").getTime() - cycleDays * 86400000)
+        .toISOString().split("T")[0];
 
       let freezeApplied = false;
       let newFreezeUsed = false;
 
       const firstDate = dates[0];
-      if (firstDate !== today && firstDate !== yesterday) {
-        if (firstDate === twoDaysAgo) {
+      if (firstDate !== current && firstDate !== previous) {
+        if (firstDate === twoAgo) {
           if (isPaid && freezeAvailable) {
             freezeApplied = true;
             newFreezeUsed = true;
-          } else if (freezeProtectedDate === yesterday) {
+          } else if (freezeProtectedDate === missedOccurrence) {
             freezeApplied = true;
           } else {
             return { streak: 0, freezeApplied: false, newFreezeUsed: false };
@@ -950,10 +990,10 @@ export function useHabits() {
         const prev     = new Date(dates[i - 1]);
         const curr     = new Date(dates[i]);
         const diffDays = Math.round((prev.getTime() - curr.getTime()) / 86400000);
-        if (diffDays === 1) {
+        if (diffDays === cycleDays) {
           streak++;
-        } else if (diffDays === 2) {
-          const missingDate = new Date(curr.getTime() + 86400000).toISOString().split("T")[0];
+        } else if (diffDays === 2 * cycleDays) {
+          const missingDate = new Date(curr.getTime() + cycleDays * 86400000).toISOString().split("T")[0];
           if (freezeProtectedDate === missingDate) {
             streak++;
             freezeApplied = true;
@@ -967,7 +1007,7 @@ export function useHabits() {
 
       return { streak, freezeApplied, newFreezeUsed };
     },
-    [habitDateSets],
+    [habitDateSets, habits, getOccurrenceWindow],
   );
 
   // Returns the stored habit_strength from DB state (updated on toggle and synced on load)
@@ -978,14 +1018,19 @@ export function useHabits() {
 
   const hasBrokenStreak = useCallback(
     (habitId: string): boolean => {
-      const dates       = habitDateSets.get(habitId) ?? [];
+      const dates = habitDateSets.get(habitId) ?? [];
       if (dates.length === 0) return false;
-      const today       = new Date().toISOString().split("T")[0];
-      const yesterday   = new Date(Date.now() -     86400000).toISOString().split("T")[0];
+
+      const habit = habits.find((h) => h.id === habitId);
+      const { current, previous } = getOccurrenceWindow(habit ?? { frequency: "daily", day_of_week: null });
+      // Notification freshness window — how recently the break must have
+      // happened to still be worth surfacing. Kept as a flat 7-calendar-day
+      // window for both cadences (not cycle-scaled) since this is a UX
+      // staleness cutoff, not part of the streak-correctness math above.
       const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0];
-      return dates[0] !== today && dates[0] !== yesterday && dates[0] >= sevenDaysAgo;
+      return dates[0] !== current && dates[0] !== previous && dates[0] >= sevenDaysAgo;
     },
-    [habitDateSets],
+    [habitDateSets, habits, getOccurrenceWindow],
   );
 
   // Real-time subscriptions for cross-tab sync
