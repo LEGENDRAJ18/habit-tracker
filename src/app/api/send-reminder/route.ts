@@ -7,6 +7,15 @@ import { generateUnsubscribeToken } from "@/lib/unsubscribeToken";
 const resend = new Resend(process.env.RESEND_API_KEY);
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://habitai.app";
 
+// A weekly habit is only reminder-eligible on its scheduled day; daily
+// habits (day_of_week always null) are always eligible. Compared against
+// the server's UTC day-of-week, matching this file's existing convention
+// of matching reminder hour via now.getUTCHours() rather than per-user
+// local time — day-of-week uses the same reference frame for consistency.
+function isDueToday(habit: { frequency?: string | null; day_of_week?: number | null }, todayUtcDow: number): boolean {
+  return habit.frequency !== "weekly" || habit.day_of_week === todayUtcDow;
+}
+
 // ─── Weekly AI Report (Sundays only) ─────────────────────────────────────────
 
 async function callOpenAIWeekly(userPrompt: string): Promise<{ summary: string; bestHabit: string; worstHabit: string; tips: string[] } | null> {
@@ -400,7 +409,7 @@ async function runReminders(): Promise<{ sent: number; skipped: number; hour: nu
 
     const { data: habits } = await supabase
       .from("habits")
-      .select("id, name")
+      .select("id, name, frequency, day_of_week")
       .eq("user_id", profile.id);
     if (!habits || habits.length === 0) { skipped++; continue; }
 
@@ -412,7 +421,10 @@ async function runReminders(): Promise<{ sent: number; skipped: number; hour: nu
       .lt("completed_at", `${today}T23:59:59.999Z`);
 
     const completedIds = new Set((logs ?? []).map((l) => l.habit_id));
-    const remaining = habits.filter((h) => !completedIds.has(h.id)).map((h) => h.name);
+    const todayUtcDow = now.getUTCDay();
+    const remaining = habits
+      .filter((h) => !completedIds.has(h.id) && isDueToday(h, todayUtcDow))
+      .map((h) => h.name);
     if (remaining.length === 0) { skipped++; continue; }
 
     // Consecutive-day streak (look back 90 days)
@@ -699,17 +711,19 @@ async function runSmartTimingReminders(supabase: ReturnType<typeof createAdminCl
   // Find Pro users' habits with preferred_reminder_time matching this hour
   const { data: habits } = await supabase
     .from("habits")
-    .select("id, name, user_id, preferred_reminder_time")
+    .select("id, name, user_id, preferred_reminder_time, frequency, day_of_week")
     .eq("smart_timing", true)
     .not("preferred_reminder_time", "is", null);
 
   if (!habits || habits.length === 0) return { sent: 0 };
 
-  // Filter to habits whose preferred hour matches current UTC hour
+  // Filter to habits whose preferred hour matches current UTC hour and,
+  // for weekly habits, whose scheduled day is today.
+  const todayUtcDow = now.getUTCDay();
   const matchingHabits = habits.filter((h) => {
     if (!h.preferred_reminder_time) return false;
     const hour = parseInt(h.preferred_reminder_time.split(":")[0], 10);
-    return hour === nowHour;
+    return hour === nowHour && isDueToday(h, todayUtcDow);
   });
 
   if (matchingHabits.length === 0) return { sent: 0 };
