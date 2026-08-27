@@ -13,6 +13,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { resolveUser } from "@/lib/supabase/resolve-user";
 import type { Habit, HabitLog, Plan } from "@/types";
+import { getCycleDays } from "@/lib/streaks";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -28,16 +29,36 @@ function daysAgo(n: number) {
   return toDateStr(new Date(Date.now() - n * 86400000));
 }
 
-function getStreak(dates: Set<string>): number {
+// Cycle-aware current streak — mirrors the pattern in useHabits.ts's
+// getOccurrenceWindow, but reimplemented on this file's own local-timezone
+// date bucketing (toDateStr/daysAgo use local calendar dates, not UTC) since
+// the two conventions can't be mixed without misaligning date strings.
+function getStreak(dates: Set<string>, habit: Pick<Habit, "frequency" | "day_of_week">): number {
+  const cycleDays = getCycleDays(habit);
+  const now = new Date();
+
+  let current: string;
+  let previous: string;
+  if (cycleDays === 1) {
+    current  = toDateStr(now);
+    previous = daysAgo(1);
+  } else {
+    const dow                = habit.day_of_week ?? now.getDay();
+    const daysSinceScheduled = (now.getDay() - dow + 7) % 7;
+    const currentDate = new Date(now.getTime() - daysSinceScheduled * 86400000);
+    current  = toDateStr(currentDate);
+    previous = daysSinceScheduled === 0
+      ? toDateStr(new Date(currentDate.getTime() - cycleDays * 86400000))
+      : current;
+  }
+
   let streak = 0;
-  const today     = toDateStr(new Date());
-  const yesterday = daysAgo(1);
-  let cur: string | null = dates.has(today) ? today : dates.has(yesterday) ? yesterday : null;
+  let cur: string | null = dates.has(current) ? current : dates.has(previous) ? previous : null;
   if (!cur) return 0;
   while (cur && dates.has(cur)) {
     streak++;
     const prev = new Date(cur);
-    prev.setDate(prev.getDate() - 1);
+    prev.setDate(prev.getDate() - cycleDays);
     cur = toDateStr(prev);
   }
   return streak;
@@ -178,7 +199,7 @@ function HabitStreakChart({ habits, habitDateSets }: { habits: Habit[]; habitDat
   const data = habits
     .map((h) => ({
       name: h.name.length > 14 ? h.name.slice(0, 13) + "…" : h.name,
-      streak: getStreak(habitDateSets.get(h.id) ?? new Set()),
+      streak: getStreak(habitDateSets.get(h.id) ?? new Set(), h),
     }))
     .sort((a, b) => b.streak - a.streak)
     .slice(0, 8);
@@ -219,7 +240,7 @@ function HabitStreakChart({ habits, habitDateSets }: { habits: Habit[]; habitDat
 // ─── per-habit breakdown row ──────────────────────────────────────────────────
 
 function HabitRow({ habit, dates }: { habit: Habit; dates: Set<string> }) {
-  const streak   = getStreak(dates);
+  const streak   = getStreak(dates, habit);
   const last30   = Array.from({ length: 30 }, (_, i) => daysAgo(29 - i));
   const rate     = Math.round((last30.filter((d) => dates.has(d)).length / 30) * 100);
   const strength = habit.habit_strength ?? 10;
@@ -366,7 +387,7 @@ function AtRiskWarnings({ habits, habitDateSets }: { habits: Habit[]; habitDateS
 
   const atRisk = habits.filter((h) => {
     const dates = habitDateSets.get(h.id) ?? new Set<string>();
-    const streak = getStreak(dates);
+    const streak = getStreak(dates, h);
     if (streak < 3) return false;
     // Check if today is the day of week with fewest completions
     const dowCounts = Array(7).fill(0) as number[];
@@ -391,7 +412,7 @@ function AtRiskWarnings({ habits, habitDateSets }: { habits: Habit[]; habitDateS
       </p>
       <div className="space-y-2">
         {atRisk.map((h) => {
-          const streak = getStreak(habitDateSets.get(h.id) ?? new Set());
+          const streak = getStreak(habitDateSets.get(h.id) ?? new Set(), h);
           return (
             <div key={h.id} className="flex items-center justify-between py-2 px-3 bg-amber-950/20 border border-amber-800/20 rounded-xl">
               <p className="text-sm text-slate-200 truncate flex-1">{h.name}</p>
@@ -668,7 +689,7 @@ export default function AnalyticsPage() {
 
   const today            = toDateStr(new Date());
   const totalCompletions = logs.length;
-  const bestStreak       = Math.max(0, ...habits.map((h) => getStreak(habitDateSets.get(h.id) ?? new Set())));
+  const bestStreak       = Math.max(0, ...habits.map((h) => getStreak(habitDateSets.get(h.id) ?? new Set(), h)));
   const completedToday   = new Set(
     logs.filter((l) => logDate(l.completed_at) === today).map((l) => l.habit_id),
   ).size;

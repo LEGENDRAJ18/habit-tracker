@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { Habit } from "@/types";
 import { computeIdentityScore, getIdentityLabel } from "./useIdentityScore";
+import { getCycleDays } from "@/lib/streaks";
 
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -114,12 +115,15 @@ export function useHabitDNA(
     const peakSlot = Object.entries(timeCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
     const peakTime = peakSlot ? `${peakSlot.charAt(0).toUpperCase() + peakSlot.slice(1)}` : null;
 
-    // Longest streak across all habits
+    // Longest streak across all habits — cycle-aware so a weekly habit's
+    // completions land as consecutive when exactly one cycle (7 days) apart,
+    // not just 1 calendar day apart.
     let longestStreak = 0;
     for (const habit of habits) {
       const dates = Array.from(
         new Set(logs.filter((l) => l.habit_id === habit.id).map((l) => l.completed_at.split("T")[0])),
       ).sort().reverse();
+      const cycleDays = getCycleDays(habit);
 
       let streak = 1;
       let maxStreak = dates.length > 0 ? 1 : 0;
@@ -127,7 +131,7 @@ export function useHabitDNA(
         const prev = new Date(dates[i - 1]);
         const curr = new Date(dates[i]);
         const diff = Math.round((prev.getTime() - curr.getTime()) / 86400000);
-        if (diff === 1) { streak++; maxStreak = Math.max(maxStreak, streak); }
+        if (diff === cycleDays) { streak++; maxStreak = Math.max(maxStreak, streak); }
         else streak = 1;
       }
       longestStreak = Math.max(longestStreak, maxStreak);
