@@ -681,7 +681,7 @@ export default function HabitCard({
             <button
               onClick={handleSkip}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border border-amber-700/40 bg-amber-950/20 text-amber-300 hover:bg-amber-950/40 hover:border-amber-600/50 active:scale-95 transition-all"
-              title="Skip today — protects your streak, no XP earned"
+              title="Skip today — protects this habit's streak only, no XP earned"
             >
               <SkipForward className="w-3.5 h-3.5" />
               Skip today
@@ -696,7 +696,7 @@ export default function HabitCard({
                   ? "border-blue-700/40 bg-blue-950/20 text-blue-300 hover:bg-blue-950/40 hover:border-blue-600/50 active:scale-95"
                   : "border-slate-800/30 bg-slate-900/20 text-slate-400 cursor-default"
               }`}
-              title={freezeAvailable ? "Freeze streak — protects your streak for one missed day, limited uses per week" : "You've already used your streak freeze this week"}
+              title={freezeAvailable ? "Freeze streak — retroactively protects yesterday across all your habits, limited uses per week" : "You've already used your streak freeze this week"}
             >
               <Snowflake className="w-3.5 h-3.5" />
               Freeze streak
@@ -712,7 +712,7 @@ export default function HabitCard({
       {!editMode && (tier === "plus" || tier === "pro") && onFreezeStreak && !freezeHintDismissed && (
         <div className="px-4 pb-2.5 -mt-1 flex items-start gap-1.5">
           <p className="text-[10px] text-slate-400 flex-1 min-w-0 leading-snug">
-            Freeze protects your streak for one missed day · limited uses per week
+            Freeze retroactively protects yesterday across all your habits · limited uses per week
           </p>
           <button
             onClick={() => { setFreezeHintDismissed(true); localStorage.setItem("habitai_freeze_hint_dismissed", "1"); }}
