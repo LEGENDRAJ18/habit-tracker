@@ -131,11 +131,12 @@ function SkeletonCard() {
 // ─── Quick stats row ──────────────────────────────────────────────────────────
 
 function QuickStats({
-  completedCount, totalHabits, bestStreak, totalXP, xpLoading, onOpenXP,
+  completedCount, totalHabits, bestStreak, streakUnit, totalXP, xpLoading, onOpenXP,
 }: {
   completedCount: number;
   totalHabits: number;
   bestStreak: number;
+  streakUnit: "day" | "week";
   totalXP: number;
   xpLoading: boolean;
   onOpenXP: () => void;
@@ -152,7 +153,7 @@ function QuickStats({
 
       <div className="relative overflow-hidden bg-gradient-to-br from-orange-900/35 to-[#0c0c18] border border-orange-700/30 rounded-xl px-3 py-2.5 text-center">
         <Flame className="w-3.5 h-3.5 text-orange-400 mx-auto mb-1" />
-        <p className="text-lg font-bold leading-none text-orange-400 tabular-nums" style={{ animation: "countUp 0.5s ease-out both" }}>{bestStreak}d</p>
+        <p className="text-lg font-bold leading-none text-orange-400 tabular-nums" style={{ animation: "countUp 0.5s ease-out both" }}>{bestStreak}{streakUnit === "week" ? "w" : "d"}</p>
         <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-medium">Streak · best</p>
       </div>
 
@@ -326,12 +327,14 @@ function AllDoneCelebration({
   onShare,
   completedCount,
   bestStreak,
+  streakUnit,
   xpToday,
 }: {
   onDismiss: () => void;
   onShare: () => void;
   completedCount: number;
   bestStreak: number;
+  streakUnit: "day" | "week";
   xpToday: number;
 }) {
   return (
@@ -373,7 +376,7 @@ function AllDoneCelebration({
               <p className="text-[9px] text-slate-400 mt-0.5 uppercase tracking-wider">Done</p>
             </div>
             <div className="bg-orange-950/30 rounded-xl py-2.5 border border-orange-800/20">
-              <p className="text-lg font-bold text-orange-300 leading-none">{bestStreak}d</p>
+              <p className="text-lg font-bold text-orange-300 leading-none">{bestStreak}{streakUnit === "week" ? "w" : "d"}</p>
               <p className="text-[9px] text-slate-400 mt-0.5 uppercase tracking-wider">Streak</p>
             </div>
             <div className="bg-amber-950/30 rounded-xl py-2.5 border border-amber-800/20">
@@ -640,6 +643,15 @@ export default function DashboardPage() {
     [habits, getStreak],
   );
 
+  // Which habit currently holds the best streak — used ONLY to label the
+  // count "day"/"days" vs "week"/"weeks" correctly for display. Does not
+  // affect the streak number itself, still computed entirely by getStreak.
+  const bestStreakHabit = useMemo(
+    () => habits.find((h) => getStreak(h.id) === bestStreak) ?? null,
+    [habits, getStreak, bestStreak],
+  );
+  const streakUnit: "day" | "week" = bestStreakHabit?.frequency === "weekly" ? "week" : "day";
+
   const anyFreezeApplied  = useMemo(() => Array.from(streakInfoMap.values()).some((i) => i.freezeApplied),  [streakInfoMap]);
   const anyNewFreezeUsed  = useMemo(() => Array.from(streakInfoMap.values()).some((i) => i.newFreezeUsed),  [streakInfoMap]);
 
@@ -691,7 +703,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (loading || bestStreak === 0) return;
     if (prevBestStreakRef.current > 0 && bestStreak > prevBestStreakRef.current) {
-      toast(`🔥 New personal best! ${bestStreak}-day streak!`, "success", undefined, 3500);
+      toast(`🔥 New personal best! ${bestStreak}-${streakUnit} streak!`, "success", undefined, 3500);
     }
     prevBestStreakRef.current = bestStreak;
   }, [bestStreak, loading]);
@@ -1323,6 +1335,7 @@ export default function DashboardPage() {
               completedCount={completedCount}
               totalHabits={todaysHabits.length}
               bestStreak={bestStreak}
+              streakUnit={streakUnit}
               totalXP={xp}
               xpLoading={xpLoading}
               onOpenXP={() => setShowXPSheet(true)}
@@ -1413,7 +1426,7 @@ export default function DashboardPage() {
                 {userMode === "student"
                   ? `Focus on your study habits${dreamUniversity ? ` — ${dreamUniversity} applications take consistency, not cramming.` : " — build the academic discipline that top universities look for."}`
                   : !xpLoading && (bestStreak > 0 || xp > 0)
-                  ? `${bestStreak > 0 ? `${bestStreak}-day streak` : "Starting fresh"} · ${xp.toLocaleString()} XP earned. Your coach spots patterns across your habits and streaks to help you level up faster.`
+                  ? `${bestStreak > 0 ? `${bestStreak}-${streakUnit} streak` : "Starting fresh"} · ${xp.toLocaleString()} XP earned. Your coach spots patterns across your habits and streaks to help you level up faster.`
                   : "Get personalised insights on your habits, streaks, and patterns — tailored to your goals."}
               </p>
               <button
@@ -1475,7 +1488,7 @@ export default function DashboardPage() {
                   <div className="flex-1 space-y-1.5">
                     <div className="inline-flex items-center gap-1.5 bg-orange-950/40 border border-orange-700/25 rounded-full px-2 py-1">
                       <span className="text-sm leading-none">🔥</span>
-                      <span className="text-xs font-bold text-orange-300">{bestStreak} day{bestStreak !== 1 ? "s" : ""}</span>
+                      <span className="text-xs font-bold text-orange-300">{bestStreak} {streakUnit}{bestStreak !== 1 ? "s" : ""}</span>
                     </div>
                     <div className="inline-flex items-center gap-1.5 bg-amber-950/40 border border-amber-700/25 rounded-full px-2 py-1 ml-1.5">
                       <span className="text-sm leading-none">⚡</span>
@@ -1603,6 +1616,7 @@ export default function DashboardPage() {
           }}
           completedCount={completedCount}
           bestStreak={bestStreak}
+          streakUnit={streakUnit}
           xpToday={genuineCompletedCount * 10}
         />
       )}
@@ -1742,6 +1756,7 @@ export default function DashboardPage() {
           level={level}
           achievements={achievements}
           bestStreak={bestStreak}
+          streakUnit={streakUnit}
           historicalLogs={historicalLogs}
           totalCompletions={totalCompletions}
           onClose={() => setShowXPSheet(false)}

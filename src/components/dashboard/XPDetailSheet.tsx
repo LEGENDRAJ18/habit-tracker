@@ -25,12 +25,13 @@ interface Props {
   level: number;
   achievements: AchievementId[];
   bestStreak: number;
+  streakUnit: "day" | "week";
   historicalLogs: { habit_id: string; completed_at: string }[];
   totalCompletions: number;
   onClose: () => void;
 }
 
-export default function XPDetailSheet({ xp, level, achievements, bestStreak, historicalLogs, totalCompletions, onClose }: Props) {
+export default function XPDetailSheet({ xp, level, achievements, bestStreak, streakUnit, historicalLogs, totalCompletions, onClose }: Props) {
   const router = useRouter();
   const [visible, setVisible] = useState(false);
   const [dragY, setDragY] = useState(0);
@@ -202,7 +203,7 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, his
             </div>
             <div className="flex-1 text-left">
               <p className="text-[10px] text-slate-400 uppercase tracking-wider font-medium">Current Streak</p>
-              <p className="text-sm font-bold text-orange-400 mt-0.5">{bestStreak} day{bestStreak !== 1 ? "s" : ""}</p>
+              <p className="text-sm font-bold text-orange-400 mt-0.5">{bestStreak} {streakUnit}{bestStreak !== 1 ? "s" : ""}</p>
             </div>
             <div className="flex items-center gap-1 text-[11px] text-slate-400 group-hover:text-violet-400 transition-colors flex-shrink-0">
               <Calendar className="w-3.5 h-3.5" />
