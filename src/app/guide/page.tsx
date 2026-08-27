@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ChevronLeft, Crown } from "lucide-react";
+import BackToDashboardButton from "@/components/ui/BackToDashboardButton";
 
 const SECTIONS = [
   {
@@ -308,6 +309,8 @@ export default function GuidePage() {
             </a>
           </p>
         </div>
+
+        <BackToDashboardButton />
       </div>
     </div>
   );
