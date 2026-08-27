@@ -121,6 +121,17 @@ export default function MonthlyWrapped({ tier, onClose }: Props) {
         className="modal-center-enter w-full max-w-sm bg-[#09090f] border border-violet-700/25 rounded-3xl shadow-2xl overflow-hidden flex flex-col"
         style={{
           height: "min(620px, 90dvh)",
+          // Safety-net cap in the universally-supported vh unit. height's
+          // min(620px, 90dvh) is a single point of failure: if a browser
+          // doesn't understand dvh (older Android WebViews, some in-app
+          // browsers), the whole min() value is invalid per spec and the
+          // *entire* height declaration is dropped — the modal then grows
+          // to its full content height with nothing capping it, and since
+          // the CenteredModal wrapper has no overflow handling either, it
+          // centers off both the top and bottom of the viewport with the
+          // footer completely unreachable. maxHeight is a separate
+          // property, so it still applies even when that happens.
+          maxHeight: "90vh",
           boxShadow: "0 0 0 1px rgba(139,92,246,0.06), 0 32px 64px rgba(0,0,0,0.7)",
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
