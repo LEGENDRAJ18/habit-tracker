@@ -27,6 +27,7 @@ export interface Habit {
   program_id?: string | null;
   program_phase?: number | null;
   program_week?: number | null;
+  is_active?: boolean;
 }
 
 export interface FocusSession {

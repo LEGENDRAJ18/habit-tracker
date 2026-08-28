@@ -93,7 +93,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ program: updated, advancedToNextPhase: isLastWeekOfPhase && !isLastPhase, completed: status === "completed" });
+    // Retire the just-completed phase's habits so they stop accumulating on
+    // the dashboard — soft-archive only (is_active: false), habit_logs and
+    // streak history are untouched. Only on a real phase transition, not on
+    // final program completion (the last phase's habits can reasonably keep
+    // going as the user's new baseline).
+    const advancedToNextPhase = isLastWeekOfPhase && !isLastPhase;
+    let retiredHabitCount = 0;
+    if (advancedToNextPhase) {
+      const { data: retired } = await supabase
+        .from("habits")
+        .update({ is_active: false })
+        .eq("user_id", user.id)
+        .eq("program_id", program.id)
+        .eq("program_phase", phase)
+        .select("id");
+      retiredHabitCount = retired?.length ?? 0;
+    }
+
+    return NextResponse.json({ program: updated, advancedToNextPhase, retiredHabitCount, completed: status === "completed" });
   } catch (err) {
     console.error("[goal-program/complete-milestone]", err);
     return NextResponse.json({ error: (err as Error).message ?? "Couldn't complete milestone" }, { status: 500 });

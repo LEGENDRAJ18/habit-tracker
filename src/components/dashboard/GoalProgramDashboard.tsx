@@ -119,7 +119,7 @@ export default function GoalProgramDashboard({
   const weeksDone = program.phases.filter((p) => p.phase < program.current_phase).reduce((s, p) => s + p.weeks, 0) + (program.current_week - 1);
   const progressPct = totalWeeks > 0 ? Math.min(100, Math.round((weeksDone / totalWeeks) * 100)) : 0;
 
-  const programHabits = useMemo(() => habits.filter((h) => h.program_id === program.id), [habits, program.id]);
+  const programHabits = useMemo(() => habits.filter((h) => h.program_id === program.id && h.is_active !== false), [habits, program.id]);
   const programHabitIds = useMemo(() => new Set(programHabits.map((h) => h.id)), [programHabits]);
 
   const todayCompletionRate = programHabits.length > 0
@@ -198,7 +198,12 @@ export default function GoalProgramDashboard({
       });
       onProgramUpdated(data.program);
       if (data.completed) toast("🎉 Program complete — incredible work!", "success", undefined, 5000);
-      else if (data.advancedToNextPhase) toast("Phase complete! Moving to the next phase.", "success", undefined, 3500);
+      else if (data.advancedToNextPhase) {
+        const archivedMsg = data.retiredHabitCount > 0
+          ? ` Last phase's ${data.retiredHabitCount === 1 ? "habit has" : "habits have"} been archived.`
+          : "";
+        toast(`Phase complete! Moving to the next phase.${archivedMsg}`, "success", undefined, 4500);
+      }
       else toast("Milestone marked complete", "success", undefined, 2000);
     } finally {
       setCompleting(false);

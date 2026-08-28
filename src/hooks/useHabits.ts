@@ -831,7 +831,7 @@ export function useHabits() {
   // that treats "all done today" as 100%) are computed against this, not the
   // full habits list, so a weekly habit not due today can't hold the count
   // below 100% or block the "everything done" celebration.
-  const todaysHabits = habits.filter((h) => h.frequency !== "weekly" || h.day_of_week === new Date().getDay());
+  const todaysHabits = habits.filter((h) => h.is_active !== false && (h.frequency !== "weekly" || h.day_of_week === new Date().getDay()));
 
   const completedCount = todaysHabits.filter((h) => isCompletedToday(h.id)).length;
 
