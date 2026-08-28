@@ -108,7 +108,7 @@ export default function VoiceCheckin({ habitId, habitName, habitLogId, tier, onC
     <button
       onClick={() => {}}
       className="flex items-center gap-1.5 text-[11px] text-slate-400 hover:text-slate-400 transition-colors mt-1.5 touch-manipulation cursor-default"
-      title="Voice check-ins — Pro feature"
+      title="Voice check-in — say how it went, we'll save it as a note and give you instant AI coaching feedback. Pro feature"
     >
       <Mic className="w-3 h-3" />
       <span>Voice note <span className="text-[10px] text-violet-700/70 font-semibold ml-0.5">Pro</span></span>
@@ -128,7 +128,7 @@ export default function VoiceCheckin({ habitId, habitName, habitLogId, tier, onC
       <button
         onClick={() => { if (isPro) { setExpanded(true); startRecording(); } }}
         className="flex items-center gap-1.5 text-[11px] text-violet-400/60 hover:text-violet-300 transition-colors mt-1.5 touch-manipulation"
-        title="Voice check-in (Pro)"
+        title="Voice check-in — say how it went, we'll save it as a note and give you instant AI coaching feedback"
       >
         <Mic className="w-3 h-3" />
         <span>Voice note</span>

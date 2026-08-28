@@ -801,7 +801,7 @@ export default function HabitCard({
             className={`relative w-8 h-4 rounded-full transition-colors duration-200 flex-shrink-0 ${
               habit.smart_timing ? "bg-amber-500" : "bg-slate-700"
             } ${smartToggling ? "opacity-60" : ""}`}
-            title="Toggle smart timing"
+            title="Smart timing — sends this habit's reminder at the hour you complete it most, instead of a fixed time"
           >
             <span
               className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform duration-200 ${

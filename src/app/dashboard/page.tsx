@@ -899,8 +899,8 @@ export default function DashboardPage() {
               {isPaid && habits.length > 0 && (
                 <button
                   onClick={() => setShowHabitDNA(true)}
-                  title="Habit DNA"
-                  aria-label="View your Habit DNA"
+                  title="Habit DNA — see your personality patterns, best day, and peak time across all habits"
+                  aria-label="Habit DNA — see your personality patterns, best day, and peak time across all habits"
                   className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-violet-800/30 text-violet-400 hover:text-violet-200 hover:border-violet-600/50 hover:bg-violet-950/20 transition-all text-xs font-medium"
                 >
                   <Brain className="w-3.5 h-3.5 flex-shrink-0" />
@@ -910,8 +910,8 @@ export default function DashboardPage() {
               {tier === "pro" && (
                 <button
                   onClick={() => setShowMonthlyWrapped(true)}
-                  title="Monthly Wrapped"
-                  aria-label="View monthly wrapped"
+                  title="Monthly Wrapped — a Spotify-Wrapped-style recap of your month's streaks, XP, and top habit"
+                  aria-label="Monthly Wrapped — a Spotify-Wrapped-style recap of your month's streaks, XP, and top habit"
                   className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-amber-700/30 text-amber-400 hover:text-amber-200 hover:border-amber-600/50 hover:bg-amber-950/20 transition-all text-xs font-medium"
                 >
                   <Calendar className="w-3.5 h-3.5 flex-shrink-0" />

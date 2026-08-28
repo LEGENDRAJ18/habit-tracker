@@ -669,6 +669,8 @@ export default function FriendsPage() {
                 <button
                   onClick={() => { setShowBattleModal(true); setPendingBattlesCount(0); }}
                   className="relative flex items-center gap-2 px-3.5 py-2 bg-violet-950/40 hover:bg-violet-900/40 border border-violet-700/30 text-violet-300 text-sm font-medium rounded-xl transition-all flex-shrink-0"
+                  title="Habit Battles — challenge a friend to a head-to-head streak duel"
+                  aria-label="Habit Battles — challenge a friend to a head-to-head streak duel"
                 >
                   <Swords className="w-4 h-4" />
                   <span className="hidden sm:inline">Battles</span>
