@@ -41,20 +41,31 @@ const PASSWORD = 'HabitAI_Onboard_26!';
 // ── Main ───────────────────────────────────────────────────────────────────
 
 async function main() {
-  const env     = loadEnv();
-  const url     = env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const env             = loadEnv();
+  const url             = env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey         = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serviceRoleKey  = env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !anonKey) {
     console.error('❌  NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY not found in .env.local');
     process.exit(1);
   }
+  if (!serviceRoleKey) {
+    console.error('❌  SUPABASE_SERVICE_ROLE_KEY not found in .env.local — required because the profile');
+    console.error('    reset writes subscription_tier, which protect_billing_columns rejects from any');
+    console.error('    non-service-role client.');
+    process.exit(1);
+  }
 
   // Dynamic import works for both CJS and ESM builds of supabase-js
   const { createClient } = await import('@supabase/supabase-js');
-  const sb = createClient(url, anonKey);
+  const sb    = createClient(url, anonKey);
+  // Service-role client, mirroring src/lib/supabase/admin.ts's createAdminClient() —
+  // bypasses RLS and the protect_billing_columns trigger's non-service-role check,
+  // needed because this reset writes subscription_tier back to 'free'.
+  const admin = createClient(url, serviceRoleKey);
 
-  // 1. Sign in
+  // 1. Sign in (also verifies the documented test-account password still works)
   console.log('🔐  Signing in as ' + EMAIL + ' …');
   const { data: authData, error: authErr } = await sb.auth.signInWithPassword({
     email: EMAIL, password: PASSWORD,
@@ -66,9 +77,9 @@ async function main() {
   const uid = authData.user.id;
   console.log('✅  Signed in  (uid: ' + uid + ')');
 
-  // 2. Reset profile
+  // 2. Reset profile (service-role client — subscription_tier is a protected column)
   console.log('🔄  Resetting profile …');
-  const { error: updateErr } = await sb
+  const { error: updateErr } = await admin
     .from('profiles')
     .update({
       onboarding_completed: false,
