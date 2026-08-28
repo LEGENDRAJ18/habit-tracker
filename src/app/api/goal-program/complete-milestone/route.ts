@@ -25,16 +25,28 @@ export async function POST(request: NextRequest) {
 
     const phases = (program.phases as ProgramPhase[]) ?? [];
     const phaseIdx = phases.findIndex((p) => p.phase === phase);
-    if (phaseIdx === -1 || !phases[phaseIdx].milestones[milestoneIndex]) {
-      return NextResponse.json({ error: "Milestone not found" }, { status: 404 });
+    if (phaseIdx === -1) {
+      return NextResponse.json({ error: "Phase not found" }, { status: 404 });
     }
 
-    phases[phaseIdx] = {
-      ...phases[phaseIdx],
-      milestones: phases[phaseIdx].milestones.map((m, i) => (i === milestoneIndex ? { ...m, done: true } : m)),
-    };
+    // Some already-saved programs (generated before milestone counts were
+    // guaranteed to match week counts) can have a week with no milestone at
+    // this index. Mark it done if it exists, but don't require one to exist
+    // — a week isn't required to have a milestone to be advanced past.
+    const hasMilestone = !!phases[phaseIdx].milestones[milestoneIndex];
+    if (hasMilestone) {
+      phases[phaseIdx] = {
+        ...phases[phaseIdx],
+        milestones: phases[phaseIdx].milestones.map((m, i) => (i === milestoneIndex ? { ...m, done: true } : m)),
+      };
+    }
 
-    const phaseComplete = phases[phaseIdx].milestones.every((m) => m.done);
+    // Phase completion is driven by the phase's "weeks" value, not by
+    // whether every milestone is done — the milestones array isn't
+    // guaranteed to have one entry per week for older programs, so tying
+    // completion to it either ends a phase early (too few milestones) or
+    // strands the user (too many, with no further milestone to mark).
+    const isLastWeekOfPhase = milestoneIndex + 1 >= phases[phaseIdx].weeks;
     const isLastPhase = phaseIdx === phases.length - 1;
 
     let currentPhase = program.current_phase;
@@ -42,15 +54,15 @@ export async function POST(request: NextRequest) {
     let status = program.status;
     const habitsToAdd: Array<{ name: string; frequency: "daily" | "weekly" }> = [];
 
-    if (phaseComplete && isLastPhase) {
+    if (isLastWeekOfPhase && isLastPhase) {
       status = "completed";
-    } else if (phaseComplete) {
+    } else if (isLastWeekOfPhase) {
       currentPhase = phase + 1;
       currentWeek = 1;
       const nextPhase = phases[phaseIdx + 1];
       if (nextPhase) habitsToAdd.push(...nextPhase.habits.map((h) => ({ name: h.name, frequency: h.frequency })));
     } else {
-      currentWeek = Math.min(phases[phaseIdx].weeks, program.current_week + 1);
+      currentWeek = program.current_week + 1;
     }
 
     const { data: updated, error } = await supabase
@@ -81,7 +93,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ program: updated, advancedToNextPhase: phaseComplete && !isLastPhase, completed: status === "completed" });
+    return NextResponse.json({ program: updated, advancedToNextPhase: isLastWeekOfPhase && !isLastPhase, completed: status === "completed" });
   } catch (err) {
     console.error("[goal-program/complete-milestone]", err);
     return NextResponse.json({ error: (err as Error).message ?? "Couldn't complete milestone" }, { status: 500 });

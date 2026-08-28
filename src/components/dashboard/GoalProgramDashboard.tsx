@@ -252,15 +252,21 @@ export default function GoalProgramDashboard({
         </div>
       )}
 
-      {/* Current milestone */}
-      {milestone && (
+      {/* Current milestone — some already-saved programs can have a week
+          with no milestone at this index (generated before milestone counts
+          were guaranteed to match week counts); still let the user advance. */}
+      {phase && (
         <div className="rounded-2xl border border-violet-900/25 bg-[#0f0f1a] p-4">
           <div className="flex items-center gap-2 mb-1">
             <Flag className="w-4 h-4 text-violet-400 flex-shrink-0" />
-            <p className="text-xs font-semibold text-violet-400 uppercase tracking-wide">This week&apos;s milestone</p>
+            <p className="text-xs font-semibold text-violet-400 uppercase tracking-wide">
+              {milestone ? "This week's milestone" : `Week ${program.current_week}`}
+            </p>
           </div>
-          <p className="text-sm text-white mb-3">{milestone.text}</p>
-          {milestone.done ? (
+          <p className="text-sm text-white mb-3">
+            {milestone ? milestone.text : "No specific milestone this week — just keep at it."}
+          </p>
+          {milestone?.done ? (
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
               <CheckCircle2 className="w-3.5 h-3.5" /> Complete
             </span>
@@ -271,7 +277,7 @@ export default function GoalProgramDashboard({
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 transition-all disabled:opacity-60"
             >
               {completing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-              Mark complete
+              {milestone ? "Mark complete" : "Continue to next week"}
             </button>
           )}
         </div>

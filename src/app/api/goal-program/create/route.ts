@@ -14,6 +14,29 @@ interface ProgramPreview {
   phases: ProgramPhase[];
 }
 
+// Normalizes an AI-generated phase's milestones to exactly one per week.
+// The generation prompt already asks for this, but nothing enforces it —
+// a mismatch either strands the user mid-phase (too many milestones: the
+// last one stays "done" with no further milestone to reach) or ends the
+// phase early (too few: "all milestones done" triggers before the phase's
+// actual week count is up). Normalizing here guarantees the invariant
+// regardless of what the model returns.
+function normalizePhaseMilestones(milestones: string[], weeks: number): string[] {
+  const clean = milestones.map((m) => m?.trim()).filter((m): m is string => !!m);
+  if (weeks <= 0 || clean.length === weeks) return clean;
+  if (clean.length > weeks) {
+    // Fold overflow into the last kept milestone rather than dropping it.
+    const kept = clean.slice(0, weeks - 1);
+    const overflow = clean.slice(weeks - 1).join(" Also: ");
+    return [...kept, overflow];
+  }
+  const padded = [...clean];
+  while (padded.length < weeks) {
+    padded.push("Stay consistent with this phase's habits this week.");
+  }
+  return padded;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -115,7 +138,9 @@ ${qaText}`;
         ? answers.map((a) => `Q: ${a.question}\nA: ${a.answer}`).join("\n\n")
         : "No additional answers provided.";
 
-      const systemPrompt = `You are an expert coach designing a multi-week, phased habit-building program to help someone reach a personal goal. Build a realistic, motivating, phased program (2-4 phases, each 2-6 weeks, total program length reasonable for the goal). Each phase has 2-4 milestones (one roughly per week) and 2-4 daily/weekly habits to build during that phase.
+      const systemPrompt = `You are an expert coach designing a multi-week, phased habit-building program to help someone reach a personal goal. Build a realistic, motivating, phased program (2-4 phases, each 2-6 weeks, total program length reasonable for the goal). Each phase has EXACTLY one milestone per week and 2-4 daily/weekly habits to build during that phase.
+
+The "milestones" array for each phase MUST contain exactly as many entries as that phase's "weeks" value — one milestone per week, in order, no more and no fewer. For example, a phase with "weeks": 5 must have exactly 5 milestones.
 
 Write every phase title, focus sentence, milestone, habit name, and explanation in simple, plain, everyday language — the kind a teenager would understand immediately. Avoid jargon, technical terms, or vague abstractions (for example, say "practice" instead of "techniques", say "why this helps" instead of "rationale"). Keep everything concrete and easy to picture.
 
@@ -154,7 +179,7 @@ Design the full phased program now.`;
         title: p.title,
         weeks: p.weeks,
         focus: p.focus,
-        milestones: (p.milestones ?? []).map((text) => ({ text, done: false })),
+        milestones: normalizePhaseMilestones(p.milestones ?? [], p.weeks).map((text) => ({ text, done: false })),
         habits: p.habits ?? [],
       }));
 
