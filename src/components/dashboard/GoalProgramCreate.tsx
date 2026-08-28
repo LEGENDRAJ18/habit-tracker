@@ -39,6 +39,18 @@ const DURATION_OPTIONS = [
   { value: "5yr_plus",  label: "5+ years" },
 ] as const;
 
+// Universal across all categories — unlike the category-specific fixed
+// question below, everyone gets asked this. Bucketed to what the generator
+// can actually produce (2-4 phases of 2-6 weeks each = ~4-24 weeks); "weeks"
+// feeds a hard constraint on generation, null means no numeric constraint.
+const TIMEFRAME_OPTIONS = [
+  { value: "2_4_weeks",   label: "2-4 weeks",         weeks: 3 },
+  { value: "1_2_months",  label: "1-2 months",        weeks: 6 },
+  { value: "3_4_months",  label: "3-4 months",        weeks: 15 },
+  { value: "5_6_months",  label: "5-6 months",        weeks: 22 },
+  { value: "no_deadline", label: "No fixed deadline", weeks: null },
+] as const;
+
 // Skill level only makes sense where there's a skill to develop. For
 // ongoing situations (a habit, a mental-health struggle, a relationship),
 // "how long has this been going on" is the relevant fixed question instead.
@@ -61,6 +73,9 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
   const [answers, setAnswers] = useState<string[]>([]);
   const [customModes, setCustomModes] = useState<boolean[]>([]);
   const [fixedAnswer, setFixedAnswer] = useState<string>("");
+  const [timeframeValue, setTimeframeValue] = useState<string>("");
+  const [timeframeCustom, setTimeframeCustom] = useState(false);
+  const [timeframeCustomText, setTimeframeCustomText] = useState("");
   const [preview, setPreview] = useState<ProgramPreview | null>(null);
   const [busy, setBusy] = useState(false);
   const [tipIdx, setTipIdx] = useState(0);
@@ -69,6 +84,14 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
 
   const fixedQuestion = CATEGORY_FIXED_QUESTION[category ?? "sport"];
   const goalValidation = useGoalValidation(description, 700);
+
+  const timeframeLabel = timeframeCustom
+    ? timeframeCustomText.trim()
+    : TIMEFRAME_OPTIONS.find((o) => o.value === timeframeValue)?.label ?? "";
+  const timeframeAnswered = timeframeCustom ? !!timeframeCustomText.trim() : !!timeframeValue;
+  const targetWeeks = !timeframeCustom
+    ? TIMEFRAME_OPTIONS.find((o) => o.value === timeframeValue)?.weeks ?? null
+    : null;
 
   const cycleTips = () => {
     const id = setInterval(() => setTipIdx((i) => (i + 1) % LOADING_TIPS.length), 1400);
@@ -103,6 +126,9 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
     ...(fixedAnswer
       ? [{ question: fixedQuestion.question, answer: fixedQuestion.options.find((o) => o.value === fixedAnswer)?.label ?? fixedAnswer }]
       : []),
+    ...(timeframeAnswered
+      ? [{ question: "How long do you have for this goal?", answer: timeframeLabel }]
+      : []),
     ...questions.map((q, i) => ({ question: q.question, answer: answers[i] ?? "" })),
   ];
 
@@ -118,6 +144,7 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
           goalCategory: category,
           goalDescription: description,
           answers: buildAnswers(),
+          targetWeeks,
         }),
       });
       const data = await res.json();
@@ -197,7 +224,7 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
             {GOAL_CATEGORIES.map((c) => (
               <button
                 key={c.id}
-                onClick={() => { setCategory(c.id); setFixedAnswer(""); setStep(2); }}
+                onClick={() => { setCategory(c.id); setFixedAnswer(""); setTimeframeValue(""); setTimeframeCustom(false); setTimeframeCustomText(""); setStep(2); }}
                 className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-violet-900/25 bg-[#0f0f1a] hover:border-violet-600/50 hover:bg-violet-950/20 transition-all text-center"
               >
                 <span className="text-2xl">{c.emoji}</span>
@@ -323,6 +350,52 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
                 ))}
               </div>
             </div>
+            <div>
+              <p className="text-xs font-semibold text-violet-300 mb-1.5">How long do you have for this goal?</p>
+              {!timeframeCustom ? (
+                <div className="flex flex-wrap gap-2">
+                  {TIMEFRAME_OPTIONS.map((o) => (
+                    <button
+                      key={o.value}
+                      type="button"
+                      onClick={() => setTimeframeValue(o.value)}
+                      className={`px-3 py-2 rounded-full text-xs font-medium border transition-all ${
+                        timeframeValue === o.value
+                          ? "border-violet-500/60 bg-violet-600/15 ring-1 ring-violet-500/25 text-violet-100"
+                          : "border-violet-900/30 bg-[#0f0f1a] text-slate-300 hover:border-violet-700/50 hover:bg-violet-950/30"
+                      }`}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => { setTimeframeCustom(true); setTimeframeValue(""); }}
+                    className="px-3 py-2 rounded-full text-xs font-medium border border-dashed border-violet-800/40 text-slate-400 hover:text-slate-300 hover:border-violet-700/50 transition-all"
+                  >
+                    Something else…
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <input
+                    autoFocus
+                    value={timeframeCustomText}
+                    onChange={(e) => setTimeframeCustomText(e.target.value)}
+                    className="w-full bg-violet-950/30 border border-violet-700/40 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-600 outline-none focus:border-violet-500/70"
+                    placeholder="e.g. By my sister's wedding in April"
+                    spellCheck="true" autoCorrect="on"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { setTimeframeCustom(false); setTimeframeCustomText(""); }}
+                    className="text-[11px] text-violet-500 hover:text-violet-400 transition-colors"
+                  >
+                    ← Pick from options instead
+                  </button>
+                </div>
+              )}
+            </div>
             {questions.map((q, i) => (
               <div key={i}>
                 <p className="text-xs font-semibold text-violet-300 mb-1.5">{q.question}</p>
@@ -381,7 +454,7 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
             ))}
           </div>
           <button
-            disabled={!fixedAnswer}
+            disabled={!fixedAnswer || !timeframeAnswered}
             onClick={runFeasibilityCheck}
             className="w-full mt-4 py-3 rounded-2xl text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
           >

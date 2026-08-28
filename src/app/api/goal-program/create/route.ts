@@ -37,6 +37,19 @@ function normalizePhaseMilestones(milestones: string[], weeks: number): string[]
   return padded;
 }
 
+// Forces the sum of phase weeks to match the user's stated timeframe,
+// regardless of what the AI actually returned — same defense-in-depth
+// reasoning as normalizePhaseMilestones. Adjusts the last phase's length
+// to absorb the difference rather than touching earlier phases' content.
+function normalizeTotalWeeks(phases: Array<{ weeks: number }>, targetWeeks: number): void {
+  if (phases.length === 0) return;
+  const currentTotal = phases.reduce((sum, p) => sum + p.weeks, 0);
+  const diff = targetWeeks - currentTotal;
+  if (diff === 0) return;
+  const last = phases[phases.length - 1];
+  last.weeks = Math.max(1, last.weeks + diff);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -61,8 +74,12 @@ export async function POST(request: NextRequest) {
       goalDescription?: string;
       answers?: QAPair[];
       program?: ProgramPreview;
+      targetWeeks?: number | null;
     };
-    const { mode = "questions", goalCategory, goalDescription, answers = [], program } = body;
+    const { mode = "questions", goalCategory, goalDescription, answers = [], program, targetWeeks } = body;
+    const safeTargetWeeks = typeof targetWeeks === "number" && Number.isFinite(targetWeeks) && targetWeeks > 0
+      ? Math.round(targetWeeks)
+      : null;
 
     if (!goalCategory || !goalDescription?.trim()) {
       return NextResponse.json({ error: "Missing goal category or description" }, { status: 400 });
@@ -78,7 +95,7 @@ Then ask 3-4 short clarifying questions covering only what's genuinely still mis
 
 If their stated timeframe or approach is unusually fast, abrupt, or all-at-once (e.g. stopping "immediately" or "within a day," rather than gradually over weeks), do NOT ask questions that assume a longer, gradual, multi-week routine (like "how much time can you dedicate each day"). Ask things relevant to that specific short window instead — like what might make them slip, who can support them, or what's different this time.
 
-Do NOT ask about their current skill/experience level — that's already captured separately.
+Do NOT ask about their current skill/experience level, or their target timeframe/deadline — both are already captured separately.
 
 For EACH question, also provide 3-4 short suggested answers written in plain, everyday language — no jargon, no vague categories. Phrase both the question and the answers concretely and specifically. For example, instead of asking about "time constraints," ask "How much time do you have per session?" with answers like "Under 15 min", "15-30 min", "30-60 min", "1 hour+". Do NOT include a "something else" or "other" option in your answers — that's added automatically by the app.
 
@@ -138,7 +155,11 @@ ${qaText}`;
         ? answers.map((a) => `Q: ${a.question}\nA: ${a.answer}`).join("\n\n")
         : "No additional answers provided.";
 
-      const systemPrompt = `You are an expert coach designing a multi-week, phased habit-building program to help someone reach a personal goal. Build a realistic, motivating, phased program (2-4 phases, each 2-6 weeks, total program length reasonable for the goal). Each phase has EXACTLY one milestone per week and 2-4 daily/weekly habits to build during that phase.
+      const timeframeInstruction = safeTargetWeeks
+        ? `The user has exactly ${safeTargetWeeks} weeks for this goal — the phases' "weeks" values MUST sum to exactly ${safeTargetWeeks}. Adjust phase count and length to fit that (even a single short phase for a very tight timeframe, or more/longer phases for a longer one) rather than defaulting to the usual phase structure below.`
+        : `No specific timeframe was given. If their answers state one anyway, honor it. Otherwise default to a realistic total of 8-12 weeks across all phases, unless the goal clearly needs longer or shorter.`;
+
+      const systemPrompt = `You are an expert coach designing a multi-week, phased habit-building program to help someone reach a personal goal. By default, build a realistic, motivating, phased program using 2-4 phases of 2-6 weeks each — but that's only a starting point. ${timeframeInstruction} Each phase has EXACTLY one milestone per week and 2-4 daily/weekly habits to build during that phase.
 
 The "milestones" array for each phase MUST contain exactly as many entries as that phase's "weeks" value — one milestone per week, in order, no more and no fewer. For example, a phase with "weeks": 5 must have exactly 5 milestones.
 
@@ -174,7 +195,10 @@ Design the full phased program now.`;
         phases?: Array<{ phase: number; title: string; weeks: number; focus: string; milestones: string[]; habits: Array<{ name: string; frequency: "daily" | "weekly"; why: string }> }>;
       };
 
-      const phases: ProgramPhase[] = (result.phases ?? []).map((p) => ({
+      const rawPhases = result.phases ?? [];
+      if (safeTargetWeeks) normalizeTotalWeeks(rawPhases, safeTargetWeeks);
+
+      const phases: ProgramPhase[] = rawPhases.map((p) => ({
         phase: p.phase,
         title: p.title,
         weeks: p.weeks,
