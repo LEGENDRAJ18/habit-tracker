@@ -7,7 +7,7 @@ import {
   Sparkles, LogOut, Zap, ChevronDown, BarChart2,
   User, Settings, CreditCard, HelpCircle,
   Keyboard, Users, Calendar, ChevronLeft, ChevronRight,
-  LayoutDashboard, MessageSquare,
+  LayoutDashboard, MessageSquare, Shield,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import AvatarDisplay from "@/components/ui/AvatarDisplay";
@@ -166,6 +166,7 @@ export default function DashboardNav() {
     "/help":          { label: "Help & Support", Icon: HelpCircle },
     "/organisations": { label: "Organisations",  Icon: Users     },
     "/groups":        { label: "Group Habits",   Icon: Users     },
+    "/admin":         { label: "Admin Dashboard", Icon: Shield    },
   };
   const pageMeta = PAGE_META[pathname];
 

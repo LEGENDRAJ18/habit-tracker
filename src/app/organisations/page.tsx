@@ -2,14 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import {
-  ArrowLeft, Loader2, Users, Plus, Copy, Check, Crown,
+  Loader2, Users, Plus, Copy, Check, Crown,
   School, BarChart3, AlertCircle, X, ChevronRight, Hash,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import BottomNav from "@/components/ui/BottomNav";
-import BackToDashboardButton from "@/components/ui/BackToDashboardButton";
 import type { Plan } from "@/types";
 import FeatureUpgradeGate from "@/components/dashboard/FeatureUpgradeGate";
 
@@ -145,17 +142,7 @@ export default function OrganisationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#09090f] pb-24 sm:pb-8">
-      <div className="sticky top-0 z-40 bg-[#09090f]/90 backdrop-blur-xl border-b border-violet-900/20">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
-          <Link href="/dashboard" className="flex items-center gap-1.5 text-slate-500 hover:text-white text-xs transition-colors">
-            <ArrowLeft className="w-3.5 h-3.5" />Dashboard
-          </Link>
-          <span className="text-slate-700">/</span>
-          <span className="text-sm font-semibold text-white">Organisations</span>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-[#09090f] pb-nav">
       <main className="max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
         {/* Hero */}
@@ -387,11 +374,7 @@ export default function OrganisationsPage() {
             ))}
           </div>
         </div>
-
-        <BackToDashboardButton />
       </main>
-
-      <BottomNav />
     </div>
   );
 }

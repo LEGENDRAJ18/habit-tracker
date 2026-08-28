@@ -7,7 +7,6 @@ import {
   Swords, Building2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import BackToDashboardButton from "@/components/ui/BackToDashboardButton";
 
 const ADMIN_EMAILS  = (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "mannrajsj@gmail.com,surjeetsj@gmail.com")
   .split(",").map((e) => e.trim()).filter(Boolean);
@@ -330,8 +329,6 @@ export default function AdminPage() {
             ? ` · Last fetch: ${new Date(stats.updatedAt).toLocaleString()}`
             : ""}
         </p>
-
-        <BackToDashboardButton />
       </div>
     </div>
   );
