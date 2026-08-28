@@ -1246,7 +1246,7 @@ export default function CalendarPage() {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <Sparkles className="w-4 h-4 text-violet-400" />
-                <h1 className="text-lg font-bold text-white">
+                <h1 className="text-base font-bold text-white">
                   Habit history{displayName ? `, ${displayName}` : ""}
                 </h1>
               </div>

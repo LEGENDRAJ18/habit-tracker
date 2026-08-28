@@ -301,7 +301,7 @@ export default function HelpPage() {
             </div>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">How can we help?</h1>
+          <h1 className="text-base font-bold text-white mb-2">How can we help?</h1>
           <p className="text-sm text-slate-500 mb-7">Find answers to common questions about HabitAI.</p>
 
           {/* Search */}

@@ -853,7 +853,7 @@ export default function DashboardPage() {
           {/* Greeting */}
           <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">{today}</p>
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <h1 className="text-2xl font-bold text-white">{getGreeting()} 👋</h1>
+            <h1 className="text-base font-bold text-white">{getGreeting()} 👋</h1>
             {!loading && (
               <>
                 <button

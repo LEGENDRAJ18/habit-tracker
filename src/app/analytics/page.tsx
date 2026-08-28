@@ -749,7 +749,7 @@ export default function AnalyticsPage() {
     return (
       <div className="min-h-screen bg-[#09090f] pb-nav">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8 pb-3">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">📊 Analytics</h1>
+          <h1 className="text-base font-bold text-white tracking-tight">📊 Analytics</h1>
           <p className="text-sm text-slate-500 mt-1.5">Track your progress and build better habits over time</p>
         </div>
         <main className="max-w-7xl mx-auto px-4 sm:px-6 pb-8">
