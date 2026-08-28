@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Flag, Loader2, Star, TrendingDown, CheckCircle2, Pause, Play, Ban } from "lucide-react";
-import type { GoalProgram, Habit, ProgramCheckin } from "@/types";
+import { useEffect, useMemo, useState } from "react";
+import { Flag, Loader2, Star, TrendingDown, CheckCircle2, Circle, Pause, Play, Ban } from "lucide-react";
+import type { CheckinSuggestion, GoalProgram, Habit, ProgramCheckin } from "@/types";
 import { toast } from "@/components/ui/Toast";
 import CenteredModal from "@/components/ui/CenteredModal";
 import posthog from "posthog-js";
@@ -141,6 +141,44 @@ export default function GoalProgramDashboard({
   }, [historicalLogs, programHabitIds, programHabits.length]);
 
   const latestCheckin = checkins[0];
+
+  // Mirrors latestCheckin.ai_suggestions in local state so a toggle can
+  // re-render immediately — checkins is a prop array the parent only
+  // refetches on next load (see submitCheckin below), so there's nothing
+  // else to trigger a re-render on tap.
+  const [suggestions, setSuggestions] = useState<CheckinSuggestion[]>(latestCheckin?.ai_suggestions ?? []);
+  const [togglingIndex, setTogglingIndex] = useState<number | null>(null);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSuggestions(latestCheckin?.ai_suggestions ?? []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latestCheckin?.id]);
+
+  const toggleSuggestion = async (index: number) => {
+    if (!latestCheckin || togglingIndex !== null) return;
+    const current = suggestions[index];
+    if (!current) return;
+    const nextDone = !current.done;
+    setSuggestions((prev) => prev.map((s, i) => (i === index ? { ...s, done: nextDone } : s)));
+    setTogglingIndex(index);
+    try {
+      const res = await fetch("/api/goal-program/checkin", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ checkinId: latestCheckin.id, suggestionIndex: index, done: nextDone }),
+      });
+      if (!res.ok) {
+        setSuggestions((prev) => prev.map((s, i) => (i === index ? { ...s, done: !nextDone } : s)));
+        const data = await res.json().catch(() => ({}));
+        toast(data.error ?? "Couldn't update suggestion", "error");
+      }
+    } catch {
+      setSuggestions((prev) => prev.map((s, i) => (i === index ? { ...s, done: !nextDone } : s)));
+      toast("Couldn't update suggestion", "error");
+    } finally {
+      setTogglingIndex(null);
+    }
+  };
 
   const markMilestoneComplete = async () => {
     if (!phase) return;
@@ -310,6 +348,26 @@ export default function GoalProgramDashboard({
         <div className="rounded-2xl border border-violet-900/25 bg-[#0f0f1a] p-4">
           <p className="text-xs font-semibold text-violet-400 mb-1.5">Your coach says</p>
           <p className="text-sm text-slate-300 leading-relaxed">{latestCheckin.ai_response}</p>
+          {suggestions.length > 0 && (
+            <div className="mt-3 space-y-1.5">
+              {suggestions.map((s, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  disabled={togglingIndex !== null}
+                  onClick={() => toggleSuggestion(i)}
+                  className="w-full flex items-center gap-2 text-left px-2.5 py-2 rounded-lg border border-violet-900/20 hover:border-violet-700/40 hover:bg-violet-950/20 transition-all disabled:opacity-60"
+                >
+                  {s.done ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  ) : (
+                    <Circle className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                  )}
+                  <span className={`text-xs ${s.done ? "text-slate-500 line-through" : "text-slate-300"}`}>{s.text}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

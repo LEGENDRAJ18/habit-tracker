@@ -131,6 +131,11 @@ export interface GoalProgram {
   updated_at: string;
 }
 
+export interface CheckinSuggestion {
+  text: string;
+  done: boolean;
+}
+
 export interface ProgramCheckin {
   id: string;
   user_id: string;
@@ -140,5 +145,6 @@ export interface ProgramCheckin {
   what_went_well: string | null;
   what_was_hard: string | null;
   ai_response: string | null;
+  ai_suggestions: CheckinSuggestion[] | null;
   created_at: string;
 }
