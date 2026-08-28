@@ -512,6 +512,7 @@ export default function DashboardPage() {
   const [showReOnboard, setShowReOnboard]       = useState(false);
   const [shareData, setShareData] = useState<{ type: "streak" | "level" | "daily"; value: number; tier?: string } | null>(null);
   const [checkinHabit, setCheckinHabit]   = useState<string | null>(null);
+  const [checkinDaysSince, setCheckinDaysSince] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const prevCompletedRef     = useRef<number | null>(null);
   const seenBreakModalRef    = useRef(false);
@@ -740,16 +741,28 @@ export default function DashboardPage() {
     setShowMonthlyWrapped(true);
   }, [tier, loading]);
 
-  // Daily check-in: detect missed habits from yesterday (once per day)
+  // Daily check-in: detect a habit whose streak is broken and surface the
+  // real gap since its last completion (once per day)
   useEffect(() => {
     if (loading || habits.length === 0) return;
     const todayKey = new Date().toISOString().split("T")[0];
     const lsKey    = `ai_checkin_dismissed_${todayKey}`;
     if (localStorage.getItem(lsKey)) return;
     const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-    const missedYesterday = habits.find((h) => !getStreak(h.id) && h.created_at.split("T")[0] < yesterday);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (missedYesterday) setCheckinHabit(missedYesterday.name);
+    const missedHabit = habits.find((h) => !getStreak(h.id) && h.created_at.split("T")[0] < yesterday);
+    if (missedHabit) {
+      const dates = new Set(
+        historicalLogs.filter((l) => l.habit_id === missedHabit.id).map((l) => l.completed_at.split("T")[0])
+      );
+      let daysSince: number | null = null;
+      for (let i = 1; i <= 90; i++) {
+        const d = new Date(Date.now() - i * 86400000).toISOString().split("T")[0];
+        if (dates.has(d)) { daysSince = i; break; }
+      }
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCheckinHabit(missedHabit.name);
+      setCheckinDaysSince(daysSince);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, habits.length]);
 
@@ -994,6 +1007,7 @@ export default function DashboardPage() {
           <ErrorBoundary section="ai-checkin">
             <AICheckinCard
               missedHabitName={checkinHabit}
+              daysSince={checkinDaysSince}
               onDismiss={() => {
                 setCheckinHabit(null);
                 const todayKey = new Date().toISOString().split("T")[0];

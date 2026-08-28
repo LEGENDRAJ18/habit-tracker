@@ -40,6 +40,13 @@ function daysAgo(n: number): string {
   return new Date(Date.now() - n * 86400000).toISOString().split("T")[0];
 }
 
+function daysSinceLastCompletion(dates: Set<string>): number | null {
+  for (let i = 0; i <= 90; i++) {
+    if (dates.has(daysAgo(i))) return i;
+  }
+  return null;
+}
+
 function getStreak(dates: Set<string>): number {
   const today     = daysAgo(0);
   const yesterday = daysAgo(1);
@@ -200,12 +207,19 @@ Build a realistic 7-day plan. Reference specific habits by name. Build on their 
     // ── DAILY CHECK-IN ────────────────────────────────────────────────────────
     if (mode === "checkin") {
       const habitName = missedHabitName ?? habits[0].name;
-      const systemPrompt = `You are a supportive habit coach. The user missed a habit yesterday. Give a short, practical suggestion. Respond with valid JSON:
+      const habitId    = habits.find((h) => h.name === habitName)?.id;
+      const gapDays    = daysSinceLastCompletion(habitId ? (habitLogMap.get(habitId) ?? new Set<string>()) : new Set<string>());
+      const gapDescription =
+        gapDays === null ? "has never completed this habit" :
+        gapDays === 1    ? "missed it yesterday (a 1-day gap)" :
+        `hasn't done it in ${gapDays} days`;
+
+      const systemPrompt = `You are a supportive habit coach. The user has a gap in a habit. Give a short, practical suggestion. Respond with valid JSON:
 {
-  "suggestion": "2-3 sentences max: acknowledge it gently, give ONE specific actionable tip for today"
+  "suggestion": "2-3 sentences max: acknowledge the gap accurately and gently (do not say 'yesterday' unless the gap is truly 1 day), give ONE specific actionable tip for today"
 }`;
 
-      const userPrompt = `User missed "${habitName}" yesterday.
+      const userPrompt = `User ${gapDescription} for "${habitName}".
 Their goals: ${goalsText}
 Current streak for this habit: ${habitSummaries.find((h) => h.name === habitName)?.streak ?? 0} days.
 7-day completion rate: ${habitSummaries.find((h) => h.name === habitName)?.rate7d ?? 0}%.`;

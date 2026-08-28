@@ -6,10 +6,24 @@ import posthog from "posthog-js";
 
 interface Props {
   missedHabitName: string;
+  daysSince: number | null;
   onDismiss: () => void;
 }
 
-export default function AICheckinCard({ missedHabitName, onDismiss }: Props) {
+// Scales the check-in copy to the real gap instead of always saying
+// "yesterday" — a multi-week gap described as "yesterday" reads as
+// dishonest, but the tone should stay supportive at every length.
+function gapCopy(daysSince: number | null): { prefix: string; suffix: string } {
+  if (daysSince === null) return { prefix: "You haven't logged ", suffix: " yet — today's a good day to start." };
+  if (daysSince === 1) return { prefix: "You missed ", suffix: " yesterday." };
+  if (daysSince <= 3) return { prefix: "You've missed ", suffix: ` ${daysSince} days in a row — let's turn it around today.` };
+  if (daysSince <= 6) return { prefix: "It's been almost a week since ", suffix: "." };
+  if (daysSince <= 13) return { prefix: "It's been over a week since ", suffix: "." };
+  if (daysSince <= 27) return { prefix: "It's been a couple weeks since ", suffix: " — today's a good day to restart." };
+  return { prefix: "It's been about a month since ", suffix: ". No pressure — just pick it back up today." };
+}
+
+export default function AICheckinCard({ missedHabitName, daysSince, onDismiss }: Props) {
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState(false);
@@ -41,6 +55,8 @@ export default function AICheckinCard({ missedHabitName, onDismiss }: Props) {
 
   if (error) return null;
 
+  const { prefix, suffix } = gapCopy(daysSince);
+
   return (
     <div className="relative bg-[#0c0c18] border border-violet-800/30 rounded-2xl p-4 mb-4 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-violet-600/8 to-transparent pointer-events-none" />
@@ -53,7 +69,9 @@ export default function AICheckinCard({ missedHabitName, onDismiss }: Props) {
             <div className="flex-1 min-w-0">
               <p className="text-[11px] font-semibold text-violet-400 uppercase tracking-wider mb-0.5">AI Check-in</p>
               <p className="text-xs text-slate-400">
-                You missed <span className="text-slate-200 font-medium">{missedHabitName}</span> yesterday
+                {prefix}
+                <span className="text-slate-200 font-medium">{missedHabitName}</span>
+                {suffix}
               </p>
             </div>
           </div>
