@@ -215,7 +215,7 @@ export default function ProfilePage() {
                     )}
                   </div>
                   <p className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">Level {level} · {name}</p>
-                  <h1 className="text-xl font-bold text-white mb-0.5 hidden sm:block">{name}</h1>
+                  <p className="text-xl font-bold text-white mb-0.5 hidden sm:block">{name}</p>
                   <p className="text-xs text-slate-500 mb-3">
                     {xp.toLocaleString()} XP · {totalCompletions.toLocaleString()} completions
                     {joinedDate && <> · Joined {joinedDate}</>}

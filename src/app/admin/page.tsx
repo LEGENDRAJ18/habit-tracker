@@ -244,7 +244,7 @@ export default function AdminPage() {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="space-y-2 animate-pulse">
                   <div className="h-3 w-12 bg-slate-800 rounded" />
@@ -254,7 +254,7 @@ export default function AdminPage() {
               ))}
             </div>
           ) : stats ? (
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
               {(["free", "plus", "pro"] as const).map((tier) => {
                 const count = stats.tiers[tier];
                 const pct   = tierTotal > 0 ? Math.round((count / tierTotal) * 100) : 0;

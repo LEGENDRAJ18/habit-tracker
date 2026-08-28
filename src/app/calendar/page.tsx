@@ -1196,7 +1196,7 @@ export default function CalendarPage() {
                 <CalendarIcon className="w-4 h-4 text-emerald-300" />
               </div>
               <div>
-                <h1 className="text-base font-bold text-white leading-none">Calendar</h1>
+                <p className="text-base font-bold text-white leading-none">Calendar</p>
                 <p className="text-[11px] text-slate-500 mt-0.5">{MONTH_NAMES[month]} {year}</p>
               </div>
             </div>
