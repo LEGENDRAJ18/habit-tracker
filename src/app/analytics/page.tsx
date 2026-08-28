@@ -389,14 +389,23 @@ function AtRiskWarnings({ habits, habitDateSets }: { habits: Habit[]; habitDateS
     const dates = habitDateSets.get(h.id) ?? new Set<string>();
     const streak = getStreak(dates, h);
     if (streak < 3) return false;
-    // Check if today is the day of week with fewest completions
+    if (dates.has(today)) return false;
+
+    if (h.frequency === "weekly") {
+      // Weekly habits are only ever completed on one day-of-week by
+      // construction, so a "weakest day" comparison is meaningless. The
+      // only real at-risk signal is: today IS the scheduled day.
+      return h.day_of_week === todayDow;
+    }
+
+    // Daily habits: flag if today is historically the weakest day.
     const dowCounts = Array(7).fill(0) as number[];
     for (const d of dates) {
       const dow = new Date(d + "T12:00:00").getDay();
       dowCounts[dow]++;
     }
     const minDow = dowCounts.indexOf(Math.min(...dowCounts));
-    return minDow === todayDow && !dates.has(today);
+    return minDow === todayDow;
   });
 
   if (atRisk.length === 0) return null;
@@ -408,14 +417,19 @@ function AtRiskWarnings({ habits, habitDateSets }: { habits: Habit[]; habitDateS
         At-risk today
       </h3>
       <p className="text-xs text-slate-500 mb-3 leading-relaxed">
-        These habits have an active streak but {todayDow === 0 || todayDow === 6 ? "weekends" : "today"} is historically your weakest day for them.
+        These habits have an active streak on the line today.
       </p>
       <div className="space-y-2">
         {atRisk.map((h) => {
           const streak = getStreak(habitDateSets.get(h.id) ?? new Set(), h);
           return (
             <div key={h.id} className="flex items-center justify-between py-2 px-3 bg-amber-950/20 border border-amber-800/20 rounded-xl">
-              <p className="text-sm text-slate-200 truncate flex-1">{h.name}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-slate-200 truncate">{h.name}</p>
+                <p className="text-[10px] text-slate-500">
+                  {h.frequency === "weekly" ? "Today's the only day this is due" : "Usually a weak day for you"}
+                </p>
+              </div>
               <span className="flex items-center gap-1 text-xs text-amber-400 flex-shrink-0 ml-2">
                 <Flame className="w-3.5 h-3.5" />{streak}d
               </span>
