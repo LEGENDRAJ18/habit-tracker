@@ -1,24 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X, Calendar, Flame, Zap, Target, ChevronRight } from "lucide-react";
+import { X, Calendar, Flame, Target, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import CenteredModal from "@/components/ui/CenteredModal";
 import { xpForLevel, xpIntoLevel, xpSpanOfLevel, levelName, levelEmoji } from "@/lib/xp";
 import { ACHIEVEMENT_META, type AchievementId } from "@/hooks/useXP";
-
-const LEVEL_UNLOCKS: Record<number, string> = {
-  2:  "Streak Freeze 🧊",
-  3:  "Custom Avatars 🎨",
-  4:  "Lucky XP Bonus 🎰",
-  5:  "Streak Shield 🛡️",
-  6:  "Battle Mode ⚔️",
-  7:  "Habit DNA 🧬",
-  8:  "AI Coach 🤖",
-  9:  "Monthly Wrapped 📊",
-  10: "Elite Status ⚡",
-  11: "Legend Badge 👑",
-};
+import { getNextReward } from "@/lib/rewards";
 
 interface Props {
   xp: number;
@@ -95,8 +83,8 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, str
     ? Math.ceil(xpToNext / (totalWeekXP / activeDays))
     : null;
 
-  const unlock    = LEVEL_UNLOCKS[nextLv] ?? null;
-  const recentAch = [...achievements].reverse().slice(0, 3);
+  const nextReward = getNextReward(level);
+  const recentAch  = [...achievements].reverse().slice(0, 3);
 
   if (!visible) return null;
 
@@ -181,14 +169,15 @@ export default function XPDetailSheet({ xp, level, achievements, bestStreak, str
           </div>
 
           {/* Next unlock */}
-          {unlock && (
+          {nextReward && (
             <div className="flex items-center gap-3 bg-gradient-to-r from-violet-950/50 to-purple-950/30 border border-violet-700/30 rounded-2xl px-4 py-3">
               <div className="w-8 h-8 rounded-xl bg-violet-900/60 border border-violet-700/30 flex items-center justify-center flex-shrink-0">
-                <Zap className="w-4 h-4 text-violet-300" />
+                <span className="text-base leading-none">{nextReward.icon}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] text-violet-400/70 uppercase tracking-wider font-semibold">Next unlock at Level {nextLv}</p>
-                <p className="text-sm font-bold text-white mt-0.5">{unlock}</p>
+                <p className="text-[10px] text-violet-400/70 uppercase tracking-wider font-semibold">Next unlock at Level {nextReward.level}</p>
+                <p className="text-sm font-bold text-white mt-0.5">{nextReward.name}</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">{nextReward.desc}</p>
               </div>
             </div>
           )}
