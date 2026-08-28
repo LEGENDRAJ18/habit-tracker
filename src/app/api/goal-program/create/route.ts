@@ -240,6 +240,7 @@ Design the full phased program now.`;
           phases: program.phases,
           current_phase: 1,
           current_week: 1,
+          current_week_started_at: new Date().toISOString(),
           status: "active",
           started_at: new Date().toISOString(),
           target_completion_date: targetCompletionDate,

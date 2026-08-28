@@ -125,6 +125,7 @@ export interface GoalProgram {
   phases: ProgramPhase[];
   current_phase: number;
   current_week: number;
+  current_week_started_at: string;
   status: "active" | "paused" | "completed" | "abandoned";
   started_at: string;
   target_completion_date: string | null;

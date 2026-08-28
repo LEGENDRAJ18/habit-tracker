@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
 
     let currentPhase = program.current_phase;
     let currentWeek = program.current_week;
+    let currentWeekStartedAt = program.current_week_started_at;
     let status = program.status;
     const habitsToAdd: Array<{ name: string; frequency: "daily" | "weekly" }> = [];
 
@@ -59,10 +60,12 @@ export async function POST(request: NextRequest) {
     } else if (isLastWeekOfPhase) {
       currentPhase = phase + 1;
       currentWeek = 1;
+      currentWeekStartedAt = new Date().toISOString();
       const nextPhase = phases[phaseIdx + 1];
       if (nextPhase) habitsToAdd.push(...nextPhase.habits.map((h) => ({ name: h.name, frequency: h.frequency })));
     } else {
       currentWeek = program.current_week + 1;
+      currentWeekStartedAt = new Date().toISOString();
     }
 
     const { data: updated, error } = await supabase
@@ -71,6 +74,7 @@ export async function POST(request: NextRequest) {
         phases,
         current_phase: currentPhase,
         current_week: currentWeek,
+        current_week_started_at: currentWeekStartedAt,
         status,
         updated_at: new Date().toISOString(),
       })
