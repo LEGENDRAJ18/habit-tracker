@@ -43,7 +43,7 @@ export default function GoalProgramPage() {
   return (
     <div className="min-h-screen bg-[#09090f] pb-24 sm:pb-8">
       <div className="sticky top-0 z-40 bg-[#09090f]/90 backdrop-blur-xl border-b border-violet-900/20">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
           <Link href="/dashboard" className="flex items-center gap-1.5 text-slate-500 hover:text-white text-xs transition-colors">
             <ArrowLeft className="w-3.5 h-3.5" />Dashboard
           </Link>
@@ -52,7 +52,7 @@ export default function GoalProgramPage() {
         </div>
       </div>
 
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         {profileLoading ? (
           <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 text-violet-500 animate-spin" /></div>
         ) : tier !== "pro" ? (
