@@ -126,6 +126,7 @@ export interface GoalProgram {
   current_phase: number;
   current_week: number;
   current_week_started_at: string;
+  last_nudged_at: string | null;
   status: "active" | "paused" | "completed" | "abandoned";
   started_at: string;
   target_completion_date: string | null;
