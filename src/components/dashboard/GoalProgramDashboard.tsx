@@ -112,6 +112,7 @@ export default function GoalProgramDashboard({
   const [wasHardCustom, setWasHardCustom] = useState(false);
   const [checkinSubmitting, setCheckinSubmitting] = useState(false);
   const [statusBusy, setStatusBusy] = useState(false);
+  const [adjustmentBusy, setAdjustmentBusy] = useState(false);
 
   const phase = program.phases.find((p) => p.phase === program.current_phase);
   const milestone = phase?.milestones[program.current_week - 1];
@@ -248,6 +249,30 @@ export default function GoalProgramDashboard({
     }
   };
 
+  const respondToAdjustment = async (action: "accept" | "decline") => {
+    setAdjustmentBusy(true);
+    try {
+      const res = await fetch("/api/goal-program/respond-adjustment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast(data.error ?? "Couldn't respond to suggestion", "error"); return; }
+      onProgramUpdated(data.program);
+      posthog.capture("goal_program_adjustment_responded", { action, adjustment_type: program.pending_adjustment?.type });
+      if (action === "decline") {
+        toast("Got it — we'll leave things as they are", "success");
+      } else if (program.pending_adjustment?.type === "extend_phase") {
+        toast(`Phase extended by ${program.pending_adjustment.extra_weeks} week${program.pending_adjustment.extra_weeks === 1 ? "" : "s"}`, "success");
+      } else {
+        toast(`"${program.pending_adjustment?.habit_name}" paused`, "success");
+      }
+    } finally {
+      setAdjustmentBusy(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -295,12 +320,32 @@ export default function GoalProgramDashboard({
         </div>
       )}
 
-      {/* AI-proposed adjustment (Stage 3 — read-only for now, no
-          accept/decline yet; the server never applies this on its own). */}
-      {program.pending_adjustment && program.status === "active" && (
+      {/* AI-proposed adjustment (Stage 4 — accept applies it server-side,
+          decline just records that and starts a cooldown; nothing here
+          mutates the program directly). */}
+      {program.pending_adjustment?.status === "pending" && program.status === "active" && (
         <div className="rounded-2xl border border-blue-600/30 bg-blue-950/20 p-4">
           <p className="text-sm font-bold text-blue-300 mb-1">Your coach suggests</p>
-          <p className="text-xs text-slate-300 leading-relaxed">{program.pending_adjustment.reasoning}</p>
+          <p className="text-xs text-slate-300 leading-relaxed mb-3">{program.pending_adjustment.reasoning}</p>
+          <div className="flex gap-2">
+            <button
+              disabled={adjustmentBusy}
+              onClick={() => respondToAdjustment("decline")}
+              className="flex-1 py-2 rounded-xl text-xs font-semibold text-slate-400 border border-white/10 hover:bg-white/5 transition-colors disabled:opacity-60"
+            >
+              Not now
+            </button>
+            <button
+              disabled={adjustmentBusy}
+              onClick={() => respondToAdjustment("accept")}
+              className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 transition-all disabled:opacity-60 flex items-center justify-center gap-1.5"
+            >
+              {adjustmentBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+              {program.pending_adjustment.type === "extend_phase"
+                ? `Add ${program.pending_adjustment.extra_weeks} week${program.pending_adjustment.extra_weeks === 1 ? "" : "s"}`
+                : `Pause "${program.pending_adjustment.habit_name}"`}
+            </button>
+          </div>
         </div>
       )}
 

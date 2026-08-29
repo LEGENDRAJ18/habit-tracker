@@ -28,3 +28,8 @@ export const CATEGORY_PLACEHOLDERS: Record<GoalCategory, string> = {
   finance: "e.g. I want to save $2,000 and pay off my credit card by the end of the year. I currently spend most of what I earn with no real savings plan.",
   relationships: "e.g. I want to be more present with my family and reconnect with old friends over the next few months. I feel distant right now and rarely reach out first.",
 };
+
+// Shared so it can't drift between the generation-time milestone normalizer
+// (create/route.ts) and the accept-time padding used when a Stage 4
+// "extend_phase" adjustment adds weeks to an in-progress phase.
+export const FALLBACK_MILESTONE_TEXT = "Stay consistent with this phase's habits this week.";

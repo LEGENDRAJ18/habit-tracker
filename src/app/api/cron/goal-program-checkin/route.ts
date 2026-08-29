@@ -13,6 +13,7 @@ import type { PendingAdjustment, ProgramPhase } from "@/types";
 const OVERDUE_DAYS = 7;
 const COMPLETION_WINDOW_DAYS = 7;
 const COMPLETION_THRESHOLD = 0.5;
+const RESOLVED_COOLDOWN_DAYS = 7;
 
 function isAuthorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
@@ -132,6 +133,7 @@ Suggest ONE adjustment now.`;
       habit_id: matched.id,
       habit_name: matched.name,
       proposed_at: new Date().toISOString(),
+      status: "pending",
     };
   }
 
@@ -142,10 +144,25 @@ Suggest ONE adjustment now.`;
       reasoning: result.reasoning.trim(),
       extra_weeks: extraWeeks,
       proposed_at: new Date().toISOString(),
+      status: "pending",
     };
   }
 
   return null;
+}
+
+// Can a new proposal be generated? Yes if there's none yet, or the existing
+// one was resolved (accepted OR declined) more than RESOLVED_COOLDOWN_DAYS
+// ago — covers both "just declined, don't immediately re-propose the same
+// thing" and "just accepted extend_phase, but the trailing completion
+// window hasn't had a chance to reflect that yet" without two separate
+// mechanisms.
+function canProposeNew(existing: PendingAdjustment | null, now: Date): boolean {
+  if (!existing) return true;
+  if (existing.status === "pending") return false;
+  const resolvedAt = new Date(existing.resolved_at ?? existing.proposed_at);
+  const daysSinceResolved = (now.getTime() - resolvedAt.getTime()) / 86_400_000;
+  return daysSinceResolved >= RESOLVED_COOLDOWN_DAYS;
 }
 
 async function runGoalProgramCheckin() {
@@ -203,12 +220,13 @@ async function runGoalProgramCheckin() {
 
       const struggling = lowCompletion || missedTwoInARow;
 
-      // Generate a proposal at most once per unresolved struggle episode —
+      // Generate a proposal at most once per unresolved struggle episode,
+      // then respect a cooldown after it's resolved (see canProposeNew) —
       // independent of the push-nudge idempotency below, since "have we
-      // already proposed something" isn't a daily concern. Cleared by
-      // complete-milestone on any real advance (a stale proposal about a
+      // already proposed something" isn't a daily concern. Cleared entirely
+      // by complete-milestone on any real advance (a stale proposal about a
       // phase the user has since moved past would be confusing).
-      if (struggling && !program.pending_adjustment && snapshot) {
+      if (struggling && canProposeNew(program.pending_adjustment as PendingAdjustment | null, now) && snapshot) {
         const reasons: string[] = [];
         if (lowCompletion) reasons.push("Completion across active habits has averaged under 50% over the last 7 days.");
         if (missedTwoInARow) reasons.push("No check-in was submitted for either of the last two weeks.");

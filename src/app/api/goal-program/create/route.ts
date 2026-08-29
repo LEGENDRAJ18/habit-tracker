@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { callOpenAIJSON } from "@/lib/openai";
-import { categoryLabel } from "@/lib/goalProgram";
+import { categoryLabel, FALLBACK_MILESTONE_TEXT } from "@/lib/goalProgram";
 import type { GoalCategory, ProgramPhase } from "@/types";
 
 const DAILY_GENERATION_LIMIT = 3;
@@ -32,7 +32,7 @@ function normalizePhaseMilestones(milestones: string[], weeks: number): string[]
   }
   const padded = [...clean];
   while (padded.length < weeks) {
-    padded.push("Stay consistent with this phase's habits this week.");
+    padded.push(FALLBACK_MILESTONE_TEXT);
   }
   return padded;
 }

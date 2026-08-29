@@ -122,6 +122,8 @@ export interface PendingAdjustment {
   habit_name?: string;
   extra_weeks?: number;
   proposed_at: string;
+  status: "pending" | "accepted" | "declined";
+  resolved_at?: string;
 }
 
 export interface GoalProgram {
