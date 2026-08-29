@@ -295,6 +295,15 @@ export default function GoalProgramDashboard({
         </div>
       )}
 
+      {/* AI-proposed adjustment (Stage 3 — read-only for now, no
+          accept/decline yet; the server never applies this on its own). */}
+      {program.pending_adjustment && program.status === "active" && (
+        <div className="rounded-2xl border border-blue-600/30 bg-blue-950/20 p-4">
+          <p className="text-sm font-bold text-blue-300 mb-1">Your coach suggests</p>
+          <p className="text-xs text-slate-300 leading-relaxed">{program.pending_adjustment.reasoning}</p>
+        </div>
+      )}
+
       {/* Current milestone — some already-saved programs can have a week
           with no milestone at this index (generated before milestone counts
           were guaranteed to match week counts); still let the user advance. */}

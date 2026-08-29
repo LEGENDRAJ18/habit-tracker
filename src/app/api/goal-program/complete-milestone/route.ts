@@ -53,6 +53,9 @@ export async function POST(request: NextRequest) {
     let currentWeek = program.current_week;
     let currentWeekStartedAt = program.current_week_started_at;
     let status = program.status;
+    // A stale proposal about a phase/week the user has since moved past on
+    // their own would be confusing — clear it on any real advance.
+    let pendingAdjustment = program.pending_adjustment;
     const habitsToAdd: Array<{ name: string; frequency: "daily" | "weekly" }> = [];
 
     if (isLastWeekOfPhase && isLastPhase) {
@@ -61,11 +64,13 @@ export async function POST(request: NextRequest) {
       currentPhase = phase + 1;
       currentWeek = 1;
       currentWeekStartedAt = new Date().toISOString();
+      pendingAdjustment = null;
       const nextPhase = phases[phaseIdx + 1];
       if (nextPhase) habitsToAdd.push(...nextPhase.habits.map((h) => ({ name: h.name, frequency: h.frequency })));
     } else {
       currentWeek = program.current_week + 1;
       currentWeekStartedAt = new Date().toISOString();
+      pendingAdjustment = null;
     }
 
     const { data: updated, error } = await supabase
@@ -75,6 +80,7 @@ export async function POST(request: NextRequest) {
         current_phase: currentPhase,
         current_week: currentWeek,
         current_week_started_at: currentWeekStartedAt,
+        pending_adjustment: pendingAdjustment,
         status,
         updated_at: new Date().toISOString(),
       })

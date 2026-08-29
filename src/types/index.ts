@@ -115,6 +115,15 @@ export interface ProgramPhase {
   habits: ProgramHabit[];
 }
 
+export interface PendingAdjustment {
+  type: "extend_phase" | "deactivate_habit";
+  reasoning: string;
+  habit_id?: string;
+  habit_name?: string;
+  extra_weeks?: number;
+  proposed_at: string;
+}
+
 export interface GoalProgram {
   id: string;
   user_id: string;
@@ -127,6 +136,7 @@ export interface GoalProgram {
   current_week: number;
   current_week_started_at: string;
   last_nudged_at: string | null;
+  pending_adjustment: PendingAdjustment | null;
   status: "active" | "paused" | "completed" | "abandoned";
   started_at: string;
   target_completion_date: string | null;
