@@ -75,8 +75,9 @@ export async function POST(request: NextRequest) {
       answers?: QAPair[];
       program?: ProgramPreview;
       targetWeeks?: number | null;
+      gradingSystem?: string;
     };
-    const { mode = "questions", goalCategory, goalDescription, answers = [], program, targetWeeks } = body;
+    const { mode = "questions", goalCategory, goalDescription, answers = [], program, targetWeeks, gradingSystem } = body;
     const safeTargetWeeks = typeof targetWeeks === "number" && Number.isFinite(targetWeeks) && targetWeeks > 0
       ? Math.round(targetWeeks)
       : null;
@@ -95,7 +96,7 @@ Then ask 3-4 short clarifying questions covering only what's genuinely still mis
 
 If their stated timeframe or approach is unusually fast, abrupt, or all-at-once (e.g. stopping "immediately" or "within a day," rather than gradually over weeks), do NOT ask questions that assume a longer, gradual, multi-week routine (like "how much time can you dedicate each day"). Ask things relevant to that specific short window instead — like what might make them slip, who can support them, or what's different this time.
 
-Do NOT ask about their current skill/experience level, or their target timeframe/deadline — both are already captured separately.
+Do NOT ask about their current skill/experience level, their target timeframe/deadline, or (for academic goals) their grading system — these are already captured separately.
 
 For EACH question, also provide 3-4 short suggested answers written in plain, everyday language — no jargon, no vague categories. Phrase both the question and the answers concretely and specifically. For example, instead of asking about "time constraints," ask "How much time do you have per session?" with answers like "Under 15 min", "15-30 min", "30-60 min", "1 hour+". Do NOT include a "something else" or "other" option in your answers — that's added automatically by the app.
 
@@ -162,6 +163,8 @@ ${qaText}`;
       const systemPrompt = `You are an expert coach designing a multi-week, phased habit-building program to help someone reach a personal goal. By default, build a realistic, motivating, phased program using 2-4 phases of 2-6 weeks each — but that's only a starting point. ${timeframeInstruction} Each phase has EXACTLY one milestone per week and 2-4 daily/weekly habits to build during that phase.
 
 The "milestones" array for each phase MUST contain exactly as many entries as that phase's "weeks" value — one milestone per week, in order, no more and no fewer. For example, a phase with "weeks": 5 must have exactly 5 milestones.
+
+If the user's answers state a specific grading system (e.g. NCEA, GCSE, percentage, GPA/CGPA, letter grades), phrase any grade-related milestones using that system's actual terminology — never default to US letter grades (A-F) unless that's what they specified or this isn't an academic goal at all.
 
 Write every phase title, focus sentence, milestone, habit name, and explanation in simple, plain, everyday language — the kind a teenager would understand immediately. Avoid jargon, technical terms, or vague abstractions (for example, say "practice" instead of "techniques", say "why this helps" instead of "rationale"). Keep everything concrete and easy to picture.
 
@@ -250,6 +253,13 @@ Design the full phased program now.`;
 
       if (insertErr || !savedProgram) {
         return NextResponse.json({ error: insertErr?.message ?? "Couldn't save program" }, { status: 500 });
+      }
+
+      // Write-through: remember the grading system so future academic-category
+      // programs can pre-fill it instead of asking again. Best-effort — a
+      // failure here shouldn't fail the program save itself.
+      if (goalCategory === "academic" && gradingSystem?.trim()) {
+        void supabase.from("profiles").update({ grading_system: gradingSystem.trim() }).eq("id", user.id);
       }
 
       // Auto-add Phase 1 / Week 1 habits to the dashboard.

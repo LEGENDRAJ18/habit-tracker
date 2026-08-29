@@ -5,6 +5,7 @@ import { Loader2, Sparkles, ArrowLeft, ArrowRight, Target, Flag, AlertTriangle, 
 import type { GoalCategory, GoalProgram, ProgramPhase } from "@/types";
 import { GOAL_CATEGORIES, CATEGORY_PLACEHOLDERS } from "@/lib/goalProgram";
 import { useGoalValidation } from "@/hooks/useGoalValidation";
+import { useProfile } from "@/hooks/useProfile";
 import { toast } from "@/components/ui/Toast";
 import posthog from "posthog-js";
 
@@ -39,6 +40,19 @@ const DURATION_OPTIONS = [
   { value: "5yr_plus",  label: "5+ years" },
 ] as const;
 
+// Deliberately not exhaustive (no German 1-6, French /20, IB out-of-45,
+// Australian ATAR, etc.) — same restraint as TIMEFRAME_OPTIONS: cover the
+// common cases, let "Something else" catch the rest as free text the AI
+// can still read and follow. Stored value (not label) is what gets written
+// to profiles.grading_system so it can be matched back on to pre-select
+// this chip for future academic-category programs.
+const GRADING_SYSTEM_OPTIONS = [
+  { value: "letter_grades",  label: "Letter grades (A–F)" },
+  { value: "percentage_gpa", label: "Percentage or GPA/CGPA" },
+  { value: "uk_style",       label: "UK-style (GCSE / A-Level)" },
+  { value: "nz_ncea",        label: "NZ NCEA (Achieved / Merit / Excellence)" },
+] as const;
+
 // Universal across all categories — unlike the category-specific fixed
 // question below, everyone gets asked this. Bucketed to what the generator
 // can actually produce (2-4 phases of 2-6 weeks each = ~4-24 weeks); "weeks"
@@ -54,10 +68,13 @@ const TIMEFRAME_OPTIONS = [
 // Skill level only makes sense where there's a skill to develop. For
 // ongoing situations (a habit, a mental-health struggle, a relationship),
 // "how long has this been going on" is the relevant fixed question instead.
+// Academic gets grading system instead of skill level — more useful for a
+// grade-improvement goal, and it doubles as this app's one capture point
+// for a fact that's stable per-user (see the profile pre-fill below).
 const CATEGORY_FIXED_QUESTION: Record<GoalCategory, { question: string; options: readonly { value: string; label: string }[] }> = {
   sport:         { question: "What's your current skill level?",      options: SKILL_OPTIONS },
   body:          { question: "What's your current skill level?",      options: SKILL_OPTIONS },
-  academic:      { question: "What's your current skill level?",      options: SKILL_OPTIONS },
+  academic:      { question: "What grading system does your school use?", options: GRADING_SYSTEM_OPTIONS },
   build:         { question: "What's your current skill level?",      options: SKILL_OPTIONS },
   finance:       { question: "What's your current skill level?",      options: SKILL_OPTIONS },
   bad_habit:     { question: "How long have you had this habit?",     options: DURATION_OPTIONS },
@@ -73,6 +90,8 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
   const [answers, setAnswers] = useState<string[]>([]);
   const [customModes, setCustomModes] = useState<boolean[]>([]);
   const [fixedAnswer, setFixedAnswer] = useState<string>("");
+  const [fixedAnswerCustom, setFixedAnswerCustom] = useState(false);
+  const [fixedAnswerCustomText, setFixedAnswerCustomText] = useState("");
   const [timeframeValue, setTimeframeValue] = useState<string>("");
   const [timeframeCustom, setTimeframeCustom] = useState(false);
   const [timeframeCustomText, setTimeframeCustomText] = useState("");
@@ -82,8 +101,15 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
   const [checkingFeasibility, setCheckingFeasibility] = useState(false);
   const [feasibilityConcern, setFeasibilityConcern] = useState<string | null>(null);
 
+  const { gradingSystem } = useProfile();
+
   const fixedQuestion = CATEGORY_FIXED_QUESTION[category ?? "sport"];
   const goalValidation = useGoalValidation(description, 700);
+
+  const fixedAnswerLabel = fixedAnswerCustom
+    ? fixedAnswerCustomText.trim()
+    : fixedQuestion.options.find((o) => o.value === fixedAnswer)?.label ?? fixedAnswer;
+  const fixedAnswerAnswered = fixedAnswerCustom ? !!fixedAnswerCustomText.trim() : !!fixedAnswer;
 
   const timeframeLabel = timeframeCustom
     ? timeframeCustomText.trim()
@@ -123,8 +149,8 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
   };
 
   const buildAnswers = () => [
-    ...(fixedAnswer
-      ? [{ question: fixedQuestion.question, answer: fixedQuestion.options.find((o) => o.value === fixedAnswer)?.label ?? fixedAnswer }]
+    ...(fixedAnswerAnswered
+      ? [{ question: fixedQuestion.question, answer: fixedAnswerLabel }]
       : []),
     ...(timeframeAnswered
       ? [{ question: "How long do you have for this goal?", answer: timeframeLabel }]
@@ -194,7 +220,18 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
       const res = await fetch("/api/goal-program/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "save", goalCategory: category, goalDescription: description, program: preview }),
+        body: JSON.stringify({
+          mode: "save",
+          goalCategory: category,
+          goalDescription: description,
+          program: preview,
+          // Write-through so future academic-category programs can pre-fill
+          // this instead of asking again — grading system doesn't vary
+          // goal-to-goal the way skill level or timeframe do.
+          ...(category === "academic" && fixedAnswerAnswered
+            ? { gradingSystem: fixedAnswerCustom ? fixedAnswerCustomText.trim() : fixedAnswer }
+            : {}),
+        }),
       });
       const data = await res.json();
       if (!res.ok) { toast(data.error ?? "Couldn't start your program", "error"); return; }
@@ -224,7 +261,22 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
             {GOAL_CATEGORIES.map((c) => (
               <button
                 key={c.id}
-                onClick={() => { setCategory(c.id); setFixedAnswer(""); setTimeframeValue(""); setTimeframeCustom(false); setTimeframeCustomText(""); setStep(2); }}
+                onClick={() => {
+                  setCategory(c.id);
+                  setFixedAnswer("");
+                  setFixedAnswerCustom(false);
+                  setFixedAnswerCustomText("");
+                  // Pre-fill from the profile so a returning academic-goal
+                  // user isn't asked their grading system again — still
+                  // shown and tappable in Step 3 so they can correct it.
+                  if (c.id === "academic" && gradingSystem) {
+                    const preset = GRADING_SYSTEM_OPTIONS.find((o) => o.value === gradingSystem);
+                    if (preset) setFixedAnswer(preset.value);
+                    else { setFixedAnswerCustom(true); setFixedAnswerCustomText(gradingSystem); }
+                  }
+                  setTimeframeValue(""); setTimeframeCustom(false); setTimeframeCustomText("");
+                  setStep(2);
+                }}
                 className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-violet-900/25 bg-[#0f0f1a] hover:border-violet-600/50 hover:bg-violet-950/20 transition-all text-center"
               >
                 <span className="text-2xl">{c.emoji}</span>
@@ -333,22 +385,49 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
           <div className="space-y-3">
             <div>
               <p className="text-xs font-semibold text-violet-300 mb-1.5">{fixedQuestion.question}</p>
-              <div className="flex flex-wrap gap-2">
-                {fixedQuestion.options.map((o) => (
+              {!fixedAnswerCustom ? (
+                <div className="flex flex-wrap gap-2">
+                  {fixedQuestion.options.map((o) => (
+                    <button
+                      key={o.value}
+                      type="button"
+                      onClick={() => setFixedAnswer(o.value)}
+                      className={`px-3 py-2 rounded-full text-xs font-medium border transition-all ${
+                        fixedAnswer === o.value
+                          ? "border-violet-500/60 bg-violet-600/15 ring-1 ring-violet-500/25 text-violet-100"
+                          : "border-violet-900/30 bg-[#0f0f1a] text-slate-300 hover:border-violet-700/50 hover:bg-violet-950/30"
+                      }`}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
                   <button
-                    key={o.value}
                     type="button"
-                    onClick={() => setFixedAnswer(o.value)}
-                    className={`px-3 py-2 rounded-full text-xs font-medium border transition-all ${
-                      fixedAnswer === o.value
-                        ? "border-violet-500/60 bg-violet-600/15 ring-1 ring-violet-500/25 text-violet-100"
-                        : "border-violet-900/30 bg-[#0f0f1a] text-slate-300 hover:border-violet-700/50 hover:bg-violet-950/30"
-                    }`}
+                    onClick={() => { setFixedAnswerCustom(true); setFixedAnswer(""); }}
+                    className="px-3 py-2 rounded-full text-xs font-medium border border-dashed border-violet-800/40 text-slate-400 hover:text-slate-300 hover:border-violet-700/50 transition-all"
                   >
-                    {o.label}
+                    Something else…
                   </button>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <input
+                    autoFocus
+                    value={fixedAnswerCustomText}
+                    onChange={(e) => setFixedAnswerCustomText(e.target.value)}
+                    className="w-full bg-violet-950/30 border border-violet-700/40 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-600 outline-none focus:border-violet-500/70"
+                    placeholder="Your answer…"
+                    spellCheck="true" autoCorrect="on"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { setFixedAnswerCustom(false); setFixedAnswerCustomText(""); }}
+                    className="text-[11px] text-violet-500 hover:text-violet-400 transition-colors"
+                  >
+                    ← Pick from options instead
+                  </button>
+                </div>
+              )}
             </div>
             <div>
               <p className="text-xs font-semibold text-violet-300 mb-1.5">How long do you have for this goal?</p>
@@ -454,7 +533,7 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
             ))}
           </div>
           <button
-            disabled={!fixedAnswer || !timeframeAnswered}
+            disabled={!fixedAnswerAnswered || !timeframeAnswered}
             onClick={runFeasibilityCheck}
             className="w-full mt-4 py-3 rounded-2xl text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
           >

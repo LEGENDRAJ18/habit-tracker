@@ -16,6 +16,7 @@ interface ProfileSnapshot {
   goal: string | null;
   goals: string[];
   dreamUniversity: string | null;
+  gradingSystem: string | null;
   userMode: string;
   subscriptionStatus: string | null;
   trialEndDate: string | null;
@@ -94,6 +95,7 @@ export function useProfile() {
   const [subscriptionStatus, setSubscriptionStatus]   = useState<string | null>(cached?.subscriptionStatus ?? null);
   const [trialEndDate, setTrialEndDate]               = useState<string | null>(cached?.trialEndDate ?? null);
   const [dreamUniversity, setDreamUniversity]         = useState<string | null>(cached?.dreamUniversity ?? null);
+  const [gradingSystem, setGradingSystem]             = useState<string | null>(cached?.gradingSystem ?? null);
   const [userMode, setUserMode]                       = useState<"student" | "parent" | "teacher" | "personal">(
     (cached?.userMode as "student" | "parent" | "teacher" | "personal") ?? "personal"
   );
@@ -125,6 +127,7 @@ export function useProfile() {
       subscription_status?: string | null;
       trial_end_date?: string | null;
       dream_university?: string | null;
+      grading_system?: string | null;
       user_mode?: string | null;
       username?: string | null;
       avatar_id?: string | null;
@@ -149,6 +152,7 @@ export function useProfile() {
       const newSubStatus         = d.subscription_status ?? null;
       const newTrialEnd          = d.trial_end_date ?? null;
       const newDreamUniversity   = d.dream_university ?? null;
+      const newGradingSystem     = d.grading_system ?? null;
       const newUserMode          = (d.user_mode as "student" | "parent" | "teacher" | "personal") ?? "personal";
       const newUsername          = d.username ?? null;
       const newAvatarId          = d.avatar_id ?? null;
@@ -171,6 +175,7 @@ export function useProfile() {
       setSubscriptionStatus(newSubStatus);
       setTrialEndDate(newTrialEnd);
       setDreamUniversity(newDreamUniversity);
+      setGradingSystem(newGradingSystem);
       setUserMode(newUserMode);
       setUsername(newUsername);
       setAvatarId(newAvatarId);
@@ -200,6 +205,7 @@ export function useProfile() {
         goal: newGoal,
         goals: newGoals,
         dreamUniversity: newDreamUniversity,
+        gradingSystem: newGradingSystem,
         userMode: newUserMode,
         subscriptionStatus: newSubStatus,
         trialEndDate: newTrialEnd,
@@ -259,7 +265,7 @@ export function useProfile() {
                   "subscription_tier, onboarding_completed, goal, goals, last_freeze_used, " +
                   "freeze_protected_date, reminder_enabled, reminder_hour, reminder_minute, " +
                   "subscription_cancel_at_period_end, subscription_current_period_end, " +
-                  "subscription_status, trial_end_date, dream_university, user_mode, " +
+                  "subscription_status, trial_end_date, dream_university, grading_system, user_mode, " +
                   "username, avatar_id, accent_color, persona, welcome_seen, notif_prompt_last_asked_at"
                 )
                 .eq("id", _uid)
@@ -406,6 +412,7 @@ export function useProfile() {
     subscriptionStatus,
     trialEndDate,
     dreamUniversity,
+    gradingSystem,
     userMode,
     username,
     avatarId,

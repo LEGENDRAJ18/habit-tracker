@@ -89,7 +89,7 @@ NEVER approve a habit with a generic message. Every response must reference the 
 "be happy" → {"status":"blocked","message":"'Be happy' is a feeling, not a daily action you can check off. Habits need to be concrete behaviours.","suggestion":"Write 3 things I'm grateful for each morning"}
 "exercise" → {"status":"warning","message":"'Exercise' doesn't say what type, how long, or how often — all three gaps mean nothing to track.","suggestion":"Do 30 minutes of cardio every morning"}
 "read" → {"status":"warning","message":"'Read' is missing how much and when, which makes it impossible to build into a consistent routine.","suggestion":"Read 20 pages every night before bed"}
-"drink water" → {"status":"warning","message":"'Drink water' needs a target amount and time to be trackable. How much, and when?","suggestion":"Drink 2 glasses of water every morning"}
+"drink water" → {"status":"warning","message":"'Drink water' needs a target amount and time to be trackable. How much, and when?","suggestion":"Drink 500ml of water every morning"}
 "journal" → {"status":"warning","message":"'Journal' doesn't say how long or when, so there's no clear habit to measure.","suggestion":"Write a 5-minute journal entry before bed"}
 "wellingotn under 17 cricket prctise" → {"status":"warning","message":"'Wellington under 17 cricket practice' doesn't say how long each session is — add a duration to make it trackable.","suggestion":"Wellington under 17 cricket practice for 1 hour every week","correction":"Wellington under 17 cricket practice"}`;
 
@@ -133,8 +133,8 @@ const GENERIC_SUGGESTIONS: Record<string, string> = {
   reading:      "Read 20 pages every evening",
   eat:          "Eat a balanced meal with vegetables every day",
   eating:       "Eat a balanced meal with vegetables every day",
-  drink:        "Drink 8 glasses of water every day",
-  drinking:     "Drink 8 glasses of water every day",
+  drink:        "Drink 2 litres of water every day",
+  drinking:     "Drink 2 litres of water every day",
   diet:         "Track my meals every day",
   work:         "Do 1 focused deep-work block every morning",
   code:         "Code for 1 hour every day",
