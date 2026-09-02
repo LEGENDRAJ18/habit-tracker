@@ -44,15 +44,17 @@ export function computeOccurrenceStreak(
   return streak;
 }
 
-// Completion rate (0-100) over a habit's last `count` scheduled
+// Raw completion count (0..count) over a habit's last `count` scheduled
 // occurrences, walking backward from `anchor` (inclusive). Daily habits
-// are graded against their last `count` calendar days; weekly habits are
-// graded against their last `count` completions of their own scheduled
-// day_of_week (steps of 7 days) — so a weekly habit is scored against
+// are checked against their last `count` calendar days; weekly habits are
+// checked against their last `count` completions of their own scheduled
+// day_of_week (steps of 7 days) — so a weekly habit is counted against
 // occurrences it was actually due for, not against `count` daily slots it
-// was never scheduled on. For daily habits this produces byte-identical
-// results to the plain "last N calendar days" calculation it replaces.
-export function computeOccurrenceRate(
+// was never scheduled on. Exposed separately from computeOccurrenceRate so
+// a caller aggregating across several habits (e.g. a weekly consistency %)
+// can sum raw hits/possible before rounding once, instead of rounding each
+// habit's rate first and compounding rounding error.
+export function computeOccurrenceHits(
   anchor: Date,
   doneDates: Set<string>,
   frequency: string | null | undefined,
@@ -75,5 +77,20 @@ export function computeOccurrenceRate(
       if (doneDates.has(d)) hits++;
     }
   }
-  return Math.round((hits / count) * 100);
+  return hits;
+}
+
+// Completion rate (0-100) over a habit's last `count` scheduled
+// occurrences. See computeOccurrenceHits for the counting rule. For daily
+// habits this produces byte-identical results to the plain "last N
+// calendar days" calculation it replaces.
+export function computeOccurrenceRate(
+  anchor: Date,
+  doneDates: Set<string>,
+  frequency: string | null | undefined,
+  dayOfWeek: number | null | undefined,
+  count: number,
+): number {
+  if (count <= 0) return 0;
+  return Math.round((computeOccurrenceHits(anchor, doneDates, frequency, dayOfWeek, count) / count) * 100);
 }

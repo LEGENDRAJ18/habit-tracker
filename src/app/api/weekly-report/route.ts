@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
+import { computeOccurrenceHits } from "@/lib/streaks";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -81,9 +82,11 @@ export async function POST(request: NextRequest) {
     if (isCron) {
       const thisWeekSunday = new Date().toISOString().split("T")[0];
       // Send to all users with weekly_email_enabled = true who haven't received it this Sunday
+      // profiles has no full_name column — use username, falling back to
+      // the auth user's own metadata (already fetched below for the email).
       const { data: users } = await admin
         .from("profiles")
-        .select("id, full_name, username, subscription_tier")
+        .select("id, username, subscription_tier")
         .eq("weekly_email_enabled", true)
         .in("subscription_tier", ["plus", "pro"])
         .or(`weekly_report_sent_date.is.null,weekly_report_sent_date.lt.${thisWeekSunday}`);
@@ -97,7 +100,7 @@ export async function POST(request: NextRequest) {
         const { stats, report } = await buildUserReport(admin, profile.id);
         if (!stats) continue;
 
-        const name = profile.full_name ?? profile.username ?? "there";
+        const name = profile.username ?? authUser?.user?.user_metadata?.full_name ?? "there";
         await resend.emails.send({
           from:    "HabitAI <hello@habitaiapp.com>",
           to:      email,
@@ -118,7 +121,9 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { data: profile } = await admin.from("profiles").select("full_name, username, subscription_tier").eq("id", user.id).single();
+    // profiles has no full_name column — use username, falling back to
+    // this session's own auth user metadata.
+    const { data: profile } = await admin.from("profiles").select("username, subscription_tier").eq("id", user.id).single();
     if (!profile || profile.subscription_tier === "free") {
       return NextResponse.json({ error: "Weekly email report requires Plus or Pro." }, { status: 403 });
     }
@@ -126,7 +131,7 @@ export async function POST(request: NextRequest) {
     const { stats, report } = await buildUserReport(admin, user.id);
     if (!stats) return NextResponse.json({ error: "Not enough data" }, { status: 400 });
 
-    const name = profile?.full_name ?? profile?.username ?? "there";
+    const name = profile?.username ?? user.user_metadata?.full_name ?? "there";
     await resend.emails.send({
       from:    "HabitAI <hello@habitaiapp.com>",
       to:      user.email!,
@@ -141,38 +146,70 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// How many of a habit's own last 7 scheduled occurrences to score against
+// — 7 calendar days for a daily habit, 7 completions of its own
+// day_of_week (spanning ~7 weeks) for a weekly one. Matches the window
+// ai-insight's rate7d uses, for the same reason: a flat "×7" possible-
+// completions count assumes every habit is due daily, so a weekly habit
+// completed exactly as scheduled still gets flagged as the "weak spot".
+const OCCURRENCE_WINDOW = 7;
+
 async function buildUserReport(admin: ReturnType<typeof createAdminClient>, userId: string) {
-  const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 86400000).toISOString();
+  // A weekly habit's last 7 scheduled occurrences can span ~7 weeks, so the
+  // logs query needs to look back further than the 7-day window used for
+  // the "completions this week" count below — otherwise a weekly habit's
+  // occurrence history outside the last 7 calendar days is invisible and
+  // it scores as if it had never been done.
+  const occurrenceLookback = new Date(now.getTime() - OCCURRENCE_WINDOW * 7 * 86400000).toISOString();
 
   const [{ data: habits }, { data: logs }] = await Promise.all([
-    admin.from("habits").select("id, name").eq("user_id", userId),
-    admin.from("habit_logs").select("habit_id, completed_at").eq("user_id", userId).gte("completed_at", weekAgo),
+    admin.from("habits").select("id, name, frequency, day_of_week").eq("user_id", userId),
+    admin.from("habit_logs").select("habit_id, completed_at").eq("user_id", userId).gte("completed_at", occurrenceLookback),
   ]);
 
   if (!habits || habits.length === 0) return { stats: null, report: { tip: "" } };
 
-  const completions = (logs ?? []).length;
-  const possible = habits.length * 7;
-  const consistency = Math.round((completions / Math.max(possible, 1)) * 100);
+  // "Completions" shown in the email is genuinely scoped to the last 7
+  // calendar days — accurate regardless of habit frequency, unlike the
+  // occurrence-based scoring below, so it's filtered down from the wider
+  // fetch rather than widened itself.
+  const completions = (logs ?? []).filter((l) => l.completed_at >= weekAgo).length;
 
-  // Find best and worst habit
-  const countByHabit = new Map<string, number>();
+  const doneDatesByHabit = new Map<string, Set<string>>();
   for (const log of logs ?? []) {
-    countByHabit.set(log.habit_id, (countByHabit.get(log.habit_id) ?? 0) + 1);
+    const d = log.completed_at.split("T")[0];
+    if (!doneDatesByHabit.has(log.habit_id)) doneDatesByHabit.set(log.habit_id, new Set());
+    doneDatesByHabit.get(log.habit_id)!.add(d);
   }
 
-  const habitMap = new Map(habits.map((h) => [h.id, h.name]));
+  // Find best and worst habit — scored by each habit's own occurrence-rate,
+  // not raw completion count, so a weekly habit isn't structurally
+  // disadvantaged against a daily one just for having fewer possible slots.
   let bestHabit = "";
   let weakHabit: string | null = null;
-  let bestCount = 0;
-  let worstCount = Infinity;
+  let bestRate = -1;
+  let worstRate = 101;
   let worstId: string | null = null;
+  let hitsSum = 0;
 
   for (const habit of habits) {
-    const count = countByHabit.get(habit.id) ?? 0;
-    if (count > bestCount) { bestCount = count; bestHabit = habit.name; }
-    if (count < worstCount) { worstCount = count; worstId = habit.id; }
+    const dates = doneDatesByHabit.get(habit.id) ?? new Set<string>();
+    const hits = computeOccurrenceHits(now, dates, habit.frequency, habit.day_of_week, OCCURRENCE_WINDOW);
+    hitsSum += hits;
+    const rate = Math.round((hits / OCCURRENCE_WINDOW) * 100);
+    if (rate > bestRate) { bestRate = rate; bestHabit = habit.name; }
+    if (rate < worstRate) { worstRate = rate; worstId = habit.id; }
   }
+
+  // Sum raw hits/possible across all habits before rounding once, rather
+  // than rounding each habit's rate first — for an all-daily user this
+  // stays mathematically identical to the original completions/possible
+  // calculation, just with a correct numerator for any weekly habits.
+  const consistency = Math.round((hitsSum / (habits.length * OCCURRENCE_WINDOW)) * 100);
+
+  const habitMap = new Map(habits.map((h) => [h.id, h.name]));
   if (worstId && worstId !== habits.find((h) => h.name === bestHabit)?.id) {
     weakHabit = habitMap.get(worstId) ?? null;
   }
