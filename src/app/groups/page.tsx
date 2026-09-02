@@ -239,7 +239,7 @@ export default function GroupsPage() {
 
   return (
     <div className="min-h-screen bg-[#09090f] pb-nav">
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
         {/* Hero */}
         <div className="bg-gradient-to-br from-orange-950/40 to-[#0f0f1a] border border-orange-700/25 rounded-2xl p-6">
