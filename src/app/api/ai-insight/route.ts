@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { computeOccurrenceRate, computeOccurrenceStreak } from "@/lib/streaks";
 
 const DAILY_LIMIT_PLUS = 5;
 const DAILY_LIMIT_FREE = 1;
@@ -47,18 +48,18 @@ function daysSinceLastCompletion(dates: Set<string>): number | null {
   return null;
 }
 
-function getStreak(dates: Set<string>): number {
-  const today     = daysAgo(0);
-  const yesterday = daysAgo(1);
-  const start     = dates.has(today) ? today : dates.has(yesterday) ? yesterday : null;
-  if (!start) return 0;
-  let streak = 0;
-  let offset = start === today ? 0 : 1;
-  while (dates.has(daysAgo(offset))) {
-    streak++;
-    offset++;
-  }
-  return streak;
+// A weekly habit's streak is counted in scheduled occurrences (steps of 7
+// days on its own day_of_week), not calendar days — same fix family as
+// rate7d and the cron/midnight milestone/freeze bugs. Preserves the
+// original grace period: if the current cycle (today for daily, this
+// week's scheduled day for weekly) hasn't been logged yet, that alone
+// doesn't break the streak — only re-anchor to the previous cycle if the
+// current one comes back empty.
+function getStreak(dates: Set<string>, frequency: string | null | undefined, dayOfWeek: number | null | undefined): number {
+  const cycleDays = frequency === "weekly" ? 7 : 1;
+  const streak = computeOccurrenceStreak(new Date(), dates, frequency, dayOfWeek, 90);
+  if (streak > 0) return streak;
+  return computeOccurrenceStreak(new Date(Date.now() - cycleDays * 86400000), dates, frequency, dayOfWeek, 90);
 }
 
 export async function POST(request: NextRequest) {
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
     // The profile read includes subscription_tier + the rate-limit counters,
     // so it goes through the admin client — same as the counter write below.
     const [{ data: habits }, { data: rawLogs }, { data: profile }] = await Promise.all([
-      supabase.from("habits").select("id, name, habit_strength, created_at").eq("user_id", user.id).order("created_at"),
+      supabase.from("habits").select("id, name, habit_strength, created_at, frequency, day_of_week").eq("user_id", user.id).order("created_at"),
       supabase.from("habit_logs").select("habit_id, completed_at").eq("user_id", user.id).gte("completed_at", daysAgo(90)),
       admin.from("profiles").select("goal, goals, subscription_tier, ai_memory, ai_insight_count, ai_insight_date").eq("id", user.id).single(),
     ]);
@@ -138,9 +139,12 @@ export async function POST(request: NextRequest) {
 
     const habitSummaries = habits.map((h) => {
       const dates  = habitLogMap.get(h.id) ?? new Set<string>();
-      const streak = getStreak(dates);
-      const last7  = Array.from({ length: 7 }, (_, i) => daysAgo(6 - i));
-      const rate7d = Math.round((last7.filter((d) => dates.has(d)).length / 7) * 100);
+      const streak = getStreak(dates, h.frequency, h.day_of_week);
+      // A weekly habit is graded against its own last 7 scheduled
+      // occurrences (spanning ~7 weeks), not 7 daily slots it was never
+      // scheduled on — otherwise it caps at ~14% even with a perfect record,
+      // and the AI routinely misreads it as the "most struggling" habit.
+      const rate7d = computeOccurrenceRate(new Date(), dates, h.frequency, h.day_of_week, 7);
       return { name: h.name, strength: h.habit_strength ?? 10, streak, rate7d };
     });
 

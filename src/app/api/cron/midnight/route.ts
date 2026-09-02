@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getWebPush } from "@/lib/webpush";
 import { Resend } from "resend";
 import { generateUnsubscribeToken } from "@/lib/unsubscribeToken";
+import { computeOccurrenceStreak } from "@/lib/streaks";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://habitaiapp.com";
@@ -46,40 +47,6 @@ async function sendPushToUser(
 }
 
 // ─── Streak Freezes ───────────────────────────────────────────────────────────
-
-// Consecutive-occurrence streak for one habit, walking backward from
-// `anchor` (inclusive). Daily habits count consecutive calendar days;
-// weekly habits only count consecutive completions of their own scheduled
-// day_of_week (steps of 7 days) — every other day was never due, so it
-// can't be a miss. Shared by the freeze-consumed notification (anchored to
-// yesterday) and the milestone check (anchored to today).
-function computeOccurrenceStreak(
-  anchor: Date,
-  doneDates: Set<string>,
-  frequency: string | null | undefined,
-  dayOfWeek: number | null | undefined,
-  maxLookback: number,
-): number {
-  let streak = 0;
-  if (frequency === "weekly" && dayOfWeek != null) {
-    const anchorDow = anchor.getUTCDay();
-    const offsetToOccurrence = (anchorDow - dayOfWeek + 7) % 7;
-    for (let occurrence = 0; ; occurrence++) {
-      const daysBack = offsetToOccurrence + occurrence * 7;
-      if (daysBack >= maxLookback) break;
-      const d = new Date(anchor.getTime() - daysBack * 86400000).toISOString().slice(0, 10);
-      if (doneDates.has(d)) streak++;
-      else break;
-    }
-  } else {
-    for (let i = 0; i < maxLookback; i++) {
-      const d = new Date(anchor.getTime() - i * 86400000).toISOString().slice(0, 10);
-      if (doneDates.has(d)) streak++;
-      else break;
-    }
-  }
-  return streak;
-}
 
 async function processStreakFreezes(supabase: ReturnType<typeof createAdminClient>) {
   const now       = new Date();
