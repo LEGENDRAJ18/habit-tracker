@@ -749,7 +749,16 @@ export default function DashboardPage() {
     const lsKey    = `ai_checkin_dismissed_${todayKey}`;
     if (localStorage.getItem(lsKey)) return;
     const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-    const missedHabit = habits.find((h) => !getStreak(h.id) && h.created_at.split("T")[0] < yesterday);
+    const todayDow = new Date().getDay();
+    // A weekly habit is only "missed" on its own scheduled day — same fix as
+    // AtRiskWarnings (analytics/page.tsx): without this, a broken-streak
+    // weekly habit would trigger this card every day of the week, not just
+    // the day it's actually due.
+    const missedHabit = habits.find((h) =>
+      !getStreak(h.id) &&
+      h.created_at.split("T")[0] < yesterday &&
+      (h.frequency !== "weekly" || h.day_of_week === todayDow)
+    );
     if (missedHabit) {
       const dates = new Set(
         historicalLogs.filter((l) => l.habit_id === missedHabit.id).map((l) => l.completed_at.split("T")[0])
