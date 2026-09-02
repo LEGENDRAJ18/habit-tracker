@@ -47,15 +47,50 @@ async function sendPushToUser(
 
 // ─── Streak Freezes ───────────────────────────────────────────────────────────
 
+// Consecutive-occurrence streak for one habit, walking backward from
+// `anchor` (inclusive). Daily habits count consecutive calendar days;
+// weekly habits only count consecutive completions of their own scheduled
+// day_of_week (steps of 7 days) — every other day was never due, so it
+// can't be a miss. Shared by the freeze-consumed notification (anchored to
+// yesterday) and the milestone check (anchored to today).
+function computeOccurrenceStreak(
+  anchor: Date,
+  doneDates: Set<string>,
+  frequency: string | null | undefined,
+  dayOfWeek: number | null | undefined,
+  maxLookback: number,
+): number {
+  let streak = 0;
+  if (frequency === "weekly" && dayOfWeek != null) {
+    const anchorDow = anchor.getUTCDay();
+    const offsetToOccurrence = (anchorDow - dayOfWeek + 7) % 7;
+    for (let occurrence = 0; ; occurrence++) {
+      const daysBack = offsetToOccurrence + occurrence * 7;
+      if (daysBack >= maxLookback) break;
+      const d = new Date(anchor.getTime() - daysBack * 86400000).toISOString().slice(0, 10);
+      if (doneDates.has(d)) streak++;
+      else break;
+    }
+  } else {
+    for (let i = 0; i < maxLookback; i++) {
+      const d = new Date(anchor.getTime() - i * 86400000).toISOString().slice(0, 10);
+      if (doneDates.has(d)) streak++;
+      else break;
+    }
+  }
+  return streak;
+}
+
 async function processStreakFreezes(supabase: ReturnType<typeof createAdminClient>) {
   const now       = new Date();
   const yesterday = new Date(now.getTime() - 86400000).toISOString().split("T")[0];
   const today     = now.toISOString().split("T")[0];
   const isMonday  = now.getUTCDay() === 1;
+  const yesterdayDow = new Date(now.getTime() - 86400000).getUTCDay();
 
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("id, subscription_tier, streak_freeze_count, freeze_protected_date")
+    .select("id, subscription_tier, streak_freezes, freeze_protected_date")
     .in("subscription_tier", ["plus", "pro"]);
 
   if (!profiles || profiles.length === 0) return { freezesApplied: 0, freezesRefilled: 0 };
@@ -68,10 +103,10 @@ async function processStreakFreezes(supabase: ReturnType<typeof createAdminClien
       const maxFreeze = profile.subscription_tier === "pro" ? 2 : 1;
 
       // Monday: refill one freeze and notify
-      if (isMonday && profile.streak_freeze_count < maxFreeze) {
-        const newCount = Math.min(maxFreeze, profile.streak_freeze_count + 1);
+      if (isMonday && profile.streak_freezes < maxFreeze) {
+        const newCount = Math.min(maxFreeze, profile.streak_freezes + 1);
         await supabase.from("profiles")
-          .update({ streak_freeze_count: newCount })
+          .update({ streak_freezes: newCount })
           .eq("id", profile.id);
         freezesRefilled++;
 
@@ -84,10 +119,15 @@ async function processStreakFreezes(supabase: ReturnType<typeof createAdminClien
       }
 
       if (profile.freeze_protected_date === yesterday) continue;
-      if (profile.streak_freeze_count <= 0) continue;
+      if (profile.streak_freezes <= 0) continue;
 
-      const { data: habits } = await supabase.from("habits").select("id").eq("user_id", profile.id);
+      const { data: habits } = await supabase.from("habits").select("id, frequency, day_of_week").eq("user_id", profile.id);
       if (!habits || habits.length === 0) continue;
+
+      // A weekly habit is only "missed" if yesterday was actually its
+      // scheduled day — every other day it was never due in the first place.
+      const dueYesterday = habits.filter((h) => h.frequency !== "weekly" || h.day_of_week === yesterdayDow);
+      if (dueYesterday.length === 0) continue;
 
       const { data: logs } = await supabase.from("habit_logs")
         .select("habit_id")
@@ -96,27 +136,25 @@ async function processStreakFreezes(supabase: ReturnType<typeof createAdminClien
         .lt("completed_at", `${today}T00:00:00.000Z`);
 
       const completedIds = new Set((logs ?? []).map((l) => l.habit_id));
-      if (!habits.some((h) => !completedIds.has(h.id))) continue;
+      const missedHabit = dueYesterday.find((h) => !completedIds.has(h.id));
+      if (!missedHabit) continue;
 
-      const newFreezeCount = Math.max(0, profile.streak_freeze_count - 1);
+      const newFreezeCount = Math.max(0, profile.streak_freezes - 1);
 
-      // Calculate current streak to show in notification
-      const { data: recentLogs } = await supabase.from("habit_logs")
+      // Streak to show in the notification — the specific habit that
+      // triggered this freeze, not an aggregate across all habits.
+      const { data: habitLogs } = await supabase.from("habit_logs")
         .select("completed_at")
         .eq("user_id", profile.id)
+        .eq("habit_id", missedHabit.id)
         .order("completed_at", { ascending: false })
-        .limit(60);
-      const doneDates = new Set((recentLogs ?? []).map((l) => (l.completed_at as string).slice(0, 10)));
-      let streak = 0;
-      for (let i = 1; i <= 60; i++) {
-        const d = new Date(now.getTime() - i * 86400000).toISOString().slice(0, 10);
-        if (doneDates.has(d)) streak++;
-        else break;
-      }
+        .limit(400);
+      const doneDates = new Set((habitLogs ?? []).map((l) => (l.completed_at as string).slice(0, 10)));
+      const streak = computeOccurrenceStreak(new Date(now.getTime() - 86400000), doneDates, missedHabit.frequency, missedHabit.day_of_week, 400);
 
       await supabase.from("profiles").update({
         freeze_protected_date: yesterday,
-        streak_freeze_count:   newFreezeCount,
+        streak_freezes:        newFreezeCount,
       }).eq("id", profile.id);
 
       freezesApplied++;
@@ -409,7 +447,7 @@ function buildMilestoneHtml(name: string, habitName: string, days: number, unsub
 
 async function processStreakMilestones(supabase: ReturnType<typeof createAdminClient>): Promise<{ sent: number }> {
   const now = new Date();
-  const { data: allHabits } = await supabase.from("habits").select("id, name, user_id");
+  const { data: allHabits } = await supabase.from("habits").select("id, name, user_id, frequency, day_of_week");
   if (!allHabits?.length) return { sent: 0 };
 
   const byUser = new Map<string, typeof allHabits>();
@@ -440,12 +478,14 @@ async function processStreakMilestones(supabase: ReturnType<typeof createAdminCl
           .limit(400);
 
         const doneDates = new Set((logs ?? []).map((l) => (l.completed_at as string).slice(0, 10)));
-        let streak = 0;
-        for (let i = 0; i < 400; i++) {
-          const d = new Date(now.getTime() - i * 86400000).toISOString().slice(0, 10);
-          if (doneDates.has(d)) streak++;
-          else break;
-        }
+        // For a weekly habit this counts consecutive completed occurrences
+        // (steps of 7 days on its scheduled day_of_week), not consecutive
+        // calendar days — otherwise a weekly habit's streak breaks the moment
+        // "yesterday" (almost never its scheduled day) has no log, and it can
+        // essentially never reach a milestone. Milestone copy still reads
+        // "N days straight" for a weekly habit even though this now means N
+        // consecutive weekly occurrences — known, deliberately left as-is.
+        const streak = computeOccurrenceStreak(now, doneDates, habit.frequency, habit.day_of_week, 400);
 
         const hitMilestone = MILESTONE_DAYS.find((m) => streak === m && !emailedMilestones.includes(m));
         if (!hitMilestone) continue;
