@@ -15,9 +15,17 @@ import { toast } from "@/components/ui/Toast";
 // Computes habit strength from historical logs using the canonical formula:
 // base 10 + 5 per completion − 3 per missed day (min 5, max 100).
 // Missed days are counted from the day AFTER creation (not the creation day itself).
+// For a weekly habit, only its scheduled day_of_week counts as a "possible"
+// day — every other day was never due, so it can't be missed. Same fix
+// family as AtRiskWarnings (analytics/page.tsx) and the dashboard AI
+// check-in trigger — without this, a weekly habit racks up ~6 phantom
+// misses a week and gets driven toward the floor regardless of how
+// consistently it's actually completed on its real schedule.
 function computeStrengthFromLogs(
   habitCreatedAt: string,
   logDates: string[], // unique completion date strings YYYY-MM-DD, any order
+  frequency: "daily" | "weekly" = "daily",
+  dayOfWeek: number | null = null,
 ): number {
   const today             = new Date().toISOString().split("T")[0];
   const thirtyOneDaysAgo  = new Date(Date.now() - 31 * 86400000).toISOString().split("T")[0];
@@ -31,11 +39,24 @@ function computeStrengthFromLogs(
   // Total completions within the 31-day window
   const completions = logDates.filter((d) => d >= thirtyOneDaysAgo).length;
 
-  // Days between missStart and today (exclusive) — the window in which we count misses
-  const daysInMissWindow = Math.max(
-    0,
-    Math.round((new Date(today).getTime() - new Date(missStart).getTime()) / 86400000),
-  );
+  // Days between missStart and today (exclusive) — the window in which we count misses.
+  // Weekly habits only count occurrences of their own scheduled weekday;
+  // fixed to local noon so a bare UTC-midnight parse can't shift the
+  // computed day-of-week across a timezone boundary.
+  let daysInMissWindow: number;
+  if (frequency === "weekly" && dayOfWeek != null) {
+    daysInMissWindow = 0;
+    const startMs = new Date(`${missStart}T12:00:00`).getTime();
+    const endMs   = new Date(`${today}T12:00:00`).getTime();
+    for (let t = startMs; t < endMs; t += 86400000) {
+      if (new Date(t).getDay() === dayOfWeek) daysInMissWindow++;
+    }
+  } else {
+    daysInMissWindow = Math.max(
+      0,
+      Math.round((new Date(today).getTime() - new Date(missStart).getTime()) / 86400000),
+    );
+  }
 
   const pastCompletions = logDates.filter((d) => d >= missStart && d < today).length;
   const missed          = Math.max(0, daysInMissWindow - pastCompletions);
@@ -166,7 +187,7 @@ export function useHabits() {
 
       const strengthUpdates: { id: string; strength: number }[] = [];
       for (const habit of loadedHabits) {
-        const computed = computeStrengthFromLogs(habit.created_at, dateMap.get(habit.id) ?? []);
+        const computed = computeStrengthFromLogs(habit.created_at, dateMap.get(habit.id) ?? [], habit.frequency, habit.day_of_week);
         if (computed !== habit.habit_strength) {
           strengthUpdates.push({ id: habit.id, strength: computed });
         }
