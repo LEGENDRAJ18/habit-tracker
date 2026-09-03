@@ -10,10 +10,17 @@ import { pushNotify } from "@/lib/pushNotify";
 
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 
+/** Verify the caller is our cron runner.
+ *  Vercel Cron sends: Authorization: Bearer <CRON_SECRET>
+ *  Supabase pg_cron sends: x-cron-secret: <CRON_SECRET>
+ */
 function isAuthorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
-  return req.headers.get("authorization") === `Bearer ${secret}`;
+  const bearer = req.headers.get("authorization");
+  if (bearer === `Bearer ${secret}`) return true;
+  const legacy = req.headers.get("x-cron-secret");
+  return legacy === secret;
 }
 
 interface LaterReminder {
