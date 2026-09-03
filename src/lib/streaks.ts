@@ -94,3 +94,30 @@ export function computeOccurrenceRate(
   if (count <= 0) return 0;
   return Math.round((computeOccurrenceHits(anchor, doneDates, frequency, dayOfWeek, count) / count) * 100);
 }
+
+// Possible/actual occurrence counts for one habit within a FIXED calendar
+// date range [startDate, endDate). Distinct in shape from
+// computeOccurrenceHits/computeOccurrenceRate, which count backward from an
+// anchor over a trailing N occurrences — this instead walks a bounded range,
+// for callers scoring a specific past period (e.g. monthly-wrap's "last
+// month") rather than "last N times this was due". Daily habits are checked
+// against every day in the range; weekly habits are checked only against
+// days matching their own day_of_week, so a weekly habit isn't scored
+// against days it was never scheduled on.
+export function computeOccurrencesInRange(
+  startDate: Date,
+  endDate: Date,
+  doneDates: Set<string>,
+  frequency: string | null | undefined,
+  dayOfWeek: number | null | undefined,
+): { possible: number; hits: number } {
+  let possible = 0;
+  let hits = 0;
+  for (let t = startDate.getTime(); t < endDate.getTime(); t += 86400000) {
+    const d = new Date(t);
+    if (frequency === "weekly" && dayOfWeek != null && d.getUTCDay() !== dayOfWeek) continue;
+    possible++;
+    if (doneDates.has(d.toISOString().slice(0, 10))) hits++;
+  }
+  return { possible, hits };
+}
