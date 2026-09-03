@@ -121,3 +121,40 @@ export function computeOccurrencesInRange(
   }
   return { possible, hits };
 }
+
+// Consecutive-occurrence streak aggregated across MULTIPLE habits at once
+// (any one of them counts as "done" that day), walking backward from
+// `anchor`. Distinct from computeOccurrenceStreak, which scores a single
+// habit against its own schedule — this is for callers that show one
+// combined streak number for a whole habit set (teacher/parent dashboards
+// showing a student/child's overall streak), where the set can freely mix
+// daily and weekly habits with different day_of_week values. A calendar day
+// only counts as "possible" (required for the streak to continue, and able
+// to break it on a miss) if at least one habit in the set was actually
+// scheduled that day — so a day none of the set's habits were due on is
+// skipped rather than counted as a break, and a weekly-only habit set steps
+// through its own day_of_week occurrences instead of every calendar day.
+// For any habit set containing at least one daily habit, every day is
+// possible, so this produces byte-identical results to a plain "walk
+// backward from anchor, break at first miss" calendar-day streak.
+export function computeAggregateOccurrenceStreak(
+  anchor: Date,
+  doneDates: Set<string>,
+  habits: { frequency: string | null | undefined; day_of_week: number | null | undefined }[],
+  maxLookback: number,
+): number {
+  const hasDaily = habits.some((h) => h.frequency !== "weekly");
+  const weeklyDows = new Set(
+    habits.filter((h) => h.frequency === "weekly" && h.day_of_week != null).map((h) => h.day_of_week as number),
+  );
+
+  let streak = 0;
+  for (let i = 0; i < maxLookback; i++) {
+    const d = new Date(anchor.getTime() - i * 86400000);
+    const isPossible = hasDaily || weeklyDows.has(d.getUTCDay());
+    if (!isPossible) continue;
+    if (doneDates.has(d.toISOString().slice(0, 10))) streak++;
+    else break;
+  }
+  return streak;
+}

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Copy, Check, Users, Trophy, TrendingUp, RefreshCw, BarChart3 } from "lucide-react";
 import AvatarDisplay from "@/components/ui/AvatarDisplay";
+import { computeAggregateOccurrenceStreak } from "@/lib/streaks";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -238,9 +239,12 @@ export default function TeacherDashboard() {
         if (orgMembers && orgMembers.length > 0) {
           const today = new Date().toISOString().split("T")[0];
 
+          const todayAnchor = new Date(`${today}T00:00:00Z`);
+          const todayDow = todayAnchor.getUTCDay();
+
           memberList = await Promise.all(
             orgMembers.map(async (m: { id: string; username: string | null; avatar_id: string | null }) => {
-              const { data: habits } = await supabase.from("habits").select("id").eq("user_id", m.id);
+              const { data: habits } = await supabase.from("habits").select("id, frequency, day_of_week").eq("user_id", m.id);
               const { data: logs }   = await supabase
                 .from("habit_logs").select("habit_id")
                 .eq("user_id", m.id)
@@ -254,13 +258,13 @@ export default function TeacherDashboard() {
                 .limit(60);
 
               const dates = new Set((allLogs ?? []).map((l: { completed_at: string }) => l.completed_at.split("T")[0]));
-              let streak = 0; let offset = 0;
-              const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString().split("T")[0];
-              if (dates.has(today) || dates.has(daysAgo(1))) {
-                while (dates.has(daysAgo(offset))) { streak++; offset++; }
-              }
+              const streak = computeAggregateOccurrenceStreak(todayAnchor, dates, habits ?? [], 60);
 
-              const totalHabits    = habits?.length ?? 0;
+              // Only count habits actually scheduled today — a weekly
+              // habit isn't "due" on its off days, so it shouldn't count
+              // against today's completion percentage on those days.
+              const dueTodayHabits = (habits ?? []).filter((h) => h.frequency !== "weekly" || h.day_of_week === todayDow);
+              const totalHabits    = dueTodayHabits.length;
               const completedToday = logs?.length ?? 0;
               return {
                 id: m.id,

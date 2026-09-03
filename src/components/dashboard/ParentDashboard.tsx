@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Users, Copy, Check, ChevronRight, RefreshCw, MessageCircle, X } from "lucide-react";
 import AvatarDisplay from "@/components/ui/AvatarDisplay";
+import { computeAggregateOccurrenceStreak } from "@/lib/streaks";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -255,6 +256,8 @@ export default function ParentDashboard() {
       if (!links || links.length === 0) { setLoading(false); return; }
 
       const today = new Date().toISOString().split("T")[0];
+      const todayAnchor = new Date(`${today}T00:00:00Z`);
+      const todayDow = todayAnchor.getUTCDay();
 
       const childProfiles = await Promise.all(
         links.map(async (link) => {
@@ -267,10 +270,11 @@ export default function ParentDashboard() {
             .eq("id", childId)
             .single();
 
-          // Total habits
+          // Habits (with schedule, so today's due-count can exclude
+          // weekly habits not scheduled today)
           const { data: habits } = await supabase
             .from("habits")
-            .select("id")
+            .select("id, frequency, day_of_week")
             .eq("user_id", childId);
 
           // Today's completions
@@ -281,10 +285,17 @@ export default function ParentDashboard() {
             .gte("completed_at", `${today}T00:00:00`)
             .lte("completed_at", `${today}T23:59:59`);
 
-          const totalHabits    = habits?.length ?? 0;
+          // Only count habits actually scheduled today — a weekly habit
+          // isn't "due" on its off days, so it shouldn't count against
+          // today's completion percentage on those days.
+          const dueTodayHabits = (habits ?? []).filter((h) => h.frequency !== "weekly" || h.day_of_week === todayDow);
+          const totalHabits    = dueTodayHabits.length;
           const completedToday = logs?.length ?? 0;
 
-          // Best streak (simplified: consecutive days from today)
+          // Streak, aggregated across the child's whole habit set (any
+          // habit counts as "done" that day) — see
+          // computeAggregateOccurrenceStreak for why weekly habits need
+          // this instead of a plain consecutive-calendar-day walk.
           const { data: allLogs } = await supabase
             .from("habit_logs")
             .select("completed_at")
@@ -293,12 +304,7 @@ export default function ParentDashboard() {
             .limit(100);
 
           const dates = new Set((allLogs ?? []).map((l: { completed_at: string }) => l.completed_at.split("T")[0]));
-          let streak = 0;
-          let offset = 0;
-          const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString().split("T")[0];
-          if (dates.has(today) || dates.has(daysAgo(1))) {
-            while (dates.has(daysAgo(offset))) { streak++; offset++; }
-          }
+          const streak = computeAggregateOccurrenceStreak(todayAnchor, dates, habits ?? [], 100);
 
           return {
             id: childId,
