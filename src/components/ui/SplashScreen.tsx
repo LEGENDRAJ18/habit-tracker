@@ -11,6 +11,7 @@ export default function SplashScreen() {
   const [phase, setPhase] = useState<"pre" | "in" | "pulse" | "out" | "gone">("pre");
 
   useLayoutEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (sessionStorage.getItem("habitai_splash")) setPhase("gone");
   }, []);
 
@@ -18,6 +19,7 @@ export default function SplashScreen() {
     sessionStorage.setItem("habitai_splash", "1");
     // Skip on onboarding — new users must see content immediately, not a 2-second splash.
     if (phase === "gone" || window.location.pathname.startsWith("/onboarding")) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPhase("gone");
       return;
     }
