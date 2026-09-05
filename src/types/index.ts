@@ -95,6 +95,12 @@ export type GoalCategory =
   | "sport" | "body" | "bad_habit" | "academic"
   | "build" | "mental_health" | "finance" | "relationships";
 
+// A goal that doesn't fit any of the 8 fixed categories above — skips the
+// category-specific fixed question (skill level/duration/grading system)
+// and the AI prompt's "Goal category: ..." framing, relying purely on the
+// free-text goal description.
+export type GoalCategoryOrOther = GoalCategory | "other";
+
 export interface ProgramHabit {
   name: string;
   frequency: "daily" | "weekly";
@@ -129,7 +135,7 @@ export interface PendingAdjustment {
 export interface GoalProgram {
   id: string;
   user_id: string;
-  goal_category: GoalCategory;
+  goal_category: GoalCategoryOrOther;
   goal_description: string;
   program_name: string;
   program_overview: string;

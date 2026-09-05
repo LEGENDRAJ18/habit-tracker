@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { callOpenAIJSON } from "@/lib/openai";
 import { categoryLabel, FALLBACK_MILESTONE_TEXT } from "@/lib/goalProgram";
-import type { GoalCategory, ProgramPhase } from "@/types";
+import type { GoalCategoryOrOther, ProgramPhase } from "@/types";
 
 const DAILY_GENERATION_LIMIT = 3;
 
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json() as {
       mode?: "questions" | "feasibility" | "generate" | "save";
-      goalCategory?: GoalCategory;
+      goalCategory?: GoalCategoryOrOther;
       goalDescription?: string;
       answers?: QAPair[];
       program?: ProgramPreview;
@@ -85,6 +85,13 @@ export async function POST(request: NextRequest) {
     if (!goalCategory || !goalDescription?.trim()) {
       return NextResponse.json({ error: "Missing goal category or description" }, { status: 400 });
     }
+
+    // "other" means the goal didn't fit any of the 8 fixed categories —
+    // there's genuinely no category to state, so every prompt below omits
+    // the "Goal category: ..." line entirely rather than printing something
+    // unhelpful like "Goal category: other". Narrows goalCategory to
+    // GoalCategory (excluding "other") in the categoryLabel() call below.
+    const categoryLine = goalCategory !== "other" ? `Goal category: ${categoryLabel(goalCategory)}\n` : "";
 
     // ── Clarifying questions ────────────────────────────────────────────────
     if (mode === "questions") {
@@ -102,7 +109,7 @@ For EACH question, also provide 3-4 short suggested answers written in plain, ev
 
 Respond with valid JSON exactly matching this schema:
 { "questions": [ { "question": "question text", "options": ["short answer 1", "short answer 2", "short answer 3"] } ] }`;
-      const userPrompt = `Goal category: ${categoryLabel(goalCategory)}\nGoal in their words: "${goalDescription}"`;
+      const userPrompt = `${categoryLine}Goal in their words: "${goalDescription}"`;
       const result = await callOpenAIJSON(systemPrompt, userPrompt) as { questions?: Array<{ question?: string; options?: string[] }> };
       const questions = (result.questions ?? [])
         .filter((q) => !!q.question?.trim())
@@ -129,8 +136,7 @@ If it's extremely aggressive (for example: quitting a long-standing habit "cold 
 
 Respond with valid JSON exactly matching this schema:
 { "concern": "the message here, or null if the timeframe is reasonable" }`;
-      const userPrompt = `Goal category: ${categoryLabel(goalCategory)}
-Goal in their words: "${goalDescription}"
+      const userPrompt = `${categoryLine}Goal in their words: "${goalDescription}"
 
 Answers:
 ${qaText}`;
@@ -185,8 +191,7 @@ Respond with valid JSON exactly matching this schema:
     }
   ]
 }`;
-      const userPrompt = `Goal category: ${categoryLabel(goalCategory)}
-Goal in their words: "${goalDescription}"
+      const userPrompt = `${categoryLine}Goal in their words: "${goalDescription}"
 
 Clarifying answers:
 ${qaText}

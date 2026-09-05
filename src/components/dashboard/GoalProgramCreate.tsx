@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Loader2, Sparkles, ArrowLeft, ArrowRight, Target, Flag, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
-import type { GoalCategory, GoalProgram, ProgramPhase } from "@/types";
+import type { GoalCategory, GoalCategoryOrOther, GoalProgram, ProgramPhase } from "@/types";
 import { GOAL_CATEGORIES, CATEGORY_PLACEHOLDERS } from "@/lib/goalProgram";
 import { useGoalValidation } from "@/hooks/useGoalValidation";
 import { useProfile } from "@/hooks/useProfile";
@@ -84,7 +84,7 @@ const CATEGORY_FIXED_QUESTION: Record<GoalCategory, { question: string; options:
 
 export default function GoalProgramCreate({ onCreated }: { onCreated: (program: GoalProgram) => void }) {
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1);
-  const [category, setCategory] = useState<GoalCategory | null>(null);
+  const [category, setCategory] = useState<GoalCategoryOrOther | null>(null);
   const [description, setDescription] = useState("");
   const [questions, setQuestions] = useState<DynamicQuestion[]>([]);
   const [answers, setAnswers] = useState<string[]>([]);
@@ -103,13 +103,18 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
 
   const { gradingSystem } = useProfile();
 
-  const fixedQuestion = CATEGORY_FIXED_QUESTION[category ?? "sport"];
+  // No fixed question applies to a category-less "Something else…" goal —
+  // skill level, duration, and grading system all assume a category this
+  // goal doesn't have.
+  const fixedQuestion = category && category !== "other" ? CATEGORY_FIXED_QUESTION[category] : null;
   const goalValidation = useGoalValidation(description, 700);
 
   const fixedAnswerLabel = fixedAnswerCustom
     ? fixedAnswerCustomText.trim()
-    : fixedQuestion.options.find((o) => o.value === fixedAnswer)?.label ?? fixedAnswer;
-  const fixedAnswerAnswered = fixedAnswerCustom ? !!fixedAnswerCustomText.trim() : !!fixedAnswer;
+    : fixedQuestion?.options.find((o) => o.value === fixedAnswer)?.label ?? fixedAnswer;
+  const fixedAnswerAnswered = !fixedQuestion
+    ? true
+    : fixedAnswerCustom ? !!fixedAnswerCustomText.trim() : !!fixedAnswer;
 
   const timeframeLabel = timeframeCustom
     ? timeframeCustomText.trim()
@@ -149,7 +154,7 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
   };
 
   const buildAnswers = () => [
-    ...(fixedAnswerAnswered
+    ...(fixedQuestion && fixedAnswerAnswered
       ? [{ question: fixedQuestion.question, answer: fixedAnswerLabel }]
       : []),
     ...(timeframeAnswered
@@ -284,6 +289,19 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
               </button>
             ))}
           </div>
+          <button
+            onClick={() => {
+              setCategory("other");
+              setFixedAnswer("");
+              setFixedAnswerCustom(false);
+              setFixedAnswerCustomText("");
+              setTimeframeValue(""); setTimeframeCustom(false); setTimeframeCustomText("");
+              setStep(2);
+            }}
+            className="w-full mt-3 py-3 rounded-2xl border border-dashed border-violet-800/40 text-slate-400 hover:text-slate-300 hover:border-violet-700/50 transition-all text-xs font-medium"
+          >
+            Something else…
+          </button>
         </div>
       )}
 
@@ -301,7 +319,7 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
             onChange={(e) => setDescription(e.target.value)}
             rows={5}
             maxLength={600}
-            placeholder={category ? CATEGORY_PLACEHOLDERS[category] : "e.g. I want to run a 5K in under 30 minutes by the end of the summer. I currently can jog about 10 minutes without stopping."}
+            placeholder={category && category !== "other" ? CATEGORY_PLACEHOLDERS[category] : "e.g. I want to run a 5K in under 30 minutes by the end of the summer. I currently can jog about 10 minutes without stopping."}
             spellCheck="true" autoCorrect="on"
             className={`w-full bg-violet-950/30 border rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-violet-500/70 resize-none ${
               goalValidation.status === "not_a_goal" ? "border-red-600/50" :
@@ -383,6 +401,7 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
           <h2 className="text-lg font-bold text-white mb-1">A few quick questions</h2>
           <p className="text-sm text-slate-400 mb-4">This helps tailor the program to your situation.</p>
           <div className="space-y-3">
+            {fixedQuestion && (
             <div>
               <p className="text-xs font-semibold text-violet-300 mb-1.5">{fixedQuestion.question}</p>
               {!fixedAnswerCustom ? (
@@ -429,6 +448,7 @@ export default function GoalProgramCreate({ onCreated }: { onCreated: (program: 
                 </div>
               )}
             </div>
+            )}
             <div>
               <p className="text-xs font-semibold text-violet-300 mb-1.5">How long do you have for this goal?</p>
               {!timeframeCustom ? (
