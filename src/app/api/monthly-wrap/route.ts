@@ -31,10 +31,14 @@ export async function POST() {
       return NextResponse.json({ error: "Monthly Wrapped is a Pro feature." }, { status: 403 });
     }
 
-    // Determine last month's date range
+    // Determine last month's date range. Built directly in UTC (not local
+    // time then converted) — local-time construction here could shift the
+    // window by the server's UTC offset, and since firstOfLastMonth also
+    // becomes monthKey below, that shift could land the wrap under the
+    // wrong month entirely, not just skew which logs get counted.
     const now         = new Date();
-    const firstOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const firstOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const firstOfThisMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const firstOfLastMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
     const monthKey    = firstOfLastMonth.toISOString().split("T")[0]; // YYYY-MM-DD
 
     // Check if wrap already exists

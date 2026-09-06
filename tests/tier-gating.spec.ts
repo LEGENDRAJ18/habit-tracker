@@ -343,7 +343,7 @@ test.describe('Plus tier', () => {
     const page = await ctx.newPage();
     try {
       await page.goto('/dashboard', { waitUntil: 'networkidle' });
-      await page.getByRole('button', { name: 'View your Habit DNA' }).click();
+      await page.getByRole('button', { name: 'Habit DNA — see your personality patterns, best day, and peak time across all habits' }).click();
       await expect(page.locator('text=Habit DNA').first()).toBeVisible({ timeout: 10_000 });
       await expect(page.locator('text=Upgrade to Plus')).not.toBeVisible();
     } finally {

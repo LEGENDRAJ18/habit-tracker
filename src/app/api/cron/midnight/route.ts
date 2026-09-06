@@ -219,8 +219,8 @@ async function processReferrerRewards(supabase: ReturnType<typeof createAdminCli
         const { data: userData } = await supabase.auth.admin.getUserById(ref.referrer_id);
         const email = userData?.user?.email;
         if (email) {
-          const { data: p } = await supabase.from("profiles").select("full_name, username").eq("id", ref.referrer_id).single();
-          const rawName = p?.full_name ?? p?.username ?? userData.user?.user_metadata?.full_name ?? email.split("@")[0];
+          const { data: p } = await supabase.from("profiles").select("username").eq("id", ref.referrer_id).single();
+          const rawName = p?.username ?? userData.user?.user_metadata?.full_name ?? email.split("@")[0];
           const name    = (rawName as string).split(/[\s_\-+@]/)[0];
           const display = name.charAt(0).toUpperCase() + name.slice(1);
 
@@ -343,8 +343,8 @@ async function processWinBack(supabase: ReturnType<typeof createAdminClient>): P
       const { data: userData } = await supabase.auth.admin.getUserById(profileId);
       const email = userData?.user?.email;
       if (!email) return;
-      const { data: p } = await supabase.from("profiles").select("full_name, username").eq("id", profileId).single();
-      const rawName = p?.full_name ?? p?.username ?? userData.user?.user_metadata?.full_name ?? email.split("@")[0];
+      const { data: p } = await supabase.from("profiles").select("username").eq("id", profileId).single();
+      const rawName = p?.username ?? userData.user?.user_metadata?.full_name ?? email.split("@")[0];
       const name = (rawName as string).split(/[\s_\-+@]/)[0];
       const display = name.charAt(0).toUpperCase() + name.slice(1);
       await resend.emails.send({
@@ -367,15 +367,31 @@ async function processWinBack(supabase: ReturnType<typeof createAdminClient>): P
 
 const MILESTONE_DAYS = [7, 30, 100, 365];
 
-function buildMilestoneHtml(name: string, habitName: string, days: number, unsubUrl: string): string {
+// `days` is the raw milestone count (still named for the common daily case)
+// — for a weekly habit it means that many consecutive scheduled
+// occurrences (~N weeks), not N calendar days, since computeOccurrenceStreak
+// counts occurrences, not days. `frequency` selects which copy set to use so
+// the numbers stay honest for both cadences without changing MILESTONE_DAYS.
+function buildMilestoneHtml(name: string, habitName: string, days: number, unsubUrl: string, frequency: string | null | undefined): string {
+  const isWeekly = frequency === "weekly";
   const emojis:   Record<number, string> = { 7: "🔥", 30: "⚡", 100: "🏆", 365: "👑" };
-  const labels:   Record<number, string> = { 7: "One week", 30: "One month", 100: "100 days", 365: "One full year" };
-  const taglines: Record<number, string> = {
-    7:   "A full week without missing a day. Most people quit by day 3.",
-    30:  "30 days builds a real habit. You've crossed the threshold.",
-    100: "100 days. You're not just tracking habits — you're changing who you are.",
-    365: "365 days. One full year. This is extraordinary — you're in the top 0.1%.",
-  };
+  const labels:   Record<number, string> = isWeekly
+    ? { 7: "7 weeks", 30: "30 weeks", 100: "100 weeks", 365: "365 weeks" }
+    : { 7: "One week", 30: "One month", 100: "100 days", 365: "One full year" };
+  const taglines: Record<number, string> = isWeekly
+    ? {
+        7:   "7 weeks without missing your scheduled day. Most people quit long before this.",
+        30:  "30 weeks of showing up — the better part of a year. This is a real habit now.",
+        100: "100 weeks. Almost two years of consistency — you're not just tracking habits, you're changing who you are.",
+        365: "365 weeks. Seven years without missing your day. This is extraordinary — you're in the top 0.1%.",
+      }
+    : {
+        7:   "A full week without missing a day. Most people quit by day 3.",
+        30:  "30 days builds a real habit. You've crossed the threshold.",
+        100: "100 days. You're not just tracking habits — you're changing who you are.",
+        365: "365 days. One full year. This is extraordinary — you're in the top 0.1%.",
+      };
+  const unit = isWeekly ? "week" : "day";
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
@@ -389,11 +405,11 @@ function buildMilestoneHtml(name: string, habitName: string, days: number, unsub
   </td></tr>
   <tr><td style="padding:32px 36px 28px;text-align:center;">
     <div style="display:inline-block;background:rgba(124,58,237,0.2);border:1px solid rgba(139,92,246,0.4);border-radius:16px;padding:8px 20px;margin-bottom:20px;">
-      <span style="font-size:13px;font-weight:700;color:#a78bfa;">${labels[days] ?? `${days} days`} streak</span>
+      <span style="font-size:13px;font-weight:700;color:#a78bfa;">${labels[days] ?? `${days} ${unit}s`} streak</span>
     </div>
     <h1 style="margin:0 0 8px;font-size:26px;font-weight:800;color:#fff;">Incredible, ${name}!</h1>
-    <p style="margin:0 0 6px;font-size:16px;color:#a78bfa;font-weight:600;">${days} days of "${habitName}"</p>
-    <p style="margin:0 0 24px;font-size:14px;color:#8b8fa8;line-height:1.7;">${taglines[days] ?? `${days} days straight. You've proven you can do this.`}</p>
+    <p style="margin:0 0 6px;font-size:16px;color:#a78bfa;font-weight:600;">${days} ${unit}s of "${habitName}"</p>
+    <p style="margin:0 0 24px;font-size:14px;color:#8b8fa8;line-height:1.7;">${taglines[days] ?? `${days} ${unit}s straight. You've proven you can do this.`}</p>
     <table cellpadding="0" cellspacing="0" style="width:100%;"><tr><td align="center">
       <a href="${APP_URL}/dashboard" style="display:inline-block;background:linear-gradient(135deg,#7c3aed,#9333ea);color:#fff;font-size:15px;font-weight:700;text-decoration:none;padding:14px 40px;border-radius:12px;box-shadow:0 4px 24px rgba(124,58,237,0.4);">
         View My Achievement →
@@ -444,9 +460,9 @@ async function processStreakMilestones(supabase: ReturnType<typeof createAdminCl
         // (steps of 7 days on its scheduled day_of_week), not consecutive
         // calendar days — otherwise a weekly habit's streak breaks the moment
         // "yesterday" (almost never its scheduled day) has no log, and it can
-        // essentially never reach a milestone. Milestone copy still reads
-        // "N days straight" for a weekly habit even though this now means N
-        // consecutive weekly occurrences — known, deliberately left as-is.
+        // essentially never reach a milestone. buildMilestoneHtml and the
+        // subject line below read the frequency to say "weeks" rather than
+        // "days" for a weekly habit's milestone.
         const streak = computeOccurrenceStreak(now, doneDates, habit.frequency, habit.day_of_week, 400);
 
         const hitMilestone = MILESTONE_DAYS.find((m) => streak === m && !emailedMilestones.includes(m));
@@ -456,16 +472,17 @@ async function processStreakMilestones(supabase: ReturnType<typeof createAdminCl
         const email = userData?.user?.email;
         if (!email) continue;
 
-        const { data: p } = await supabase.from("profiles").select("full_name, username").eq("id", userId).single();
-        const rawName = p?.full_name ?? p?.username ?? userData.user?.user_metadata?.full_name ?? email.split("@")[0];
+        const { data: p } = await supabase.from("profiles").select("username").eq("id", userId).single();
+        const rawName = p?.username ?? userData.user?.user_metadata?.full_name ?? email.split("@")[0];
         const name    = (rawName as string).split(/[\s_\-+@]/)[0];
         const display = name.charAt(0).toUpperCase() + name.slice(1);
 
+        const milestoneUnit = habit.frequency === "weekly" ? "week" : "day";
         await resend.emails.send({
           from:    "HabitAI <hello@habitaiapp.com>",
           to:      email,
-          subject: `${hitMilestone} days straight — incredible, ${display}! ${hitMilestone === 365 ? "👑" : "🔥"}`,
-          html:    buildMilestoneHtml(display, habit.name, hitMilestone, `${APP_URL}/api/unsubscribe?uid=${userId}&token=${generateUnsubscribeToken(userId)}`),
+          subject: `${hitMilestone} ${milestoneUnit}s straight — incredible, ${display}! ${hitMilestone === 365 ? "👑" : "🔥"}`,
+          html:    buildMilestoneHtml(display, habit.name, hitMilestone, `${APP_URL}/api/unsubscribe?uid=${userId}&token=${generateUnsubscribeToken(userId)}`, habit.frequency),
         });
 
         await supabase.from("profiles").update({
