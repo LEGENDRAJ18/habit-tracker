@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { resolveUser } from "@/lib/supabase/resolve-user";
+import { computeAggregateOccurrenceStreak } from "@/lib/streaks";
 import type { Habit, HabitLog, Plan } from "@/types";
 import AddHabitModal from "@/components/dashboard/AddHabitModal";
 import { useUpgrade } from "@/contexts/UpgradeContext";
@@ -36,27 +37,32 @@ function fmtShort(ds: string) {
   if (ds === tomorrow) return "Tomorrow";
   return new Date(ds + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 }
-function computeBestStreak(logs: { completed_at: string }[]): number {
+// Aggregate across the user's whole habit set (any habit counts as "done"
+// that day) — matches how these are called (all logs, not one habit's).
+// Uses computeAggregateOccurrenceStreak's UTC-based day bucketing (matching
+// every other streak fix this session) rather than this file's own
+// local-timezone toDateStr/logDate helpers, which the rest of the page
+// still uses for calendar-grid display — that's a distinct concern (what
+// day does the grid show right now) from which day a completion counts
+// toward a streak.
+function computeBestStreak(logs: { completed_at: string }[], habits: Pick<Habit, "frequency" | "day_of_week">[]): number {
   if (!logs.length) return 0;
-  const days = [...new Set(logs.map(l => logDate(l.completed_at)))].sort();
-  let best = 1, cur = 1;
-  for (let i = 1; i < days.length; i++) {
-    const diff = (new Date(days[i]).getTime() - new Date(days[i - 1]).getTime()) / 86400000;
-    if (diff === 1) { cur++; best = Math.max(best, cur); } else cur = 1;
+  const doneDates = new Set(logs.map(l => l.completed_at.split("T")[0]));
+  // No single-pass "longest run" helper exists for an aggregate, mixed-
+  // frequency habit set — so this reuses computeAggregateOccurrenceStreak
+  // (which finds the streak ending at one given anchor) once per candidate
+  // end-date and keeps the max, rather than adding new shared-lib code.
+  let best = 0;
+  for (const dateStr of doneDates) {
+    const anchor = new Date(`${dateStr}T00:00:00Z`);
+    best = Math.max(best, computeAggregateOccurrenceStreak(anchor, doneDates, habits, 365));
   }
   return best;
 }
-function computeCurrentStreak(logs: { completed_at: string }[]): number {
+function computeCurrentStreak(logs: { completed_at: string }[], habits: Pick<Habit, "frequency" | "day_of_week">[]): number {
   if (!logs.length) return 0;
-  const days = new Set(logs.map(l => logDate(l.completed_at)));
-  const today = toDateStr(new Date());
-  const start = days.has(today) ? new Date() : new Date(Date.now() - 86400000);
-  let streak = 0;
-  for (let i = 0; i < 365; i++) {
-    const ds = toDateStr(new Date(start.getTime() - i * 86400000));
-    if (days.has(ds)) streak++; else break;
-  }
-  return streak;
+  const doneDates = new Set(logs.map(l => l.completed_at.split("T")[0]));
+  return computeAggregateOccurrenceStreak(new Date(), doneDates, habits, 365);
 }
 
 // ─── category + color ─────────────────────────────────────────────────────────
@@ -1068,8 +1074,8 @@ export default function CalendarPage() {
     return logs.filter(l => logDate(l.completed_at).startsWith(prefix)).length;
   }, [logs, today]);
 
-  const currentStreak = useMemo(() => computeCurrentStreak(logs), [logs]);
-  const bestStreak    = useMemo(() => computeBestStreak(logs), [logs]);
+  const currentStreak = useMemo(() => computeCurrentStreak(logs, habits), [logs, habits]);
+  const bestStreak    = useMemo(() => computeBestStreak(logs, habits), [logs, habits]);
 
   // Calendar grid
   const calendarDays = useMemo(() => {

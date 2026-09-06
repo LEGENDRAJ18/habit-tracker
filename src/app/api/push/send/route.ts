@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getWebPush } from "@/lib/webpush";
-
-// Verify caller is our cron runner.
-function verifyCron(req: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  const bearer = req.headers.get("authorization")?.replace("Bearer ", "");
-  const legacy  = req.headers.get("x-cron-secret");
-  return bearer === secret || legacy === secret;
-}
+import { isAuthorizedCron as verifyCron } from "@/lib/cronAuth";
 
 type PushSub = {
   id: string;

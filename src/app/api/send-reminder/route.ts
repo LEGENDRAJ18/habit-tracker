@@ -3,6 +3,8 @@ import { Resend } from "resend";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { levelFromXP } from "@/lib/xp";
 import { generateUnsubscribeToken } from "@/lib/unsubscribeToken";
+import { isAuthorizedCron as isAuthorized } from "@/lib/cronAuth";
+import { computeAggregateOccurrenceStreak } from "@/lib/streaks";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://habitai.app";
@@ -369,19 +371,6 @@ function buildEmailHtml(habits: string[], streak: number, unsubscribeUrl: string
 </html>`;
 }
 
-/** Verify the caller is our cron runner.
- *  Vercel Cron sends: Authorization: Bearer <CRON_SECRET>
- *  Supabase pg_cron sends: x-cron-secret: <CRON_SECRET>
- */
-function isAuthorized(req: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  const bearer = req.headers.get("authorization");
-  if (bearer === `Bearer ${secret}`) return true;
-  const legacy = req.headers.get("x-cron-secret");
-  return legacy === secret;
-}
-
 async function runReminders(): Promise<{ sent: number; skipped: number; hour: number; timestamp: string; weeklySent?: number; trialRemindersSent?: number; weeklyPlansGenerated?: number; smartTimingSent?: number }> {
   const supabase = createAdminClient();
   const now = new Date();
@@ -435,17 +424,11 @@ async function runReminders(): Promise<{ sent: number; skipped: number; hour: nu
       .order("completed_at", { ascending: false })
       .limit(90);
 
-    const uniqueDays = [
-      ...new Set((recentLogs ?? []).map((l) => l.completed_at.split("T")[0])),
-    ].sort().reverse();
-
-    let streak = 0;
-    const todayMs = new Date(today).getTime();
-    for (let i = 0; i < uniqueDays.length; i++) {
-      const diff = Math.round((todayMs - new Date(uniqueDays[i]).getTime()) / 86400000);
-      if (diff === i || diff === i + 1) streak++;
-      else break;
-    }
+    // Aggregate across this user's whole habit set (any habit counts as
+    // "done" that day) — a weekly-only habit set was previously scored
+    // against a hardcoded 1-day gap and could never show a streak above 1.
+    const doneDates = new Set((recentLogs ?? []).map((l) => l.completed_at.split("T")[0]));
+    const streak = computeAggregateOccurrenceStreak(now, doneDates, habits, 90);
 
     const unsubscribeUrl = `${APP_URL}/api/unsubscribe?uid=${profile.id}&token=${generateUnsubscribeToken(profile.id)}`;
 

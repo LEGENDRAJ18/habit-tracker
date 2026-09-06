@@ -1,6 +1,15 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { computeOccurrenceHits, computeOccurrenceStreak, getCycleDays } from "@/lib/streaks";
+
+// How many of a habit's own last scheduled occurrences to score against —
+// 7 calendar days for daily, 7 completions of its own day_of_week (spanning
+// ~7 weeks) for weekly. Same window/reasoning as ai-insight's rate7d and
+// weekly-report's weak-spot fix: a flat "/7 days" assumes every habit is
+// due daily, so a weekly habit completed exactly as scheduled still read as
+// badly underperforming in this prompt.
+const OCCURRENCE_WINDOW = 7;
 
 function getWeekStart(): string {
   const d = new Date();
@@ -20,8 +29,8 @@ async function generatePlan(
 
   const prompt = `You are a habit coach. Generate a personalised weekly game plan.
 
-User's habits and recent performance (last 7 days):
-${habits.map((h) => `- "${h.name}": completed ${h.rate}/7 days, current streak ${h.streak} days`).join("\n")}
+User's habits and recent performance (last ${OCCURRENCE_WINDOW} scheduled occurrences — daily habits are checked over the last ${OCCURRENCE_WINDOW} days, weekly habits over their last ${OCCURRENCE_WINDOW} scheduled days):
+${habits.map((h) => `- "${h.name}": completed ${h.rate}/${OCCURRENCE_WINDOW} occurrences, current streak ${h.streak}`).join("\n")}
 
 User's goals: ${goals.length > 0 ? goals.join(", ") : "general wellbeing"}
 
@@ -88,15 +97,20 @@ export async function POST() {
   }
 
   const weekStart = getWeekStart();
-  const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0];
+  // A weekly habit's last 7 scheduled occurrences can span ~7 weeks, so the
+  // logs query needs to look back further than a plain 7-day window —
+  // otherwise a weekly habit's occurrence history outside the last 7
+  // calendar days is invisible and it scores as if never done. Same fix
+  // shape as weekly-report's occurrenceLookback.
+  const occurrenceLookback = new Date(Date.now() - OCCURRENCE_WINDOW * 7 * 86400000).toISOString().split("T")[0];
 
   const admin = createAdminClient();
   const [{ data: habits }, { data: logs }, { data: profileData }] = await Promise.all([
-    admin.from("habits").select("id, name").eq("user_id", user.id),
+    admin.from("habits").select("id, name, frequency, day_of_week").eq("user_id", user.id),
     admin.from("habit_logs")
       .select("habit_id, completed_at")
       .eq("user_id", user.id)
-      .gte("completed_at", sevenDaysAgo),
+      .gte("completed_at", occurrenceLookback),
     admin.from("profiles").select("goals").eq("id", user.id).single(),
   ]);
 
@@ -105,28 +119,19 @@ export async function POST() {
   }
 
   const logsArr = logs ?? [];
+  const now = new Date();
 
-  // Compute 7-day rate and streak for each habit
-  const today = new Date().toISOString().split("T")[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-
+  // Rate and streak scored against each habit's own scheduled occurrences,
+  // not a flat "last 7 calendar days" — see OCCURRENCE_WINDOW above.
   const habitData = habits.map((h) => {
-    const habitLogs = logsArr
-      .filter((l) => l.habit_id === h.id)
-      .map((l) => l.completed_at.split("T")[0])
-      .sort()
-      .reverse();
-    const rate = habitLogs.length;
-    let streak = 0;
-    if (habitLogs[0] === today || habitLogs[0] === yesterday) {
-      streak = 1;
-      for (let i = 1; i < habitLogs.length; i++) {
-        const prev = new Date(habitLogs[i - 1]);
-        const curr = new Date(habitLogs[i]);
-        if (Math.round((prev.getTime() - curr.getTime()) / 86400000) === 1) streak++;
-        else break;
-      }
-    }
+    const doneDates = new Set(
+      logsArr.filter((l) => l.habit_id === h.id).map((l) => l.completed_at.split("T")[0]),
+    );
+    const rate = computeOccurrenceHits(now, doneDates, h.frequency, h.day_of_week, OCCURRENCE_WINDOW);
+    // maxLookback in calendar days, scaled by cycle length so a daily habit
+    // still walks exactly 7 days back (byte-identical to the old cap) while
+    // a weekly habit gets the full 49-day window it needs for 7 occurrences.
+    const streak = computeOccurrenceStreak(now, doneDates, h.frequency, h.day_of_week, OCCURRENCE_WINDOW * getCycleDays(h));
     return { name: h.name, rate, streak };
   });
 

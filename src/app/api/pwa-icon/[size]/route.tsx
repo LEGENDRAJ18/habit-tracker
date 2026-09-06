@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 const VALID_SIZES = [72, 96, 128, 144, 152, 192, 384, 512];
 

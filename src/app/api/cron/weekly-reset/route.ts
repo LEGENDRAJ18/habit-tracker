@@ -3,12 +3,7 @@
 // "week_start" marker so rank-change indicators (↑3 this week) work correctly.
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-
-function isAuthorized(req: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  return req.headers.get("authorization") === `Bearer ${secret}`;
-}
+import { isAuthorizedCron as isAuthorized } from "@/lib/cronAuth";
 
 async function runWeeklyReset() {
   const supabase  = createAdminClient();

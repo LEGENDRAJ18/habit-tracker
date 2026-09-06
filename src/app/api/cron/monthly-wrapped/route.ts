@@ -2,12 +2,7 @@
 // The dashboard client checks this flag and auto-shows the Wrapped modal.
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-
-function isAuthorized(req: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  return req.headers.get("authorization") === `Bearer ${secret}`;
-}
+import { isAuthorizedCron as isAuthorized } from "@/lib/cronAuth";
 
 async function runMonthlyWrapped() {
   const supabase = createAdminClient();

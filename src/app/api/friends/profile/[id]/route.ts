@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { computeAggregateOccurrenceStreak } from "@/lib/streaks";
 
 function toDateStr(d: Date) {
   return d.toISOString().split("T")[0];
@@ -61,26 +62,20 @@ export async function GET(
   const email = profile?.email ?? authUser?.user?.email ?? "";
   const name = metaName ?? (email ? email.split("@")[0] : "Unknown");
 
-  // Streak calculation (from logs over last 30 days)
-  const { data: logsStreak } = await admin
-    .from("habit_logs")
-    .select("completed_at")
-    .eq("user_id", id)
-    .gte("completed_at", daysAgo(30));
+  // Streak calculation (from logs over last 30 days), aggregated across
+  // ALL of this friend's habits — not just the public ones fetched above,
+  // since private habits still count toward their own streak.
+  const [{ data: logsStreak }, { data: allHabits }] = await Promise.all([
+    admin.from("habit_logs").select("completed_at").eq("user_id", id).gte("completed_at", daysAgo(30)),
+    admin.from("habits").select("frequency, day_of_week").eq("user_id", id),
+  ]);
 
   const dateDays = new Set(
     (logsStreak ?? []).map((l: { completed_at: string }) => l.completed_at.split("T")[0]),
   );
-  const today = toDateStr(new Date());
-  const yesterday = daysAgo(1);
-  let cur: string | null = dateDays.has(today) ? today : dateDays.has(yesterday) ? yesterday : null;
-  let streak = 0;
-  while (cur && dateDays.has(cur)) {
-    streak++;
-    const prev = new Date(cur);
-    prev.setDate(prev.getDate() - 1);
-    cur = toDateStr(prev);
-  }
+  // maxLookback matches the 30-day window logsStreak was actually fetched
+  // with, same effective ceiling as before.
+  const streak = computeAggregateOccurrenceStreak(new Date(), dateDays, allHabits ?? [], 30);
 
   // Weekly % (last 7 days completions / (habits_count * 7))
   const publicHabitCount = (habits ?? []).length;

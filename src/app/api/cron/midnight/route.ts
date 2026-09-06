@@ -4,15 +4,10 @@ import { getWebPush } from "@/lib/webpush";
 import { Resend } from "resend";
 import { generateUnsubscribeToken } from "@/lib/unsubscribeToken";
 import { computeOccurrenceStreak } from "@/lib/streaks";
+import { isAuthorizedCron as isAuthorized } from "@/lib/cronAuth";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://habitaiapp.com";
-
-function isAuthorized(req: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  return req.headers.get("authorization") === `Bearer ${secret}`;
-}
 
 // ─── Push helper ──────────────────────────────────────────────────────────────
 

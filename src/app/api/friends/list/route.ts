@@ -1,26 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { computeAggregateOccurrenceStreak } from "@/lib/streaks";
 
 function toDateStr(d: Date) {
   return d.toISOString().split("T")[0];
 }
 function daysAgo(n: number) {
   return toDateStr(new Date(Date.now() - n * 86400000));
-}
-function getStreak(dates: Set<string>): number {
-  const today     = toDateStr(new Date());
-  const yesterday = daysAgo(1);
-  let cur: string | null = dates.has(today) ? today : dates.has(yesterday) ? yesterday : null;
-  if (!cur) return 0;
-  let streak = 0;
-  while (cur && dates.has(cur)) {
-    streak++;
-    const prev = new Date(cur);
-    prev.setDate(prev.getDate() - 1);
-    cur = toDateStr(prev);
-  }
-  return streak;
 }
 
 export async function GET() {
@@ -51,7 +38,7 @@ export async function GET() {
       const [{ data: authUser }, { data: logs }, { data: habits }, { data: profile }] = await Promise.all([
         admin.auth.admin.getUserById(fid),
         admin.from("habit_logs").select("completed_at").eq("user_id", fid).gte("completed_at", since),
-        admin.from("habits").select("id").eq("user_id", fid),
+        admin.from("habits").select("id, frequency, day_of_week").eq("user_id", fid),
         admin.from("profiles").select("username").eq("id", fid).maybeSingle(),
       ]);
 
@@ -63,7 +50,10 @@ export async function GET() {
       const name = metaName ?? email.split("@")[0];
       const username = profile?.username ?? null;
       const dates = new Set((logs ?? []).map((l: { completed_at: string }) => l.completed_at.split("T")[0]));
-      const streak = getStreak(dates);
+      // Aggregate across this friend's whole habit set (any habit counts as
+      // "done" that day) — maxLookback matches the 30-day window the logs
+      // above were actually fetched with, same effective ceiling as before.
+      const streak = computeAggregateOccurrenceStreak(new Date(), dates, habits ?? [], 30);
       const completions30 = (logs ?? []).length;
       const habitCount = (habits ?? []).length;
 

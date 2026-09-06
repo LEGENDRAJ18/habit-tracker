@@ -8,18 +8,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { pushNotify } from "@/lib/pushNotify";
 import { callOpenAIJSON } from "@/lib/openai";
+import { isAuthorizedCron as isAuthorized } from "@/lib/cronAuth";
 import type { PendingAdjustment, ProgramPhase } from "@/types";
 
 const OVERDUE_DAYS = 7;
 const COMPLETION_WINDOW_DAYS = 7;
 const COMPLETION_THRESHOLD = 0.5;
 const RESOLVED_COOLDOWN_DAYS = 7;
-
-function isAuthorized(req: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  return req.headers.get("authorization") === `Bearer ${secret}`;
-}
 
 interface HabitCompletion {
   id: string;

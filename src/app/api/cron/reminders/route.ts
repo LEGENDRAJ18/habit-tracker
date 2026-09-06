@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { pushNotify } from "@/lib/pushNotify";
+import { isAuthorizedCron as isAuthorized } from "@/lib/cronAuth";
 
 // Delivers "I'll do it later" reminders queued in `later_reminders`
 // (see supabase/migrations/011_habit_verification.sql). That table already
@@ -9,19 +10,6 @@ import { pushNotify } from "@/lib/pushNotify";
 // adding a redundant duplicate column.
 
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
-
-/** Verify the caller is our cron runner.
- *  Vercel Cron sends: Authorization: Bearer <CRON_SECRET>
- *  Supabase pg_cron sends: x-cron-secret: <CRON_SECRET>
- */
-function isAuthorized(req: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  const bearer = req.headers.get("authorization");
-  if (bearer === `Bearer ${secret}`) return true;
-  const legacy = req.headers.get("x-cron-secret");
-  return legacy === secret;
-}
 
 interface LaterReminder {
   id: string;
