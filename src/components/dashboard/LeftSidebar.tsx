@@ -63,7 +63,7 @@ export default function LeftSidebar() {
             </div>
             <p className="text-xs font-semibold text-white leading-none">AI Goal Program</p>
           </div>
-          <p className="text-[10px] text-slate-400 leading-relaxed">A phased plan built around your goal</p>
+          <p className="text-[10px] text-slate-400 leading-relaxed">Get an AI-built plan for any goal, with weekly check-ins and automatic adjustments</p>
         </Link>
       ) : (
         <button
@@ -80,7 +80,7 @@ export default function LeftSidebar() {
             </span>
           </div>
           <p className="text-[10px] text-slate-400 leading-relaxed flex items-center gap-1">
-            <Lock className="w-2.5 h-2.5" /> Unlock a personalized, phased habit plan
+            <Lock className="w-2.5 h-2.5 flex-shrink-0" /> AI-built plan for any goal, with weekly check-ins
           </p>
         </button>
       )}

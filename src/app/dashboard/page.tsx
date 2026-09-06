@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Plus, Loader2, AlertCircle, CheckCircle2, Shield, Share2, Sparkles, Search, X, ClipboardList, Crown, Flame, Brain, Calendar, ChevronUp, Zap } from "lucide-react";
 import type { Plan } from "@/types";
 import { useHabits } from "@/hooks/useHabits";
@@ -463,6 +464,22 @@ export default function DashboardPage() {
       }
     });
   }, []);
+
+  // Drives the dashboard's "Start your AI Goal Program" entry point — only
+  // shown once we know a Pro user genuinely doesn't have one already
+  // (null = not checked yet, false = no active program, true = has one).
+  const [hasActiveGoalProgram, setHasActiveGoalProgram] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (tier !== "pro") return;
+    let cancelled = false;
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.user) return;
+      supabase.from("goal_programs").select("id").eq("user_id", session.user.id).eq("status", "active").limit(1).maybeSingle()
+        .then(({ data }) => { if (!cancelled) setHasActiveGoalProgram(!data); });
+    });
+    return () => { cancelled = true; };
+  }, [tier]);
 
   // Persisted across tab navigation via sessionStorage so remounts don't re-show the modal.
   // Also guarded by: onboardingCompleted (Supabase), signedUpAt < 1h, and habits.length === 0.
@@ -1592,6 +1609,60 @@ export default function DashboardPage() {
                       <div className="h-2.5 bg-slate-700 rounded-full" style={{ width: `${w}%` }} />
                     </div>
                   ))}
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <button
+                    onClick={() => openUpgradeModal("pro_feature", tier === "plus")}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600/20 border border-amber-500/40 text-amber-300 text-xs font-semibold rounded-xl hover:bg-amber-600/30 transition-all"
+                  >
+                    <Crown className="w-3 h-3" />
+                    Upgrade to unlock →
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* AI Goal Program — obvious entry point for a Pro user who
+              hasn't started one yet; teaser for others. Hidden once
+              hasActiveGoalProgram resolves true (dedicated progress lives
+              on /goal-program and the sidebar link) or is still loading. */}
+          {tier === "pro" ? (
+            hasActiveGoalProgram === false && (
+              <Link
+                href="/goal-program"
+                className="block bg-gradient-to-br from-violet-950/50 to-[#0c0c18] border border-violet-600/25 hover:border-violet-500/50 rounded-2xl p-4 transition-all group"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-4 h-4 text-violet-300 flex-shrink-0" />
+                  <p className="text-sm font-semibold text-white">Start your AI Goal Program</p>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed mb-3">
+                  Get an AI-built plan for any goal, with weekly check-ins and automatic adjustments.
+                </p>
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-violet-300 group-hover:text-violet-200 transition-colors">
+                  Get started →
+                </span>
+              </Link>
+            )
+          ) : (
+            <div className="bg-[#0c0c18] border border-violet-900/20 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                <p className="text-sm font-semibold text-slate-400">AI Goal Program</p>
+                <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-300 bg-amber-900/25 border border-amber-600/25 px-1.5 py-0.5 rounded-full ml-auto">
+                  <Crown className="w-2.5 h-2.5" />PRO
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed mb-3">
+                Get an AI-built plan for any goal, with weekly check-ins and automatic adjustments.
+              </p>
+              <div className="relative">
+                <div className="space-y-2 pointer-events-none select-none" style={{ filter: "blur(3px)", opacity: 0.3 }}>
+                  <div className="h-2.5 bg-slate-700 rounded-full" style={{ width: "70%" }} />
+                  <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-full w-1/3 bg-slate-600 rounded-full" />
+                  </div>
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <button

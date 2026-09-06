@@ -91,7 +91,7 @@ export default function GoalProgramPage() {
                 <FeatureUpgradeGate
                   requiredTier="pro"
                   featureName="AI Goal Program"
-                  description="Get a personalized, phased habit plan for your biggest goal."
+                  description="Get an AI-built plan for any goal, with weekly check-ins and automatic adjustments."
                   features={[
                     "AI-designed multi-week program",
                     "Auto-adds the right habits each phase",
