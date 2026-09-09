@@ -11,10 +11,12 @@ import type { UpgradeReason } from "@/components/dashboard/UpgradeModal";
 import { UpgradeProvider } from "@/contexts/UpgradeContext";
 import CancellationBanner from "@/components/ui/CancellationBanner";
 import TrialBanner from "@/components/ui/TrialBanner";
+import OfflineIndicator from "@/components/ui/OfflineIndicator";
 import MobileXPBar from "@/components/ui/MobileXPBar";
 import AIInsightModal from "@/components/dashboard/AIInsightModal";
 import { useProfile } from "@/hooks/useProfile";
 import { AIInsightProvider } from "@/contexts/AIInsightContext";
+import { useInstallBannerReservedHeight } from "@/contexts/InstallBannerContext";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -23,6 +25,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [showAIInsight, setShowAIInsight] = useState(false);
   const { tier } = useProfile();
+  // DashboardNav is sticky, not fixed — it doesn't get pushed down by the
+  // (fixed, out-of-flow) install banner on its own, so on first load the
+  // banner sat on top of it (logo/level/XP/PRO badge fully hidden). Only
+  // "invisible" because the content further down happened to sit low enough
+  // to clear the banner anyway. Reserve real space instead of relying on that.
+  const bannerReservedHeight = useInstallBannerReservedHeight();
 
   function openUpgradeModal(reason: UpgradeReason = "habits", fromPlus = false) {
     setUpgradeReason(reason);
@@ -35,8 +43,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <UpgradeProvider value={{ openUpgradeModal }}>
       <AIInsightProvider value={{ openAIInsight }}>
-        <DashboardNav />
-        <MobileXPBar />
+        <div style={{ paddingTop: bannerReservedHeight, transition: "padding-top 0.25s ease" }}>
+          <DashboardNav />
+          <MobileXPBar />
+        </div>
+        <OfflineIndicator />
         <TrialBanner />
         <CancellationBanner />
         <BottomNav />

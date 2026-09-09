@@ -6,6 +6,7 @@ import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useHabits } from "@/hooks/useHabits";
 import { useUpgrade } from "@/contexts/UpgradeContext";
+import { useInstallBannerReservedHeight } from "@/contexts/InstallBannerContext";
 import type { GoalProgram, ProgramCheckin } from "@/types";
 import FeatureUpgradeGate from "@/components/dashboard/FeatureUpgradeGate";
 import GoalProgramCreate from "@/components/dashboard/GoalProgramCreate";
@@ -17,6 +18,12 @@ export default function GoalProgramPage() {
   const { tier, profileLoading } = useProfile();
   const { habits, historicalLogs, isCompletedToday } = useHabits();
   const { openUpgradeModal } = useUpgrade();
+  // Standalone page (no AppShell), so unlike AppShell pages it doesn't get
+  // the install banner's top clearance for free — reserve matching space
+  // while the banner is actually on screen (iOS Safari / installable
+  // Android Chrome), otherwise it overlaps this page's own sticky header
+  // and "What do you want to achieve?" heading.
+  const bannerReservedHeight = useInstallBannerReservedHeight();
 
   const [program, setProgram] = useState<GoalProgram | null>(null);
   const [checkins, setCheckins] = useState<ProgramCheckin[]>([]);
@@ -41,7 +48,10 @@ export default function GoalProgramPage() {
   }, [tier]);
 
   return (
-    <div className="min-h-screen bg-[#09090f] pb-24 sm:pb-8">
+    <div
+      className="min-h-screen bg-[#09090f] pb-24 sm:pb-8"
+      style={{ paddingTop: bannerReservedHeight, transition: "padding-top 0.25s ease" }}
+    >
       <div className="sticky top-0 z-40 bg-[#09090f]/90 backdrop-blur-xl border-b border-violet-900/20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
           <Link href="/dashboard" className="flex items-center gap-1.5 text-slate-500 hover:text-white text-xs transition-colors">

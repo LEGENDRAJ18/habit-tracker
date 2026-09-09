@@ -1,34 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useRef, useLayoutEffect } from "react";
 import { Download } from "lucide-react";
-import { usePWAInstall } from "@/hooks/usePWAInstall";
-
-// Bumped to v2 so users who dismissed the old bottom banner see this new one.
-const DISMISS_KEY = "habitai-install-dismissed-v2";
+import { useInstallBanner } from "@/contexts/InstallBannerContext";
 
 export default function InstallBanner() {
-  const { canInstall, isInstalled, isIOS, promptInstall } = usePWAInstall();
+  const { visible, isIOS, promptInstall, dismiss, reportHeight } = useInstallBanner();
+  const bannerRef = useRef<HTMLDivElement>(null);
 
-  const [dismissed, setDismissed] = useState(
-    () => typeof window !== "undefined" ? localStorage.getItem(DISMISS_KEY) === "1" : true
-  );
-  const [visible, setVisible]     = useState(false);
-
-  useEffect(() => {
-    const shouldShow = (canInstall || isIOS) && !isInstalled && !dismissed;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (!shouldShow) { setVisible(false); return; }
-    // Brief delay so the page settles before the banner slides in.
-    const t = setTimeout(() => setVisible(true), 1500);
-    return () => clearTimeout(t);
-  }, [canInstall, isIOS, isInstalled, dismissed]);
-
-  const dismiss = () => {
-    setVisible(false);
-    setDismissed(true);
-    localStorage.setItem(DISMISS_KEY, "1");
-  };
+  // Reports its real rendered height (0 while hidden via sm:hidden, or when
+  // unmounted) so pages outside AppShell can reserve matching top space —
+  // see useInstallBannerReservedHeight.
+  useLayoutEffect(() => {
+    if (!visible || !bannerRef.current) return;
+    const el = bannerRef.current;
+    const measure = () => reportHeight(el.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [visible, reportHeight]);
 
   const handleInstall = async () => {
     if (isIOS) {
@@ -45,6 +36,7 @@ export default function InstallBanner() {
   return (
     /* Top banner — mobile only; desktop installs via Settings */
     <div
+      ref={bannerRef}
       className="fixed top-0 inset-x-0 z-[60] px-3 pt-3 pb-0 sm:hidden"
       style={{ animation: "slideDown 0.35s cubic-bezier(0.34,1.56,0.64,1) both" }}
     >

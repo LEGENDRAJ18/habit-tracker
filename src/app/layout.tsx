@@ -13,7 +13,7 @@ import ConditionalAppShell from "@/components/layout/ConditionalAppShell";
 import PostHogProvider from "@/components/PostHogProvider";
 import SplashScreen from "@/components/ui/SplashScreen";
 import AuthStateManager from "@/components/AuthStateManager";
-import OfflineIndicator from "@/components/ui/OfflineIndicator";
+import { InstallBannerProvider } from "@/contexts/InstallBannerContext";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -89,23 +89,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} scroll-smooth`}>
       <body>
-        <PostHogProvider>
-          <AppearanceProvider>
-            <CurrencyProvider>
-              <ConditionalAppShell>
-                {children}
-              </ConditionalAppShell>
-            </CurrencyProvider>
-          </AppearanceProvider>
-        </PostHogProvider>
-        <AuthStateManager />
-        <OfflineIndicator />
-        <SplashScreen />
-        <Analytics />
-        <ServiceWorkerRegistration />
-        <InstallBanner />
-        <ToastContainer />
-        <CookieBanner />
+        <InstallBannerProvider>
+          <PostHogProvider>
+            <AppearanceProvider>
+              <CurrencyProvider>
+                <ConditionalAppShell>
+                  {children}
+                </ConditionalAppShell>
+              </CurrencyProvider>
+            </AppearanceProvider>
+          </PostHogProvider>
+          <AuthStateManager />
+          <SplashScreen />
+          <Analytics />
+          <ServiceWorkerRegistration />
+          <InstallBanner />
+          <ToastContainer />
+          <CookieBanner />
+        </InstallBannerProvider>
       </body>
     </html>
   );

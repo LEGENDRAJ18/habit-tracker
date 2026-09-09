@@ -8,6 +8,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { AVATARS, type AvatarId } from "@/lib/avatars";
 import { PERSONAS, PERSONA_TO_USER_MODE, type PersonaId } from "@/lib/personas";
+import { useInstallBannerReservedHeight } from "@/contexts/InstallBannerContext";
 import posthog from "posthog-js";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -518,6 +519,11 @@ function HabitStep({
 
 function OnboardingFlow() {
   const router = useRouter();
+  // Standalone page (no AppShell), so unlike AppShell pages it doesn't get
+  // the install banner's top clearance for free — on iOS Safari the banner
+  // was covering ~87% of the step-1 "Who are you?" heading. Reserve matching
+  // space on top of this step's own centering padding while it's on screen.
+  const bannerReservedHeight = useInstallBannerReservedHeight();
 
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [userId, setUserId]           = useState<string | null>(null);
@@ -772,8 +778,9 @@ function OnboardingFlow() {
 
       <div
         key={`step-${step}`}
-        className={`relative z-10 min-h-screen flex items-center justify-center pt-16 pb-8
+        className={`relative z-10 min-h-screen flex items-center justify-center pb-8
           ${direction === "fwd" ? "step-slide-in" : "step-slide-in-left"}`}
+        style={{ paddingTop: `calc(4rem + ${bannerReservedHeight}px)`, transition: "padding-top 0.25s ease" }}
       >
         {step === 1 && (
           <PersonaStep
