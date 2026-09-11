@@ -35,3 +35,13 @@ The script writes via the anon-key client, so it can only reset `subscription_ti
 - **Standalone (intentionally):** `/goal-program`, `/billing`, `/guide`, `/changelog` — each has its own breadcrumb-style header and no sidebar.
 
 When adding a new authenticated page, prefer adding its route to `APP_ROUTES` over hand-rolling a new breadcrumb bar, unless there's a specific reason it should stay standalone. If a page is moved into the shell, remove any `BottomNav`/`BackToDashboardButton` it renders itself — `AppShell` already renders both globally, and doubling up shows two of each.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

@@ -1,18 +1,17 @@
 ﻿"use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, Check, Loader2, ExternalLink, AlertCircle, CheckCircle2,
   Sparkles, Crown, Zap, Shield, CreditCard, Clock, ArrowRight,
 } from "lucide-react";
 import posthog from "posthog-js";
-import { createClient } from "@/lib/supabase/client";
 import BottomNav from "@/components/ui/BottomNav";
 import BackToDashboardButton from "@/components/ui/BackToDashboardButton";
 import type { Plan } from "@/types";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useProfile } from "@/hooks/useProfile";
 
 // ─── Feature lists ────────────────────────────────────────────────────────────
 
@@ -349,41 +348,35 @@ function CompRow({ label, free, plus, pro }: { label: string; free: string | boo
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function BillingPage() {
-  const router = useRouter();
-  const [supabase] = useState(() => createClient());
+  // Auth is enforced server-side by billing/layout.tsx. Tier comes from the
+  // same cached/deduped hook every other page uses, so the page paints
+  // immediately with last-known (or default "free") data instead of blocking
+  // on a fresh round-trip — this is what was tanking LCP.
+  const { tier, profileLoading } = useProfile();
 
-  const [tier,            setTier]            = useState<Plan>("free");
   const [annual,          setAnnual]          = useState(false);
-  const [pageLoading,     setPageLoading]     = useState(true);
   const [portalLoading,   setPortalLoading]   = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState<Plan | null>(null);
   const [error,           setError]           = useState<string | null>(null);
   const [successMsg,      setSuccessMsg]      = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser()
-      .then(({ data: { user } }) => { if (!user) router.push("/auth/login"); })
-      .catch(() => router.push("/auth/login"));
-
     const upgradeParam = new URLSearchParams(window.location.search).get("upgrade");
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (upgradeParam === "success") setSuccessMsg("Plan updated! Welcome to your new plan.");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (upgradeParam === "cancel")  setError("Checkout cancelled. No charge was made.");
+  }, []);
 
-    supabase.from("profiles").select("subscription_tier").single().then(({ data }) => {
-      const newTier = (data?.subscription_tier as Plan) ?? "free";
-      if (data?.subscription_tier) setTier(newTier);
-      setPageLoading(false);
-
-      if (upgradeParam === "success" && !sessionStorage.getItem("ph_upgrade_tracked")) {
-        sessionStorage.setItem("ph_upgrade_tracked", "1");
-        if (newTier === "plus") posthog.capture("upgraded_to_plus");
-        else if (newTier === "pro") posthog.capture("upgraded_to_pro");
-        if (newTier === "plus" || newTier === "pro") posthog.capture("subscription_started", { tier: newTier });
-      }
-    });
-  }, [supabase, router]);
+  useEffect(() => {
+    if (profileLoading) return;
+    const upgradeParam = new URLSearchParams(window.location.search).get("upgrade");
+    if (upgradeParam === "success" && !sessionStorage.getItem("ph_upgrade_tracked")) {
+      sessionStorage.setItem("ph_upgrade_tracked", "1");
+      if (tier === "plus") posthog.capture("upgraded_to_plus");
+      else if (tier === "pro") posthog.capture("upgraded_to_pro");
+      if (tier === "plus" || tier === "pro") posthog.capture("subscription_started", { tier });
+    }
+  }, [profileLoading, tier]);
 
   const openPortal = async () => {
     setPortalLoading(true); setError(null);
@@ -411,14 +404,6 @@ export default function BillingPage() {
       else { setError(data.error ?? "Could not start checkout."); setCheckoutLoading(null); }
     } catch { setError("Network error. Please try again."); setCheckoutLoading(null); }
   };
-
-  if (pageLoading) {
-    return (
-      <div className="min-h-screen bg-[#09090f] flex items-center justify-center">
-        <Loader2 className="w-6 h-6 text-violet-500 animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#09090f] pb-nav">
