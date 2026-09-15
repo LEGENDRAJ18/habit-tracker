@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getWebPush } from "@/lib/webpush";
 import { isAuthorizedCron as verifyCron } from "@/lib/cronAuth";
+import { formatElapsed } from "@/lib/time";
 
 type PushSub = {
   id: string;
@@ -170,9 +171,10 @@ async function handle(req: NextRequest) {
       const hoursAbsent = lastSeen ? (now.getTime() - lastSeen.getTime()) / 36e5 : 999;
 
       if (hoursAbsent >= 24 && hoursSince(sub.last_streak_warned_at, now) >= 23) {
+        const elapsed = lastSeen ? formatElapsed(now.getTime() - lastSeen.getTime()) : "a while";
         const result = await sendPush(sub, {
           title: "Your streak is at risk 🔥",
-          body:  "You haven't opened HabitAI in 24 hours. Tap to keep your streak alive!",
+          body:  `You haven't opened HabitAI in ${elapsed}. Tap to keep your streak alive!`,
           tag:   "streak-risk",
           url:   "/dashboard",
         });
