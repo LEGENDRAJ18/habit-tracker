@@ -7,10 +7,11 @@ interface Props {
   goals: string[];
   habitCount: number;
   completionCount: number;
+  daysSince: number;
   onDismiss: () => void;
 }
 
-export default function FirstWeekCheckin({ goals, habitCount, completionCount, onDismiss }: Props) {
+export default function FirstWeekCheckin({ goals, habitCount, completionCount, daysSince, onDismiss }: Props) {
   const [visible, setVisible] = useState(false);
   const [text, setText]       = useState("");
   const [loading, setLoading] = useState(true);
@@ -29,7 +30,7 @@ export default function FirstWeekCheckin({ goals, habitCount, completionCount, o
     fetch("/api/first-week-checkin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ goals, habitCount, completionCount }),
+      body: JSON.stringify({ goals, habitCount, completionCount, daysSince }),
     })
       .then(async (res) => {
         if (!res.ok || !res.body) { setLoading(false); setDone(true); return; }
@@ -43,7 +44,7 @@ export default function FirstWeekCheckin({ goals, habitCount, completionCount, o
         }
       })
       .catch(() => { setLoading(false); setDone(true); });
-  }, [goals, habitCount, completionCount]);
+  }, [goals, habitCount, completionCount, daysSince]);
 
   return (
     <div
@@ -63,7 +64,7 @@ export default function FirstWeekCheckin({ goals, habitCount, completionCount, o
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
             <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
-              3 Days In — AI Coach
+              {daysSince} Day{daysSince === 1 ? "" : "s"} In — AI Coach
             </span>
             {!done && (
               <span className="flex gap-0.5">

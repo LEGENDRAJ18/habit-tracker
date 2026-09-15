@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { computeOccurrenceRate, computeOccurrenceStreak } from "@/lib/streaks";
+import { formatElapsed } from "@/lib/time";
 
 const DAILY_LIMIT_PLUS = 5;
 const DAILY_LIMIT_FREE = 1;
@@ -216,7 +217,7 @@ Build a realistic 7-day plan. Reference specific habits by name. Build on their 
       const gapDescription =
         gapDays === null ? "has never completed this habit" :
         gapDays === 1    ? "missed it yesterday (a 1-day gap)" :
-        `hasn't done it in ${gapDays} days`;
+        `hasn't done it in ${formatElapsed(gapDays * 24 * 60 * 60 * 1000)}`;
 
       const systemPrompt = `You are a supportive habit coach. The user has a gap in a habit. Give a short, practical suggestion. Respond with valid JSON:
 {

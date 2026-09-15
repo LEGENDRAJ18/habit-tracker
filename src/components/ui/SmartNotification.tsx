@@ -71,6 +71,8 @@ export default function SmartNotification({ tier, habitCount, onUpgradeClick, on
         <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
           {type === "upgrade"
             ? "You're getting close to the free habit limit — upgrade for unlimited"
+            : tier === "pro"
+            ? "Analyse your habits with AI — unlimited coaching sessions"
             : "Analyse your habits with AI — 5 free coaching sessions today"}
         </p>
       </div>

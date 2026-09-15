@@ -542,6 +542,7 @@ export default function DashboardPage() {
   const [showFirstCompletion,   setShowFirstCompletion]   = useState(false);
   const [firstHabitWowName,     setFirstHabitWowName]     = useState<string | null>(null);
   const [showFirstWeekCheckin,  setShowFirstWeekCheckin]  = useState(false);
+  const [firstWeekDaysSince,    setFirstWeekDaysSince]    = useState(3);
   const [showMonthlyWrapped,    setShowMonthlyWrapped]    = useState(false);
   const [showHabitDNA,          setShowHabitDNA]          = useState(false);
   const [commitmentHabit, setCommitmentHabit] = useState<{ id: string; name: string; isPublic: boolean; commitmentText: string | null } | null>(null);
@@ -586,8 +587,11 @@ export default function DashboardPage() {
     const ageMs = Date.now() - new Date(signedUpAt).getTime();
     const MS_3D = 3 * 24 * 60 * 60 * 1000;
     const MS_8D = 8 * 24 * 60 * 60 * 1000;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (ageMs >= MS_3D && ageMs < MS_8D) setShowFirstWeekCheckin(true);
+    if (ageMs >= MS_3D && ageMs < MS_8D) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFirstWeekDaysSince(Math.floor(ageMs / (24 * 60 * 60 * 1000)));
+      setShowFirstWeekCheckin(true);
+    }
   }, [loading, profileLoading, signedUpAt, totalCompletions]);
 
   useEffect(() => {
@@ -1061,6 +1065,7 @@ export default function DashboardPage() {
             goals={goals}
             habitCount={habits.length}
             completionCount={totalCompletions}
+            daysSince={firstWeekDaysSince}
             onDismiss={() => {
               setShowFirstWeekCheckin(false);
               localStorage.setItem("habitai_3day_checkin", "1");

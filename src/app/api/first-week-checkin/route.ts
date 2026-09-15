@@ -6,20 +6,25 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return new Response("Unauthorized", { status: 401 });
 
-  const { goals, habitCount, completionCount } = await req.json() as {
+  const { goals, habitCount, completionCount, daysSince } = await req.json() as {
     goals: string[];
     habitCount: number;
     completionCount: number;
+    daysSince: number;
   };
 
+  // Trigger window is day 3–8 since signup, not exactly day 3 — daysSince
+  // is the real elapsed days, defaulting to 3 only if the client somehow
+  // omits it (older cached client bundle, etc.).
+  const days = Number.isFinite(daysSince) && daysSince > 0 ? daysSince : 3;
   const goalsStr = goals?.length > 0 ? goals.join(" and ") : "personal growth";
-  const avgPerDay = completionCount > 0 ? (completionCount / 3).toFixed(1) : "0";
+  const avgPerDay = completionCount > 0 ? (completionCount / days).toFixed(1) : "0";
 
-  const prompt = `A user is 3 days into their habit journey. You are their coach and you've been watching their data.
+  const prompt = `A user is ${days} days into their habit journey. You are their coach and you've been watching their data.
 
 Their goals: ${goalsStr}
 Number of habits they're tracking: ${habitCount}
-Total completions in 3 days: ${completionCount} (~${avgPerDay}/day average)
+Total completions in ${days} days: ${completionCount} (~${avgPerDay}/day average)
 
 Write exactly 2 sentences (under 70 words):
 Sentence 1: One specific, non-obvious observation about what their completion pattern reveals. Start with "You've been..." or "Your ${completionCount} completions..." — reference the actual number to make it feel real.
