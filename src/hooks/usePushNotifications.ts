@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import posthog from "posthog-js";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
 
 const SUBSCRIBED_KEY = "habitai-push-subscribed";
 const SNOOZE_DAYS = 3;
@@ -64,6 +65,15 @@ const hasNotifAPI = (): boolean =>
 export type SubscribeResult = "success" | "denied" | "error" | "no_vapid" | "unsupported";
 
 export function usePushNotifications() {
+  // iOS Safari only exposes Notification/PushManager to a web app that's
+  // been added to the Home Screen (display-mode: standalone) — outside of
+  // that, hasNotifAPI() below is unconditionally false. That's an Apple
+  // platform restriction, not a bug, but it's not something the user can
+  // infer on their own — needsIOSInstall lets the modal explain it instead
+  // of just never appearing.
+  const { isIOS, isInstalled } = usePWAInstall();
+  const needsIOSInstall = isIOS && !isInstalled;
+
   const [showModal, setShowModal] = useState(false);
   // isSubscribed reflects whether the SERVER has a saved push_subscriptions
   // row for this device — never derived from Notification.permission alone.
@@ -78,6 +88,9 @@ export function usePushNotifications() {
   const [reconciling, setReconciling] = useState(false);
   const [subscribeError, setSubscribeError] = useState<string | null>(null);
   const [subscribeSuccess, setSubscribeSuccess] = useState(false);
+  // True while allow()/requestPermission() is mid-flight, so the modal can
+  // disable its retry button instead of allowing a pile-up of clicks.
+  const [subscribing, setSubscribing] = useState(false);
 
   // POSTs a browser PushSubscription to the server. The route upserts on
   // (user_id, endpoint), so this is idempotent — safe to call every time we
@@ -174,26 +187,51 @@ export function usePushNotifications() {
   }, [persistSubscription]);
 
   const allow = useCallback(async () => {
-    setShowModal(false);
-    if (!hasNotifAPI()) return;
-    const permission = await Notification.requestPermission();
-    posthog.capture(permission === "granted" ? "notification_permission_granted" : "notification_permission_denied");
-    if (permission === "granted") {
+    setSubscribeError(null);
+    // needsIOSInstall means Notification/PushManager don't exist at all here
+    // — nothing for requestPermission()/subscribe() to do. The modal should
+    // never call allow() in this state (it renders install instructions
+    // instead), but guard anyway rather than let this throw.
+    if (needsIOSInstall) return;
+    if (!hasNotifAPI()) { setShowModal(false); return; }
+
+    setSubscribing(true);
+    try {
+      const permission = await Notification.requestPermission();
+      posthog.capture(permission === "granted" ? "notification_permission_granted" : "notification_permission_denied");
+
+      if (permission !== "granted") {
+        // Denied at the browser level — permanent, nothing to retry via a
+        // reopened modal. notifPermission() === "denied" is already checked
+        // everywhere below, and the settings page has dedicated "blocked"
+        // guidance for this case.
+        setShowModal(false);
+        return;
+      }
+
       const result = await subscribe();
       if (result !== "success") {
         console.error("[push] allow(): subscribe() returned", result);
-        setSubscribeError("Couldn't enable notifications, please try again.");
+        setSubscribeError("Couldn't enable notifications — please try again.");
+        // Reopen the modal (instead of leaving it closed) so the failure is
+        // actually visible and the user has an easy retry instead of being
+        // silently left unsubscribed with permission already granted.
+        setShowModal(true);
+        return;
       }
+
+      setShowModal(false);
+    } finally {
+      setSubscribing(false);
     }
-    // If denied at the browser level, notifPermission() === "denied" is now
-    // permanent and already checked everywhere below — no local flag needed.
-  }, [subscribe]);
+  }, [subscribe, needsIOSInstall]);
 
   // "Maybe later" — just hides the modal. The 3-day snooze is enforced by the
   // caller persisting `notif_prompt_last_asked_at` on the profile (survives
   // devices) and passing it back into showAfterFirstCompletion.
   const dismiss = useCallback(() => {
     setShowModal(false);
+    setSubscribeError(null);
   }, []);
 
   // Allow external trigger (e.g. from settings page "Enable notifications" button)
@@ -266,7 +304,12 @@ export function usePushNotifications() {
   // `lastAskedAt` is the profile's `notif_prompt_last_asked_at` timestamp; if
   // they dismissed with "Maybe later" less than SNOOZE_DAYS ago, skip.
   const showAfterFirstCompletion = useCallback((lastAskedAt: string | null) => {
-    if (!hasNotifAPI()) return;
+    // needsIOSInstall is the one "unsupported" case that's actually
+    // actionable — the modal explains the Home Screen install requirement
+    // instead of the usual permission ask. Every other unsupported case
+    // (in-app browsers with no Notification API at all, etc.) has nothing
+    // useful to tell the user, so it stays silent as before.
+    if (!needsIOSInstall && !hasNotifAPI()) return;
     // Permission already granted — don't re-prompt for it. The mount-time
     // reconciliation effect above handles verifying/saving the server-side
     // row; it does not depend on this modal being shown.
@@ -275,7 +318,7 @@ export function usePushNotifications() {
     if (localStorage.getItem(SUBSCRIBED_KEY)) return;
     if (lastAskedAt && Date.now() - new Date(lastAskedAt).getTime() < SNOOZE_MS) return;
     setShowModal(true);
-  }, []);
+  }, [needsIOSInstall]);
 
   return {
     showModal,
@@ -283,6 +326,8 @@ export function usePushNotifications() {
     reconciling,
     subscribeError,
     subscribeSuccess,
+    subscribing,
+    needsIOSInstall,
     allow,
     dismiss,
     requestPermission,

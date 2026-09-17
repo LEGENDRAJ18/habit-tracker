@@ -453,7 +453,7 @@ export default function DashboardPage() {
   const { xp, level, achievements, totalCompletions, justLeveledUp, xpLoading, isDailyAchieved, onHabitCompleted, onDailyOpen, checkMilestones, dismissLevelUp } = useXP();
   const { openUpgradeModal } = useUpgrade();
   const { openAIInsight } = useAIInsight();
-  const { showModal: showPushModal, allow: allowPush, dismiss: dismissPush, showAfterFirstCompletion } = usePushNotifications();
+  const { showModal: showPushModal, allow: allowPush, dismiss: dismissPush, showAfterFirstCompletion, subscribeError: pushSubscribeError, subscribing: pushSubscribing, needsIOSInstall: pushNeedsIOSInstall } = usePushNotifications();
 
   // Update last_seen_at so streak-at-risk detection works
   useEffect(() => {
@@ -848,6 +848,9 @@ export default function DashboardPage() {
         <NotificationPermissionModal
           onAllow={allowPush}
           onDismiss={() => { dismissPush(); void markNotifPromptAsked(); }}
+          error={pushSubscribeError}
+          subscribing={pushSubscribing}
+          needsIOSInstall={pushNeedsIOSInstall}
         />
       )}
 
