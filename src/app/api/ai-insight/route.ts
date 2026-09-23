@@ -173,20 +173,14 @@ Always respond with valid JSON matching this exact schema:
   "struggling": "1-2 sentence explanation of what the data reveals about their main challenge",
   "fixes": ["specific fix 1", "specific fix 2", "specific fix 3"],
   "encouragement": "1-2 personalized encouraging sentences referencing their actual progress",
-  "sevenDayPlan": [
-    {"day": 1, "action": "short, specific action (max 12 words)"},
-    {"day": 2, "action": "short, specific action (max 12 words)"},
-    {"day": 3, "action": "short, specific action (max 12 words)"},
-    {"day": 4, "action": "short, specific action (max 12 words)"},
-    {"day": 5, "action": "short, specific action (max 12 words)"},
-    {"day": 6, "action": "short, specific action (max 12 words)"},
-    {"day": 7, "action": "short, specific action (max 12 words)"}
-  ]${hasHarmfulHabit ? `,
+  "sevenDayPlan": [{"day": 1, "action": "short, specific action (max 12 words)"}]${hasHarmfulHabit ? `,
   "helpResources": [
     {"name": "resource name", "url": "https://...", "desc": "one-line description"}
   ]` : `,
   "helpResources": []`}
-}`;
+}
+
+sevenDayPlan must contain exactly 7 objects total, one per day in order (day: 1 through 7), each with a short, specific action (max 12 words) — the single entry above shows the shape, not the count.`;
 
       const dayOfWeek = new Date().toLocaleDateString("en-US", { weekday: "long" });
       const bestHabit = habitSummaries.reduce((a, b) => (b.rate7d > a.rate7d ? b : a), habitSummaries[0]);
@@ -287,16 +281,10 @@ Respond with valid JSON:
   "fixes": ["specific fix 1", "specific fix 2", "specific fix 3"],
   "encouragement": "1-2 sentences that reference something specific from their journey",
   "patternInsight": "1 sentence calling out a recurring pattern you've noticed (null if first session)",
-  "sevenDayPlan": [
-    {"day": 1, "action": "specific action"},
-    {"day": 2, "action": "specific action"},
-    {"day": 3, "action": "specific action"},
-    {"day": 4, "action": "specific action"},
-    {"day": 5, "action": "specific action"},
-    {"day": 6, "action": "specific action"},
-    {"day": 7, "action": "specific action"}
-  ]
-}`;
+  "sevenDayPlan": [{"day": 1, "action": "specific action"}]
+}
+
+sevenDayPlan must contain exactly 7 objects total, one per day in order (day: 1 through 7) — the single entry above shows the shape, not the count.`;
 
       const userPrompt = `User's goals: ${goalsText}
 Total completions (90 days): ${totalCompletions}
